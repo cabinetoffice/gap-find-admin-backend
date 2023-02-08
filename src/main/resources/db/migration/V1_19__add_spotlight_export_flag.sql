@@ -1,0 +1,1 @@
+ALTER TABLE grant_application ADD spotlight_export boolean DEFAULT false;

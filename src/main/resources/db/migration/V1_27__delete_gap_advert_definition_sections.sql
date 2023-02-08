@@ -1,0 +1,1 @@
+UPDATE public.gap_definition SET definition ['sections'] = '[]' WHERE gap_definition_id  = 1;

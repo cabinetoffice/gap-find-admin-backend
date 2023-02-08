@@ -1,0 +1,2 @@
+ALTER TABLE GRANT_BENEFICIARY DROP COLUMN supports_specific_gender;
+ALTER TABLE GRANT_BENEFICIARY DROP COLUMN supporting_gender_details;

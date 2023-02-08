@@ -1,0 +1,1 @@
+ALTER TABLE grant_submission DROP CONSTRAINT submission_last_updated_by_admin_fkey;

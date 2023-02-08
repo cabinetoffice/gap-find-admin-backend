@@ -1,0 +1,406 @@
+{
+	"info": {
+		"_postman_id": "f94ee0f2-fccd-4662-a66d-c68a20f6d392",
+		"name": "GAP-Admin",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "19315684"
+	},
+	"item": [
+		{
+			"name": "Salesforce",
+			"item": [
+				{
+					"name": "Scheme",
+					"item": [
+						{
+							"name": "Get Scheme",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{_endpoint}}/services/data/v{{version}}/sobjects/Scheme__c/:Scheme__c.id",
+									"host": [
+										"{{_endpoint}}"
+									],
+									"path": [
+										"services",
+										"data",
+										"v{{version}}",
+										"sobjects",
+										"Scheme__c",
+										":Scheme__c.id"
+									],
+									"variable": [
+										{
+											"key": "Scheme__c.id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Scheme",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"Name\": \"Example Name\",\n    \"Description__c\": \"Example Desc\",\n    \"Email__c\": \"example@email.com\",\n    \"OrganisationId__c\": \"example\"\n}"
+								},
+								"url": {
+									"raw": "{{_endpoint}}/services/data/v{{version}}/sobjects/Scheme__c",
+									"host": [
+										"{{_endpoint}}"
+									],
+									"path": [
+										"services",
+										"data",
+										"v{{version}}",
+										"sobjects",
+										"Scheme__c"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Schemes By Org ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{_endpoint}}/services/data/v{{version}}/query/?q=SELECT ID, Name, Description__c, Email__c, OrganisationId__c FROM Scheme__c WHERE OrganisationId__c = 'example'",
+									"host": [
+										"{{_endpoint}}"
+									],
+									"path": [
+										"services",
+										"data",
+										"v{{version}}",
+										"query",
+										""
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "SELECT ID, Name, Description__c, Email__c, OrganisationId__c FROM Scheme__c WHERE OrganisationId__c = 'example'"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Scheme By ID",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{_endpoint}}/services/data/v{{version}}/sobjects/Scheme__c/:Scheme__c.id",
+									"host": [
+										"{{_endpoint}}"
+									],
+									"path": [
+										"services",
+										"data",
+										"v{{version}}",
+										"sobjects",
+										"Scheme__c",
+										":Scheme__c.id"
+									],
+									"variable": [
+										{
+											"key": "Scheme__c.id",
+											"value": "a028d000004O7qLAAS"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Scheme",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"OrganisationId__c\":\"Test\" \n}"
+								},
+								"url": {
+									"raw": "{{_endpoint}}/services/data/v{{version}}/sobjects/Scheme__c/:Scheme__c.id",
+									"host": [
+										"{{_endpoint}}"
+									],
+									"path": [
+										"services",
+										"data",
+										"v{{version}}",
+										"sobjects",
+										"Scheme__c",
+										":Scheme__c.id"
+									],
+									"variable": [
+										{
+											"key": "Scheme__c.id",
+											"value": "a028d000004OACHAA4"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Backend",
+			"item": [
+				{
+					"name": "schemes",
+					"item": [
+						{
+							"name": "Get All Schemes By Org Id",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/schemes/testing",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"schemes",
+										"testing"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get limited Schemes By Org Id Copy",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/schemes/testing?limit=2",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"schemes",
+										"testing"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "sessions",
+					"item": [
+						{
+							"name": "Get session value by key",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/sessions/",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"sessions",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add key-value pair to session",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/sessions/add?key=&value=",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"sessions",
+										"add"
+									],
+									"query": [
+										{
+											"key": "key",
+											"value": ""
+										},
+										{
+											"key": "value",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "oauth2",
+		"oauth2": [
+			{
+				"key": "tokenType",
+				"value": "Bearer",
+				"type": "string"
+			},
+			{
+				"key": "accessToken",
+				"value": "00D8d0000059NIn!AQ0AQB6_bEQdOBAEhdgXYfrYGEgJ8p5gy9_AcrC_59lQixnbOhw6XI_EmTI.aWcQh78YcOx4DGmLZR.eSmIP.Y4GC5UXIdvF",
+				"type": "string"
+			},
+			{
+				"key": "useBrowser",
+				"value": true,
+				"type": "boolean"
+			},
+			{
+				"key": "tokenName",
+				"value": "access_token",
+				"type": "string"
+			},
+			{
+				"key": "client_authentication",
+				"value": "body",
+				"type": "string"
+			},
+			{
+				"key": "scope",
+				"value": "api",
+				"type": "string"
+			},
+			{
+				"key": "grant_type",
+				"value": "implicit",
+				"type": "string"
+			},
+			{
+				"key": "clientId",
+				"value": "{{clientId}}",
+				"type": "string"
+			},
+			{
+				"key": "authUrl",
+				"value": "{{url}}{{site}}/services/oauth2/authorize",
+				"type": "string"
+			},
+			{
+				"key": "addTokenTo",
+				"value": "header",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Specifying Postman as the client for Salesforce logs ",
+					"pm.request.headers.add({key: 'Sforce-Call-Options', value: 'client=postman' });"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "url",
+			"value": "https://login.salesforce.com",
+			"type": "string"
+		},
+		{
+			"key": "site",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "version",
+			"value": "55.0",
+			"type": "string"
+		},
+		{
+			"key": "clientId",
+			"value": "3MVG98_Psg5cppyYCmk1gZNC25o00SXpgpodlS29IZ6pXiHkt3xuPa5qIjBTtEgdsiMuIWVN_8F0jnwEtbDh4",
+			"type": "string"
+		},
+		{
+			"key": "_endpoint",
+			"value": "https://anddigital8-dev-ed.my.salesforce.com",
+			"type": "string"
+		}
+	]
+}
