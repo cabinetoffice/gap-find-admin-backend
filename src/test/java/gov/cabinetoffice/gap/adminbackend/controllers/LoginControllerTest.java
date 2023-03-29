@@ -5,7 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
-import gov.cabinetoffice.gap.adminbackend.security.CognitoAuthManager;
+import gov.cabinetoffice.gap.adminbackend.security.AuthManager;
 import gov.cabinetoffice.gap.adminbackend.security.WebSecurityConfig;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(LoginController.class)
-@ContextConfiguration(classes = { LoginController.class, CognitoAuthManager.class, WebSecurityConfig.class,
+@ContextConfiguration(classes = { LoginController.class, AuthManager.class, WebSecurityConfig.class,
         ControllerExceptionHandler.class })
 class LoginControllerTest {
 

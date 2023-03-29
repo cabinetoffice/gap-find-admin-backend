@@ -1,20 +1,16 @@
 package gov.cabinetoffice.gap.adminbackend.security;
 
-import java.util.Collections;
-import java.util.Optional;
-
 import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
-import gov.cabinetoffice.gap.adminbackend.models.ColaJwtPayload;
+import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.repositories.FundingOrganisationRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,12 +19,15 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.Optional;
+
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 @RequiredArgsConstructor
 @Component
 @Transactional
-public class CognitoAuthManager implements AuthenticationManager {
+public class AuthManager implements AuthenticationManager {
 
     private final GrantAdminRepository grantAdminRepository;
 
@@ -48,24 +47,24 @@ public class CognitoAuthManager implements AuthenticationManager {
         String jwtBase64 = authHeader.split(" ")[1];
 
         DecodedJWT decodedJWT = this.jwtService.verifyToken(jwtBase64);
-        ColaJwtPayload colaJWTPayload = this.jwtService.getColaPayloadFromJwt(decodedJWT);
+        JwtPayload JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
 
         Optional<GrantAdmin> grantAdmin = this.grantAdminRepository
-                .findBygapUserCognitoSubscription(colaJWTPayload.getSub());
+                .findBygapUserCognitoSubscription(JWTPayload.getSub());
 
         // if JWT is valid and admin doesn't already exist, create admin user in database
         if (grantAdmin.isEmpty()) {
-            grantAdmin = Optional.of(createNewAdmin(colaJWTPayload));
+            grantAdmin = Optional.of(createNewAdmin(JWTPayload));
         }
 
         AdminSession adminSession = new AdminSession(grantAdmin.get().getId(), grantAdmin.get().getFunder().getId(),
-                colaJWTPayload);
+                JWTPayload);
 
         return new UsernamePasswordAuthenticationToken(adminSession, null,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
     }
 
-    private GrantAdmin createNewAdmin(ColaJwtPayload jwtPayload) {
+    private GrantAdmin createNewAdmin(JwtPayload jwtPayload) {
 
         // check if funding org already exists. if not, create it
         Optional<FundingOrganisation> fundingOrganisation = this.fundingOrganisationRepository

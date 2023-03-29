@@ -1,28 +1,35 @@
 package gov.cabinetoffice.gap.adminbackend.validation.validators;
 
+import java.time.Month;
+import java.time.Year;
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+import gov.cabinetoffice.gap.adminbackend.models.*;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
 import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertValidationType;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ConvertHtmlToMdException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.models.*;
 import gov.cabinetoffice.gap.adminbackend.validation.ValidationResult;
 import gov.cabinetoffice.gap.adminbackend.validation.annotations.ValidPageResponse;
 import io.github.furstenheim.CopyDown;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.util.Strings;
-
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-
-import java.time.Month;
-import java.time.Year;
-import java.util.*;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 public class AdvertPageResponseValidator implements ConstraintValidator<ValidPageResponse, Object> {
@@ -291,7 +298,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         // check both date are valid
         grantAdvertQuestionResponses.forEach(question -> {
             AbstractMap.SimpleEntry<String, String> dateValidation = validateDate(question.getMultiResponse(), true,
-                    question.getId());
+                    question.getId(), submittedPage);
             if (dateValidation != null) {
                 result.addError(dateValidation.getKey(), dateValidation.getValue());
             }
@@ -351,7 +358,12 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
     }
 
     private AbstractMap.SimpleEntry<String, String> validateDate(final String[] dateComponents,
-            final boolean isMandatory, String questionId) {
+            final boolean isMandatory, String questionId, GrantAdvertPageResponseValidationDto submittedPage) {
+
+        // retrieve question and validation messages from static definition
+        AdvertDefinitionQuestion questionDefinition = advertDefinition.getSectionById(submittedPage.getSectionId())
+                .getPageById(submittedPage.getPage().getId()).getQuestionById(questionId);
+        AdvertDefinitionQuestionValidationMessages validationMessages = questionDefinition.getValidationMessages();
 
         // if it's not mandatory and date part is empty, skip rest of the validation
         if (!isMandatory && (dateComponents.length >= 3
@@ -379,10 +391,12 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             String errorId = String.format("%s-%s", questionId, nullList.get(0));
             String formattedError = "";
             if (nullList.size() == 3) {
-                formattedError = "You must enter a date";
+                formattedError = getCustomErrorMessage(GrantAdvertValidationType.MANDATORY, validationMessages);
             }
             else {
-                formattedError = getDateErrorMessage(nullList, "Date must include a %s", " and a %s");
+                String errorTemplate = getCustomErrorMessage(GrantAdvertValidationType.MISSING_FIELD,
+                        validationMessages);
+                formattedError = getDateErrorMessage(nullList, errorTemplate, " and a %s");
             }
 
             return new AbstractMap.SimpleEntry<>(errorId, formattedError);
@@ -429,7 +443,8 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
         if (!invalidList.isEmpty()) {
             String errorId = String.format("%s-%s", questionId, invalidList.get(0));
-            String formattedError = getDateErrorMessage(invalidList, "Date must include a real %s", null);
+            String errorTemplate = getCustomErrorMessage(GrantAdvertValidationType.INVALID, validationMessages);
+            String formattedError = getDateErrorMessage(invalidList, errorTemplate, null);
 
             return new AbstractMap.SimpleEntry<>(errorId, formattedError);
         }
@@ -441,7 +456,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
      * Given a list of invalid values, will generate a concatenated error message using
      * the provided template. ie. ["day","month","year] & "Enter a value for %s" will
      * return "Enter a value for day, month and year"
-     * 
+     *
      * You can provide an optional string to customise the final concatenation. ie.
      * ["day","month"] & "Date must include a %s" & " and a %s" would return "Date must
      * include a day and a month"
@@ -498,6 +513,8 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             case URL -> customMessages.getUrl();
             case LESS_THAN -> customMessages.getLessThan();
             case GREATER_THAN -> customMessages.getGreaterThan();
+            case MISSING_FIELD -> customMessages.getMissingField();
+            case INVALID -> customMessages.getInvalid();
             default -> null;
         } : null;
     }

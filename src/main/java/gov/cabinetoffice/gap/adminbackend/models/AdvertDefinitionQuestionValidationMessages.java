@@ -23,4 +23,8 @@ public class AdvertDefinitionQuestionValidationMessages {
 
     private String greaterThan;
 
+    private String missingField;
+
+    private String invalid;
+
 }

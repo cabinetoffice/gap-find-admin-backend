@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ColaJwtPayload {
+public class JwtPayload {
 
     private UUID sub;
 
