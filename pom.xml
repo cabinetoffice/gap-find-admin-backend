@@ -5,6 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
+        <!-- Upgrade to version 3.0.0 or above required to protect against CVE-2016-1000027-->
         <version>2.7.7</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
@@ -256,9 +257,9 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <configuration>
-                    <url>jdbc:postgresql://localhost:5432/gap_admin</url>
-                    <user>root</user>
-                    <password>root</password>
+                    <url>jdbc:postgresql://localhost:5432/gapapply</url>
+                    <user>postgres</user>
+                    <password>mysecretpassword</password>
                     <cleanDisabled>false</cleanDisabled>
                 </configuration>
             </plugin>

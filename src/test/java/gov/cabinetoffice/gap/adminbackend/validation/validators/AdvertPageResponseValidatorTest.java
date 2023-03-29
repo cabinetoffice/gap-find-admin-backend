@@ -179,6 +179,22 @@ class AdvertPageResponseValidatorTest {
                     .greaterThan("Number provided must be greater than 100").build())
             .build();
 
+    private final AdvertDefinitionQuestion openingDateCustomMessages = AdvertDefinitionQuestion.builder()
+            .id(OPENING_DATE_ID).responseType(AdvertDefinitionQuestionResponseType.DATE)
+            .validation(AdvertDefinitionQuestionValidation.builder().mandatory(true).build())
+            .validationMessages(AdvertDefinitionQuestionValidationMessages.builder().mandatory("Enter an opening date")
+                    .missingField("Opening date must include a %s").invalid("Opening date must include a real %s")
+                    .build())
+            .build();
+
+    private final AdvertDefinitionQuestion closingDateCustomMessages = AdvertDefinitionQuestion.builder()
+            .id(CLOSING_DATE_ID).responseType(AdvertDefinitionQuestionResponseType.DATE)
+            .validation(AdvertDefinitionQuestionValidation.builder().mandatory(true).build())
+            .validationMessages(AdvertDefinitionQuestionValidationMessages.builder().mandatory("Enter a closing date")
+                    .missingField("Closing date must include a %s").invalid("Closing date must include a real %s")
+                    .build())
+            .build();
+
     @BeforeEach
     void setup() {
         nodeBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
@@ -771,38 +787,65 @@ class AdvertPageResponseValidatorTest {
     }
 
     private static Stream<Arguments> provideInvalidDatesAndExpectedErrorMessages() {
-        return Stream.of(Arguments.of(new String[] { "", "02", "2022" }, "Date must include a day"),
-                Arguments.of(new String[] { "", "", "2022" }, "Date must include a day and a month"),
-                Arguments.of(new String[] { "", "02", "" }, "Date must include a day and a year"),
-                Arguments.of(new String[] { "01", "", "" }, "Date must include a month and a year"),
-                Arguments.of(new String[] { "", "", "" }, "You must enter a date"),
-                Arguments.of(new String[] { "02", "", "2022" }, "Date must include a month"),
-                Arguments.of(new String[] { "02", "02", "" }, "Date must include a year"),
-                Arguments.of(new String[] { "INVALID", "02", "2022" }, "Date must include a real day"),
-                Arguments.of(new String[] { "02", "INVALID", "2022" }, "Date must include a real month"),
-                Arguments.of(new String[] { "02", "02", "INVALID" }, "Date must include a real year"),
-                Arguments.of(new String[] { "31", "04", "2022" }, "Date must include a real day"),
-                Arguments.of(new String[] { "31", "40", "2022" }, "Date must include a real month"),
-                Arguments.of(new String[] { "29", "02", "2022" }, "Date must include a real day"),
-                Arguments.of(new String[] { "0", "02", "2022" }, "Date must include a real day"),
-                Arguments.of(new String[] { "-1", "02", "2022" }, "Date must include a real day"),
-                Arguments.of(new String[] { "28", "13", "2022" }, "Date must include a real month"),
-                Arguments.of(new String[] { "28", "0", "2022" }, "Date must include a real month"),
-                Arguments.of(new String[] { "28", "-1", "2022" }, "Date must include a real month"),
-                Arguments.of(new String[] { "29", "02", "-1" }, "Date must include a real year"),
-                Arguments.of(new String[] { "29", "02", "999" }, "Date must include a real year"),
-                Arguments.of(new String[] { "29", "02", "10000" }, "Date must include a real year"),
-                Arguments.of(new String[] { "290", "02", "10000" }, "Date must include a real year and day"),
-                Arguments.of(new String[] { "29", "-2", "10000" }, "Date must include a real month and year"),
-                Arguments.of(new String[] { "290", "-2", "2023" }, "Date must include a real month and day"),
-                Arguments.of(new String[] { "290", "-2", "10000" }, "Date must include a real month, year and day")
+        return Stream.of(
+                Arguments.of(new String[] { "", "02", "2022" }, "Opening date must include a day",
+                        "Closing date must include a day"),
+                Arguments.of(new String[] { "", "", "2022" }, "Opening date must include a day and a month",
+                        "Closing date must include a day and a month"),
+                Arguments.of(new String[] { "", "02", "" }, "Opening date must include a day and a year",
+                        "Closing date must include a day and a year"),
+                Arguments.of(new String[] { "01", "", "" }, "Opening date must include a month and a year",
+                        "Closing date must include a month and a year"),
+                Arguments.of(new String[] { "", "", "" }, "Enter an opening date", "Enter a closing date"),
+                Arguments.of(new String[] { "02", "", "2022" }, "Opening date must include a month",
+                        "Closing date must include a month"),
+                Arguments.of(new String[] { "02", "02", "" }, "Opening date must include a year",
+                        "Closing date must include a year"),
+                Arguments.of(new String[] { "INVALID", "02", "2022" }, "Opening date must include a real day",
+                        "Closing date must include a real day"),
+                Arguments.of(new String[] { "02", "INVALID", "2022" }, "Opening date must include a real month",
+                        "Closing date must include a real month"),
+                Arguments.of(new String[] { "02", "02", "INVALID" }, "Opening date must include a real year",
+                        "Closing date must include a real year"),
+                Arguments.of(new String[] { "31", "04", "2022" }, "Opening date must include a real day",
+                        "Closing date must include a real day"),
+                Arguments.of(new String[] { "31", "40", "2022" }, "Opening date must include a real month",
+                        "Closing date must include a real month"),
+                Arguments.of(new String[] { "29", "02", "2022" }, "Opening date must include a real day",
+                        "Closing date must include a real day"),
+                Arguments.of(new String[] { "0", "02", "2022" }, "Opening date must include a real day",
+                        "Closing date must include a real day"),
+                Arguments.of(new String[] { "-1", "02", "2022" }, "Opening date must include a real day",
+                        "Closing date must include a real day"),
+                Arguments.of(new String[] { "28", "13", "2022" }, "Opening date must include a real month",
+                        "Closing date must include a real month"),
+                Arguments.of(new String[] { "28", "0", "2022" }, "Opening date must include a real month",
+                        "Closing date must include a real month"),
+                Arguments.of(new String[] { "28", "-1", "2022" }, "Opening date must include a real month",
+                        "Closing date must include a real month"),
+                Arguments.of(new String[] { "29", "02", "-1" }, "Opening date must include a real year",
+                        "Closing date must include a real year"),
+                Arguments.of(new String[] { "29", "02", "999" }, "Opening date must include a real year",
+                        "Closing date must include a real year"),
+                Arguments.of(new String[] { "29", "02", "10000" }, "Opening date must include a real year",
+                        "Closing date must include a real year"),
+                Arguments.of(new String[] { "290", "02", "10000" }, "Opening date must include a real year and day",
+                        "Closing date must include a real year and day"),
+                Arguments.of(new String[] { "29", "-2", "10000" }, "Opening date must include a real month and year",
+                        "Closing date must include a real month and year"),
+                Arguments.of(new String[] { "290", "-2", "2023" }, "Opening date must include a real month and day",
+                        "Closing date must include a real month and day"),
+                Arguments.of(new String[] { "290", "-2", "10000" },
+                        "Opening date must include a real month, year and day",
+                        "Closing date must include a real month, year and day")
 
         );
     }
 
     @ParameterizedTest
     @MethodSource("provideInvalidDatesAndExpectedErrorMessages")
-    void validateDate_returnsFalseWhenInvalidResponseProvided(String[] date, String message) {
+    void validateDate_returnsFalseWhenInvalidResponseProvided(String[] date, String openingDateMessage,
+            String closingDateMessage) {
         GrantAdvertPageResponseValidationDto response = GrantAdvertPageResponseValidationDto.builder()
                 .grantAdvertId(UUID.randomUUID()).sectionId(ADVERT_DATES_SECTION_ID)
                 .page(GrantAdvertPageResponse.builder().id("1")
@@ -812,12 +855,19 @@ class AdvertPageResponseValidatorTest {
                         .build())
                 .build();
 
+        AdvertDefinitionSection definitionSection = AdvertDefinitionSection
+                .builder().id(ADVERT_DATES_SECTION_ID).pages(Collections.singletonList(AdvertDefinitionPage.builder()
+                        .id("1").questions(List.of(openingDateCustomMessages, closingDateCustomMessages)).build()))
+                .build();
+
+        when(advertDefinition.getSectionById(anyString())).thenReturn(definitionSection);
         when(validatorContext.buildConstraintViolationWithTemplate(Mockito.anyString())).thenReturn(builder);
         when(builder.addPropertyNode(Mockito.anyString())).thenReturn(nodeBuilder);
 
         boolean isValid = validator.isValid(response, validatorContext);
 
-        verify(validatorContext, times(2)).buildConstraintViolationWithTemplate(message);
+        verify(validatorContext, times(1)).buildConstraintViolationWithTemplate(openingDateMessage);
+        verify(validatorContext, times(1)).buildConstraintViolationWithTemplate(closingDateMessage);
         assertThat(isValid).isFalse();
 
     }
@@ -842,6 +892,12 @@ class AdvertPageResponseValidatorTest {
                         .build())
                 .build();
 
+        AdvertDefinitionSection definitionSection = AdvertDefinitionSection.builder().id(ADVERT_DATES_SECTION_ID)
+                .pages(Collections.singletonList(AdvertDefinitionPage.builder().id(ADVERT_DATES_SECTION_ID)
+                        .questions(List.of(openingDateCustomMessages, closingDateCustomMessages)).build()))
+                .build();
+
+        when(advertDefinition.getSectionById(anyString())).thenReturn(definitionSection);
         when(validatorContext.buildConstraintViolationWithTemplate(Mockito.anyString())).thenReturn(builder);
         when(builder.addPropertyNode(Mockito.anyString())).thenReturn(nodeBuilder);
 
@@ -973,6 +1029,13 @@ class AdvertPageResponseValidatorTest {
                         .build())
                 .build();
 
+        AdvertDefinitionSection definitionSection = AdvertDefinitionSection.builder().id(ADVERT_DATES_SECTION_ID)
+                .pages(Collections.singletonList(AdvertDefinitionPage.builder().id(ADVERT_DATES_SECTION_ID)
+                        .questions(List.of(openingDateCustomMessages, closingDateCustomMessages)).build()))
+                .build();
+
+        when(advertDefinition.getSectionById(anyString())).thenReturn(definitionSection);
+
         boolean isValid = validator.isValid(response, validatorContext);
 
         verify(validatorContext, never()).buildConstraintViolationWithTemplate(anyString());
@@ -1066,9 +1129,7 @@ class AdvertPageResponseValidatorTest {
                                 .questions(List.of(GrantAdvertQuestionResponse.builder()
                                         .id("greaterThanQuestionCustomMessage").response("10").build()))
                                 .build())
-                        .build(), "Number provided must be greater than 100")
-
-        );
+                        .build(), "Number provided must be greater than 100"));
     }
 
     @ParameterizedTest
