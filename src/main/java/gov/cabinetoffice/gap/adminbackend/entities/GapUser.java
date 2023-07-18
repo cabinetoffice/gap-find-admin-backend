@@ -1,7 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
-import java.util.UUID;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -32,6 +30,6 @@ public class GapUser {
     private Integer id;
 
     @Column(name = "user_sub")
-    private UUID cognitoSubscription;
+    private String userSub;
 
 }
