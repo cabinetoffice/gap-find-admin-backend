@@ -52,15 +52,13 @@ public class AuthManagerV2 implements AuthenticationManager {
         JwtPayloadV2 jwtPayloadV2 = this.jwtService.getPayloadFromJwtV2(decodedJWT);
         AdminSessionV2 adminSessionV2 = createAdminSession(jwtPayloadV2);
 
-
         return new UsernamePasswordAuthenticationToken(adminSessionV2, null,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
     }
 
     @NotNull
     private AdminSessionV2 createAdminSession(JwtPayloadV2 jwtPayloadV2) {
-        Optional<GrantAdmin> grantAdmin = this.grantAdminRepository
-                .findByGapUserUserSub(jwtPayloadV2.getSub());
+        Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(jwtPayloadV2.getSub());
 
         if (!jwtPayloadV2.getRoles().contains("ADMIN")) {
             throw new ForbiddenException("User is not an admin");
@@ -71,8 +69,7 @@ public class AuthManagerV2 implements AuthenticationManager {
             grantAdmin = Optional.of(createNewAdmin(jwtPayloadV2));
         }
 
-        return new AdminSessionV2(grantAdmin.get().getId(), grantAdmin.get().getFunder().getId(),
-                jwtPayloadV2);
+        return new AdminSessionV2(grantAdmin.get().getId(), grantAdmin.get().getFunder().getId(), jwtPayloadV2);
     }
 
     private GrantAdmin createNewAdmin(JwtPayloadV2 jwtPayload) {
@@ -81,8 +78,8 @@ public class AuthManagerV2 implements AuthenticationManager {
         Optional<FundingOrganisation> fundingOrganisation = this.fundingOrganisationRepository
                 .findByName(jwtPayload.getDepartment());
         if (fundingOrganisation.isEmpty()) {
-            fundingOrganisation = Optional.of(this.fundingOrganisationRepository
-                    .save(new FundingOrganisation(null, jwtPayload.getDepartment())));
+            fundingOrganisation = Optional.of(
+                    this.fundingOrganisationRepository.save(new FundingOrganisation(null, jwtPayload.getDepartment())));
         }
 
         // save new admin to db. This also creates a matching GapUser

@@ -70,20 +70,12 @@ public class JwtService {
         int exp = decodedJWT.getClaim("exp").asInt();
         int iat = decodedJWT.getClaim("iat").asInt();
 
-
         if (department == null || roles == null || emailAddress == null) {
             throw new InvalidJwtException("JWT is missing expected properties");
         }
 
-        return JwtPayloadV2.builder()
-                .sub(sub)
-                .roles(roles)
-                .emailAddress(emailAddress)
-                .department(department)
-                .iss(iss)
-                .aud(aud)
-                .exp(exp)
-                .iat(iat).build();
+        return JwtPayloadV2.builder().sub(sub).roles(roles).emailAddress(emailAddress).department(department).iss(iss)
+                .aud(aud).exp(exp).iat(iat).build();
     }
 
 }

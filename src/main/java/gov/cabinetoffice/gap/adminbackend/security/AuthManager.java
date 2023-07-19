@@ -51,8 +51,7 @@ public class AuthManager implements AuthenticationManager {
         DecodedJWT decodedJWT = this.jwtService.verifyToken(jwtBase64);
         JwtPayload JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
 
-        Optional<GrantAdmin> grantAdmin = this.grantAdminRepository
-                .findByGapUserUserSub(JWTPayload.getSub());
+        Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(JWTPayload.getSub());
 
         // if JWT is valid and admin doesn't already exist, create admin user in database
         if (grantAdmin.isEmpty()) {
