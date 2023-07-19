@@ -73,7 +73,7 @@ public class JwtService {
             throw new InvalidJwtException("JWT is missing expected properties");
         }
 
-        return JwtPayload.builder().sub(sub).roles(roles).emailAddress(emailAddress).department(department).iss(iss)
+        return JwtPayload.builder().sub(sub).roles(roles).emailAddress(emailAddress).departmentName(department).iss(iss)
                 .aud(aud).exp(exp).iat(iat).build();
     }
 

@@ -23,8 +23,6 @@ public class JwtPayload {
 
     private String roles;
 
-    private String department;
-
     private String iss;
 
     private String aud;
