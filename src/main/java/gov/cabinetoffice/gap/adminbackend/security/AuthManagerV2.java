@@ -50,6 +50,11 @@ public class AuthManagerV2 implements AuthenticationManager {
 
         DecodedJWT decodedJWT = this.jwtService.verifyToken(jwtBase64);
         JwtPayloadV2 jwtPayloadV2 = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+
+        if (!jwtPayloadV2.getRoles().contains("ADMIN")) {
+            throw new ForbiddenException("User is not an admin");
+        }
+
         AdminSessionV2 adminSessionV2 = createAdminSession(jwtPayloadV2);
 
         return new UsernamePasswordAuthenticationToken(adminSessionV2, null,
@@ -59,10 +64,6 @@ public class AuthManagerV2 implements AuthenticationManager {
     @NotNull
     private AdminSessionV2 createAdminSession(JwtPayloadV2 jwtPayloadV2) {
         Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(jwtPayloadV2.getSub());
-
-        if (!jwtPayloadV2.getRoles().contains("ADMIN")) {
-            throw new ForbiddenException("User is not an admin");
-        }
 
         // if JWT is valid and admin doesn't already exist, create admin user in database
         if (grantAdmin.isEmpty()) {
