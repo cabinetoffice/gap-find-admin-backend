@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.exceptions.InvalidJwtException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
-import gov.cabinetoffice.gap.adminbackend.models.JwtPayloadV2;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -60,7 +59,7 @@ public class JwtService {
                 .emailAddress(emailAddress).build();
     }
 
-    public JwtPayloadV2 getPayloadFromJwtV2(DecodedJWT decodedJWT) throws IllegalArgumentException {
+    public JwtPayload getPayloadFromJwtV2(DecodedJWT decodedJWT) throws IllegalArgumentException {
         String sub = decodedJWT.getSubject();
         String roles = decodedJWT.getClaim("roles").asString();
         String department = decodedJWT.getClaim("department").asString();
@@ -74,7 +73,7 @@ public class JwtService {
             throw new InvalidJwtException("JWT is missing expected properties");
         }
 
-        return JwtPayloadV2.builder().sub(sub).roles(roles).emailAddress(emailAddress).department(department).iss(iss)
+        return JwtPayload.builder().sub(sub).roles(roles).emailAddress(emailAddress).department(department).iss(iss)
                 .aud(aud).exp(exp).iat(iat).build();
     }
 

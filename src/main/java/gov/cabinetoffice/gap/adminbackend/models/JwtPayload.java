@@ -21,4 +21,16 @@ public class JwtPayload {
 
     private String emailAddress;
 
+    private String roles;
+
+    private String department;
+
+    private String iss;
+
+    private String aud;
+
+    private int exp;
+
+    private int iat;
+
 }

@@ -1,7 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
-import gov.cabinetoffice.gap.adminbackend.security.AuthManagerV2;
+import gov.cabinetoffice.gap.adminbackend.security.AuthManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,7 +25,7 @@ import java.util.Objects;
 @RequestMapping("v2")
 public class LoginControllerV2 {
 
-    private final AuthManagerV2 authManager;
+    private final AuthManager authManager;
 
     @Value("${spring.profiles.active:PROD}")
     private String profile;
