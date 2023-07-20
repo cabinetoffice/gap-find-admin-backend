@@ -5,15 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class JwtPayload {
 
-    private UUID sub;
+    private String sub;
 
     private String givenName;
 
@@ -22,5 +20,15 @@ public class JwtPayload {
     private String departmentName;
 
     private String emailAddress;
+
+    private String roles;
+
+    private String iss;
+
+    private String aud;
+
+    private int exp;
+
+    private int iat;
 
 }

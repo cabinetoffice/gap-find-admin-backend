@@ -77,7 +77,7 @@ class JwtServiceTest {
             assertThat(payloadFromJwt.getGivenName()).isEqualTo("Test");
             assertThat(payloadFromJwt.getFamilyName()).isEqualTo("User");
             assertThat(payloadFromJwt.getEmailAddress()).isEqualTo("test.user@and.digital");
-            assertThat(payloadFromJwt.getSub()).isEqualTo(UUID.fromString("106b1a34-cd3a-45d7-924f-beedc33acc70"));
+            assertThat(payloadFromJwt.getSub()).isEqualTo("106b1a34-cd3a-45d7-924f-beedc33acc70");
         }
 
     }

@@ -11,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.FundingOrganisationReposi
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,6 +36,9 @@ public class AuthManager implements AuthenticationManager {
 
     private final JwtService jwtService;
 
+    @Value("${feature.onelogin.enabled}")
+    private boolean oneLoginEnabled;
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
 
@@ -47,10 +51,16 @@ public class AuthManager implements AuthenticationManager {
         String jwtBase64 = authHeader.split(" ")[1];
 
         DecodedJWT decodedJWT = this.jwtService.verifyToken(jwtBase64);
-        JwtPayload JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
 
-        Optional<GrantAdmin> grantAdmin = this.grantAdminRepository
-                .findBygapUserCognitoSubscription(JWTPayload.getSub());
+        JwtPayload JWTPayload;
+        if (oneLoginEnabled) {
+            JWTPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+        }
+        else {
+            JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
+        }
+
+        Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(JWTPayload.getSub());
 
         // if JWT is valid and admin doesn't already exist, create admin user in database
         if (grantAdmin.isEmpty()) {
