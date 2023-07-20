@@ -23,7 +23,7 @@ public class WebSecurityConfig {
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and()
                 .authorizeHttpRequests(
                         auth -> auth
-                                .mvcMatchers("/v2/login", "/login", "/health", "/emails/sendLambdaConfirmationEmail",
+                                .mvcMatchers("/login", "/health", "/emails/sendLambdaConfirmationEmail",
                                         "/submissions/{submissionId:" + UUID_REGEX_STRING
                                                 + "}/export-batch/{batchExportId:" + UUID_REGEX_STRING + "}/submission",
                                         "/submissions/*/export-batch/*/status",
