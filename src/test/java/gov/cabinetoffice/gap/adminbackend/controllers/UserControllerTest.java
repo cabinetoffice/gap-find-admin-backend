@@ -75,70 +75,53 @@ class UserControllerTest {
 
     @Test
     void migrateUser_HappyPath() throws Exception {
-        final MigrateUserDto migrateUserDto = MigrateUserDto.builder()
-                .colaSub(UUID.randomUUID())
-                .oneLoginSub("oneLoginSub")
-                .build();
-        final DecodedJWT decodedJWT = TestDecodedJwt.builder()
-                .subject("oneLoginSub")
-                .build();
+        final MigrateUserDto migrateUserDto = MigrateUserDto.builder().colaSub(UUID.randomUUID())
+                .oneLoginSub("oneLoginSub").build();
+        final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
         when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
 
-        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate")
-                                .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(migrateUserDto))
-                                .header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate").contentType(MediaType.APPLICATION_JSON)
+                .content(HelperUtils.asJsonString(migrateUserDto)).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                 .andExpect(status().isOk()).andReturn();
         verify(userService).migrateUser("oneLoginSub", migrateUserDto.getColaSub());
     }
 
     @Test
     void migrateUser_NoJwt() throws Exception {
-        final MigrateUserDto migrateUserDto = MigrateUserDto.builder()
-                .colaSub(UUID.randomUUID())
-                .oneLoginSub("oneLoginSub")
-                .build();
-        final DecodedJWT decodedJWT = TestDecodedJwt.builder()
-                .subject("oneLoginSub")
-                .build();
+        final MigrateUserDto migrateUserDto = MigrateUserDto.builder().colaSub(UUID.randomUUID())
+                .oneLoginSub("oneLoginSub").build();
+        final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
         when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
 
-        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate")
-                        .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(migrateUserDto))
-                        .header(HttpHeaders.AUTHORIZATION, ""))
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate").contentType(MediaType.APPLICATION_JSON)
+                .content(HelperUtils.asJsonString(migrateUserDto)).header(HttpHeaders.AUTHORIZATION, ""))
                 .andExpect(status().isUnauthorized()).andReturn();
         verify(userService, times(0)).migrateUser("oneLoginSub", migrateUserDto.getColaSub());
     }
 
     @Test
     void migrateUser_InvalidJwt() throws Exception {
-        final MigrateUserDto migrateUserDto = MigrateUserDto.builder()
-                .colaSub(UUID.randomUUID())
-                .oneLoginSub("oneLoginSub")
-                .build();
+        final MigrateUserDto migrateUserDto = MigrateUserDto.builder().colaSub(UUID.randomUUID())
+                .oneLoginSub("oneLoginSub").build();
         doThrow(new UnauthorizedException("Invalid JWT")).when(jwtService).verifyToken("jwt");
 
-        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate")
-                        .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(migrateUserDto))
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate").contentType(MediaType.APPLICATION_JSON)
+                .content(HelperUtils.asJsonString(migrateUserDto)).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                 .andExpect(status().isUnauthorized()).andReturn();
         verify(userService, times(0)).migrateUser("oneLoginSub", migrateUserDto.getColaSub());
     }
 
     @Test
     void migrateUser_JwtDoesNotMatchMUserToMigrate() throws Exception {
-        final MigrateUserDto migrateUserDto = MigrateUserDto.builder()
-                .colaSub(UUID.randomUUID())
-                .oneLoginSub("oneLoginSub")
-                .build();
-        final DecodedJWT decodedJWT = TestDecodedJwt.builder()
-                .subject("anotherUsersOneLoginSub")
-                .build();
+        final MigrateUserDto migrateUserDto = MigrateUserDto.builder().colaSub(UUID.randomUUID())
+                .oneLoginSub("oneLoginSub").build();
+        final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("anotherUsersOneLoginSub").build();
         when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
 
-        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate")
-                        .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(migrateUserDto))
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/migrate").contentType(MediaType.APPLICATION_JSON)
+                .content(HelperUtils.asJsonString(migrateUserDto)).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                 .andExpect(status().isForbidden()).andReturn();
         verify(userService, times(0)).migrateUser("oneLoginSub", migrateUserDto.getColaSub());
     }
+
 }

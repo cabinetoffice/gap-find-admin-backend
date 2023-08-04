@@ -29,7 +29,9 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 public class UserController {
 
     private final UserMapper userMapper;
+
     private final JwtService jwtService;
+
     private final UserService userService;
 
     @GetMapping("/loggedInUser")
@@ -39,15 +41,19 @@ public class UserController {
     }
 
     @PatchMapping("/migrate")
-    public ResponseEntity<String> migrateUser(@RequestBody MigrateUserDto migrateUserDto, @RequestHeader("Authorization") String token) {
-        // Called from our user service only. Does not have an admin session so authing via the jwt
+    public ResponseEntity<String> migrateUser(@RequestBody MigrateUserDto migrateUserDto,
+            @RequestHeader("Authorization") String token) {
+        // Called from our user service only. Does not have an admin session so authing
+        // via the jwt
         if (isEmpty(token) || !token.startsWith("Bearer "))
             return ResponseEntity.status(401).body("Migrate user: Expected Authorization header not provided");
         final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
         if (!Objects.equals(decodedJWT.getSubject(), migrateUserDto.getOneLoginSub()))
-            return ResponseEntity.status(403).body("User not authorized to migrate user: " + migrateUserDto.getOneLoginSub());
+            return ResponseEntity.status(403)
+                    .body("User not authorized to migrate user: " + migrateUserDto.getOneLoginSub());
 
         userService.migrateUser(migrateUserDto.getOneLoginSub(), migrateUserDto.getColaSub());
         return ResponseEntity.ok("User migrated successfully");
     }
+
 }

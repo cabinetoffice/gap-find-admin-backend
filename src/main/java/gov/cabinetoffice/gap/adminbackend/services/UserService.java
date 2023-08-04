@@ -12,6 +12,7 @@ import java.util.UUID;
 public class UserService {
 
     private final GapUserRepository gapUserRepository;
+
     private final GrantApplicantRepository grantApplicantRepository;
 
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -25,4 +26,5 @@ public class UserService {
             grantApplicantRepository.save(grantApplicant);
         });
     }
+
 }

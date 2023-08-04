@@ -17,22 +17,39 @@ import java.util.Map;
 public class TestDecodedJwt implements DecodedJWT {
 
     private Date expiresAt;
+
     private String signingKey;
+
     private String token;
+
     private String header;
+
     private String payload;
+
     private String signature;
+
     private String algorithm;
+
     private String type;
+
     private String contentType;
+
     private String keyId;
+
     private String issuer;
+
     private String subject;
+
     private List<String> audience;
+
     private Date notBefore;
+
     private Date issuedAt;
+
     private String id;
+
     private Map<String, Claim> claims;
+
     private Claim claim;
 
     @Getter(value = AccessLevel.NONE)
@@ -47,4 +64,5 @@ public class TestDecodedJwt implements DecodedJWT {
     public Claim getClaim(String s) {
         return claim;
     }
+
 }

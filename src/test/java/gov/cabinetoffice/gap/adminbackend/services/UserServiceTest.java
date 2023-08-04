@@ -69,6 +69,7 @@ class UserServiceTest {
     private GrantApplicantRepository grantApplicantRepository;
 
     private final String oneLoginSub = "oneLoginSub";
+
     private final UUID colaSub = UUID.randomUUID();
 
     @Test
@@ -122,4 +123,5 @@ class UserServiceTest {
         verify(gapUserRepository, times(1)).save(gapUser);
         verify(grantApplicantRepository, times(1)).save(grantApplicant);
     }
+
 }
