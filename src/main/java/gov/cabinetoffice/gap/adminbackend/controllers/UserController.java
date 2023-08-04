@@ -42,10 +42,10 @@ public class UserController {
     public ResponseEntity<String> migrateUser(@RequestBody MigrateUserDto migrateUserDto, @RequestHeader("Authorization") String token) {
         // Called from our user service only. Does not have an admin session so authing via the jwt
         if (isEmpty(token) || !token.startsWith("Bearer "))
-            throw new UnauthorizedException("Migrate user: Expected Authorization header not provided");
+            return ResponseEntity.status(401).body("Migrate user: Expected Authorization header not provided");
         final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
         if (!Objects.equals(decodedJWT.getSubject(), migrateUserDto.getOneLoginSub()))
-            throw new ForbiddenException("User not authorized to migrate user: " + migrateUserDto.getOneLoginSub());
+            return ResponseEntity.status(403).body("User not authorized to migrate user: " + migrateUserDto.getOneLoginSub());
 
         userService.migrateUser(migrateUserDto.getOneLoginSub(), migrateUserDto.getColaSub());
         return ResponseEntity.ok("User migrated successfully");
