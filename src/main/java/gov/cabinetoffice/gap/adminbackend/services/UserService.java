@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ public class UserService {
 
     private final GrantApplicantRepository grantApplicantRepository;
 
+    @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
         gapUserRepository.findByUserSub(colaSub.toString()).ifPresent(gapUser -> {
             gapUser.setUserSub(oneLoginSub);
