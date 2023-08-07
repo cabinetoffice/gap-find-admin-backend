@@ -60,6 +60,10 @@ public class AuthManager implements AuthenticationManager {
             JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
         }
 
+        if (!JWTPayload.getRoles().contains("ADMIN")) {
+            throw new UnauthorizedException("User is not an admin");
+        }
+
         Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(JWTPayload.getSub());
 
         // if JWT is valid and admin doesn't already exist, create admin user in database
