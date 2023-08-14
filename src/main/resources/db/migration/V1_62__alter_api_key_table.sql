@@ -1,0 +1,4 @@
+ALTER TABLE api_key
+ADD COLUMN is_revoked BOOLEAN,
+ADD COLUMN revocation_date TIMESTAMP WITHOUT TIME ZONE,
+ADD COLUMN revoked_by UUID;
