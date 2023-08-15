@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
-import java.util.UUID;
 
 /**
  * The methods from this class are shamelessly taken from the applicant-backend with some
@@ -43,7 +42,7 @@ public class JwtService {
     }
 
     public JwtPayload getPayloadFromJwt(DecodedJWT decodedJWT) throws IllegalArgumentException {
-        UUID sub = UUID.fromString(decodedJWT.getSubject());
+        String sub = decodedJWT.getSubject();
         String givenName = decodedJWT.getClaim("given_name").asString();
         String familyName = decodedJWT.getClaim("family_name").asString();
         String[] jwtFeatures = decodedJWT.getClaims().get("custom:features").asString().split(",");
@@ -58,6 +57,24 @@ public class JwtService {
 
         return JwtPayload.builder().sub(sub).givenName(givenName).familyName(familyName).departmentName(deptName)
                 .emailAddress(emailAddress).build();
+    }
+
+    public JwtPayload getPayloadFromJwtV2(DecodedJWT decodedJWT) throws IllegalArgumentException {
+        String sub = decodedJWT.getSubject();
+        String roles = decodedJWT.getClaim("roles").asString();
+        String department = decodedJWT.getClaim("department").asString();
+        String emailAddress = decodedJWT.getClaim("email").asString();
+        String iss = decodedJWT.getClaim("iss").asString();
+        String aud = decodedJWT.getClaim("aud").asString();
+        int exp = decodedJWT.getClaim("exp").asInt();
+        int iat = decodedJWT.getClaim("iat").asInt();
+
+        if (roles == null || emailAddress == null) {
+            throw new InvalidJwtException("JWT is missing expected properties");
+        }
+
+        return JwtPayload.builder().sub(sub).roles(roles).emailAddress(emailAddress).departmentName(department).iss(iss)
+                .aud(aud).exp(exp).iat(iat).build();
     }
 
 }

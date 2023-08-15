@@ -96,7 +96,7 @@ class SubmissionsServiceTest {
             final SubmissionDefinition submissionDefinition = randomSubmissionDefinition(SUBMISSION_DEFINITION).build();
             final Submission submission = RandomSubmissionGenerator.randomSubmission()
                     .status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID()).build())
+                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
                     .definition(submissionDefinition).build();
 
             when(applicationFormService.retrieveApplicationFormSummary(1, false, false)).thenReturn(applicationFormDTO);
@@ -121,13 +121,13 @@ class SubmissionsServiceTest {
 
             final SubmissionDefinition goodSubmission = createSubmissionDefinition();
             final Submission goodSubmissionEntity = randomSubmission().status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID()).build())
+                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
                     .gapId("GAP-LL-20221006-1").definition(goodSubmission).build();
 
             final SubmissionDefinition badSubmission = createSubmissionDefinition();
             badSubmission.getSections().get(1).getQuestionById("APPLICANT_ORG_NAME").setResponse(null);
             final Submission badSubmissionEntity = randomSubmission().status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID()).build())
+                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
                     .gapId("GAP-LL-20221006-2").definition(badSubmission).build();
 
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
