@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -62,7 +63,7 @@ public class AuthManager implements AuthenticationManager {
         }
 
         if (!JWTPayload.getRoles().contains("ADMIN")) {
-            throw new ForbiddenException("User is not an admin");
+            throw new AccessDeniedException("User is not an admin");
         }
 
         Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(JWTPayload.getSub());
