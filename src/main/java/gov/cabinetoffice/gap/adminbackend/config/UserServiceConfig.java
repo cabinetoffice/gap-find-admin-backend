@@ -23,4 +23,6 @@ public class UserServiceConfig {
     @NotNull
     private String cookieName;
 
+    private boolean oneLoginEnabled;
+
 }

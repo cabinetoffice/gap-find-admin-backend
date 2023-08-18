@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -27,6 +28,17 @@ public class UserService {
             grantApplicant.setUserId(oneLoginSub);
             grantApplicantRepository.save(grantApplicant);
         });
+    }
+
+    public void deleteUser(final String oneLoginSub, final Optional<UUID> colaSubOptional) {
+        // Deleting by both COLA and OneLogin sub as either could be stored against the
+        // user
+        gapUserRepository.deleteByUserSub(oneLoginSub);
+        grantApplicantRepository.deleteByUserId(oneLoginSub);
+        if (colaSubOptional.isPresent()) {
+            gapUserRepository.deleteByUserSub(colaSubOptional.get().toString());
+            grantApplicantRepository.deleteByUserId(colaSubOptional.get().toString());
+        }
     }
 
 }

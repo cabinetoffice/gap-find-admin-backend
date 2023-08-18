@@ -1,24 +1,23 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
-import gov.cabinetoffice.gap.adminbackend.security.AuthManager;
+import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
@@ -33,6 +32,8 @@ public class UserController {
     private final JwtService jwtService;
 
     private final UserService userService;
+
+    private final UserServiceConfig userServiceConfig;
 
     @GetMapping("/loggedInUser")
     public ResponseEntity<UserDTO> getLoggedInUserDetails() {
@@ -54,6 +55,24 @@ public class UserController {
 
         userService.migrateUser(migrateUserDto.getOneLoginSub(), migrateUserDto.getColaSub());
         return ResponseEntity.ok("User migrated successfully");
+    }
+
+    @DeleteMapping("/delete/{oneLoginSub}")
+    public ResponseEntity<String> deleteUser(@PathVariable String oneLoginSub,
+            @RequestParam(required = false) Optional<UUID> colaSub, @RequestHeader("Authorization") String token) {
+        // Called from our user service only. Does not have an admin session so authing
+        // via the jwt
+        if (isEmpty(token) || !token.startsWith("Bearer "))
+            return ResponseEntity.status(401).body("Delete user: Expected Authorization header not provided");
+        final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
+        final JwtPayload jwtPayload = userServiceConfig.isOneLoginEnabled()
+                ? this.jwtService.getPayloadFromJwtV2(decodedJWT) : this.jwtService.getPayloadFromJwt(decodedJWT);
+        if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
+            return ResponseEntity.status(403).body("User not authorized to delete user: " + oneLoginSub);
+        }
+
+        userService.deleteUser(oneLoginSub, colaSub);
+        return ResponseEntity.ok("User deleted successfully");
     }
 
 }
