@@ -55,7 +55,8 @@ public class AuthManager implements AuthenticationManager {
         JwtPayload JWTPayload;
         if (oneLoginEnabled) {
             JWTPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
-        } else {
+        }
+        else {
             JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
         }
 

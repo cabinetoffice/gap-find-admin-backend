@@ -27,7 +27,6 @@ public class LoginController {
 
     private final AuthenticationManager authManager;
 
-
     @Value("${spring.profiles.active:PROD}")
     private String profile;
 
@@ -45,9 +44,9 @@ public class LoginController {
 
     @Value("${debug.email-address:test@domain.com}")
     private String emailAddress;
+
     @Value("${user-service.domain}")
     private String userServiceDomain;
-
 
     @PostMapping("/login")
     public ResponseEntity<String> login(HttpServletRequest httpRequest) {
