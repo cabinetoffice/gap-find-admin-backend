@@ -32,7 +32,6 @@ public class UserController {
 
     private final UserService userService;
 
-
     @GetMapping("/loggedInUser")
     public ResponseEntity<UserDTO> getLoggedInUserDetails() {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
