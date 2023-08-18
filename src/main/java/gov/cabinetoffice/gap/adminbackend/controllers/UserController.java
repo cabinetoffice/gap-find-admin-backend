@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
@@ -33,7 +32,6 @@ public class UserController {
 
     private final UserService userService;
 
-    private final UserServiceConfig userServiceConfig;
 
     @GetMapping("/loggedInUser")
     public ResponseEntity<UserDTO> getLoggedInUserDetails() {
@@ -65,8 +63,7 @@ public class UserController {
         if (isEmpty(token) || !token.startsWith("Bearer "))
             return ResponseEntity.status(401).body("Delete user: Expected Authorization header not provided");
         final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
-        final JwtPayload jwtPayload = userServiceConfig.isOneLoginEnabled()
-                ? this.jwtService.getPayloadFromJwtV2(decodedJWT) : this.jwtService.getPayloadFromJwt(decodedJWT);
+        final JwtPayload jwtPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
         if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
             return ResponseEntity.status(403).body("User not authorized to delete user: " + oneLoginSub);
         }

@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
@@ -48,9 +47,6 @@ class UserControllerTest {
 
     @MockBean
     private UserMapper userMapper;
-
-    @MockBean
-    private UserServiceConfig userServiceConfig;
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
@@ -122,7 +118,7 @@ class UserControllerTest {
             final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
             final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
-            when(jwtService.getPayloadFromJwt(decodedJWT)).thenReturn(jwtPayload);
+            when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
@@ -136,7 +132,7 @@ class UserControllerTest {
             final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
             final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
-            when(jwtService.getPayloadFromJwt(decodedJWT)).thenReturn(jwtPayload);
+            when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub?colaSub=")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
@@ -151,7 +147,7 @@ class UserControllerTest {
             final UUID colaSub = UUID.randomUUID();
             final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
-            when(jwtService.getPayloadFromJwt(decodedJWT)).thenReturn(jwtPayload);
+            when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub?colaSub=" + colaSub)
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
@@ -166,7 +162,7 @@ class UserControllerTest {
             final String colaSub = "not-a-uuid";
             final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
-            when(jwtService.getPayloadFromJwt(decodedJWT)).thenReturn(jwtPayload);
+            when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub?colaSub=" + colaSub)
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
@@ -201,7 +197,7 @@ class UserControllerTest {
             final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("anotherUsersOneLoginSub").build();
             final JwtPayload jwtPayload = JwtPayload.builder().roles("ADMIN").build();
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
-            when(jwtService.getPayloadFromJwt(decodedJWT)).thenReturn(jwtPayload);
+            when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
