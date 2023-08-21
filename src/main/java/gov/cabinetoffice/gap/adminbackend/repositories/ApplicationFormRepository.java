@@ -16,6 +16,14 @@ public interface ApplicationFormRepository extends JpaRepository<ApplicationForm
 
     Optional<ApplicationFormNoSections> findByGrantApplicationId(Integer applicationId);
 
+    @Query(nativeQuery = true,
+            value = "SELECT q->>'responseType' from grant_application a, "
+                    + "json_array_elements(a.definition->'sections') sec, " + "json_array_elements(sec->'questions') q "
+                    + "WHERE grant_application_id = :appId " + "AND sec->>'sectionId' = :sectionId "
+                    + "AND q->>'questionId' = :questionId")
+    Optional<String> determineQuestionResponseType(@Param("appId") Integer applicationId,
+            @Param("sectionId") String sectionId, @Param("questionId") String questionId);
+
     @Query(nativeQuery = true, value = "SELECT a.grant_application_id AS applicationId, "
             + "(SELECT COUNT(*) from grant_submission s WHERE s.application_id = a.grant_application_id AND s.status = 'IN_PROGRESS') AS inProgressCount, "
             + "(SELECT COUNT(*) from grant_submission s WHERE s.application_id = a.grant_application_id AND s.status = 'SUBMITTED') AS submissionCount "

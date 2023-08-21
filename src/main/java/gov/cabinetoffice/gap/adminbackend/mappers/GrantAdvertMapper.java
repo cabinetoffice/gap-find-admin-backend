@@ -14,7 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface GrantAdvertMapper {
 
-    @Mapping(target = "schemeId", source = "schemeEntity.id")
+    @Mapping(target = "schemeId", source = "scheme.id")
     @Mapping(target = "createdById", source = "createdBy.id")
     @Mapping(target = "lastUpdatedById", source = "lastUpdatedBy.id")
     CreateGrantAdvertResponseDto grantAdvertToCreateGrantAdvertResponseDto(GrantAdvert grantAdvert);

@@ -16,11 +16,11 @@ import java.util.UUID;
 @Repository
 public interface GrantExportRepository extends JpaRepository<GrantExportEntity, GrantExportId> {
 
-    boolean existsByApplicationFormEntityGrantApplicationIdAndStatus(Integer applicationId, GrantExportStatus status);
+    boolean existsByApplicationIdAndStatus(Integer applicationId, GrantExportStatus status);
 
-    boolean existsByApplicationFormEntityGrantApplicationId(Integer applicationId);
+    boolean existsByApplicationId(Integer applicationId);
 
-    List<GrantExportEntity> findByIdExportBatchIdAndStatusAndGrantAdminId(UUID exportGrantId, GrantExportStatus status,
+    List<GrantExportEntity> findAllByIdExportBatchIdAndStatusAndCreatedBy(UUID exportGrantId, GrantExportStatus status,
             Integer createdBy);
 
     @Transactional

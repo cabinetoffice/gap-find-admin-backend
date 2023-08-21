@@ -23,17 +23,21 @@ public class UserService {
             gapUser.setUserSub(oneLoginSub);
             gapUserRepository.save(gapUser);
         });
+
+        grantApplicantRepository.findByUserId(colaSub.toString()).ifPresent(grantApplicant -> {
+            grantApplicant.setUserId(oneLoginSub);
+            grantApplicantRepository.save(grantApplicant);
+        });
     }
 
-    @Transactional
     public void deleteUser(final String oneLoginSub, final Optional<UUID> colaSubOptional) {
         // Deleting by both COLA and OneLogin sub as either could be stored against the
         // user
         gapUserRepository.deleteByUserSub(oneLoginSub);
-        grantApplicantRepository.deleteByGapUserUserSub(oneLoginSub);
+        grantApplicantRepository.deleteByUserId(oneLoginSub);
         if (colaSubOptional.isPresent()) {
             gapUserRepository.deleteByUserSub(colaSubOptional.get().toString());
-            grantApplicantRepository.deleteByGapUserUserSub(colaSubOptional.get().toString());
+            grantApplicantRepository.deleteByUserId(colaSubOptional.get().toString());
         }
     }
 

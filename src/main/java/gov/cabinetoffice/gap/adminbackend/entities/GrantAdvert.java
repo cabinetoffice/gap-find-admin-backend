@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertResponse;
 import lombok.*;
@@ -30,10 +31,11 @@ public class GrantAdvert extends BaseEntity {
     @Column(name = "grant_advert_id")
     private UUID id;
 
-    @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
+    @ManyToOne(cascade = { CascadeType.MERGE, CascadeType.PERSIST }, fetch = FetchType.LAZY)
     @JoinColumn(name = "scheme_id", nullable = false)
-    private SchemeEntity schemeEntity;
+    @ToString.Exclude
+    @JsonIgnoreProperties({ "hibernateLazyInitializer" })
+    private SchemeEntity scheme;
 
     @Column(name = "version", nullable = false)
     private Integer version;
@@ -42,18 +44,20 @@ public class GrantAdvert extends BaseEntity {
     @Column(name = "created", nullable = false)
     private Instant created;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = { CascadeType.MERGE, CascadeType.PERSIST }, fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "grant_admin_id", nullable = false)
     @ToString.Exclude
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private GrantAdmin createdBy;
 
     @LastModifiedDate
     @Column(name = "last_updated")
     private Instant lastUpdated;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = { CascadeType.MERGE, CascadeType.PERSIST }, fetch = FetchType.LAZY)
     @JoinColumn(name = "last_updated_by", referencedColumnName = "grant_admin_id")
     @ToString.Exclude
+    @JsonIgnoreProperties({ "hibernateLazyInitializer" })
     private GrantAdmin lastUpdatedBy;
 
     @Column(name = "opening_date")

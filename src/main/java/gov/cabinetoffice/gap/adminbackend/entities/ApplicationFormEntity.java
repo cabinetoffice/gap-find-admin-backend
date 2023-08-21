@@ -1,6 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationDefinitionDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import lombok.*;
@@ -9,8 +8,6 @@ import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -28,10 +25,8 @@ public class ApplicationFormEntity extends BaseEntity {
     @Column(name = "grant_application_id")
     private Integer grantApplicationId;
 
-    @ToString.Exclude
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "grant_scheme_id", nullable = false)
-    private SchemeEntity schemeEntity;
+    @Column(name = "grant_scheme_id")
+    private Integer grantSchemeId;
 
     @Column(name = "version")
     private Integer version;
@@ -58,45 +53,28 @@ public class ApplicationFormEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ApplicationStatusEnum applicationStatus;
 
-    @OneToMany(mappedBy = "application")
-    @Builder.Default
-    @ToString.Exclude
-    @JsonBackReference
-    private List<Submission> submissions = new ArrayList<>();
-
     @Column(name = "definition", nullable = false, columnDefinition = "json")
     @Type(type = "json")
     private ApplicationDefinitionDTO definition;
 
-    @OneToMany(mappedBy = "applicationFormEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonBackReference
-    private List<GrantExportEntity> grantExportEntities = new ArrayList<>();
-
-    @OneToMany(mappedBy = "applicationFormEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonBackReference
-    private List<GrantBeneficiary> grantBeneficiaries = new ArrayList<>();
-
-    public ApplicationFormEntity(SchemeEntity schemeEntity, String applicationName, Integer lastUpdateBy,
+    public ApplicationFormEntity(Integer grantSchemeId, String applicationName, Integer lastUpdateBy,
             ApplicationDefinitionDTO definition) {
         Instant now = Instant.now();
+
         this.version = 1;
         this.created = now;
         this.lastUpdated = now;
         this.applicationStatus = ApplicationStatusEnum.DRAFT;
-        this.schemeEntity = schemeEntity;
+        this.grantSchemeId = grantSchemeId;
         this.lastUpdateBy = lastUpdateBy;
         this.lastPublished = null;
         this.applicationName = applicationName;
         this.definition = definition;
     }
 
-    public static ApplicationFormEntity createFromTemplate(SchemeEntity schemeEntity, String applicationName,
+    public static ApplicationFormEntity createFromTemplate(Integer grantSchemeId, String applicationName,
             Integer lastUpdateBy, ApplicationDefinitionDTO definition) {
-        return new ApplicationFormEntity(schemeEntity, applicationName, lastUpdateBy, definition);
+        return new ApplicationFormEntity(grantSchemeId, applicationName, lastUpdateBy, definition);
     }
 
     @Override

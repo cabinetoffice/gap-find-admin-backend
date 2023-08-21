@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -22,6 +23,6 @@ public class LambdaSubmissionDefinition {
 
     private List<SubmissionSection> sections;
 
-    private String userId;
+    private UUID userId;
 
 }

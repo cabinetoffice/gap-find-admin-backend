@@ -22,6 +22,9 @@ public class GrantExportEntity {
     @EmbeddedId
     private GrantExportId id;
 
+    @Column(name = "application_id", nullable = false)
+    private Integer applicationId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private GrantExportStatus status;
@@ -33,26 +36,14 @@ public class GrantExportEntity {
     @Builder.Default
     private Instant created = Instant.now();
 
+    @Column(name = "created_by", nullable = false)
+    private Integer createdBy;
+
     @Column(name = "last_updated")
     private Instant lastUpdated;
 
     @Column(name = "location")
     private String location;
-
-    @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
-    @JoinColumn(name = "applicationId", nullable = false)
-    private ApplicationFormEntity applicationFormEntity;
-
-    @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
-    @MapsId("submissionId")
-    private Submission submission;
-
-    @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
-    @JoinColumn(name = "created_by", nullable = false)
-    private GrantAdmin grantAdmin;
 
     @Override
     public boolean equals(Object o) {

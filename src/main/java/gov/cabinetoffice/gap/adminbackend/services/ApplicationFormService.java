@@ -4,7 +4,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.*;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.TemplateApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -15,7 +14,6 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
-import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -44,8 +42,6 @@ public class ApplicationFormService {
 
     private final TemplateApplicationFormRepository templateApplicationFormRepository;
 
-    private final SchemeRepository schemeRepository;
-
     private final ApplicationFormMapper applicationFormMapper;
 
     private final SessionsService sessionsService;
@@ -62,15 +58,12 @@ public class ApplicationFormService {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
             // TODO move template id to external config?
-            final TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository.findById(1)
+            TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository.findById(1)
                     .orElseThrow(() -> new ApplicationFormException("Could not retrieve template application form"));
-            final SchemeEntity schemeEntity = schemeRepository.findById(applicationFormDTO.getGrantSchemeId())
-                    .orElseThrow(() -> new NotFoundException(
-                            "Could not save application form - could not find scheme with id "
-                                    + applicationFormDTO.getGrantSchemeId()));
 
-            ApplicationFormEntity newFormEntity = ApplicationFormEntity.createFromTemplate(schemeEntity,
-                    applicationFormDTO.getApplicationName(), session.getGrantAdminId(), formTemplate.getDefinition());
+            ApplicationFormEntity newFormEntity = ApplicationFormEntity.createFromTemplate(
+                    applicationFormDTO.getGrantSchemeId(), applicationFormDTO.getApplicationName(),
+                    session.getGrantAdminId(), formTemplate.getDefinition());
 
             newFormEntity.setCreatedBy(session.getGrantAdminId());
 

@@ -1,13 +1,10 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -25,6 +22,10 @@ public class SchemeEntity {
     @Column(name = "grant_scheme_id")
     private Integer id;
 
+    // This will become a FK to Organisation
+    @Column(name = "funder_id", nullable = false)
+    private Integer funderId;
+
     @Column(name = "version", nullable = false)
     @Builder.Default
     private Integer version = 1;
@@ -33,8 +34,15 @@ public class SchemeEntity {
     @Builder.Default
     private Instant createdDate = Instant.now();
 
+    @Column(name = "created_by", nullable = false)
+    private Integer createdBy;
+
     @Column(name = "last_updated")
     private Instant lastUpdated;
+
+    // This will become a FK to User
+    @Column(name = "last_updated_by")
+    private Integer lastUpdatedBy;
 
     @Column(name = "ggis_identifier", nullable = false)
     private String ggisIdentifier;
@@ -44,45 +52,6 @@ public class SchemeEntity {
 
     @Column(name = "scheme_contact")
     private String email;
-
-    @OneToMany(mappedBy = "scheme", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @JsonBackReference
-    @Builder.Default
-    private List<Submission> submissions = new ArrayList<>();
-
-    @ManyToOne
-    @JoinColumn(name = "funder_id")
-    @ToString.Exclude
-    private FundingOrganisation fundingOrganisation;
-
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
-    @JoinColumn(name = "created_by", nullable = false)
-    @ToString.Exclude
-    private GrantAdmin createdBy;
-
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
-    @JoinColumn(name = "last_updated_by", nullable = false)
-    @ToString.Exclude
-    private GrantAdmin lastUpdatedBy;
-
-    @OneToMany(mappedBy = "schemeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonBackReference
-    private List<GrantAdvert> grantAdverts = new ArrayList<>();
-
-    @OneToMany(mappedBy = "schemeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonBackReference
-    private List<ApplicationFormEntity> applicationFormEntities = new ArrayList<>();
-
-    @OneToMany(mappedBy = "schemeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonBackReference
-    private List<GrantBeneficiary> grantBeneficiaries = new ArrayList<>();
 
     @Override
     public boolean equals(Object o) {
