@@ -19,6 +19,6 @@ public interface GrantAdvertRepository extends JpaRepository<GrantAdvert, UUID> 
     Long deleteByIdAndCreatedById(UUID advertId, Integer grantAdminId);
 
     @PostAuthorize("!returnObject.isEmpty() ? returnObject.get().createdBy.id == authentication.principal.grantAdminId : true")
-    Optional<GrantAdvert> findBySchemeId(Integer schemeId);
+    Optional<GrantAdvert> findBySchemeEntityId(Integer schemeId);
 
 }

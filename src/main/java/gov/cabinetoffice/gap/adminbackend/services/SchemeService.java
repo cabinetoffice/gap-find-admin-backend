@@ -1,26 +1,27 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import java.time.Instant;
-import java.util.List;
-
-import javax.persistence.EntityNotFoundException;
-import javax.servlet.http.HttpSession;
-
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.FundingOrganisationRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+
+import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpSession;
+import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +33,14 @@ public class SchemeService {
 
     private final SessionsService sessionsService;
 
+    private final GrantAdminRepository grantAdminRepository;
+
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
-
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
+            if (!scheme.getCreatedBy().getId().equals(session.getGrantAdminId())) {
                 throw new AccessDeniedException(
                         "User " + session.getGrantAdminId() + " is unable to access scheme with id " + schemeId);
             }
@@ -57,9 +59,13 @@ public class SchemeService {
     public Integer postNewScheme(SchemePostDTO newScheme, HttpSession session) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
+            final GrantAdmin grantAdmin = grantAdminRepository.findById(adminSession.getGrantAdminId())
+                    .orElseThrow(EntityNotFoundException::new);
             SchemeEntity entity = this.schemeMapper.schemePostDtoToEntity(newScheme);
-            entity.setFunderId(adminSession.getFunderId());
-            entity.setCreatedBy(adminSession.getGrantAdminId());
+            if (grantAdmin.getFundingOrganisation() != null) {
+                entity.setFundingOrganisation(grantAdmin.getFundingOrganisation());
+            }
+            entity.setCreatedBy(grantAdmin);
             entity = this.schemeRepo.save(entity);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newScheme, session);
 
@@ -77,16 +83,17 @@ public class SchemeService {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
-
+            final GrantAdmin grantAdmin = grantAdminRepository.findById(session.getGrantAdminId())
+                    .orElseThrow(EntityNotFoundException::new);
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
 
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
+            if (!scheme.getCreatedBy().getId().equals(session.getGrantAdminId())) {
                 throw new AccessDeniedException(
                         "User " + session.getGrantAdminId() + "is unable to update the scheme with id " + schemeId);
             }
 
             scheme.setLastUpdated(Instant.now());
-            scheme.setLastUpdatedBy(Integer.valueOf(session.getGrantAdminId()));
+            scheme.setLastUpdatedBy(grantAdmin);
 
             this.schemeMapper.updateSchemeEntityFromPatchDto(schemePatchDTO, scheme);
             this.schemeRepo.save(scheme);
@@ -107,7 +114,7 @@ public class SchemeService {
         try {
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
 
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
+            if (!scheme.getCreatedBy().getId().equals(session.getGrantAdminId())) {
                 throw new AccessDeniedException(
                         "User " + session.getGrantAdminId() + "is unable to delete the scheme with id " + schemeId);
             }

@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.enums.SubmissionStatus;
 import lombok.*;
@@ -15,6 +14,8 @@ import javax.persistence.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -33,20 +34,13 @@ public class Submission extends BaseEntity {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "applicant_id", referencedColumnName = "id")
-    @JsonIgnoreProperties("submissions")
-    @ToString.Exclude
-    private GrantApplicant applicant;
-
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "scheme_id")
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "scheme_id", nullable = false)
     @ToString.Exclude
     private SchemeEntity scheme;
 
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id")
-    @JsonIgnoreProperties("schemes")
     @ToString.Exclude
     private ApplicationFormEntity application;
 
@@ -56,18 +50,16 @@ public class Submission extends BaseEntity {
     @CreatedDate
     private LocalDateTime created;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", referencedColumnName = "id")
-    @JsonIgnoreProperties("submissions")
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "created_by", referencedColumnName = "id", nullable = false)
     @ToString.Exclude
     private GrantApplicant createdBy;
 
     @LastModifiedDate
     private LocalDateTime lastUpdated;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_updated_by", referencedColumnName = "id")
-    @JsonIgnoreProperties("submissions")
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "last_updated_by", referencedColumnName = "id", nullable = false)
     @ToString.Exclude
     private GrantApplicant lastUpdatedBy;
 
@@ -90,6 +82,17 @@ public class Submission extends BaseEntity {
 
     @Column(name = "last_required_checks_export")
     private Instant lastRequiredChecksExport;
+
+    @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonBackReference
+    private List<GrantExportEntity> grantExportEntities = new ArrayList<>();
+
+    @OneToOne(mappedBy = "submission", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @JsonBackReference
+    private GrantBeneficiary grantBeneficiary;
 
     @Override
     public boolean equals(Object o) {

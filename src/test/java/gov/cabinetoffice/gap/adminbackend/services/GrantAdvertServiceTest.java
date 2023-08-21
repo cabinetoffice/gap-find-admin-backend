@@ -1000,7 +1000,7 @@ class GrantAdvertServiceTest {
 
             GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
+            when(grantAdvertRepository.findBySchemeEntityId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
 
             GetGrantAdvertStatusResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertStatusBySchemeId(SAMPLE_SCHEME_ID);
@@ -1014,7 +1014,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertStatusBySchemeId_GrantAdvertNotFound() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
+            when(grantAdvertRepository.findBySchemeEntityId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
 
             NotFoundException thrown = assertThrows(NotFoundException.class,
                     () -> grantAdvertService.getGrantAdvertStatusBySchemeId(SAMPLE_SCHEME_ID));
@@ -1026,7 +1026,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertStatusBySchemeId_NotEnoughPermissions() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
+            when(grantAdvertRepository.findBySchemeEntityId(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
 
             assertThrows(AccessDeniedException.class,
                     () -> grantAdvertService.getGrantAdvertStatusBySchemeId(SAMPLE_SCHEME_ID));
@@ -1044,7 +1044,7 @@ class GrantAdvertServiceTest {
 
             GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
+            when(grantAdvertRepository.findBySchemeEntityId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
 
             GetGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID);
@@ -1064,7 +1064,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertPublishInformationBySchemeId_GrantAdvertNotFound() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
+            when(grantAdvertRepository.findBySchemeEntityId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
 
             NotFoundException thrown = assertThrows(NotFoundException.class,
                     () -> grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID));
@@ -1076,7 +1076,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertPublishInformationBySchemeId_NotEnoughPermissions() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
+            when(grantAdvertRepository.findBySchemeEntityId(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
 
             assertThrows(AccessDeniedException.class,
                     () -> grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID));

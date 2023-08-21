@@ -6,9 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationAuditDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.*;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.Submission;
+import gov.cabinetoffice.gap.adminbackend.entities.*;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SubmissionStatus;
@@ -388,7 +386,8 @@ class SubmissionsServiceTest {
 
         @Test
         void whenApplicationIsNotFound_returnNotStarted() {
-            when(grantExportRepository.existsByApplicationId(APPLICATION_ID)).thenReturn(false);
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationId(APPLICATION_ID))
+                    .thenReturn(false);
 
             final GrantExportStatus result = submissionsService.getExportStatus(APPLICATION_ID);
 
@@ -397,9 +396,10 @@ class SubmissionsServiceTest {
 
         @Test
         void whenExportRecordsExist_returnProcessing() {
-            when(grantExportRepository.existsByApplicationId(APPLICATION_ID)).thenReturn(true);
-            when(grantExportRepository.existsByApplicationIdAndStatus(APPLICATION_ID, GrantExportStatus.PROCESSING))
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationId(APPLICATION_ID))
                     .thenReturn(true);
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationIdAndStatus(APPLICATION_ID,
+                    GrantExportStatus.PROCESSING)).thenReturn(true);
 
             final GrantExportStatus result = submissionsService.getExportStatus(APPLICATION_ID);
 
@@ -408,11 +408,12 @@ class SubmissionsServiceTest {
 
         @Test
         void whenExportRecordsStillRequested_returnAwaiting() {
-            when(grantExportRepository.existsByApplicationId(APPLICATION_ID)).thenReturn(true);
-            when(grantExportRepository.existsByApplicationIdAndStatus(APPLICATION_ID, GrantExportStatus.PROCESSING))
-                    .thenReturn(false);
-            when(grantExportRepository.existsByApplicationIdAndStatus(APPLICATION_ID, GrantExportStatus.REQUESTED))
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationId(APPLICATION_ID))
                     .thenReturn(true);
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationIdAndStatus(APPLICATION_ID,
+                    GrantExportStatus.PROCESSING)).thenReturn(false);
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationIdAndStatus(APPLICATION_ID,
+                    GrantExportStatus.REQUESTED)).thenReturn(true);
 
             final GrantExportStatus result = submissionsService.getExportStatus(APPLICATION_ID);
 
@@ -421,11 +422,12 @@ class SubmissionsServiceTest {
 
         @Test
         void whenExportRecordsComplete_returnComplete() {
-            when(grantExportRepository.existsByApplicationId(APPLICATION_ID)).thenReturn(true);
-            when(grantExportRepository.existsByApplicationIdAndStatus(APPLICATION_ID, GrantExportStatus.PROCESSING))
-                    .thenReturn(false);
-            when(grantExportRepository.existsByApplicationIdAndStatus(APPLICATION_ID, GrantExportStatus.REQUESTED))
-                    .thenReturn(false);
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationId(APPLICATION_ID))
+                    .thenReturn(true);
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationIdAndStatus(APPLICATION_ID,
+                    GrantExportStatus.PROCESSING)).thenReturn(false);
+            when(grantExportRepository.existsByApplicationFormEntityGrantApplicationIdAndStatus(APPLICATION_ID,
+                    GrantExportStatus.REQUESTED)).thenReturn(false);
 
             final GrantExportStatus result = submissionsService.getExportStatus(APPLICATION_ID);
 
@@ -493,7 +495,7 @@ class SubmissionsServiceTest {
                     .location(urlToTest).build();
             List<GrantExportEntity> mockEntityList = Collections.singletonList(mockEntity);
 
-            when(grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(testUUID,
+            when(grantExportRepository.findByIdExportBatchIdAndStatusAndGrantAdminId(testUUID,
                     GrantExportStatus.COMPLETE, 1)).thenReturn(mockEntityList);
 
             List<SubmissionExportsDTO> submissionExports = submissionsService
@@ -514,7 +516,7 @@ class SubmissionsServiceTest {
                     .location(urlToTest).build();
             List<GrantExportEntity> mockEntityList = Collections.singletonList(mockEntity);
 
-            when(grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(testUUID,
+            when(grantExportRepository.findByIdExportBatchIdAndStatusAndGrantAdminId(testUUID,
                     GrantExportStatus.COMPLETE, 1)).thenReturn(mockEntityList);
 
             List<SubmissionExportsDTO> submissionExports = submissionsService
@@ -538,7 +540,7 @@ class SubmissionsServiceTest {
                     .id(mockIdWithSubmissionIdToTest).location(urlToTest).build();
             List<GrantExportEntity> mockEntityList = Collections.singletonList(mockEntity);
 
-            when(grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(testUUID,
+            when(grantExportRepository.findByIdExportBatchIdAndStatusAndGrantAdminId(testUUID,
                     GrantExportStatus.COMPLETE, 1)).thenReturn(mockEntityList);
 
             List<SubmissionExportsDTO> submissionExports = submissionsService
@@ -554,7 +556,7 @@ class SubmissionsServiceTest {
         void getNoCompletedSubmissionExports() {
             UUID testUUID = UUID.randomUUID();
 
-            when(grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(testUUID,
+            when(grantExportRepository.findByIdExportBatchIdAndStatusAndGrantAdminId(testUUID,
                     GrantExportStatus.COMPLETE, 1)).thenReturn(Collections.emptyList());
 
             List<SubmissionExportsDTO> submissionExports = submissionsService

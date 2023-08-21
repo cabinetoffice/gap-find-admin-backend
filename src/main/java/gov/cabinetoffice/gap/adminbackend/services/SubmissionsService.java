@@ -1,18 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import java.io.ByteArrayOutputStream;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
@@ -23,6 +10,8 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionSection;
+import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.Submission;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
@@ -32,6 +21,8 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -39,11 +30,18 @@ import gov.cabinetoffice.gap.adminbackend.utils.XlsxGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.ByteArrayOutputStream;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +58,10 @@ public class SubmissionsService {
     private final SubmissionRepository submissionRepository;
 
     private final GrantExportRepository grantExportRepository;
+
+    private final ApplicationFormRepository applicationFormRepository;
+
+    private final GrantAdminRepository grantAdminRepository;
 
     private final ApplicationFormService applicationFormService;
 
@@ -202,23 +204,32 @@ public class SubmissionsService {
             throw new NotFoundException("No submissions in SUBMITTED state for application " + applicationId);
         }
 
+        final ApplicationFormEntity applicationFormEntity = applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("No application found for id " + applicationId));
+
+        final GrantAdmin grantAdmin = grantAdminRepository.findById(adminSession.getGrantAdminId()).orElseThrow(
+                () -> new NotFoundException("No grant admin found for admin " + adminSession.getGrantAdminId()));
+
         // split the submissions into groups of 10, process in batches
         List<List<Submission>> partitionedSubmissions = Lists.partition(submissions,
                 AWSConstants.MAX_ALLOWED_SQS_FIFO_BATCH_SIZE);
 
-        partitionedSubmissions.stream().map(submissionsBatch -> mapExportRecordListToBatchMessageRequest(applicationId,
-                exportBatchId, adminSession, submissionsBatch)).forEach(exportRecordsBatch -> {
+        partitionedSubmissions.stream()
+                .map(submissionsBatch -> mapExportRecordListToBatchMessageRequest(applicationFormEntity, exportBatchId,
+                        adminSession, grantAdmin, submissionsBatch))
+                .forEach(exportRecordsBatch -> {
                     grantExportRepository.saveAll(exportRecordsBatch);
                     amazonSQS.sendMessageBatch(mapExportRecordListToBatchMessageRequest(exportRecordsBatch));
                 });
     }
 
-    private List<GrantExportEntity> mapExportRecordListToBatchMessageRequest(Integer applicationId, UUID exportId,
-            AdminSession adminSession, List<Submission> list) {
+    private List<GrantExportEntity> mapExportRecordListToBatchMessageRequest(
+            ApplicationFormEntity applicationFormEntity, UUID exportId, AdminSession adminSession,
+            GrantAdmin grantAdmin, List<Submission> list) {
         return list.stream()
                 .map(submission -> GrantExportEntity.builder().id(new GrantExportId(exportId, submission.getId()))
-                        .status(GrantExportStatus.REQUESTED).applicationId(applicationId)
-                        .emailAddress(adminSession.getEmailAddress()).createdBy(adminSession.getGrantAdminId()).build())
+                        .status(GrantExportStatus.REQUESTED).applicationFormEntity(applicationFormEntity)
+                        .emailAddress(adminSession.getEmailAddress()).grantAdmin(grantAdmin).build())
                 .toList();
     }
 
@@ -240,8 +251,8 @@ public class SubmissionsService {
                                     new MessageAttributeValue().withDataType("String")
                                             .withStringValue(exportRecord.getId().getExportBatchId().toString()))
                             .addMessageAttributesEntry("applicationId",
-                                    new MessageAttributeValue().withDataType("Number")
-                                            .withStringValue(exportRecord.getApplicationId().toString()))
+                                    new MessageAttributeValue().withDataType("Number").withStringValue(
+                                            exportRecord.getApplicationFormEntity().getGrantApplicationId().toString()))
                             .addMessageAttributesEntry("emailAddress",
                                     new MessageAttributeValue().withDataType("String")
                                             .withStringValue(exportRecord.getEmailAddress()))
@@ -249,7 +260,7 @@ public class SubmissionsService {
                                     new MessageAttributeValue().withDataType("String")
                                             .withStringValue(exportRecord.getCreated().toString()))
                             .addMessageAttributesEntry("createdBy", new MessageAttributeValue().withDataType("String")
-                                    .withStringValue(exportRecord.getCreatedBy().toString()));
+                                    .withStringValue(exportRecord.getGrantAdmin().getId().toString()));
                 }).toList();
 
         return new SendMessageBatchRequest(submissionsExportQueue).withEntries(sendMessageBatchRequestEntries);
@@ -258,13 +269,15 @@ public class SubmissionsService {
 
     // TODO handle new EXPIRED and ERROR statuses
     public GrantExportStatus getExportStatus(Integer applicationId) {
-        if (!grantExportRepository.existsByApplicationId(applicationId)) {
+        if (!grantExportRepository.existsByApplicationFormEntityGrantApplicationId(applicationId)) {
             return GrantExportStatus.NOT_STARTED;
         }
-        if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.PROCESSING)) {
+        if (grantExportRepository.existsByApplicationFormEntityGrantApplicationIdAndStatus(applicationId,
+                GrantExportStatus.PROCESSING)) {
             return GrantExportStatus.PROCESSING;
         }
-        if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.REQUESTED)) {
+        if (grantExportRepository.existsByApplicationFormEntityGrantApplicationIdAndStatus(applicationId,
+                GrantExportStatus.REQUESTED)) {
             return GrantExportStatus.REQUESTED;
         }
         return GrantExportStatus.COMPLETE;
@@ -274,7 +287,7 @@ public class SubmissionsService {
 
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        List<GrantExportEntity> exports = grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(
+        List<GrantExportEntity> exports = grantExportRepository.findByIdExportBatchIdAndStatusAndGrantAdminId(
                 exportBatchId, GrantExportStatus.COMPLETE, adminSession.getGrantAdminId());
 
         return exports.stream().map(entity -> SubmissionExportsDTO.builder().url(entity.getLocation())

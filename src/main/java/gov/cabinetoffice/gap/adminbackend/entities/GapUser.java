@@ -1,18 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "gap_user")
@@ -31,5 +22,15 @@ public class GapUser {
 
     @Column(name = "user_sub")
     private String userSub;
+
+    @OneToOne(mappedBy = "gapUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("gapUsers")
+    @ToString.Exclude
+    private GrantApplicant grantApplicant;
+
+    @OneToOne(mappedBy = "gapUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("gapUsers")
+    @ToString.Exclude
+    private GrantAdmin grantAdmin;
 
 }

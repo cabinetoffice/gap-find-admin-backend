@@ -1,6 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantApplicant;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
@@ -40,7 +40,7 @@ class UserServiceTest {
         @Test
         void migrateUserNoMatches() {
             when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.empty());
-            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.empty());
+            when(grantApplicantRepository.findByGapUserUserSub(any())).thenReturn(Optional.empty());
 
             userService.migrateUser(oneLoginSub, colaSub);
 
@@ -52,7 +52,7 @@ class UserServiceTest {
         void migrateUserMatchesGapUser() {
             final GapUser gapUser = GapUser.builder().build();
             when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.of(gapUser));
-            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.empty());
+            when(grantApplicantRepository.findByGapUserUserSub(any())).thenReturn(Optional.empty());
 
             userService.migrateUser(oneLoginSub, colaSub);
             gapUser.setUserSub(oneLoginSub);
@@ -64,7 +64,7 @@ class UserServiceTest {
         @Test
         void migrateUserMatchesGrantApplicant() {
             final GrantApplicant grantApplicant = GrantApplicant.builder().build();
-            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.of(grantApplicant));
+            when(grantApplicantRepository.findByGapUserUserSub(any())).thenReturn(Optional.of(grantApplicant));
             when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.empty());
 
             userService.migrateUser(oneLoginSub, colaSub);
@@ -78,7 +78,7 @@ class UserServiceTest {
         void migrateUserMatchesGrantApplicantAndGapUser() {
             final GrantApplicant grantApplicant = GrantApplicant.builder().build();
             final GapUser gapUser = GapUser.builder().build();
-            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.of(grantApplicant));
+            when(grantApplicantRepository.findByGapUserUserSub(any())).thenReturn(Optional.of(grantApplicant));
             when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.of(gapUser));
 
             userService.migrateUser(oneLoginSub, colaSub);
@@ -99,7 +99,7 @@ class UserServiceTest {
             userService.deleteUser(oneLoginSub, Optional.empty());
 
             verify(gapUserRepository, times(1)).deleteByUserSub(oneLoginSub);
-            verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(1)).deleteByGapUserUserSub(oneLoginSub);
         }
 
         @Test
@@ -107,9 +107,9 @@ class UserServiceTest {
             userService.deleteUser(oneLoginSub, Optional.of(colaSub));
 
             verify(gapUserRepository, times(1)).deleteByUserSub(oneLoginSub);
-            verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(1)).deleteByGapUserUserSub(oneLoginSub);
             verify(gapUserRepository, times(1)).deleteByUserSub(colaSub.toString());
-            verify(grantApplicantRepository, times(1)).deleteByUserId(colaSub.toString());
+            verify(grantApplicantRepository, times(1)).deleteByGapUserUserSub(colaSub.toString());
         }
 
     }

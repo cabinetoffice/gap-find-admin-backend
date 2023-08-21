@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.application;
 
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 
 import java.time.Instant;
@@ -7,8 +8,6 @@ import java.time.Instant;
 public interface ApplicationFormNoSections {
 
     Integer getGrantApplicationId();
-
-    Integer getGrantSchemeId();
 
     Integer getVersion();
 

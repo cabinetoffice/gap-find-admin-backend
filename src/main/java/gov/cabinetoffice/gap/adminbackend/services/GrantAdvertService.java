@@ -80,12 +80,12 @@ public class GrantAdvertService {
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
         GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
         SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
-        if (!scheme.getFunderId().equals(grantAdmin.getFunder().getId())) {
+        if (!scheme.getFundingOrganisation().getId().equals(grantAdmin.getFundingOrganisation().getId())) {
             throw new AccessDeniedException(
                     "User " + grantAdminId + " is unable to access scheme with id " + scheme.getId());
         }
 
-        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme).createdBy(grantAdmin)
+        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).schemeEntity(scheme).createdBy(grantAdmin)
                 .created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
                 .status(GrantAdvertStatus.DRAFT).version(1).build();
         return this.grantAdvertRepository.save(grantAdvert);
@@ -322,8 +322,8 @@ public class GrantAdvertService {
 
     private String generateUniqueSlug(final GrantAdvert grantAdvert) {
 
-        String currentSlug = grantAdvert.getScheme().getName().toLowerCase().replaceAll("[^a-z\\d\\- ]", "").trim()
-                .replace(" ", "-");
+        String currentSlug = grantAdvert.getSchemeEntity().getName().toLowerCase().replaceAll("[^a-z\\d\\- ]", "")
+                .trim().replace(" ", "-");
 
         final CDAArray allAdvertEntries = contentfulDeliveryClient.fetch(CDAEntry.class)
                 .withContentType(CONTENTFUL_GRANT_TYPE_ID).where("fields.label", QueryOperation.Matches, currentSlug)
@@ -360,21 +360,12 @@ public class GrantAdvertService {
                 .getResponseType();
 
         switch (questionResponse.getId()) {
-            case "grantTotalAwardAmount":
-                contentfulAdvert.setField("grantTotalAwardDisplay", CONTENTFUL_LOCALE,
-                        CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
-                break;
-
-            case "grantMinimumAward":
-                contentfulAdvert.setField("grantMinimumAwardDisplay", CONTENTFUL_LOCALE,
-                        CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
-                break;
-
-            case "grantMaximumAward":
-                contentfulAdvert.setField("grantMaximumAwardDisplay", CONTENTFUL_LOCALE,
-                        CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
-                break;
-
+            case "grantTotalAwardAmount" -> contentfulAdvert.setField("grantTotalAwardDisplay", CONTENTFUL_LOCALE,
+                    CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
+            case "grantMinimumAward" -> contentfulAdvert.setField("grantMinimumAwardDisplay", CONTENTFUL_LOCALE,
+                    CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
+            case "grantMaximumAward" -> contentfulAdvert.setField("grantMaximumAwardDisplay", CONTENTFUL_LOCALE,
+                    CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
         }
 
         final Object contentfulValue = convertQuestionResponseToContentfulFormat(answerType, questionResponse);
@@ -465,14 +456,14 @@ public class GrantAdvertService {
 
     public GetGrantAdvertPublishingInformationResponseDTO getGrantAdvertPublishingInformationBySchemeId(
             Integer grantSchemeId) {
-        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
+        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeEntityId(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
         return this.grantAdvertMapper.grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
     }
 
     public GetGrantAdvertStatusResponseDTO getGrantAdvertStatusBySchemeId(Integer grantSchemeId) {
-        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
+        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeEntityId(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
         return this.grantAdvertMapper.grantAdvertStatusResponseDtoFromGrantAdvert(grantAdvert);

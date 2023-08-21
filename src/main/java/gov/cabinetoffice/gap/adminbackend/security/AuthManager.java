@@ -4,7 +4,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
@@ -73,8 +72,8 @@ public class AuthManager implements AuthenticationManager {
             grantAdmin = Optional.of(createNewAdmin(JWTPayload));
         }
 
-        AdminSession adminSession = new AdminSession(grantAdmin.get().getId(), grantAdmin.get().getFunder().getId(),
-                JWTPayload);
+        AdminSession adminSession = new AdminSession(grantAdmin.get().getId(),
+                grantAdmin.get().getFundingOrganisation().getId(), JWTPayload);
 
         return new UsernamePasswordAuthenticationToken(adminSession, null,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
@@ -83,16 +82,16 @@ public class AuthManager implements AuthenticationManager {
     private GrantAdmin createNewAdmin(JwtPayload jwtPayload) {
 
         // check if funding org already exists. if not, create it
-        Optional<FundingOrganisation> fundingOrganisation = this.fundingOrganisationRepository
-                .findByName(jwtPayload.getDepartmentName());
-        if (fundingOrganisation.isEmpty()) {
-            fundingOrganisation = Optional.of(this.fundingOrganisationRepository
-                    .save(new FundingOrganisation(null, jwtPayload.getDepartmentName())));
-        }
+        FundingOrganisation fundingOrganisation = fundingOrganisationRepository
+                .findByName(jwtPayload.getDepartmentName()).orElse(fundingOrganisationRepository
+                        .save(FundingOrganisation.builder().name(jwtPayload.getDepartmentName()).build()));
 
         // save new admin to db. This also creates a matching GapUser
-        return this.grantAdminRepository
-                .save(new GrantAdmin(null, fundingOrganisation.get(), new GapUser(null, jwtPayload.getSub())));
+        final GrantAdmin grantAdmin = GrantAdmin.builder().fundingOrganisation(fundingOrganisation).build();
+        final GapUser gapUser = GapUser.builder().userSub(jwtPayload.getSub()).grantAdmin(grantAdmin).build();
+        grantAdmin.setGapUser(gapUser);
+        fundingOrganisation.setGrantAdmin(grantAdmin);
+        return this.grantAdminRepository.save(grantAdmin);
     }
 
 }

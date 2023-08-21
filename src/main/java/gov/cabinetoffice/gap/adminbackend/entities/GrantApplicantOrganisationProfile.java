@@ -1,19 +1,17 @@
-package gov.cabinetoffice.gap.adminbackend.dtos.submission;
+package gov.cabinetoffice.gap.adminbackend.entities;
 
 import gov.cabinetoffice.gap.adminbackend.enums.GrantApplicantOrganisationType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
 @Table
+@Setter
+@Getter
 public class GrantApplicantOrganisationProfile {
 
     @Id
