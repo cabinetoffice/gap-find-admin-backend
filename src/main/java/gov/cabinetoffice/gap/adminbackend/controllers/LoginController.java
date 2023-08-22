@@ -12,8 +12,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
@@ -43,6 +45,9 @@ public class LoginController {
     @Value("${debug.email-address:test@domain.com}")
     private String emailAddress;
 
+    @Value("${user-service.domain}")
+    private String userServiceDomain;
+
     @PostMapping("/login")
     public ResponseEntity<String> login(HttpServletRequest httpRequest) {
         // so local dev work won't be quite as miserable
@@ -71,6 +76,14 @@ public class LoginController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         securityContextLogoutHandler.logout(httpRequest, null, authentication);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/v2/logout")
+    public RedirectView logoutV2(HttpServletRequest httpRequest) {
+        SecurityContextLogoutHandler securityContextLogoutHandler = new SecurityContextLogoutHandler();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        securityContextLogoutHandler.logout(httpRequest, null, authentication);
+        return new RedirectView(userServiceDomain + "/v2/logout");
     }
 
 }
