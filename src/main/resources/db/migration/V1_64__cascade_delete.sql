@@ -44,6 +44,17 @@ add constraint fk_grant_admin_id_grant_admin
     on delete set null
     on update no action;
 
+alter table public.grant_application
+drop constraint grant_scheme_fk,
+add constraint grant_scheme_fk
+    foreign key (grant_scheme_id)
+    references public.grant_scheme (grant_scheme_id) match simple
+    on delete set null
+    on update no action;
+
+alter table public.grant_application
+alter column created_by drop not null;
+
 -- grant_export table
 
 alter table public.grant_export
