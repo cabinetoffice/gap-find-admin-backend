@@ -19,6 +19,14 @@ add constraint fkj37dbyjpgaof3c3l4k33qbsjt
     on update no action;
 
 alter table public.grant_advert
+drop constraint fkkyx0kmnoeortbeg2uv6s1tjsl,
+add constraint fkkyx0kmnoeortbeg2uv6s1tjsl
+    foreign key (last_updated_by)
+    references public.grant_admin (grant_admin_id) match simple
+    on delete cascade
+    on update no action;
+
+alter table public.grant_advert
 drop constraint fkgkr2wfbxbhcehfofhkx9ewkdr,
 add constraint fkgkr2wfbxbhcehfofhkx9ewkdr
     foreign key (scheme_id)
@@ -106,6 +114,22 @@ alter table public.grant_submission
 drop constraint submission_applicant_id_fkey,
 add constraint submission_applicant_id_fkey
     foreign key (applicant_id)
+    references public.grant_applicant (id) match simple
+    on delete cascade
+    on update no action;
+
+alter table public.grant_submission
+drop constraint submission_last_updated_by_fkey,
+add constraint submission_last_updated_by_fkey
+    foreign key (last_updated_by)
+    references public.grant_applicant (id) match simple
+    on delete cascade
+    on update no action;
+
+alter table public.grant_submission
+drop constraint submission_created_by_fkey,
+add constraint submission_created_by_fkey
+    foreign key (created_by)
     references public.grant_applicant (id) match simple
     on delete cascade
     on update no action;

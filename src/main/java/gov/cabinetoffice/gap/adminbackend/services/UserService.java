@@ -30,6 +30,7 @@ public class UserService {
         });
     }
 
+    @Transactional
     public void deleteUser(final String oneLoginSub, final Optional<UUID> colaSubOptional) {
         // Deleting by both COLA and OneLogin sub as either could be stored against the
         // user
