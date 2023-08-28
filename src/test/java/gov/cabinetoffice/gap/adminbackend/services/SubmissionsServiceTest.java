@@ -3,7 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
-import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationAuditDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.*;
@@ -458,19 +458,19 @@ class SubmissionsServiceTest {
                             .build())
                     .scheme(SchemeEntity.builder().id(1).name("testSchemeName").build()).submittedDate(zonedDateTime)
                     .build();
-            final UserDTO userDTO = UserDTO.builder().emailAddress("testEmailAddress").build();
+            final UserV2DTO userDTO = UserV2DTO.builder().emailAddress("testEmailAddress").build();
 
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(true);
             when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.of(submission));
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
-            when(restTemplate.exchange(anyString(), any(), any(), eq(UserDTO.class)))
+            when(restTemplate.exchange(anyString(), any(), any(), eq(UserV2DTO.class)))
                     .thenReturn(new ResponseEntity<>(userDTO, HttpStatus.OK));
 
             final LambdaSubmissionDefinition actual = submissionsService.getSubmissionInfo(UUID.randomUUID(),
                     UUID.randomUUID(), authHeader);
             final LambdaSubmissionDefinition expected = submissionMapper
                     .submissionToLambdaSubmissionDefinition(submission);
-            expected.setEmail(userDTO.getEmailAddress());
+            expected.setEmail(userDTO.emailAddress());
 
             assertEquals(expected, actual);
         }
