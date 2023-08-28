@@ -6,7 +6,7 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.google.common.collect.Lists;
 import gov.cabinetoffice.gap.adminbackend.constants.AWSConstants;
-import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
@@ -334,8 +334,8 @@ public class SubmissionsService {
         final HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.add("Authorization", authHeader);
         HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
-        final ResponseEntity<UserDTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserDTO.class);
-        return user.getBody().getEmailAddress();
+        final ResponseEntity<UserV2DTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserV2DTO.class);
+        return user.getBody().emailAddress();
     }
 
     public void updateExportStatus(String submissionId, String batchExportId, GrantExportStatus status) {
