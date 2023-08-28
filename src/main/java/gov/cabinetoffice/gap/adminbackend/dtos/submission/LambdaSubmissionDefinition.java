@@ -21,6 +21,7 @@ public class LambdaSubmissionDefinition {
     private ZonedDateTime submittedDate;
 
     private List<SubmissionSection> sections;
-  
+
     private String email;
+
 }
