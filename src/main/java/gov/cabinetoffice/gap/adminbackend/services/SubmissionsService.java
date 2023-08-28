@@ -314,11 +314,13 @@ public class SubmissionsService {
             throw new NotFoundException();
         }
 
-        final Submission submission = submissionRepository.findByIdWithApplicant(submissionId).orElseThrow(NotFoundException::new);
+        final Submission submission = submissionRepository.findByIdWithApplicant(submissionId)
+                .orElseThrow(NotFoundException::new);
         final String userId = submission.getApplicant().getUserId();
         final String email = getEmailFromUserId(userId);
 
-        final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper.submissionToLambdaSubmissionDefinition(submission);
+        final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper
+                .submissionToLambdaSubmissionDefinition(submission);
         lambdaSubmissionDefinition.setEmail(email);
         return lambdaSubmissionDefinition;
     }

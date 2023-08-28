@@ -461,11 +461,13 @@ class SubmissionsServiceTest {
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(true);
             when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.of(submission));
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
-            when(restTemplate.getForEntity(anyString(), any())).thenReturn(new ResponseEntity<>(userDTO, HttpStatus.OK));
+            when(restTemplate.getForEntity(anyString(), any()))
+                    .thenReturn(new ResponseEntity<>(userDTO, HttpStatus.OK));
 
-            final LambdaSubmissionDefinition actual = submissionsService
-                    .getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID());
-            final LambdaSubmissionDefinition expected = submissionMapper.submissionToLambdaSubmissionDefinition(submission);
+            final LambdaSubmissionDefinition actual = submissionsService.getSubmissionInfo(UUID.randomUUID(),
+                    UUID.randomUUID());
+            final LambdaSubmissionDefinition expected = submissionMapper
+                    .submissionToLambdaSubmissionDefinition(submission);
             expected.setEmail(userDTO.getEmailAddress());
 
             assertEquals(expected, actual);

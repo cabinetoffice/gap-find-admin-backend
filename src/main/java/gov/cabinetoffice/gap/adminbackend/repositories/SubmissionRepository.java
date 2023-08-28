@@ -30,4 +30,5 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
             nativeQuery = true)
     void updateSubmissionLastRequiredChecksExportByGrantApplicationId(@Param("applicationId") Integer applicationId,
             @Param("lastRequiredChecksExport") Instant lastRequiredChecksExport);
+
 }
