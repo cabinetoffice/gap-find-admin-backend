@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationAuditDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.*;
@@ -29,8 +30,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -75,6 +79,9 @@ class SubmissionsServiceTest {
 
     @Spy
     private SubmissionMapper submissionMapper = new SubmissionMapperImpl();
+
+    @Mock
+    private RestTemplate restTemplate;
 
     private final List<String> EXPECTED_SPOTLIGHT_ROW = Arrays.asList("GAP-LL-20220927-1", "Some company name",
             "9-10 St Andrew Square", "Edinburgh", "EH2 2AF", "500", "12738494", "Yes", "");
@@ -449,16 +456,19 @@ class SubmissionsServiceTest {
                             .build())
                     .scheme(SchemeEntity.builder().id(1).name("testSchemeName").build()).submittedDate(zonedDateTime)
                     .build();
+            final UserDTO userDTO = UserDTO.builder().emailAddress("testEmailAddress").build();
 
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(true);
-            when(submissionRepository.findById(any(UUID.class))).thenReturn(Optional.of(submission));
+            when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.of(submission));
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
+            when(restTemplate.getForEntity(anyString(), any())).thenReturn(new ResponseEntity<>(userDTO, HttpStatus.OK));
 
-            final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionsService
+            final LambdaSubmissionDefinition actual = submissionsService
                     .getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID());
+            final LambdaSubmissionDefinition expected = submissionMapper.submissionToLambdaSubmissionDefinition(submission);
+            expected.setEmail(userDTO.getEmailAddress());
 
-            assertEquals(submissionMapper.submissionToLambdaSubmissionDefinition(submission),
-                    lambdaSubmissionDefinition);
+            assertEquals(expected, actual);
         }
 
         @Test
