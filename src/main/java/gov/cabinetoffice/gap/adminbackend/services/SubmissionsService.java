@@ -28,6 +28,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -307,7 +310,8 @@ public class SubmissionsService {
 
     }
 
-    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId) {
+    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId,
+            final String authHeader) {
 
         if (!grantExportRepository
                 .existsById(GrantExportId.builder().exportBatchId(exportBatchId).submissionId(submissionId).build())) {
@@ -317,7 +321,7 @@ public class SubmissionsService {
         final Submission submission = submissionRepository.findByIdWithApplicant(submissionId)
                 .orElseThrow(NotFoundException::new);
         final String userId = submission.getApplicant().getUserId();
-        final String email = getEmailFromUserId(userId);
+        final String email = getEmailFromUserId(userId, authHeader);
 
         final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper
                 .submissionToLambdaSubmissionDefinition(submission);
@@ -325,9 +329,12 @@ public class SubmissionsService {
         return lambdaSubmissionDefinition;
     }
 
-    private String getEmailFromUserId(final String userId) {
+    private String getEmailFromUserId(final String userId, final String authHeader) {
         final String url = userServiceUrl + "/user?userSub=" + userId;
-        final ResponseEntity<UserDTO> user = restTemplate.getForEntity(url, UserDTO.class);
+        final HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add("Authorization", authHeader);
+        HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
+        final ResponseEntity<UserDTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserDTO.class);
         return user.getBody().getEmailAddress();
     }
 

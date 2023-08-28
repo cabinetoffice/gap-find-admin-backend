@@ -113,7 +113,7 @@ public class SubmissionsController {
 
         try {
             final LambdaSubmissionDefinition submission = submissionsService.getSubmissionInfo(submissionId,
-                    batchExportId);
+                    batchExportId, authHeader);
             return ResponseEntity.ok(submission);
         }
         catch (NotFoundException e) {

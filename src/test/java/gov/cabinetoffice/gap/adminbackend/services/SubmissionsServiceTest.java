@@ -444,6 +444,8 @@ class SubmissionsServiceTest {
     @Nested
     class getSubmissionInfo {
 
+        final String authHeader = "randomAuthHeader";
+
         @Test
         void happyPath() {
             final ZonedDateTime zonedDateTime = ZonedDateTime.now();
@@ -461,11 +463,11 @@ class SubmissionsServiceTest {
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(true);
             when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.of(submission));
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
-            when(restTemplate.getForEntity(anyString(), any()))
+            when(restTemplate.exchange(anyString(), any(), any(), eq(UserDTO.class)))
                     .thenReturn(new ResponseEntity<>(userDTO, HttpStatus.OK));
 
             final LambdaSubmissionDefinition actual = submissionsService.getSubmissionInfo(UUID.randomUUID(),
-                    UUID.randomUUID());
+                    UUID.randomUUID(), authHeader);
             final LambdaSubmissionDefinition expected = submissionMapper
                     .submissionToLambdaSubmissionDefinition(submission);
             expected.setEmail(userDTO.getEmailAddress());
@@ -479,16 +481,18 @@ class SubmissionsServiceTest {
             when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.empty());
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
 
-            assertThatThrownBy(() -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID()))
-                    .isInstanceOf(NotFoundException.class);
+            assertThatThrownBy(
+                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID(), authHeader))
+                            .isInstanceOf(NotFoundException.class);
         }
 
         @Test
         void unauthorisedPath() {
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(false);
 
-            assertThatThrownBy(() -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID()))
-                    .isInstanceOf(NotFoundException.class);
+            assertThatThrownBy(
+                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID(), authHeader))
+                            .isInstanceOf(NotFoundException.class);
         }
 
     }
