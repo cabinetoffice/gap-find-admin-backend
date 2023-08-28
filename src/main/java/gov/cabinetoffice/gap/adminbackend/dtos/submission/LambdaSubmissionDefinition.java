@@ -22,6 +22,6 @@ public class LambdaSubmissionDefinition {
 
     private List<SubmissionSection> sections;
 
-    private String userId;
+    private String email;
 
 }
