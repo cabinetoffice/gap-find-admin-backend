@@ -182,7 +182,7 @@ class SubmissionsControllerTest {
         @Test
         void happyPath() throws Exception {
             final LambdaSubmissionDefinition lambdaSubmissionDefinition = LambdaSubmissionDefinition.builder().build();
-            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class)))
+            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenReturn(lambdaSubmissionDefinition);
 
             mockMvc.perform(
@@ -194,7 +194,7 @@ class SubmissionsControllerTest {
 
         @Test
         void unauthorisedPath() throws Exception {
-            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class)))
+            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenThrow(new UnauthorizedException());
 
             mockMvc.perform(
@@ -205,7 +205,7 @@ class SubmissionsControllerTest {
 
         @Test
         void resourceNotFoundPath() throws Exception {
-            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class)))
+            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenThrow(new NotFoundException());
 
             mockMvc.perform(

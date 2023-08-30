@@ -17,23 +17,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
+import java.io.*;
 import java.util.List;
 import java.util.UUID;
-
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 
 @Log4j2
 @RestController
@@ -113,7 +103,7 @@ public class SubmissionsController {
 
         try {
             final LambdaSubmissionDefinition submission = submissionsService.getSubmissionInfo(submissionId,
-                    batchExportId);
+                    batchExportId, authHeader);
             return ResponseEntity.ok(submission);
         }
         catch (NotFoundException e) {

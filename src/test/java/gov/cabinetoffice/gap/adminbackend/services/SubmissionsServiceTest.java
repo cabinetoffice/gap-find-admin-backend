@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationAuditDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.*;
@@ -29,8 +30,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -76,6 +80,9 @@ class SubmissionsServiceTest {
     @Spy
     private SubmissionMapper submissionMapper = new SubmissionMapperImpl();
 
+    @Mock
+    private RestTemplate restTemplate;
+
     private final List<String> EXPECTED_SPOTLIGHT_ROW = Arrays.asList("GAP-LL-20220927-1", "Some company name",
             "9-10 St Andrew Square", "Edinburgh", "EH2 2AF", "500", "12738494", "Yes", "");
 
@@ -96,7 +103,7 @@ class SubmissionsServiceTest {
             final SubmissionDefinition submissionDefinition = randomSubmissionDefinition(SUBMISSION_DEFINITION).build();
             final Submission submission = RandomSubmissionGenerator.randomSubmission()
                     .status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID()).build())
+                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
                     .definition(submissionDefinition).build();
 
             when(applicationFormService.retrieveApplicationFormSummary(1, false, false)).thenReturn(applicationFormDTO);
@@ -121,13 +128,13 @@ class SubmissionsServiceTest {
 
             final SubmissionDefinition goodSubmission = createSubmissionDefinition();
             final Submission goodSubmissionEntity = randomSubmission().status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID()).build())
+                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
                     .gapId("GAP-LL-20221006-1").definition(goodSubmission).build();
 
             final SubmissionDefinition badSubmission = createSubmissionDefinition();
             badSubmission.getSections().get(1).getQuestionById("APPLICANT_ORG_NAME").setResponse(null);
             final Submission badSubmissionEntity = randomSubmission().status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID()).build())
+                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
                     .gapId("GAP-LL-20221006-2").definition(badSubmission).build();
 
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
@@ -437,6 +444,8 @@ class SubmissionsServiceTest {
     @Nested
     class getSubmissionInfo {
 
+        final String authHeader = "randomAuthHeader";
+
         @Test
         void happyPath() {
             final ZonedDateTime zonedDateTime = ZonedDateTime.now();
@@ -449,16 +458,21 @@ class SubmissionsServiceTest {
                             .build())
                     .scheme(SchemeEntity.builder().id(1).name("testSchemeName").build()).submittedDate(zonedDateTime)
                     .build();
+            final UserV2DTO userDTO = UserV2DTO.builder().emailAddress("testEmailAddress").build();
 
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(true);
-            when(submissionRepository.findById(any(UUID.class))).thenReturn(Optional.of(submission));
+            when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.of(submission));
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
+            when(restTemplate.exchange(anyString(), any(), any(), eq(UserV2DTO.class)))
+                    .thenReturn(new ResponseEntity<>(userDTO, HttpStatus.OK));
 
-            final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionsService
-                    .getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID());
+            final LambdaSubmissionDefinition actual = submissionsService.getSubmissionInfo(UUID.randomUUID(),
+                    UUID.randomUUID(), authHeader);
+            final LambdaSubmissionDefinition expected = submissionMapper
+                    .submissionToLambdaSubmissionDefinition(submission);
+            expected.setEmail(userDTO.emailAddress());
 
-            assertEquals(submissionMapper.submissionToLambdaSubmissionDefinition(submission),
-                    lambdaSubmissionDefinition);
+            assertEquals(expected, actual);
         }
 
         @Test
@@ -467,16 +481,18 @@ class SubmissionsServiceTest {
             when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.empty());
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
 
-            assertThatThrownBy(() -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID()))
-                    .isInstanceOf(NotFoundException.class);
+            assertThatThrownBy(
+                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID(), authHeader))
+                            .isInstanceOf(NotFoundException.class);
         }
 
         @Test
         void unauthorisedPath() {
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(false);
 
-            assertThatThrownBy(() -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID()))
-                    .isInstanceOf(NotFoundException.class);
+            assertThatThrownBy(
+                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID(), authHeader))
+                            .isInstanceOf(NotFoundException.class);
         }
 
     }

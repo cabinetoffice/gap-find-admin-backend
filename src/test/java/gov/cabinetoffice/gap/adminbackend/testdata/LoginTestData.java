@@ -10,7 +10,7 @@ public class LoginTestData {
 
     public final static Integer GAP_USER_ID = 1;
 
-    public final static UUID GAP_USER_COGNITO_SUBSCRIPTION = UUID.fromString("82f9cde7-66b9-42e1-bbeb-07555d6dc6db");
+    public final static String GAP_USER_COGNITO_SUBSCRIPTION = "82f9cde7-66b9-42e1-bbeb-07555d6dc6db";
 
     public final static Integer FUNDING_ORGANISATION_ID = 11;
 
