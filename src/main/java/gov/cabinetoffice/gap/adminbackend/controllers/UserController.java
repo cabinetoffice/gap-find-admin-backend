@@ -16,6 +16,8 @@ import lombok.extern.log4j.Log4j;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
@@ -38,6 +40,29 @@ public class UserController {
     public ResponseEntity<UserDTO> getLoggedInUserDetails() {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         return ResponseEntity.ok(userMapper.adminSessionToUserDTO(session));
+    }
+
+    @GetMapping("/validateAdminSession")
+    public ResponseEntity<Boolean> validateAdminSession() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if(authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
+
+        AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
+        boolean isV2Payload = adminSession.isV2Payload();
+        if(!isV2Payload){
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
+        String emailAddress = adminSession.getEmailAddress();
+        String roles = adminSession.getRoles();
+        try {
+            userService.verifyAdminRoles(emailAddress, roles);
+            return ResponseEntity.ok(Boolean.TRUE);
+        } catch (UnauthorizedException error) {
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
     }
 
     @PatchMapping("/migrate")

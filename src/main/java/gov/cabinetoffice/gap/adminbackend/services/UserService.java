@@ -1,10 +1,19 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
 
@@ -15,6 +24,9 @@ public class UserService {
     private final GapUserRepository gapUserRepository;
 
     private final GrantApplicantRepository grantApplicantRepository;
+
+    private final UserServiceConfig userServiceConfig;
+    private final RestTemplate restTemplate;
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -29,4 +41,16 @@ public class UserService {
         });
     }
 
+    public void verifyAdminRoles(final String emailAddress, final String roles) {
+        final String url = userServiceConfig.getDomain() + "/v2/verifyAdminSession";
+        final HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add("emailAddress", emailAddress);
+        requestHeaders.add("roles", roles);
+        final HttpEntity<String> requestEntity = new HttpEntity<>(null, requestHeaders);
+        final Boolean adminSessionIsValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class).getBody();
+        if (!adminSessionIsValid) {
+            throw new UnauthorizedException("Token is not valid");
+        }
+    }
+//    }
 }
