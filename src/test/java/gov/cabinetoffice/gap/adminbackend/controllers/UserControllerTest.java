@@ -143,7 +143,7 @@ class UserControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("false")); // Assuming you return "false" for failed authentication
+                .andExpect(content().string("false"));
     }
 
     @Test

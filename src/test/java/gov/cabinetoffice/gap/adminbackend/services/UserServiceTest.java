@@ -1,14 +1,20 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Spy;
+import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.web.client.RestTemplate;
+
 
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +34,12 @@ class UserServiceTest {
 
     @Mock
     private GrantApplicantRepository grantApplicantRepository;
+
+    @Mock
+    private UserServiceConfig userServiceConfig;
+
+    @Mock
+    private RestTemplate restTemplate;
 
     private final String oneLoginSub = "oneLoginSub";
 
@@ -85,4 +97,41 @@ class UserServiceTest {
         verify(grantApplicantRepository, times(1)).save(grantApplicant);
     }
 
+    @Test
+    public void testVerifyAdminRolesValid() {
+        String emailAddress = "admin@example.com";
+        String roles = "[FIND, APPLY, ADMIN]";
+        String url = "http://example.com/v2/verifyAdminSession";
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add("emailAddress", emailAddress);
+        requestHeaders.add("roles", roles);
+        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(true, HttpStatus.OK);
+
+        when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
+                .thenReturn(responseEntity);
+        when(userServiceConfig.getDomain()).thenReturn("http://example.com");
+
+        userService.verifyAdminRoles(emailAddress, roles);
+        verify(restTemplate, times(1)).exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class));
+    }
+
+
+    public void testVerifyAdminRolesInvalid() {
+        String emailAddress = "admin@example.com";
+        String roles = "[FIND, APPLY, ADMIN]";
+        String url = "http://example.com/v2/verifyAdminSession";
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add("emailAddress", emailAddress);
+        requestHeaders.add("roles", roles);
+        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(false, HttpStatus.OK); // Simulate an invalid response
+        RestTemplate restTemplate = new RestTemplate();
+
+        when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
+                .thenReturn(responseEntity);
+        when(userServiceConfig.getDomain()).thenReturn("http://example.com");
+
+        assertThrows(UnauthorizedException.class, () -> {
+            userService.verifyAdminRoles(emailAddress, roles);
+        });
+    }
 }
