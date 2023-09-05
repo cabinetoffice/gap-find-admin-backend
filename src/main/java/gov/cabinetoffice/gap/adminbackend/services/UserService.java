@@ -26,6 +26,7 @@ public class UserService {
     private final GrantApplicantRepository grantApplicantRepository;
 
     private final UserServiceConfig userServiceConfig;
+
     private final RestTemplate restTemplate;
 
     @Transactional
@@ -47,9 +48,11 @@ public class UserService {
         requestHeaders.add("emailAddress", emailAddress);
         requestHeaders.add("roles", roles);
         final HttpEntity<String> requestEntity = new HttpEntity<>(null, requestHeaders);
-        final Boolean adminSessionIsValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class).getBody();
+        final Boolean adminSessionIsValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)
+                .getBody();
         if (!adminSessionIsValid) {
             throw new UnauthorizedException("Token is not valid");
         }
     }
+
 }

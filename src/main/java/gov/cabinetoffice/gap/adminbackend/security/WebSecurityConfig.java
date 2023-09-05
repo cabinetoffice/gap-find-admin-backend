@@ -21,12 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
-    private final JwtTokenFilter jwtTokenFilter;
 
+    private final JwtTokenFilter jwtTokenFilter;
 
     private static final String UUID_REGEX_STRING = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
 
-    public WebSecurityConfig(final JwtService customJwtServiceImpl, final UserService userService){
+    public WebSecurityConfig(final JwtService customJwtServiceImpl, final UserService userService) {
         this.jwtTokenFilter = new JwtTokenFilter(customJwtServiceImpl, userService);
     }
 
@@ -34,28 +34,26 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and()
-                .authorizeHttpRequests(
-                        auth -> auth
-                                .mvcMatchers("/login", "/health", "/emails/sendLambdaConfirmationEmail",
-                                        "/users/validateAdminSession",
-                                        "/submissions/{submissionId:" + UUID_REGEX_STRING
-                                                + "}/export-batch/{batchExportId:" + UUID_REGEX_STRING + "}/submission",
-                                        "/submissions/*/export-batch/*/status",
-                                        "/submissions/{submissionId:" + UUID_REGEX_STRING
-                                                + "}/export-batch/{batchExportId:" + UUID_REGEX_STRING + "}/signedUrl",
-                                        "/export-batch/{exportId:" + UUID_REGEX_STRING + "}/outstandingCount",
-                                        "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/publish",
-                                        "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/unpublish",
-                                        "/users/migrate")
-                                .permitAll()
-                                .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**",
-                                        "/swagger-ui.html", "/webjars/**")
-                                .permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        .mvcMatchers("/login", "/health", "/emails/sendLambdaConfirmationEmail",
+                                "/users/validateAdminSession", "/submissions/{submissionId:" + UUID_REGEX_STRING
+                                        + "}/export-batch/{batchExportId:" + UUID_REGEX_STRING + "}/submission",
+                                "/submissions/*/export-batch/*/status",
+                                "/submissions/{submissionId:" + UUID_REGEX_STRING + "}/export-batch/{batchExportId:"
+                                        + UUID_REGEX_STRING + "}/signedUrl",
+                                "/export-batch/{exportId:" + UUID_REGEX_STRING + "}/outstandingCount",
+                                "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/publish",
+                                "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/unpublish",
+                                "/users/migrate")
+                        .permitAll()
+                        .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/swagger-ui.html",
+                                "/webjars/**")
+                        .permitAll().anyRequest().authenticated())
 
                 .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable().exceptionHandling()
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
 
-         http.addFilterAfter(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

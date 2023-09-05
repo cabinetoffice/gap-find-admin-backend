@@ -54,8 +54,8 @@ class LoginControllerTest {
     @Test
     void SuccessfulLoginTest() throws Exception {
         Mockito.when(this.authenticationManager.authenticate(any())).thenReturn(new UsernamePasswordAuthenticationToken(
-                new AdminSession(1,1, "Test", "User",
-                        "AND Digital", "test@domain.com", "[FIND, APPLY, ADMIN]", true), null));
+                new AdminSession(1, 1, "Test", "User", "AND Digital", "test@domain.com", "[FIND, APPLY, ADMIN]", true),
+                null));
 
         this.mockMvc.perform(post("/login")).andExpect(status().isOk());
     }

@@ -15,7 +15,6 @@ import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
 
-
 import java.util.Optional;
 import java.util.UUID;
 
@@ -123,7 +122,7 @@ class UserServiceTest {
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.add("emailAddress", emailAddress);
         requestHeaders.add("roles", roles);
-        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(false, HttpStatus.OK); // Simulate an invalid response
+        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(false, HttpStatus.OK);
 
         when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
                 .thenReturn(responseEntity);
@@ -133,4 +132,5 @@ class UserServiceTest {
             userService.verifyAdminRoles(emailAddress, roles);
         });
     }
+
 }

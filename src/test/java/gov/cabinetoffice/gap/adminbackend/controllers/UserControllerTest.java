@@ -109,28 +109,26 @@ class UserControllerTest {
 
     @Test
     public void testValidateAdminSession() throws Exception {
-            AdminSession adminSession = new AdminSession();
-            adminSession.setV2Payload(true);
-            adminSession.setEmailAddress("admin@example.com");
-            adminSession.setRoles("[FIND, APPLY, ADMIN]");
+        AdminSession adminSession = new AdminSession();
+        adminSession.setV2Payload(true);
+        adminSession.setEmailAddress("admin@example.com");
+        adminSession.setRoles("[FIND, APPLY, ADMIN]");
 
+        SecurityContext securityContext = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
 
-            SecurityContext securityContext = mock(SecurityContext.class);
-            SecurityContextHolder.setContext(securityContext);
+        Authentication authentication = mock(Authentication.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(adminSession);
 
-            Authentication authentication = mock(Authentication.class);
-            when(securityContext.getAuthentication()).thenReturn(authentication);
-            when(authentication.isAuthenticated()).thenReturn(true);
-            when(authentication.getPrincipal()).thenReturn(adminSession);
+        doNothing().when(userService).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
 
-            doNothing().when(userService).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
+                .andExpect(content().string("true"));
 
-            mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession"))
-                    .andExpect(status().isOk())
-                    .andExpect(content().string("true"));
-
-            verify(userService, times(1)).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
-        }
+        verify(userService, times(1)).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
+    }
 
     @Test
     public void testValidateAdminSessionAuthenticationNotAuthenticated() throws Exception {
@@ -141,8 +139,7 @@ class UserControllerTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(false);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession"))
-                .andExpect(status().isOk())
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
                 .andExpect(content().string("false"));
     }
 
@@ -161,10 +158,11 @@ class UserControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(adminSession);
 
-        doThrow(new UnauthorizedException("Roles do not match")).when(userService).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
+        doThrow(new UnauthorizedException("Roles do not match")).when(userService).verifyAdminRoles("admin@example.com",
+                "[FIND, APPLY, ADMIN]");
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession"))
-                .andExpect(status().isOk())
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
                 .andExpect(content().string("false"));
     }
-    }
+
+}

@@ -22,9 +22,11 @@ public class AdminSession implements Serializable {
     private String organisationName;
 
     private String emailAddress;
+
     private String roles;
 
     private boolean isV2Payload;
+
     public AdminSession(Integer grantAdminId, Integer funderId, boolean isV2Payload, JwtPayload jwtPayload) {
         this.grantAdminId = grantAdminId;
         this.funderId = funderId;

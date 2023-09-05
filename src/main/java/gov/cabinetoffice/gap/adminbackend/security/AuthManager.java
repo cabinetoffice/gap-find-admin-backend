@@ -71,8 +71,8 @@ public class AuthManager implements AuthenticationManager {
             grantAdmin = Optional.of(createNewAdmin(JWTPayload));
         }
 
-        AdminSession adminSession = new AdminSession(grantAdmin.get().getId(), grantAdmin.get().getFunder().getId(), oneLoginEnabled,
-                JWTPayload);
+        AdminSession adminSession = new AdminSession(grantAdmin.get().getId(), grantAdmin.get().getFunder().getId(),
+                oneLoginEnabled, JWTPayload);
 
         return new UsernamePasswordAuthenticationToken(adminSession, null,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));

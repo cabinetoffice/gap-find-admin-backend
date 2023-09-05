@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 /**
@@ -30,7 +29,9 @@ import static org.springframework.util.ObjectUtils.isEmpty;
  */
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
+
     private final JwtService jwtService;
+
     private final UserService userService;
 
     @Override
@@ -38,14 +39,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if(authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             chain.doFilter(request, response);
             return;
         }
 
         AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
         boolean isV2Payload = adminSession.isV2Payload();
-        if(!isV2Payload){
+        if (!isV2Payload) {
             chain.doFilter(request, response);
             return;
         }
@@ -62,4 +63,5 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throw new UnauthorizedException("Payload is out of date");
         }
     }
+
 }

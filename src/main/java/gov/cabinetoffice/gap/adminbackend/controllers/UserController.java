@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
@@ -42,13 +43,13 @@ public class UserController {
     public ResponseEntity<Boolean> validateAdminSession() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if(authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.ok(Boolean.FALSE);
         }
 
         AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
         boolean isV2Payload = adminSession.isV2Payload();
-        if(!isV2Payload){
+        if (!isV2Payload) {
             return ResponseEntity.ok(Boolean.FALSE);
         }
         String emailAddress = adminSession.getEmailAddress();
@@ -56,7 +57,8 @@ public class UserController {
         try {
             userService.verifyAdminRoles(emailAddress, roles);
             return ResponseEntity.ok(Boolean.TRUE);
-        } catch (UnauthorizedException error) {
+        }
+        catch (UnauthorizedException error) {
             return ResponseEntity.ok(Boolean.FALSE);
         }
     }
