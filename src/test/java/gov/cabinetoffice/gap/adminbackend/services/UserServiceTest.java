@@ -115,7 +115,7 @@ class UserServiceTest {
         verify(restTemplate, times(1)).exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class));
     }
 
-
+    @Test
     public void testVerifyAdminRolesInvalid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
@@ -124,7 +124,6 @@ class UserServiceTest {
         requestHeaders.add("emailAddress", emailAddress);
         requestHeaders.add("roles", roles);
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(false, HttpStatus.OK); // Simulate an invalid response
-        RestTemplate restTemplate = new RestTemplate();
 
         when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
                 .thenReturn(responseEntity);
