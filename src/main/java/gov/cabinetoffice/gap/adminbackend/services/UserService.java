@@ -52,5 +52,4 @@ public class UserService {
             throw new UnauthorizedException("Token is not valid");
         }
     }
-//    }
 }
