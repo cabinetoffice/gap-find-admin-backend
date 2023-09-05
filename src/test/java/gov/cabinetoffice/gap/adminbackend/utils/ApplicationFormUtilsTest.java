@@ -19,8 +19,7 @@ class ApplicationFormUtilsTest {
         ApplicationFormEntity applicationForm = RandomApplicationFormGenerators.randomApplicationFormEntity()
                 .lastUpdateBy(007).lastUpdated(fiveSecondsAgo).version(version).build();
 
-        AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", "test.user@and.digital");
-
+        AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", "test.user@and.digital", "[FIND, APPLY, ADMIN]", true);
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session);
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
