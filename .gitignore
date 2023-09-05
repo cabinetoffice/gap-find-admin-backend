@@ -38,4 +38,6 @@ build/
 
 /bin
 
+### Local properties ###
 application-local.properties
+.env.local
