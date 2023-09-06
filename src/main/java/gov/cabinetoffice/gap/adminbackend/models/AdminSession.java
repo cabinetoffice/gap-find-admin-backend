@@ -25,15 +25,13 @@ public class AdminSession implements Serializable {
 
     private String roles;
 
-    private boolean isV2Payload;
 
-    public AdminSession(Integer grantAdminId, Integer funderId, boolean isV2Payload, JwtPayload jwtPayload) {
+    public AdminSession(Integer grantAdminId, Integer funderId, JwtPayload jwtPayload) {
         this.grantAdminId = grantAdminId;
         this.funderId = funderId;
         this.firstName = jwtPayload.getGivenName();
         this.lastName = jwtPayload.getFamilyName();
         this.organisationName = jwtPayload.getDepartmentName();
-        this.isV2Payload = isV2Payload;
         this.emailAddress = jwtPayload.getEmailAddress();
         this.roles = jwtPayload.getRoles();
     }

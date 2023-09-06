@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.security;
 
+import gov.cabinetoffice.gap.adminbackend.config.JwtTokenFilterConfig;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -34,6 +35,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final UserService userService;
 
+    private final JwtTokenFilterConfig jwtTokenFilterConfig;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -45,8 +48,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
 
         AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
-        boolean isV2Payload = adminSession.isV2Payload();
-        if (!isV2Payload) {
+        if (!jwtTokenFilterConfig.oneLoginEnabled) {
             chain.doFilter(request, response);
             return;
         }

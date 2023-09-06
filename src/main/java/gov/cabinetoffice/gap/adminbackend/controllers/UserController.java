@@ -11,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -33,6 +34,9 @@ public class UserController {
 
     private final UserService userService;
 
+    @Value("${feature.onelogin.enabled}")
+    private boolean oneLoginEnabled;
+
     @GetMapping("/loggedInUser")
     public ResponseEntity<UserDTO> getLoggedInUserDetails() {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -48,8 +52,7 @@ public class UserController {
         }
 
         AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
-        boolean isV2Payload = adminSession.isV2Payload();
-        if (!isV2Payload) {
+        if (!oneLoginEnabled) {
             return ResponseEntity.ok(Boolean.FALSE);
         }
         String emailAddress = adminSession.getEmailAddress();

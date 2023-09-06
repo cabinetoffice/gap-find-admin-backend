@@ -1,8 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.security;
 
+import gov.cabinetoffice.gap.adminbackend.config.JwtTokenFilterConfig;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -10,12 +10,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Configuration
 @EnableWebSecurity
@@ -26,8 +23,8 @@ public class WebSecurityConfig {
 
     private static final String UUID_REGEX_STRING = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
 
-    public WebSecurityConfig(final JwtService customJwtServiceImpl, final UserService userService) {
-        this.jwtTokenFilter = new JwtTokenFilter(customJwtServiceImpl, userService);
+    public WebSecurityConfig(final JwtService customJwtServiceImpl, final UserService userService, final JwtTokenFilterConfig jwtTokenFilterConfig){
+        this.jwtTokenFilter = new JwtTokenFilter(customJwtServiceImpl, userService, jwtTokenFilterConfig);
     }
 
     @Bean
