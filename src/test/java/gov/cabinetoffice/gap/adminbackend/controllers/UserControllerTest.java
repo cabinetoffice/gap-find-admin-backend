@@ -13,6 +13,8 @@ import gov.cabinetoffice.gap.adminbackend.utils.TestDecodedJwt;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -23,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -36,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(classes = { UserController.class, ControllerExceptionHandler.class })
+@TestPropertySource(properties = {"feature.onelogin.enabled=true"}) // Set the value to true or false as needed
 class UserControllerTest {
 
     @Resource
@@ -110,7 +114,6 @@ class UserControllerTest {
     @Test
     public void testValidateAdminSession() throws Exception {
         AdminSession adminSession = new AdminSession();
-        adminSession.setV2Payload(true);
         adminSession.setEmailAddress("admin@example.com");
         adminSession.setRoles("[FIND, APPLY, ADMIN]");
 
@@ -146,7 +149,6 @@ class UserControllerTest {
     @Test
     public void testValidateAdminSessionRolesDoNotMatch() throws Exception {
         AdminSession adminSession = new AdminSession();
-        adminSession.setV2Payload(true);
         adminSession.setEmailAddress("admin@example.com");
         adminSession.setRoles("[FIND, APPLY, ADMIN]");
 
