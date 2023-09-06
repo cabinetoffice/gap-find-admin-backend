@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class JwtTokenFilterConfig {
+
     @Value("${feature.onelogin.enabled}")
     public boolean oneLoginEnabled;
+
 }

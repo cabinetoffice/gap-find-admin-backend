@@ -25,7 +25,6 @@ public class AdminSession implements Serializable {
 
     private String roles;
 
-
     public AdminSession(Integer grantAdminId, Integer funderId, JwtPayload jwtPayload) {
         this.grantAdminId = grantAdminId;
         this.funderId = funderId;

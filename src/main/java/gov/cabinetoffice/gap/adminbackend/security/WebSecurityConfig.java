@@ -23,7 +23,8 @@ public class WebSecurityConfig {
 
     private static final String UUID_REGEX_STRING = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
 
-    public WebSecurityConfig(final JwtService customJwtServiceImpl, final UserService userService, final JwtTokenFilterConfig jwtTokenFilterConfig){
+    public WebSecurityConfig(final JwtService customJwtServiceImpl, final UserService userService,
+            final JwtTokenFilterConfig jwtTokenFilterConfig) {
         this.jwtTokenFilter = new JwtTokenFilter(customJwtServiceImpl, userService, jwtTokenFilterConfig);
     }
 
