@@ -39,7 +39,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(classes = { UserController.class, ControllerExceptionHandler.class })
-@TestPropertySource(properties = {"feature.onelogin.enabled=true"}) // Set the value to true or false as needed
+@TestPropertySource(properties = { "feature.onelogin.enabled=true" }) // Set the value to
+                                                                      // true or false as
+                                                                      // needed
 class UserControllerTest {
 
     @Resource
