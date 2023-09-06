@@ -43,7 +43,7 @@ public class UserService {
     }
 
     public void verifyAdminRoles(final String emailAddress, final String roles) {
-        final String url = userServiceConfig.getDomain() + "/v2/verifyAdminSession";
+        final String url = userServiceConfig.getDomain() + "/v2/validateAdminSession";
         final HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.add("emailAddress", emailAddress);
         requestHeaders.add("roles", roles);
