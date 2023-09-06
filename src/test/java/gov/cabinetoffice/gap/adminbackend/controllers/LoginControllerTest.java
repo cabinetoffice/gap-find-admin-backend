@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.config.JwtTokenFilterConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
@@ -46,6 +47,9 @@ class LoginControllerTest {
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
+
+    @MockBean
+    private JwtTokenFilterConfig jwtTokenFilterConfig;
 
     @MockBean
     private JwtService jwtService;
