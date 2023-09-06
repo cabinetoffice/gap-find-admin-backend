@@ -118,7 +118,7 @@ class UserServiceTest {
     public void testVerifyAdminRolesInvalid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
-        String url = "http://example.com/v2/verifyAdminSession";
+        String url = "http://example.com/v2/validateAdminSession";
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.add("emailAddress", emailAddress);
         requestHeaders.add("roles", roles);
