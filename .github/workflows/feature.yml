@@ -7,12 +7,14 @@ on:
       - AFG-**
       - bug/**
       - GAP-**
+      - fix/**
   pull_request:
     branches:
       - feature/**
       - AFG-**
       - bug/**
       - GAP-**
+      - fix/**
 
 jobs:
   build:
