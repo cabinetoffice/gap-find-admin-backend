@@ -53,7 +53,7 @@ public class UserController {
 
         AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
         if (!oneLoginEnabled) {
-            return ResponseEntity.ok(Boolean.FALSE);
+            return ResponseEntity.ok(Boolean.TRUE);
         }
         String emailAddress = adminSession.getEmailAddress();
         String roles = adminSession.getRoles();
