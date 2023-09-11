@@ -36,41 +36,44 @@ import static org.mockito.Mockito.*;
 class JwtTokenFilterTest {
 
     private JwtTokenFilter jwtTokenFilter;
+
     private @Mock JwtService jwtService;
+
     private @Mock UserService userService;
+
     private @Mock JwtTokenFilterConfig jwtTokenFilterConfig;
 
     private @Mock SecurityContextLogoutHandler securityContextLogoutHandler;
 
-        @BeforeEach
-        void setup() {
-            jwtTokenFilterConfig.oneLoginEnabled = true;
-            jwtTokenFilter = new JwtTokenFilter(jwtService, userService, jwtTokenFilterConfig);
-        }
+    @BeforeEach
+    void setup() {
+        jwtTokenFilterConfig.oneLoginEnabled = true;
+        jwtTokenFilter = new JwtTokenFilter(jwtService, userService, jwtTokenFilterConfig);
+    }
 
-        @Test
-        void Authenticates_when_TokenIsValid() throws IOException, ServletException {
-            HttpServletRequest request = mock(HttpServletRequest.class);
-            HttpServletResponse response = mock(HttpServletResponse.class);
-            FilterChain chain = mock(FilterChain.class);
-            Authentication authentication = mock(Authentication.class);
-            when(authentication.isAuthenticated()).thenReturn(true);
-            final SecurityContext securityContext = mock(SecurityContext.class);
-            SecurityContextHolder.setContext(securityContext);
-            when(securityContext.getAuthentication()).thenReturn(authentication);
+    @Test
+    void Authenticates_when_TokenIsValid() throws IOException, ServletException {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        final SecurityContext securityContext = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
 
-            JwtPayload payload = new JwtPayload();
-            payload.setEmailAddress("test@example.com");
-            payload.setRoles("ADMIN");
+        JwtPayload payload = new JwtPayload();
+        payload.setEmailAddress("test@example.com");
+        payload.setRoles("ADMIN");
 
-            AdminSession adminSession = new AdminSession(1, 1, payload);
-            when(authentication.getPrincipal()).thenReturn(adminSession);
-            doNothing().when(userService).verifyAdminRoles(eq("test@example.com"), eq("ADMIN"));
+        AdminSession adminSession = new AdminSession(1, 1, payload);
+        when(authentication.getPrincipal()).thenReturn(adminSession);
+        doNothing().when(userService).verifyAdminRoles(eq("test@example.com"), eq("ADMIN"));
 
-            jwtTokenFilter.doFilterInternal(request, response, chain);
-            verify(chain, times(1)).doFilter(request, response);
-            verify(userService, times(1)).verifyAdminRoles("test@example.com", "ADMIN");
-        }
+        jwtTokenFilter.doFilterInternal(request, response, chain);
+        verify(chain, times(1)).doFilter(request, response);
+        verify(userService, times(1)).verifyAdminRoles("test@example.com", "ADMIN");
+    }
 
     @Test
     void verifyAdminRolesThrowsUnauthorizedException_when_PayloadIsInvalid() throws ServletException, IOException {
@@ -96,5 +99,5 @@ class JwtTokenFilterTest {
         verify(chain, times(0)).doFilter(request, response);
         assertThrows(UnauthorizedException.class, () -> jwtTokenFilter.doFilterInternal(request, response, chain));
     }
-    
+
 }

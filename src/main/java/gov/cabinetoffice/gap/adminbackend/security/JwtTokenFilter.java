@@ -39,7 +39,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtTokenFilterConfig jwtTokenFilterConfig;
 
     @Override
-    protected void doFilterInternal(final @NotNull HttpServletRequest request, final @NotNull HttpServletResponse response, final @NotNull FilterChain chain)
+    protected void doFilterInternal(final @NotNull HttpServletRequest request,
+            final @NotNull HttpServletResponse response, final @NotNull FilterChain chain)
             throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
