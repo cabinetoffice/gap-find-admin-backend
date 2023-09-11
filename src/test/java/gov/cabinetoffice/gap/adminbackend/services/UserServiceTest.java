@@ -100,10 +100,8 @@ class UserServiceTest {
     public void testVerifyAdminRolesValid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
-        String url = "http://example.com/v2/validateAdminSession";
-        HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.add("emailAddress", emailAddress);
-        requestHeaders.add("roles", roles);
+        String url = "http://example.com/v2/validateAdminSession?emailAddress=" + emailAddress +
+                "&roles=" + roles;
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(true, HttpStatus.OK);
 
         when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
@@ -118,10 +116,9 @@ class UserServiceTest {
     public void testVerifyAdminRolesInvalid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
-        String url = "http://example.com/v2/validateAdminSession";
+        String url = "http://example.com/v2/validateAdminSession?emailAddress=" + emailAddress +
+ "&roles=" + roles;
         HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.add("emailAddress", emailAddress);
-        requestHeaders.add("roles", roles);
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(false, HttpStatus.OK);
 
         when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
