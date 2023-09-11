@@ -43,14 +43,11 @@ public class UserService {
     }
 
     public void verifyAdminRoles(final String emailAddress, final String roles) {
-        final String url = userServiceConfig.getDomain() + "/v2/validateAdminSession";
-        final HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.add("emailAddress", emailAddress);
-        requestHeaders.add("roles", roles);
-        final HttpEntity<String> requestEntity = new HttpEntity<>(null, requestHeaders);
+        final String url = userServiceConfig.getDomain() + "/v2/validateAdminSession?emailAddress=" + emailAddress + "&roles=" + roles;
+        final HttpEntity<String> requestEntity = new HttpEntity<>(null);
         final Boolean adminSessionIsValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)
                 .getBody();
-        if (!adminSessionIsValid) {
+        if (adminSessionIsValid.equals(Boolean.FALSE)) {
             throw new UnauthorizedException("Token is not valid");
         }
     }

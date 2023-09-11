@@ -7,6 +7,7 @@ import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,20 +39,16 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtTokenFilterConfig jwtTokenFilterConfig;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(final @NotNull HttpServletRequest request, final @NotNull HttpServletResponse response, final @NotNull FilterChain chain)
             throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated() || !jwtTokenFilterConfig.oneLoginEnabled) {
             chain.doFilter(request, response);
             return;
         }
 
         AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
-        if (!jwtTokenFilterConfig.oneLoginEnabled) {
-            chain.doFilter(request, response);
-            return;
-        }
 
         String emailAddress = adminSession.getEmailAddress();
         String roles = adminSession.getRoles();
