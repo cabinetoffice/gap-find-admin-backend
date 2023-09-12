@@ -43,7 +43,7 @@ public class UserService {
     }
 
     public void verifyAdminRoles(final String emailAddress, final String roles) {
-        final String url = userServiceConfig.getDomain() + "/v2/validateAdminSession?emailAddress=" + emailAddress
+        final String url = userServiceConfig.getDomain() + "/v2/validateSessionsRoles?emailAddress=" + emailAddress
                 + "&roles=" + roles;
         final HttpEntity<String> requestEntity = new HttpEntity<>(null);
         final Boolean adminSessionIsValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)

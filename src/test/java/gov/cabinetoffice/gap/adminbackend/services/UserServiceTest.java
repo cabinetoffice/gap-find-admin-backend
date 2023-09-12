@@ -100,7 +100,7 @@ class UserServiceTest {
     public void testVerifyAdminRolesValid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
-        String url = "http://example.com/v2/validateAdminSession?emailAddress=" + emailAddress + "&roles=" + roles;
+        String url = "http://example.com/v2/validateSessionsRoles?emailAddress=" + emailAddress + "&roles=" + roles;
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(true, HttpStatus.OK);
 
         when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
@@ -115,7 +115,7 @@ class UserServiceTest {
     public void testVerifyAdminRolesInvalid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
-        String url = "http://example.com/v2/validateAdminSession?emailAddress=" + emailAddress + "&roles=" + roles;
+        String url = "http://example.com/v2/validateSessionsRoles?emailAddress=" + emailAddress + "&roles=" + roles;
         HttpHeaders requestHeaders = new HttpHeaders();
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(false, HttpStatus.OK);
 
