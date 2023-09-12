@@ -11,7 +11,6 @@ public interface SubmissionMapper {
     @Mapping(source = "definition.sections", target = "sections")
     @Mapping(source = "scheme.id", target = "schemeId")
     @Mapping(source = "scheme.name", target = "schemeName")
-    @Mapping(source = "createdBy.userId", target = "userId")
     LambdaSubmissionDefinition submissionToLambdaSubmissionDefinition(Submission submission);
 
 }

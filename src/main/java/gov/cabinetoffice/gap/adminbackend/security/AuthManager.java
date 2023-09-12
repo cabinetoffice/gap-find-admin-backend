@@ -4,7 +4,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
@@ -57,13 +56,12 @@ public class AuthManager implements AuthenticationManager {
         JwtPayload JWTPayload;
         if (oneLoginEnabled) {
             JWTPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+            if (!JWTPayload.getRoles().contains("ADMIN")) {
+                throw new AccessDeniedException("User is not an admin");
+            }
         }
         else {
             JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
-        }
-
-        if (!JWTPayload.getRoles().contains("ADMIN")) {
-            throw new AccessDeniedException("User is not an admin");
         }
 
         Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(JWTPayload.getSub());

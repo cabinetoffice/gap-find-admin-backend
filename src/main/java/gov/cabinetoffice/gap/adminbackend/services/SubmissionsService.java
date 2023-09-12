@@ -1,24 +1,12 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import java.io.ByteArrayOutputStream;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.google.common.collect.Lists;
 import gov.cabinetoffice.gap.adminbackend.constants.AWSConstants;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
@@ -39,11 +27,23 @@ import gov.cabinetoffice.gap.adminbackend.utils.XlsxGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.ByteArrayOutputStream;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -69,8 +69,13 @@ public class SubmissionsService {
 
     private final SubmissionMapper submissionMapper;
 
+    private final RestTemplate restTemplate;
+
     @Value("${cloud.aws.sqs.submissions-export-queue}")
     private String submissionsExportQueue;
+
+    @Value("${user-service.domain}")
+    private String userServiceUrl;
 
     public ByteArrayOutputStream exportSpotlightChecks(Integer applicationId) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -305,16 +310,32 @@ public class SubmissionsService {
 
     }
 
-    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId) {
+    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId,
+            final String authHeader) {
 
         if (!grantExportRepository
                 .existsById(GrantExportId.builder().exportBatchId(exportBatchId).submissionId(submissionId).build())) {
             throw new NotFoundException();
         }
 
-        final Submission submission = submissionRepository.findById(submissionId).orElseThrow(NotFoundException::new);
+        final Submission submission = submissionRepository.findByIdWithApplicant(submissionId)
+                .orElseThrow(NotFoundException::new);
+        final String userId = submission.getApplicant().getUserId();
+        final String email = getEmailFromUserId(userId, authHeader);
 
-        return submissionMapper.submissionToLambdaSubmissionDefinition(submission);
+        final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper
+                .submissionToLambdaSubmissionDefinition(submission);
+        lambdaSubmissionDefinition.setEmail(email);
+        return lambdaSubmissionDefinition;
+    }
+
+    private String getEmailFromUserId(final String userId, final String authHeader) {
+        final String url = userServiceUrl + "/user?userSub=" + userId;
+        final HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add("Authorization", authHeader);
+        HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
+        final ResponseEntity<UserV2DTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserV2DTO.class);
+        return user.getBody().emailAddress();
     }
 
     public void updateExportStatus(String submissionId, String batchExportId, GrantExportStatus status) {
