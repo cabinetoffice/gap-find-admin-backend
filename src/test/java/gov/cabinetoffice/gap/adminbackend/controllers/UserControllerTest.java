@@ -127,7 +127,7 @@ class UserControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(adminSession);
 
-        doNothing().when(userService).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
+        when(userService.verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]")).thenReturn(Boolean.TRUE);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
                 .andExpect(content().string("true"));
@@ -165,8 +165,6 @@ class UserControllerTest {
         doThrow(new UnauthorizedException("Roles do not match")).when(userService).verifyAdminRoles("admin@example.com",
                 "[FIND, APPLY, ADMIN]");
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
-                .andExpect(content().string("false"));
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isUnauthorized());
     }
-
 }

@@ -9,7 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.mockito.Spy;
 import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -117,15 +117,16 @@ class UserServiceTest {
         String roles = "[FIND, APPLY, ADMIN]";
         String url = "http://example.com/v2/validateSessionsRoles?emailAddress=" + emailAddress + "&roles=" + roles;
         HttpHeaders requestHeaders = new HttpHeaders();
-        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(false, HttpStatus.OK);
+        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
 
         when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
                 .thenReturn(responseEntity);
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 
-        assertThrows(UnauthorizedException.class, () -> {
-            userService.verifyAdminRoles(emailAddress, roles);
-        });
+
+        Boolean response = userService.verifyAdminRoles(emailAddress, roles);
+        assertEquals(response, false);
+
     }
 
 }
