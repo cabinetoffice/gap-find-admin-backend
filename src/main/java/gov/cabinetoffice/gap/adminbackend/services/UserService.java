@@ -48,7 +48,7 @@ public class UserService {
         final HttpEntity<String> requestEntity = new HttpEntity<>(null);
         Boolean isAdminSessionValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)
                 .getBody();
-        if(isAdminSessionValid == null) {
+        if (isAdminSessionValid == null) {
             return Boolean.FALSE;
         }
         return isAdminSessionValid;
