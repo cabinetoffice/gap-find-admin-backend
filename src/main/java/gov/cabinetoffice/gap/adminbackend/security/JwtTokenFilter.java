@@ -32,8 +32,6 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
-
     private final UserService userService;
 
     private final JwtTokenFilterConfig jwtTokenFilterConfig;

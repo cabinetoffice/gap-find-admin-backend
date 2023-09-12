@@ -48,7 +48,7 @@ class JwtTokenFilterTest {
     @BeforeEach
     void setup() {
         jwtTokenFilterConfig.oneLoginEnabled = true;
-        jwtTokenFilter = new JwtTokenFilter(jwtService, userService, jwtTokenFilterConfig);
+        jwtTokenFilter = new JwtTokenFilter(userService, jwtTokenFilterConfig);
     }
 
     @Test
@@ -68,7 +68,7 @@ class JwtTokenFilterTest {
 
         AdminSession adminSession = new AdminSession(1, 1, payload);
         when(authentication.getPrincipal()).thenReturn(adminSession);
-        doNothing().when(userService).verifyAdminRoles(eq("test@example.com"), eq("ADMIN"));
+        when(userService.verifyAdminRoles(eq("test@example.com"), eq("ADMIN"))).thenReturn(Boolean.TRUE);
 
         jwtTokenFilter.doFilterInternal(request, response, chain);
         verify(chain, times(1)).doFilter(request, response);

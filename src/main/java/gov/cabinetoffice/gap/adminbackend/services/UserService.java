@@ -42,15 +42,16 @@ public class UserService {
         });
     }
 
-    public void verifyAdminRoles(final String emailAddress, final String roles) {
+    public Boolean verifyAdminRoles(final String emailAddress, final String roles) {
         final String url = userServiceConfig.getDomain() + "/v2/validateSessionsRoles?emailAddress=" + emailAddress
                 + "&roles=" + roles;
         final HttpEntity<String> requestEntity = new HttpEntity<>(null);
-        final Boolean adminSessionIsValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)
+        Boolean isAdminSessionValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)
                 .getBody();
-        if (adminSessionIsValid.equals(Boolean.FALSE)) {
-            throw new UnauthorizedException("Token is not valid");
+        if(isAdminSessionValid == null) {
+            return Boolean.FALSE;
         }
+        return isAdminSessionValid;
     }
 
 }
