@@ -167,4 +167,5 @@ class UserControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isUnauthorized());
     }
+
 }

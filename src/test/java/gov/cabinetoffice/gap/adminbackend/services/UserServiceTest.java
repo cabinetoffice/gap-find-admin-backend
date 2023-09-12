@@ -123,7 +123,6 @@ class UserServiceTest {
                 .thenReturn(responseEntity);
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 
-
         Boolean response = userService.verifyAdminRoles(emailAddress, roles);
         assertEquals(response, false);
 
