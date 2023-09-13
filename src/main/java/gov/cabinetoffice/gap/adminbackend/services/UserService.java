@@ -49,8 +49,9 @@ public class UserService {
         Boolean isAdminSessionValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)
                 .getBody();
         if (isAdminSessionValid == null) {
-            return Boolean.FALSE;
+            throw new UnauthorizedException("Invalid roles");
         }
+        //what is this when the roles  are invalid?
         return isAdminSessionValid;
     }
 
