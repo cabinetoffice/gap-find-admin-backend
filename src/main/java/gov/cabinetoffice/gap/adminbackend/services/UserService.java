@@ -51,7 +51,6 @@ public class UserService {
         if (isAdminSessionValid == null) {
             throw new UnauthorizedException("Invalid roles");
         }
-        //what is this when the roles  are invalid?
         return isAdminSessionValid;
     }
 
