@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -112,7 +113,7 @@ class UserServiceTest {
     }
 
     @Test
-    public void testVerifyAdminRolesInvalid() {
+    public void testVerifyAdminRolesWhenUnauthorizedResponse() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
         String url = "http://example.com/v2/validateSessionsRoles?emailAddress=" + emailAddress + "&roles=" + roles;
@@ -123,9 +124,7 @@ class UserServiceTest {
                 .thenReturn(responseEntity);
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 
-        Boolean response = userService.verifyAdminRoles(emailAddress, roles);
-        assertEquals(response, false);
-
+        assertThrows(UnauthorizedException.class, () -> userService.verifyAdminRoles(emailAddress, roles));
     }
 
 }
