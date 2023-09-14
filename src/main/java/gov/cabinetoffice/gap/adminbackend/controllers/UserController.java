@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
@@ -10,7 +11,11 @@ import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
@@ -29,10 +34,31 @@ public class UserController {
 
     private final UserService userService;
 
+    @Value("${feature.onelogin.enabled}")
+    private boolean oneLoginEnabled;
+
     @GetMapping("/loggedInUser")
     public ResponseEntity<UserDTO> getLoggedInUserDetails() {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         return ResponseEntity.ok(userMapper.adminSessionToUserDTO(session));
+    }
+
+    @GetMapping("/validateAdminSession")
+    public ResponseEntity<Boolean> validateAdminSession() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
+
+        AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
+        if (!oneLoginEnabled) {
+            return ResponseEntity.ok(Boolean.TRUE);
+        }
+        String emailAddress = adminSession.getEmailAddress();
+        String roles = adminSession.getRoles();
+
+        return ResponseEntity.ok(userService.verifyAdminRoles(emailAddress, roles));
     }
 
     @PatchMapping("/migrate")
