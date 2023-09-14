@@ -9,4 +9,7 @@ public class JwtTokenFilterConfig {
     @Value("${feature.onelogin.enabled}")
     public boolean oneLoginEnabled;
 
+    @Value("${feature.validate-user-roles-in-middleware}")
+    public boolean validateUserRolesInMiddleware;
+
 }

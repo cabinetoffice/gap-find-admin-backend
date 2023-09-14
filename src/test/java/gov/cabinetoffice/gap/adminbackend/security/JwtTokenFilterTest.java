@@ -4,19 +4,13 @@ import gov.cabinetoffice.gap.adminbackend.config.JwtTokenFilterConfig;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
-import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -26,9 +20,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collections;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -37,17 +29,14 @@ class JwtTokenFilterTest {
 
     private JwtTokenFilter jwtTokenFilter;
 
-    private @Mock JwtService jwtService;
-
     private @Mock UserService userService;
 
     private @Mock JwtTokenFilterConfig jwtTokenFilterConfig;
 
-    private @Mock SecurityContextLogoutHandler securityContextLogoutHandler;
-
     @BeforeEach
     void setup() {
         jwtTokenFilterConfig.oneLoginEnabled = true;
+        jwtTokenFilterConfig.validateUserRolesInMiddleware = true;
         jwtTokenFilter = new JwtTokenFilter(userService, jwtTokenFilterConfig);
     }
 

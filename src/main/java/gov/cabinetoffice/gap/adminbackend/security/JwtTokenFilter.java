@@ -44,7 +44,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated() || !jwtTokenFilterConfig.oneLoginEnabled) {
+        boolean skipSessionValidation = authentication == null || !authentication.isAuthenticated()
+                || !jwtTokenFilterConfig.oneLoginEnabled || !jwtTokenFilterConfig.validateUserRolesInMiddleware;
+
+        if (skipSessionValidation) {
             chain.doFilter(request, response);
             return;
         }
