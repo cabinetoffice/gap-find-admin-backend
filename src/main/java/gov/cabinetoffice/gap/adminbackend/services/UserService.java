@@ -43,7 +43,8 @@ public class UserService {
     }
 
     public Boolean verifyAdminRoles(final String emailAddress, final String roles) {
-        // TODO: after admin-session token handling is aligned with applicant we should use '/is-user-logged-in'
+        // TODO: after admin-session token handling is aligned with applicant we should
+        // use '/is-user-logged-in'
         final String url = userServiceConfig.getDomain() + "/v2/validateSessionsRoles?emailAddress=" + emailAddress
                 + "&roles=" + roles;
         final HttpEntity<String> requestEntity = new HttpEntity<>(null);
