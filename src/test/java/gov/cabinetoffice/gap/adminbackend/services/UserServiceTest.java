@@ -107,17 +107,34 @@ class UserServiceTest {
 
         @Test
         void deleteUserNoColaSub() {
-            userService.deleteUser(oneLoginSub, Optional.empty());
+            userService.deleteUser(Optional.of(oneLoginSub), Optional.empty());
 
             verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(0)).deleteByUserId(colaSub.toString());
         }
 
         @Test
-        void deleteUserColaSub() {
-            userService.deleteUser(oneLoginSub, Optional.of(colaSub));
+        void deleteUserColaSubAndOLSub() {
+            userService.deleteUser(Optional.of(oneLoginSub), Optional.of(colaSub));
 
             verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
             verify(grantApplicantRepository, times(1)).deleteByUserId(colaSub.toString());
+        }
+
+        @Test
+        void deleteUserNoOLSub() {
+            userService.deleteUser(Optional.empty(), Optional.of(colaSub));
+
+            verify(grantApplicantRepository, times(0)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(1)).deleteByUserId(colaSub.toString());
+        }
+
+        @Test
+        void deleteUserNoColaSubOrOLSub() {
+            userService.deleteUser(Optional.empty(), Optional.empty());
+
+            verify(grantApplicantRepository, times(0)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(0)).deleteByUserId(colaSub.toString());
         }
 
     }

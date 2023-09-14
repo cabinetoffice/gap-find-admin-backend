@@ -1,16 +1,12 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -44,10 +40,10 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(final String oneLoginSub, final Optional<UUID> colaSubOptional) {
+    public void deleteUser(final Optional<String> oneLoginSubOptional, final Optional<UUID> colaSubOptional) {
         // Deleting COLA and OneLogin subs as either could be stored against the user
-        grantApplicantRepository.deleteByUserId(oneLoginSub);
-        colaSubOptional.ifPresent(uuid -> grantApplicantRepository.deleteByUserId(uuid.toString()));
+        oneLoginSubOptional.ifPresent(grantApplicantRepository::deleteByUserId);
+        colaSubOptional.ifPresent(sub -> grantApplicantRepository.deleteByUserId(sub.toString()));
     }
 
     public Boolean verifyAdminRoles(final String emailAddress, final String roles) {

@@ -3,7 +3,6 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
@@ -14,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -81,7 +79,7 @@ public class UserController {
     }
 
     @DeleteMapping("/delete/{oneLoginSub}")
-    public ResponseEntity<String> deleteUser(@PathVariable String oneLoginSub,
+    public ResponseEntity<String> deleteUser(@PathVariable Optional<String> oneLoginSub,
             @RequestParam(required = false) Optional<UUID> colaSub, @RequestHeader("Authorization") String token) {
         // Called from our user service only. Does not have an admin session so authing
         // via the jwt

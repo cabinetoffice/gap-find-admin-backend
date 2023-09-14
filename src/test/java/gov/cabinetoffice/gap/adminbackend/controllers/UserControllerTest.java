@@ -5,8 +5,8 @@ import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
-import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -14,9 +14,6 @@ import gov.cabinetoffice.gap.adminbackend.utils.TestDecodedJwt;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -37,6 +34,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
@@ -133,7 +131,7 @@ class UserControllerTest {
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isOk()).andReturn();
 
-            verify(userService, times(1)).deleteUser("oneLoginSub", Optional.empty());
+            verify(userService, times(1)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());
         }
 
         @Test
@@ -147,7 +145,7 @@ class UserControllerTest {
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isOk()).andReturn();
 
-            verify(userService, times(1)).deleteUser("oneLoginSub", Optional.empty());
+            verify(userService, times(1)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());
         }
 
         @Test
@@ -162,7 +160,7 @@ class UserControllerTest {
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isOk()).andReturn();
 
-            verify(userService, times(1)).deleteUser("oneLoginSub", Optional.of(colaSub));
+            verify(userService, times(1)).deleteUser(Optional.of("oneLoginSub"), Optional.of(colaSub));
         }
 
         @Test
@@ -177,7 +175,7 @@ class UserControllerTest {
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isBadRequest()).andReturn();
 
-            verify(userService, times(0)).deleteUser(anyString(), any());
+            verify(userService, times(0)).deleteUser(any(), any());
         }
 
         @Test
@@ -188,7 +186,7 @@ class UserControllerTest {
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, ""))
                     .andExpect(status().isUnauthorized()).andReturn();
-            verify(userService, times(0)).deleteUser("oneLoginSub", Optional.empty());
+            verify(userService, times(0)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());
         }
 
         @Test
@@ -198,7 +196,7 @@ class UserControllerTest {
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isUnauthorized()).andReturn();
-            verify(userService, times(0)).deleteUser("oneLoginSub", Optional.empty());
+            verify(userService, times(0)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());
         }
 
         @Test
@@ -211,7 +209,7 @@ class UserControllerTest {
             mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isForbidden()).andReturn();
-            verify(userService, times(0)).deleteUser("oneLoginSub", Optional.empty());
+            verify(userService, times(0)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());
         }
 
     }
