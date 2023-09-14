@@ -42,7 +42,6 @@ public class AuthManager implements AuthenticationManager {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-
         String authHeader = authentication.getCredentials().toString();
         if (isEmpty(authHeader) || !authHeader.startsWith("Bearer ")) {
             throw new UnauthorizedException("Expected Authorization header not provided");
@@ -56,6 +55,7 @@ public class AuthManager implements AuthenticationManager {
         JwtPayload JWTPayload;
         if (oneLoginEnabled) {
             JWTPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+
             if (!JWTPayload.getRoles().contains("ADMIN")) {
                 throw new AccessDeniedException("User is not an admin");
             }

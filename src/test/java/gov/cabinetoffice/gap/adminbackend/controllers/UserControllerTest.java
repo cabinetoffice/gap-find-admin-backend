@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -13,13 +14,20 @@ import gov.cabinetoffice.gap.adminbackend.utils.TestDecodedJwt;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -34,6 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(classes = { UserController.class, ControllerExceptionHandler.class })
+@TestPropertySource(properties = { "feature.onelogin.enabled=true" })
 class UserControllerTest {
 
     @Resource
@@ -108,7 +117,7 @@ class UserControllerTest {
             verify(userService, times(0)).migrateUser("oneLoginSub", migrateUserDto.getColaSub());
         }
 
-    }
+}
 
     @Nested
     class DeleteUser {
@@ -205,6 +214,61 @@ class UserControllerTest {
             verify(userService, times(0)).deleteUser("oneLoginSub", Optional.empty());
         }
 
+    }
+
+    @Test
+    public void testValidateAdminSession() throws Exception {
+        AdminSession adminSession = new AdminSession();
+        adminSession.setEmailAddress("admin@example.com");
+        adminSession.setRoles("[FIND, APPLY, ADMIN]");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
+
+        Authentication authentication = mock(Authentication.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(adminSession);
+
+        when(userService.verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]")).thenReturn(Boolean.TRUE);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
+                .andExpect(content().string("true"));
+
+        verify(userService, times(1)).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
+    }
+
+    @Test
+    public void testValidateAdminSessionAuthenticationNotAuthenticated() throws Exception {
+        SecurityContext securityContext = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
+
+        Authentication authentication = mock(Authentication.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(false);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
+                .andExpect(content().string("false"));
+    }
+
+    @Test
+    public void testValidateAdminSessionRolesDoNotMatch() throws Exception {
+        AdminSession adminSession = new AdminSession();
+        adminSession.setEmailAddress("admin@example.com");
+        adminSession.setRoles("[FIND, APPLY, ADMIN]");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
+
+        Authentication authentication = mock(Authentication.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(adminSession);
+
+        doThrow(new UnauthorizedException("Roles do not match")).when(userService).verifyAdminRoles("admin@example.com",
+                "[FIND, APPLY, ADMIN]");
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isUnauthorized());
     }
 
 }
