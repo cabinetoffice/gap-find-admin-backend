@@ -117,7 +117,7 @@ class UserControllerTest {
             verify(userService, times(0)).migrateUser("oneLoginSub", migrateUserDto.getColaSub());
         }
 
-}
+    }
 
     @Nested
     class DeleteUser {
