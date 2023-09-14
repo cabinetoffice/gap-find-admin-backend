@@ -1,0 +1,3 @@
+CREATE UNIQUE INDEX grant_applicant_organisation_profile_applicant_id_idx ON grant_applicant_organisation_profile (id,applicant_id);
+CREATE UNIQUE INDEX grant_submission_applicant_id_idx ON grant_submission (id,applicant_id);
+CREATE UNIQUE INDEX grant_submission_application_id_idx ON grant_submission (id,application_id);
