@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.mockito.Spy;
 import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
