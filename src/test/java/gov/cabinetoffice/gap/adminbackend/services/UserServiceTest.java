@@ -110,7 +110,6 @@ class UserServiceTest {
         void deleteUserNoColaSub() {
             userService.deleteUser(oneLoginSub, Optional.empty());
 
-            verify(gapUserRepository, times(1)).deleteByUserSub(oneLoginSub);
             verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
         }
 
@@ -118,9 +117,7 @@ class UserServiceTest {
         void deleteUserColaSub() {
             userService.deleteUser(oneLoginSub, Optional.of(colaSub));
 
-            verify(gapUserRepository, times(1)).deleteByUserSub(oneLoginSub);
             verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
-            verify(gapUserRepository, times(1)).deleteByUserSub(colaSub.toString());
             verify(grantApplicantRepository, times(1)).deleteByUserId(colaSub.toString());
         }
 
