@@ -6,10 +6,10 @@ import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.mockito.Spy;
 import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -45,56 +45,98 @@ class UserServiceTest {
 
     private final UUID colaSub = UUID.randomUUID();
 
-    @Test
-    void migrateUserNoMatches() {
-        when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.empty());
-        when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.empty());
+    @Nested
+    class MigrateUser {
 
-        userService.migrateUser(oneLoginSub, colaSub);
+        @Test
+        void migrateUserNoMatches() {
+            when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.empty());
+            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.empty());
 
-        verify(gapUserRepository, times(0)).save(any());
-        verify(grantApplicantRepository, times(0)).save(any());
+            userService.migrateUser(oneLoginSub, colaSub);
+
+            verify(gapUserRepository, times(0)).save(any());
+            verify(grantApplicantRepository, times(0)).save(any());
+        }
+
+        @Test
+        void migrateUserMatchesGapUser() {
+            final GapUser gapUser = GapUser.builder().build();
+            when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.of(gapUser));
+            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.empty());
+
+            userService.migrateUser(oneLoginSub, colaSub);
+            gapUser.setUserSub(oneLoginSub);
+
+            verify(gapUserRepository, times(1)).save(gapUser);
+            verify(grantApplicantRepository, times(0)).save(any());
+        }
+
+        @Test
+        void migrateUserMatchesGrantApplicant() {
+            final GrantApplicant grantApplicant = GrantApplicant.builder().build();
+            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.of(grantApplicant));
+            when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.empty());
+
+            userService.migrateUser(oneLoginSub, colaSub);
+            grantApplicant.setUserId(oneLoginSub);
+
+            verify(gapUserRepository, times(0)).save(any());
+            verify(grantApplicantRepository, times(1)).save(grantApplicant);
+        }
+
+        @Test
+        void migrateUserMatchesGrantApplicantAndGapUser() {
+            final GrantApplicant grantApplicant = GrantApplicant.builder().build();
+            final GapUser gapUser = GapUser.builder().build();
+            when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.of(grantApplicant));
+            when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.of(gapUser));
+
+            userService.migrateUser(oneLoginSub, colaSub);
+            grantApplicant.setUserId(oneLoginSub);
+            gapUser.setUserSub(oneLoginSub);
+
+            verify(gapUserRepository, times(1)).save(gapUser);
+            verify(grantApplicantRepository, times(1)).save(grantApplicant);
+        }
+
     }
 
-    @Test
-    void migrateUserMatchesGapUser() {
-        final GapUser gapUser = GapUser.builder().build();
-        when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.of(gapUser));
-        when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.empty());
+    @Nested
+    class DeleteUser {
 
-        userService.migrateUser(oneLoginSub, colaSub);
-        gapUser.setUserSub(oneLoginSub);
+        @Test
+        void deleteUserNoColaSub() {
+            userService.deleteUser(Optional.of(oneLoginSub), Optional.empty());
 
-        verify(gapUserRepository, times(1)).save(gapUser);
-        verify(grantApplicantRepository, times(0)).save(any());
-    }
+            verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(0)).deleteByUserId(colaSub.toString());
+        }
 
-    @Test
-    void migrateUserMatchesGrantApplicant() {
-        final GrantApplicant grantApplicant = GrantApplicant.builder().build();
-        when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.of(grantApplicant));
-        when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.empty());
+        @Test
+        void deleteUserColaSubAndOLSub() {
+            userService.deleteUser(Optional.of(oneLoginSub), Optional.of(colaSub));
 
-        userService.migrateUser(oneLoginSub, colaSub);
-        grantApplicant.setUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(1)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(1)).deleteByUserId(colaSub.toString());
+        }
 
-        verify(gapUserRepository, times(0)).save(any());
-        verify(grantApplicantRepository, times(1)).save(grantApplicant);
-    }
+        @Test
+        void deleteUserNoOLSub() {
+            userService.deleteUser(Optional.empty(), Optional.of(colaSub));
 
-    @Test
-    void migrateUserMatchesGrantApplicantAndGapUser() {
-        final GrantApplicant grantApplicant = GrantApplicant.builder().build();
-        final GapUser gapUser = GapUser.builder().build();
-        when(grantApplicantRepository.findByUserId(any())).thenReturn(Optional.of(grantApplicant));
-        when(gapUserRepository.findByUserSub(any())).thenReturn(Optional.of(gapUser));
+            verify(grantApplicantRepository, times(0)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(1)).deleteByUserId(colaSub.toString());
+        }
 
-        userService.migrateUser(oneLoginSub, colaSub);
-        grantApplicant.setUserId(oneLoginSub);
-        gapUser.setUserSub(oneLoginSub);
+        @Test
+        void deleteUserNoColaSubOrOLSub() {
+            userService.deleteUser(Optional.empty(), Optional.empty());
 
-        verify(gapUserRepository, times(1)).save(gapUser);
-        verify(grantApplicantRepository, times(1)).save(grantApplicant);
+            verify(grantApplicantRepository, times(0)).deleteByUserId(oneLoginSub);
+            verify(grantApplicantRepository, times(0)).deleteByUserId(colaSub.toString());
+        }
+
     }
 
     @Test
