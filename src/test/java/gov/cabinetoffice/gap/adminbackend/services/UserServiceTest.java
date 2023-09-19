@@ -101,26 +101,26 @@ class UserServiceTest {
     public void testVerifyAdminRolesValid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
-        String url = "http://example.com/v2/validateSessionsRoles?emailAddress=" + emailAddress + "&roles=" + roles;
+        String url = "http://example.com/v2/validateSessionsRoles";
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(true, HttpStatus.OK);
 
-        when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
+        when(restTemplate.exchange(eq(url), eq(HttpMethod.POST), any(HttpEntity.class), eq(Boolean.class)))
                 .thenReturn(responseEntity);
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 
         userService.verifyAdminRoles(emailAddress, roles);
-        verify(restTemplate, times(1)).exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class));
+        verify(restTemplate, times(1)).exchange(eq(url), eq(HttpMethod.POST), any(HttpEntity.class), eq(Boolean.class));
     }
 
     @Test
     public void testVerifyAdminRolesWhenUnauthorizedResponse() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
-        String url = "http://example.com/v2/validateSessionsRoles?emailAddress=" + emailAddress + "&roles=" + roles;
+        String url = "http://example.com/v2/validateSessionsRoles";
         HttpHeaders requestHeaders = new HttpHeaders();
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
 
-        when(restTemplate.exchange(eq(url), eq(HttpMethod.GET), any(HttpEntity.class), eq(Boolean.class)))
+        when(restTemplate.exchange(eq(url), eq(HttpMethod.POST), any(HttpEntity.class), eq(Boolean.class)))
                 .thenReturn(responseEntity);
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 

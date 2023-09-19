@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
@@ -45,10 +46,15 @@ public class UserService {
     public Boolean verifyAdminRoles(final String emailAddress, final String roles) {
         // TODO: after admin-session token handling is aligned with applicant we should
         // use '/is-user-logged-in'
-        final String url = userServiceConfig.getDomain() + "/v2/validateSessionsRoles?emailAddress=" + emailAddress
-                + "&roles=" + roles;
-        final HttpEntity<String> requestEntity = new HttpEntity<>(null);
-        Boolean isAdminSessionValid = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class)
+        final String url = userServiceConfig.getDomain() + "/v2/validateSessionsRoles";
+        ValidateSessionsRolesRequestBodyDTO requestBody = new ValidateSessionsRolesRequestBodyDTO();
+        requestBody.setEmailAddress(emailAddress);
+        requestBody.setRoles(roles);
+
+        final HttpEntity<ValidateSessionsRolesRequestBodyDTO> requestEntity =
+                new HttpEntity<ValidateSessionsRolesRequestBodyDTO>(requestBody);
+
+        Boolean isAdminSessionValid = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Boolean.class)
                 .getBody();
         if (isAdminSessionValid == null) {
             throw new UnauthorizedException("Invalid roles");
