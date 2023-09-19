@@ -8,6 +8,9 @@ import lombok.Setter;
 @Setter
 @Data
 public class ValidateSessionsRolesRequestBodyDTO {
+
     private String emailAddress;
+
     private String roles;
+
 }

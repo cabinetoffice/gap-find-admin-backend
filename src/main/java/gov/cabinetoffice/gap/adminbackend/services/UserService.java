@@ -51,8 +51,8 @@ public class UserService {
         requestBody.setEmailAddress(emailAddress);
         requestBody.setRoles(roles);
 
-        final HttpEntity<ValidateSessionsRolesRequestBodyDTO> requestEntity =
-                new HttpEntity<ValidateSessionsRolesRequestBodyDTO>(requestBody);
+        final HttpEntity<ValidateSessionsRolesRequestBodyDTO> requestEntity = new HttpEntity<ValidateSessionsRolesRequestBodyDTO>(
+                requestBody);
 
         Boolean isAdminSessionValid = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Boolean.class)
                 .getBody();
