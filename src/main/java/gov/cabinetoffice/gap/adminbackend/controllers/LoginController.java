@@ -58,7 +58,7 @@ public class LoginController {
             SecurityContextHolder.getContext()
                     .setAuthentication(new UsernamePasswordAuthenticationToken(
                             new AdminSession(this.grantAdminId, this.funderId, "Test", "User", this.funderName,
-                                    emailAddress, null),
+                                    emailAddress),
                             null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))));
             return ResponseEntity.ok().build();
         }

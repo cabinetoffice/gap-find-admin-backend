@@ -47,16 +47,12 @@ public class UserService {
         colaSubOptional.ifPresent(sub -> grantApplicantRepository.deleteByUserId(sub.toString()));
     }
 
-    public Boolean verifyAdminRoles(final String emailAddress, final String roles) {
+    public Boolean verifyAdminRoles(final String emailAddress) {
         // TODO: after admin-session token handling is aligned with applicant we should
         // use '/is-user-logged-in'
         final String url = userServiceConfig.getDomain() + "/v2/validateSessionsRoles";
-        ValidateSessionsRolesRequestBodyDTO requestBody = new ValidateSessionsRolesRequestBodyDTO();
-        requestBody.setEmailAddress(emailAddress);
-        requestBody.setRoles(roles);
 
-        final HttpEntity<ValidateSessionsRolesRequestBodyDTO> requestEntity = new HttpEntity<ValidateSessionsRolesRequestBodyDTO>(
-                requestBody);
+        final HttpEntity<String> requestEntity = new HttpEntity<>(emailAddress);
 
         Boolean isAdminSessionValid = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Boolean.class)
                 .getBody();

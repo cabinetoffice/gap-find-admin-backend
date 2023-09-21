@@ -18,7 +18,7 @@ public class WithAdminSessionSecurityContextFactory implements WithSecurityConte
         SecurityContext context = SecurityContextHolder.createEmptyContext();
 
         AdminSession principal = new AdminSession(adminSession.grantAdminId(), adminSession.funderId(), "Test", "User",
-                "AND Digital", "test@domain.com", null);
+                "AND Digital", "test@domain.com");
 
         Authentication auth = new UsernamePasswordAuthenticationToken(principal, null,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));

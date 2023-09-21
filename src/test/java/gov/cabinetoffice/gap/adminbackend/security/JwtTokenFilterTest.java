@@ -57,11 +57,11 @@ class JwtTokenFilterTest {
 
         AdminSession adminSession = new AdminSession(1, 1, payload);
         when(authentication.getPrincipal()).thenReturn(adminSession);
-        when(userService.verifyAdminRoles(eq("test@example.com"), eq("ADMIN"))).thenReturn(Boolean.TRUE);
+        when(userService.verifyAdminRoles(eq("test@example.com"))).thenReturn(Boolean.TRUE);
 
         jwtTokenFilter.doFilterInternal(request, response, chain);
         verify(chain, times(1)).doFilter(request, response);
-        verify(userService, times(1)).verifyAdminRoles("test@example.com", "ADMIN");
+        verify(userService, times(1)).verifyAdminRoles("test@example.com");
     }
 
     @Test
@@ -83,7 +83,7 @@ class JwtTokenFilterTest {
 
         AdminSession adminSession = new AdminSession(1, 1, payload);
         when(authentication.getPrincipal()).thenReturn(adminSession);
-        doThrow(UnauthorizedException.class).when(userService).verifyAdminRoles(eq("test@example.com"), eq("ADMIN"));
+        doThrow(UnauthorizedException.class).when(userService).verifyAdminRoles(eq("test@example.com"));
 
         verify(chain, times(0)).doFilter(request, response);
         assertThrows(UnauthorizedException.class, () -> jwtTokenFilter.doFilterInternal(request, response, chain));
