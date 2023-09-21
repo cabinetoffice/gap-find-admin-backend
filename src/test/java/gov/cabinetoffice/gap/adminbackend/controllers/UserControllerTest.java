@@ -218,7 +218,6 @@ class UserControllerTest {
     public void testValidateAdminSession() throws Exception {
         AdminSession adminSession = new AdminSession();
         adminSession.setEmailAddress("admin@example.com");
-        adminSession.setRoles("[FIND, APPLY, ADMIN]");
 
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
@@ -228,12 +227,12 @@ class UserControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(adminSession);
 
-        when(userService.verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]")).thenReturn(Boolean.TRUE);
+        when(userService.verifyAdminRoles("admin@example.com")).thenReturn(Boolean.TRUE);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(userService, times(1)).verifyAdminRoles("admin@example.com", "[FIND, APPLY, ADMIN]");
+        verify(userService, times(1)).verifyAdminRoles("admin@example.com");
     }
 
     @Test
@@ -253,7 +252,6 @@ class UserControllerTest {
     public void testValidateAdminSessionRolesDoNotMatch() throws Exception {
         AdminSession adminSession = new AdminSession();
         adminSession.setEmailAddress("admin@example.com");
-        adminSession.setRoles("[FIND, APPLY, ADMIN]");
 
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
@@ -263,8 +261,8 @@ class UserControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(adminSession);
 
-        doThrow(new UnauthorizedException("Roles do not match")).when(userService).verifyAdminRoles("admin@example.com",
-                "[FIND, APPLY, ADMIN]");
+        doThrow(new UnauthorizedException("Roles do not match")).when(userService)
+                .verifyAdminRoles("admin@example.com");
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isUnauthorized());
     }

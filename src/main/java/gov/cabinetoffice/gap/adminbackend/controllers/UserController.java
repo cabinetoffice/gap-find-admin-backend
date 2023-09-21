@@ -57,9 +57,8 @@ public class UserController {
             return ResponseEntity.ok(Boolean.TRUE);
         }
         String emailAddress = adminSession.getEmailAddress();
-        String roles = adminSession.getRoles();
 
-        return ResponseEntity.ok(userService.verifyAdminRoles(emailAddress, roles));
+        return ResponseEntity.ok(userService.verifyAdminRoles(emailAddress));
     }
 
     @PatchMapping("/migrate")

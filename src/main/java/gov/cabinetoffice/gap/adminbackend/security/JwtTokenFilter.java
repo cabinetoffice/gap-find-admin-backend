@@ -55,9 +55,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
 
         String emailAddress = adminSession.getEmailAddress();
-        String roles = adminSession.getRoles();
         try {
-            userService.verifyAdminRoles(emailAddress, roles);
+            userService.verifyAdminRoles(emailAddress);
             chain.doFilter(request, response);
         }
         catch (RestClientException | UnauthorizedException error) {
