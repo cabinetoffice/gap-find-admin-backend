@@ -142,6 +142,7 @@ class UserServiceTest {
     @Test
     public void testVerifyAdminRolesValid() {
         String emailAddress = "admin@example.com";
+        String roles = "[FIND, APPLY, ADMIN]";
         String url = "http://example.com/v2/validateSessionsRoles";
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(true, HttpStatus.OK);
 
@@ -149,13 +150,14 @@ class UserServiceTest {
                 .thenReturn(responseEntity);
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 
-        userService.verifyAdminRoles(emailAddress);
+        userService.verifyAdminRoles(emailAddress, roles);
         verify(restTemplate, times(1)).exchange(eq(url), eq(HttpMethod.POST), any(HttpEntity.class), eq(Boolean.class));
     }
 
     @Test
     public void testVerifyAdminRolesWhenUnauthorizedResponse() {
         String emailAddress = "admin@example.com";
+        String roles = "[FIND, APPLY, ADMIN]";
         String url = "http://example.com/v2/validateSessionsRoles";
         HttpHeaders requestHeaders = new HttpHeaders();
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
@@ -164,7 +166,7 @@ class UserServiceTest {
                 .thenReturn(responseEntity);
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 
-        assertThrows(UnauthorizedException.class, () -> userService.verifyAdminRoles(emailAddress));
+        assertThrows(UnauthorizedException.class, () -> userService.verifyAdminRoles(emailAddress, roles));
     }
 
 }
