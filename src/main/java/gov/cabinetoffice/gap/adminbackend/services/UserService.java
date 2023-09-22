@@ -51,9 +51,7 @@ public class UserService {
         // TODO: after admin-session token handling is aligned with applicant we should
         // use '/is-user-logged-in'
         final String url = userServiceConfig.getDomain() + "/v2/validateSessionsRoles";
-        ValidateSessionsRolesRequestBodyDTO requestBody = new ValidateSessionsRolesRequestBodyDTO();
-        requestBody.setEmailAddress(emailAddress);
-        requestBody.setRoles(roles);
+        ValidateSessionsRolesRequestBodyDTO requestBody = new ValidateSessionsRolesRequestBodyDTO(emailAddress, roles);
 
         final HttpEntity<ValidateSessionsRolesRequestBodyDTO> requestEntity = new HttpEntity<ValidateSessionsRolesRequestBodyDTO>(
                 requestBody);
