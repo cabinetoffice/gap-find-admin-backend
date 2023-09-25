@@ -50,19 +50,6 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(HttpServletRequest httpRequest) {
-        // so local dev work won't be quite as miserable
-        if (Objects.equals(this.profile, "LOCAL") && this.ignoreJwt) {
-            if (this.grantAdminId == null || this.funderId == null) {
-                return ResponseEntity.internalServerError().build();
-            }
-            SecurityContextHolder.getContext()
-                    .setAuthentication(new UsernamePasswordAuthenticationToken(
-                            new AdminSession(this.grantAdminId, this.funderId, "Test", "User", this.funderName,
-                                    emailAddress, null),
-                            null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))));
-            return ResponseEntity.ok().build();
-        }
-
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken("",
                 httpRequest.getHeader(HttpHeaders.AUTHORIZATION));
         Authentication authenticate = this.authManager.authenticate(authenticationToken);
