@@ -2,6 +2,9 @@
 
 DROP VIEW IF EXISTS ADVERT_SCHEDULER_VIEW;
 
+ALTER TABLE grant_advert ALTER COLUMN opening_date TYPE timestamp with time zone;
+ALTER TABLE grant_advert ALTER COLUMN closing_date TYPE timestamp with time zone;
+
 CREATE VIEW ADVERT_SCHEDULER_VIEW AS
 SELECT GRANT_ADVERT_ID AS ID,
     CASE
