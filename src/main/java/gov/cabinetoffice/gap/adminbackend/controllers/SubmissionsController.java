@@ -143,8 +143,9 @@ public class SubmissionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "500", description = "Something went wrong while updating signed url",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<?> updateExportRecordLocation(@PathVariable UUID batchExportId, @PathVariable UUID submissionId,
-            @RequestBody AddingSignedUrlDTO signedUrlDTO, @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+    public ResponseEntity<?> updateExportRecordLocation(@PathVariable UUID batchExportId,
+            @PathVariable UUID submissionId, @RequestBody AddingSignedUrlDTO signedUrlDTO,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         submissionsService.addSignedUrlToSubmissionExport(submissionId, batchExportId, signedUrlDTO.getSignedUrl());
         return ResponseEntity.noContent().build();

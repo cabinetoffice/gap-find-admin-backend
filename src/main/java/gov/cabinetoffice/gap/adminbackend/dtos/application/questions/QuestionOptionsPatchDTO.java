@@ -15,7 +15,7 @@ import java.util.Map;
  * questions.
  */
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NotAllNull(
         fields = { "profileField", "fieldTitle", "hintText", "options", "displayText", "questionSuffix", "validation" })

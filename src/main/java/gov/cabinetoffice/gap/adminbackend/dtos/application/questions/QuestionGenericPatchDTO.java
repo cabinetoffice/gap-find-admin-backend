@@ -15,7 +15,7 @@ import java.util.Map;
  * question types except MultiSelect and Dropdown.
  */
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NotAllNull(fields = { "profileField", "fieldTitle", "hintText", "displayText", "questionSuffix", "validation" })

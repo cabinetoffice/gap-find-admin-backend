@@ -123,9 +123,7 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
     @NotNull
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(@NotNull MethodArgumentNotValidException ex,
-                                                                  @NotNull HttpHeaders headers,
-                                                                  @NotNull HttpStatus status,
-                                                                  @NotNull WebRequest request) {
+            @NotNull HttpHeaders headers, @NotNull HttpStatus status, @NotNull WebRequest request) {
         log.error(ex.getMessage(), ex);
         BindingResult bindResults = ex.getBindingResult();
 
@@ -138,10 +136,8 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @NotNull
     @Override
-    protected ResponseEntity<Object> handleBindException(@NotNull BindException ex,
-                                                         @NotNull HttpHeaders headers,
-                                                         @NotNull HttpStatus status,
-                                                         @NotNull WebRequest request) {
+    protected ResponseEntity<Object> handleBindException(@NotNull BindException ex, @NotNull HttpHeaders headers,
+            @NotNull HttpStatus status, @NotNull WebRequest request) {
         log.error(ex.getMessage(), ex);
         BindingResult bindResults = ex.getBindingResult();
 

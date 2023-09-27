@@ -39,7 +39,8 @@ public class ApplicationFormController {
                             schema = @Schema(implementation = GenericPostResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity<GenericPostResponseDTO> postApplicationForm(@RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
+    public ResponseEntity<GenericPostResponseDTO> postApplicationForm(
+            @RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
         GenericPostResponseDTO idResponse = this.applicationFormService.saveApplicationForm(applicationFormPostDTO);
 
         return new ResponseEntity<GenericPostResponseDTO>(idResponse, HttpStatus.CREATED);
@@ -54,7 +55,8 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No Application form found",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<List<ApplicationFormsFoundDTO>> checkApplicationFormsExists(@Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
+    public ResponseEntity<List<ApplicationFormsFoundDTO>> checkApplicationFormsExists(
+            @Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
         List<ApplicationFormsFoundDTO> foundApplicationForms = this.applicationFormService
                 .getMatchingApplicationFormsIds(applicationFormExistsDTO);
 

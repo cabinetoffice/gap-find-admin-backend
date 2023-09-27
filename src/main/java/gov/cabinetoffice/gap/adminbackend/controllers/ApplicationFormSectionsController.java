@@ -143,7 +143,8 @@ public class ApplicationFormSectionsController {
         try {
             // don't allow admins to update the status of custom sections
             if (!Objects.equals(sectionId, "ELIGIBILITY") && !Objects.equals(sectionId, "ESSENTIAL")) {
-                return new ResponseEntity<GenericErrorDTO>(new GenericErrorDTO("You cannot update the status of a custom section"),
+                return new ResponseEntity<GenericErrorDTO>(
+                        new GenericErrorDTO("You cannot update the status of a custom section"),
                         HttpStatus.BAD_REQUEST);
             }
 

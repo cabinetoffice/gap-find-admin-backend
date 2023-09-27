@@ -42,7 +42,8 @@ public interface ApplicationFormNoSections {
 
     Instant setLastPublished(Instant lastPublished);
 
-    // --Commented out by Inspection (27/09/2023, 13:29):String setApplicationName(String applicationName);
+    // --Commented out by Inspection (27/09/2023, 13:29):String setApplicationName(String
+    // applicationName);
 
     ApplicationStatusEnum setApplicationStatus(ApplicationStatusEnum applicationStatusEnum);
 

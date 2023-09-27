@@ -16,7 +16,7 @@ import java.util.Map;
  * questions.
  */
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class QuestionOptionsPostDTO extends QuestionAbstractPostDTO {
 
