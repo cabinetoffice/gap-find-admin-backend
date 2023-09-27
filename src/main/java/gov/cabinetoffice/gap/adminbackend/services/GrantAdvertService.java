@@ -514,11 +514,11 @@ public class GrantAdvertService {
         // build LocalDateTimes, convert to Instant
         Instant openingDateInstant = LocalDateTime
                 .of(openingResponse[2], openingResponse[1], openingResponse[0], openingResponse[3], openingResponse[4])
-                .atZone(ZoneId.of("Europe/London")).toInstant();
+                .atZone(ZoneId.of("Z")).toInstant();
 
         Instant closingDateInstant = LocalDateTime
                 .of(closingResponse[2], closingResponse[1], closingResponse[0], closingResponse[3], closingResponse[4])
-                .atZone(ZoneId.of("Europe/London")).toInstant();
+                .atZone(ZoneId.of("Z")).toInstant();
 
         // set dates on advert
         grantAdvert.setOpeningDate(openingDateInstant);
