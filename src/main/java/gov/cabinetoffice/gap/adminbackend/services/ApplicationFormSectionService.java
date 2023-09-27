@@ -11,7 +11,6 @@ import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +19,6 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ApplicationFormSectionService {
 
     private final ApplicationFormRepository applicationFormRepository;

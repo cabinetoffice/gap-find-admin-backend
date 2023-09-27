@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.repositories;
 
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,8 +13,9 @@ import java.util.UUID;
 @Repository
 public interface GrantAdvertRepository extends JpaRepository<GrantAdvert, UUID> {
 
+    @NotNull
     @Override
-    Optional<GrantAdvert> findById(UUID id);
+    Optional<GrantAdvert> findById(@NotNull UUID id);
 
     @PreAuthorize("#grantAdminId == authentication.principal.grantAdminId")
     Long deleteByIdAndCreatedById(UUID advertId, Integer grantAdminId);

@@ -9,7 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.Instant;
 import java.util.Objects;
 
 public class HelperUtils {
@@ -67,7 +66,7 @@ public class HelperUtils {
 
     /**
      * Splits the session object value by the dot, and returns the section after the dot
-     * ie. "newScheme.name" -> "name"
+     * i.e. "newScheme.name" -> "name"
      */
     public static String getSessionObjectFieldName(String key) {
         return key.split("\\.")[1];

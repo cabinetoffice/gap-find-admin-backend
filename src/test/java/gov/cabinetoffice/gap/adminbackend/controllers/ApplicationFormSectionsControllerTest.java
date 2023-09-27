@@ -202,7 +202,7 @@ class ApplicationFormSectionsControllerTest {
     }
 
     @Test
-    void deleteSectionDoesntExistTest() throws Exception {
+    void deleteSectionDoesNotExistTest() throws Exception {
 
         doThrow(new NotFoundException("Error message")).when(this.applicationFormSectionService)
                 .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID);
@@ -246,7 +246,7 @@ class ApplicationFormSectionsControllerTest {
         }
 
         @Test
-        void updateSectionStatusSectionDoesntExistTest() throws Exception {
+        void updateSectionStatusSectionDoesNotExistTest() throws Exception {
 
             doThrow(new NotFoundException("Error message"))
                     .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)

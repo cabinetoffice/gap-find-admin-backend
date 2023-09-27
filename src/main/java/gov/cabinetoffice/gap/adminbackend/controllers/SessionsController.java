@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -54,16 +55,16 @@ public class SessionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Request params 'key' and 'value' are required.",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity addToSession(@RequestParam final String key, @RequestParam final String value,
+    public ResponseEntity<?> addToSession(@RequestParam final String key, @RequestParam final String value,
             HttpSession session) {
         log.info("********* SESSION - ADD " + key + " - " + value + " *********");
 
         FieldErrorsDTO fieldErrors = sessionsService.validateFieldOnDto(key, value, session);
         if (fieldErrors == null) {
-            return new ResponseEntity(HttpStatus.OK);
+            return new ResponseEntity<ResponseStatus>(HttpStatus.OK);
         }
         else {
-            return new ResponseEntity(fieldErrors, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<FieldErrorsDTO>(fieldErrors, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -77,7 +78,7 @@ public class SessionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "415", description = "Value found but in an unsupported format.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getFromSession(@PathVariable final String key, HttpSession session) {
+    public ResponseEntity<?> getFromSession(@PathVariable final String key, HttpSession session) {
         String value = "";
         try {
             value = (String) session.getAttribute(key);
@@ -103,15 +104,15 @@ public class SessionsController {
             @ApiResponse(responseCode = "400", description = "Invalid object key",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "204", description = "No data found for given key") })
-    public ResponseEntity getSessionObject(@PathVariable final @NotNull SessionObjectEnum objectKey,
+    public ResponseEntity<?> getSessionObject(@PathVariable final @NotNull SessionObjectEnum objectKey,
             HttpSession session) {
         HashMap<String, String> returnObj = sessionsService.retrieveObjectFromSession(objectKey, session);
 
         if (returnObj.isEmpty()) {
-            return new ResponseEntity(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<ResponseStatus>(HttpStatus.NO_CONTENT);
         }
         else {
-            return new ResponseEntity(returnObj, HttpStatus.OK);
+            return new ResponseEntity<>(returnObj, HttpStatus.OK);
         }
 
     }
@@ -126,15 +127,15 @@ public class SessionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No data found for given key",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity deleteSessionObject(@PathVariable final @NotNull SessionObjectEnum objectKey,
+    public ResponseEntity<?> deleteSessionObject(@PathVariable final @NotNull SessionObjectEnum objectKey,
             HttpSession session) {
         boolean valuesDeleted = sessionsService.deleteObjectFromSession(objectKey, session);
 
         if (valuesDeleted) {
-            return new ResponseEntity(HttpStatus.OK);
+            return new ResponseEntity<ResponseStatus>(HttpStatus.OK);
         }
         else {
-            return new ResponseEntity(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<ResponseStatus>(HttpStatus.NOT_FOUND);
         }
 
     }

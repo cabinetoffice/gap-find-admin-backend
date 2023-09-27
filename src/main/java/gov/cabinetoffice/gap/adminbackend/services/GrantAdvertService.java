@@ -119,20 +119,19 @@ public class GrantAdvertService {
         GetGrantAdvertPageResponseDTO viewResponse = new GetGrantAdvertPageResponseDTO();
 
         // get advert definition from spring context
-        AdvertDefinition definition = advertDefinition;
 
         // get section information
-        AdvertDefinitionSection sectionDefiniton = definition.getSectionById(sectionId);
+        AdvertDefinitionSection sectionDefinition = advertDefinition.getSectionById(sectionId);
 
-        viewResponse.setSectionName(sectionDefiniton.getTitle());
+        viewResponse.setSectionName(sectionDefinition.getTitle());
 
         // get page information
-        AdvertDefinitionPage pageDefinition = sectionDefiniton.getPageById(pageId);
+        AdvertDefinitionPage pageDefinition = sectionDefinition.getPageById(pageId);
 
-        Integer currentPageIndex = sectionDefiniton.getIndexOfPage(pageDefinition);
-        sectionDefiniton.getPageByIndex(currentPageIndex - 1)
+        Integer currentPageIndex = sectionDefinition.getIndexOfPage(pageDefinition);
+        sectionDefinition.getPageByIndex(currentPageIndex - 1)
                 .ifPresent(page -> viewResponse.setPreviousPageId(page.getId()));
-        sectionDefiniton.getPageByIndex(currentPageIndex + 1)
+        sectionDefinition.getPageByIndex(currentPageIndex + 1)
                 .ifPresent(page -> viewResponse.setNextPageId(page.getId()));
 
         viewResponse.setPageTitle(pageDefinition.getTitle());
@@ -295,7 +294,7 @@ public class GrantAdvertService {
 
         /*
          * hate this but because we create a new advert and then immediately update it the
-         * version number in contentful is bumped up so we need to refresh the data to
+         * version number in contentful is bumped up, so we need to refresh the data to
          * prevent errors when publishing the advert :(.
          *
          * Absolutely begging to be rate limited by getting this loose with the number of
@@ -394,7 +393,7 @@ public class GrantAdvertService {
                         .anyMatch(qr -> qr.getId().equals(q.getId())))
                 .toList();
 
-        if (responses != null && !responses.isEmpty()) {
+        if (!responses.isEmpty()) {
             final String requestBody = buildRichTextPatchRequestBody(responses);
 
             final HttpHeaders headers = new HttpHeaders();

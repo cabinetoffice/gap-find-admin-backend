@@ -7,13 +7,13 @@ public enum SessionObjectEnum {
 
     newScheme(SchemePostDTO.class), newQuestion(QuestionSessionDTO.class);
 
-    public final Class classType;
+    public final Class<?> classType;
 
-    SessionObjectEnum(Class classType) {
+    SessionObjectEnum(Class<?> classType) {
         this.classType = classType;
     }
 
-    public Class getClassType() {
+    public Class<?> getClassType() {
         return classType;
     }
 

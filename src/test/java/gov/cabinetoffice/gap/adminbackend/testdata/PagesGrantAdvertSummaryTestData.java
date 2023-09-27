@@ -213,10 +213,8 @@ public class PagesGrantAdvertSummaryTestData {
         GrantAdvertResponse grantAdvertResponse = GrantAdvertResponse.builder()
                 .sections(Arrays.asList(section1, section2)).build();
 
-        GrantAdvert grantAdvert = GrantAdvert.builder().id(GRANT_ADVERT_ID).grantAdvertName(GRANT_ADVERT_NAME)
+        return GrantAdvert.builder().id(GRANT_ADVERT_ID).grantAdvertName(GRANT_ADVERT_NAME)
                 .response(grantAdvertResponse).status(GrantAdvertStatus.DRAFT).build();
-
-        return grantAdvert;
     }
 
     public static AdvertSummaryPageDTO buildGrantAdvertSummaryPageDtoWithoutMergedData() {

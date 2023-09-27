@@ -52,7 +52,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No section found with provided ids.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<ApplicationFormSectionDTO> getApplicationFormSectionById(@PathVariable Integer applicationId,
+    public ResponseEntity<?> getApplicationFormSectionById(@PathVariable Integer applicationId,
             @PathVariable String sectionId, @RequestParam(defaultValue = "true") Boolean withQuestions) {
 
         try {
@@ -64,7 +64,7 @@ public class ApplicationFormSectionsController {
             return ResponseEntity.notFound().build();
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<GenericErrorDTO>(HttpStatus.FORBIDDEN);
         }
         catch (ApplicationFormException afe) {
             return ResponseEntity.badRequest().build();
@@ -82,7 +82,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity postNewSection(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<?> postNewSection(@PathVariable @NotNull Integer applicationId,
             @RequestBody @Validated PostSectionDTO sectionDTO) {
         try {
             String sectionId = this.applicationFormSectionService.addSectionToApplicationForm(applicationId,
@@ -91,10 +91,10 @@ public class ApplicationFormSectionsController {
             return ResponseEntity.ok().body(new GenericPostResponseDTO(sectionId));
         }
         catch (NotFoundException e) {
-            return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<GenericErrorDTO>(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<GenericErrorDTO>(HttpStatus.FORBIDDEN);
         }
     }
 
@@ -108,11 +108,11 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity deleteSection(@PathVariable Integer applicationId, @PathVariable String sectionId) {
+    public ResponseEntity<?> deleteSection(@PathVariable Integer applicationId, @PathVariable String sectionId) {
         try {
             // don't allow admins to delete mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
-                return new ResponseEntity(new GenericErrorDTO("You cannot delete mandatory sections"),
+                return new ResponseEntity<GenericErrorDTO>(new GenericErrorDTO("You cannot delete mandatory sections"),
                         HttpStatus.BAD_REQUEST);
             }
 
@@ -121,10 +121,10 @@ public class ApplicationFormSectionsController {
             return ResponseEntity.ok().build();
         }
         catch (NotFoundException e) {
-            return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<GenericErrorDTO>(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<GenericErrorDTO>(HttpStatus.FORBIDDEN);
         }
     }
 
@@ -138,12 +138,12 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity updateSectionStatus(final @PathVariable Integer applicationId,
+    public ResponseEntity<?> updateSectionStatus(final @PathVariable Integer applicationId,
             final @PathVariable String sectionId, final @RequestBody SectionStatusEnum newStatus) {
         try {
             // don't allow admins to update the status of custom sections
             if (!Objects.equals(sectionId, "ELIGIBILITY") && !Objects.equals(sectionId, "ESSENTIAL")) {
-                return new ResponseEntity(new GenericErrorDTO("You cannot update the status of a custom section"),
+                return new ResponseEntity<GenericErrorDTO>(new GenericErrorDTO("You cannot update the status of a custom section"),
                         HttpStatus.BAD_REQUEST);
             }
 
@@ -152,10 +152,10 @@ public class ApplicationFormSectionsController {
             return ResponseEntity.ok().build();
         }
         catch (NotFoundException e) {
-            return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<GenericErrorDTO>(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<GenericErrorDTO>(HttpStatus.FORBIDDEN);
         }
     }
 

@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.dtos.application.questions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.validation.constraints.Size;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
  * {@link QuestionOptionsPatchDTO}
  */
 @Data
+@EqualsAndHashCode
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class QuestionAbstractPatchDTO {
 

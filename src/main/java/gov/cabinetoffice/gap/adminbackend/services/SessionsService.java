@@ -89,7 +89,7 @@ public class SessionsService {
                     }
                 }
                 else {
-                    Set<ConstraintViolation<?>> constraintViolationsSet = validator.validateValue(val.getClassType(),
+                    Set<? extends ConstraintViolation<?>> constraintViolationsSet = validator.validateValue(val.getClassType(),
                             strippedKey, value);
                     if (constraintViolationsSet.isEmpty()) {
                         session.setAttribute(key, value);

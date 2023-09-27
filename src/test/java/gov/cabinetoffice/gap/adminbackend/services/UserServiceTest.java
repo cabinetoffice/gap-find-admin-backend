@@ -159,7 +159,6 @@ class UserServiceTest {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
         String url = "http://example.com/v2/validateSessionsRoles";
-        HttpHeaders requestHeaders = new HttpHeaders();
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
 
         when(restTemplate.exchange(eq(url), eq(HttpMethod.POST), any(HttpEntity.class), eq(Boolean.class)))

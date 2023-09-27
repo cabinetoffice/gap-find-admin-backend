@@ -56,7 +56,7 @@ public class GrantAdvertController {
 
         GrantAdvert grantAdvert = grantAdvertService.create(createGrantAdvertDto.getGrantSchemeId(),
                 session.getGrantAdminId(), createGrantAdvertDto.getName());
-        log.info("Succesfully created Grant Advert named '{}' with id '{}'", grantAdvert.getGrantAdvertName(),
+        log.info("Successfully created Grant Advert named '{}' with id '{}'", grantAdvert.getGrantAdvertName(),
                 grantAdvert.getId());
 
         CreateGrantAdvertResponseDto responseDto = this.grantAdvertMapper
@@ -66,7 +66,7 @@ public class GrantAdvertController {
     }
 
     @PatchMapping("/{grantAdvertId}/sections/{sectionId}/pages/{pageId}")
-    public ResponseEntity updatePage(@PathVariable UUID grantAdvertId, @PathVariable String sectionId,
+    public ResponseEntity<?> updatePage(@PathVariable UUID grantAdvertId, @PathVariable String sectionId,
             @PathVariable String pageId,
             @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
         GrantAdvertPageResponse responseWithId = GrantAdvertPageResponse.builder().id(pageId)
@@ -104,7 +104,7 @@ public class GrantAdvertController {
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")) })
 
-    public ResponseEntity getAdvertStatus(@RequestParam @NotNull final Integer grantSchemeId) {
+    public ResponseEntity<?> getAdvertStatus(@RequestParam @NotNull final Integer grantSchemeId) {
 
         GetGrantAdvertStatusResponseDTO grantAdvertResponse = this.grantAdvertService
                 .getGrantAdvertStatusBySchemeId(grantSchemeId);
@@ -125,7 +125,7 @@ public class GrantAdvertController {
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")) })
 
-    public ResponseEntity getPublishInformation(@RequestParam @NotNull final Integer grantSchemeId) {
+    public ResponseEntity<?> getPublishInformation(@RequestParam @NotNull final Integer grantSchemeId) {
 
         GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponse = this.grantAdvertService
                 .getGrantAdvertPublishingInformationBySchemeId(grantSchemeId);
@@ -141,7 +141,7 @@ public class GrantAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Unable to find grant advert with id provided",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity deleteGrantAdvert(@PathVariable UUID grantAdvertId) {
+    public ResponseEntity<?> deleteGrantAdvert(@PathVariable UUID grantAdvertId) {
 
         grantAdvertService.deleteGrantAdvert(grantAdvertId);
 
@@ -181,7 +181,7 @@ public class GrantAdvertController {
     }
 
     @PostMapping("/lambda/{grantAdvertId}/publish")
-    public ResponseEntity publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId,
+    public ResponseEntity<?> publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId,
             final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         try {
@@ -197,7 +197,7 @@ public class GrantAdvertController {
     }
 
     @PostMapping("/{grantAdvertId}/schedule")
-    public ResponseEntity scheduleGrantAdvert(final @PathVariable UUID grantAdvertId) {
+    public ResponseEntity<?> scheduleGrantAdvert(final @PathVariable UUID grantAdvertId) {
         grantAdvertService.scheduleGrantAdvert(grantAdvertId);
         return ResponseEntity.ok().build();
     }
@@ -206,7 +206,7 @@ public class GrantAdvertController {
     @Operation(summary = "Unpublishes the advert with id provided")
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successfully unpublished the advert",
             content = @Content(mediaType = "application/json")) })
-    public ResponseEntity unpublishGrantAdvert(final @PathVariable UUID grantAdvertId) {
+    public ResponseEntity<?> unpublishGrantAdvert(final @PathVariable UUID grantAdvertId) {
         grantAdvertService.unpublishAdvert(grantAdvertId, false);
         return ResponseEntity.ok().build();
     }
@@ -218,7 +218,7 @@ public class GrantAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401", description = "No credentials or invalid credentials provided",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity unpublishGrantAdvert(final @PathVariable UUID grantAdvertId,
+    public ResponseEntity<?> unpublishGrantAdvert(final @PathVariable UUID grantAdvertId,
             final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         grantAdvertService.unpublishAdvert(grantAdvertId, true);
@@ -226,7 +226,7 @@ public class GrantAdvertController {
     }
 
     @PostMapping("/{grantAdvertId}/unschedule")
-    public ResponseEntity unscheduleGrantAdvert(final @PathVariable UUID grantAdvertId) {
+    public ResponseEntity<?> unscheduleGrantAdvert(final @PathVariable UUID grantAdvertId) {
         grantAdvertService.unscheduleGrantAdvert(grantAdvertId);
         return ResponseEntity.ok().build();
     }

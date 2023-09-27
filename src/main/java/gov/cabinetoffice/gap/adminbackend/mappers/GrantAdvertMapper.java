@@ -22,7 +22,7 @@ public interface GrantAdvertMapper {
     @Mapping(target = "questionId", source = "id")
     @Mapping(target = "questionTitle", source = "title")
     @Mapping(target = "questionValidation", source = "validation")
-    AdvertBuilderQuestionView advertBuilderQuestionViewFromDefintionQuestion(
+    AdvertBuilderQuestionView advertBuilderQuestionViewFromDefinitionQuestion(
             AdvertDefinitionQuestion definitionQuestion);
 
     List<AdvertBuilderQuestionView> advertBuilderQuestionViewListFromDefintionQuestionList(

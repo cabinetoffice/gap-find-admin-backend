@@ -10,7 +10,6 @@ import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,7 +25,6 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
-@Log4j2
 public class UserController {
 
     private final UserMapper userMapper;

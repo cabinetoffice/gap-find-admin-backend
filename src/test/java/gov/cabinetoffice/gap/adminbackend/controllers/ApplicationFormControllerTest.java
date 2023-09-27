@@ -249,14 +249,14 @@ class ApplicationFormControllerTest {
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO);
         this.mockMvc.perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID)
-                .contentType(MediaType.APPLICATION_JSON).content("{ \"testProp\": \"doesnt exist\"}"))
+                .contentType(MediaType.APPLICATION_JSON).content("{ \"testProp\": \"doesn't exist\"}"))
                 .andExpect(status().isBadRequest());
 
         verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class));
     }
 
     @Test
-    void updateApplicationForm_BadRequest_InvalidPropertieValue() throws Exception {
+    void updateApplicationForm_BadRequest_InvalidPropertyValue() throws Exception {
         this.mockMvc.perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID)
                 .contentType(MediaType.APPLICATION_JSON).content("{ \"applicationStatus\": \"INCORRECT\"}"))
                 .andExpect(status().isBadRequest());

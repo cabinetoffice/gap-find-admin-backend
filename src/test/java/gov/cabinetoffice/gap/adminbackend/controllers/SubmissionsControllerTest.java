@@ -316,7 +316,7 @@ class SubmissionsControllerTest {
         }
 
         @Test
-        void updateExportRecordLocation_UnexpectedErrorOccures() throws Exception {
+        void updateExportRecordLocation_UnexpectedErrorOccurs() throws Exception {
             AddingSignedUrlDTO mockRequest = new AddingSignedUrlDTO("link_to_aws.com/path/filename.zip");
 
             doThrow(new RuntimeException()).when(submissionsService).addSignedUrlToSubmissionExport(any(), any(),

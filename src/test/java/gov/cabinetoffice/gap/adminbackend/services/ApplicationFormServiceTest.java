@@ -120,9 +120,9 @@ class ApplicationFormServiceTest {
     @Nested
     class checkIfApplicationFormExists {
 
-        private Integer grantAdminId = 1;
+        private final Integer grantAdminId = 1;
 
-        private Integer schemeId = 333;
+        private final Integer schemeId = 333;
 
         @Test
         void repositoryFindsApplicationForm() {
@@ -260,7 +260,7 @@ class ApplicationFormServiceTest {
         }
 
         @Test
-        void deleteApplicationForminsufficientPermissionsToDeleteThisApplication() {
+        void deleteApplicationFormInsufficientPermissionsToDeleteThisApplication() {
             ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
@@ -742,7 +742,7 @@ class ApplicationFormServiceTest {
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
                     .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO))
                             .isInstanceOf(ApplicationFormException.class)
-                            .hasMessage("Error occured when patching appliction with id of " + applicationId);
+                            .hasMessage("Error occurred when patching application with id of " + applicationId);
         }
 
         @Test

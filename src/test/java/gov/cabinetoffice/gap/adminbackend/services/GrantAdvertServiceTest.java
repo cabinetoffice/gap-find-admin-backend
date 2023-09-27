@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
+import com.contentful.java.cda.CDAResource;
 import com.contentful.java.cda.FetchQuery;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.ModuleEntries;
@@ -48,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
@@ -86,7 +88,7 @@ class GrantAdvertServiceTest {
     private ModuleEntries contentfulEntries;
 
     @Mock
-    private FetchQuery mockedFetchQuery;
+    private FetchQuery<CDAResource> mockedFetchQuery;
 
     @Mock
     private CDAArray mockCDAArray;
@@ -138,7 +140,6 @@ class GrantAdvertServiceTest {
             final String instantExpected = "2014-12-22T10:15:30Z";
             final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
             final Instant instant = Instant.now(clock);
-            final UUID id = UUID.randomUUID();
             final int grantAdminId = 1;
             final int grantSchemeId = 1;
             final String name = "Test Grant Advert";
@@ -187,10 +188,6 @@ class GrantAdvertServiceTest {
 
         @Test
         void getById_ThrowNotFoundException() {
-            final int grantAdminId = 1;
-            final GrantAdmin grantAdmin = GrantAdmin.builder().id(grantAdminId)
-                    .funder(FundingOrganisation.builder().id(1).build()).build();
-
             final UUID id = UUID.randomUUID();
             when(grantAdvertRepository.findById(id)).thenThrow(new NotFoundException("error"));
 
@@ -223,7 +220,7 @@ class GrantAdvertServiceTest {
             final UUID advertId = UUID.randomUUID();
             final Integer adminId = 1;
 
-            when(grantAdvertRepository.deleteByIdAndCreatedById(advertId, adminId)).thenReturn(1l);
+            when(grantAdvertRepository.deleteByIdAndCreatedById(advertId, adminId)).thenReturn(1L);
 
             grantAdvertService.deleteGrantAdvert(advertId);
 
@@ -381,7 +378,7 @@ class GrantAdvertServiceTest {
         }
 
         @Test
-        void notFound_attemptingToViewPageForAdvertWhichDoesntExist() {
+        void notFound_attemptingToViewPageForAdvertWhichDoesNotExist() {
             final UUID grantAdvertId = UUID.randomUUID();
             final String sectionId = "section-id";
             final String pageId = "page-id";
@@ -393,7 +390,7 @@ class GrantAdvertServiceTest {
         }
 
         @Test
-        void notFound_attemptingToViewPageForSectionWhichDoesntExist() {
+        void notFound_attemptingToViewPageForSectionWhichDoesNotExist() {
             final UUID grantAdvertId = UUID.randomUUID();
             final String sectionId = "missing-section-id";
             final String pageId = "page-id";
@@ -408,7 +405,7 @@ class GrantAdvertServiceTest {
         }
 
         @Test
-        void notFound_attemptingToViewPageForPageWhichDoesntExist() {
+        void notFound_attemptingToViewPageForPageWhichDoesNotExist() {
             final UUID grantAdvertId = UUID.randomUUID();
             final String sectionId = "section-id";
             final String pageId = "missing-page-id";
@@ -615,7 +612,7 @@ class GrantAdvertServiceTest {
 
     }
 
-    // TODO refactor this test and the underlying service methods to be more maintainable
+    // @TODO refactor this test and the underlying service methods to be more maintainable
     @Nested
     class publishAdvert {
 
@@ -883,7 +880,6 @@ class GrantAdvertServiceTest {
             when(mockedFetchQuery.withContentType(any())).thenReturn(mockedFetchQuery);
 
             when(mockedFetchQuery.where(any(), any(), any())).thenReturn(mockedFetchQuery);
-
             when(contentfulDeliveryClient.fetch(any())).thenReturn(mockedFetchQuery);
 
             when(mockedFetchQuery.all()).thenReturn(mockCDAArray);

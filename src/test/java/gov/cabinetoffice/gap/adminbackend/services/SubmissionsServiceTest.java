@@ -25,6 +25,7 @@ import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGe
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -576,7 +577,7 @@ class SubmissionsServiceTest {
             List<SubmissionExportsDTO> submissionExports = submissionsService
                     .getCompletedSubmissionExportsForBatch(testUUID);
 
-            assertTrue(submissionExports.isEmpty());
+            Assertions.assertTrue(submissionExports.isEmpty());
 
         }
 
@@ -630,7 +631,7 @@ class SubmissionsServiceTest {
         }
 
         @Test
-        void errorOccuresWhileAddingLocation() {
+        void errorOccursWhileAddingLocation() {
             UUID mockSubmissionId = UUID.randomUUID();
             UUID mockBatchId = UUID.randomUUID();
             String mockLocation = "aws_domain.com/path_to/filename.zip";

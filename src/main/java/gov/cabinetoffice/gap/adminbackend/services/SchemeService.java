@@ -48,7 +48,7 @@ public class SchemeService {
             throw ex;
         }
         catch (Exception e) {
-            throw new SchemeEntityException("Something went wrong while retreiving admin " + session.getGrantAdminId()
+            throw new SchemeEntityException("Something went wrong while retrieving admin " + session.getGrantAdminId()
                     + "'s grant scheme with id: " + schemeId, e);
         }
 
@@ -86,7 +86,7 @@ public class SchemeService {
             }
 
             scheme.setLastUpdated(Instant.now());
-            scheme.setLastUpdatedBy(Integer.valueOf(session.getGrantAdminId()));
+            scheme.setLastUpdatedBy(session.getGrantAdminId());
 
             this.schemeMapper.updateSchemeEntityFromPatchDto(schemePatchDTO, scheme);
             this.schemeRepo.save(scheme);

@@ -73,14 +73,14 @@ public class SubmissionsController {
     }
 
     @PostMapping("/export-all/{applicationId}")
-    public ResponseEntity exportAllSubmissions(@PathVariable Integer applicationId) {
+    public ResponseEntity<?> exportAllSubmissions(@PathVariable Integer applicationId) {
         submissionsService.triggerSubmissionsExport(applicationId);
 
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/status/{applicationId}")
-    public ResponseEntity getExportStatus(@PathVariable Integer applicationId) {
+    public ResponseEntity<?> getExportStatus(@PathVariable Integer applicationId) {
         final GrantExportStatus status = submissionsService.getExportStatus(applicationId);
         return new ResponseEntity<>(status.toString(), HttpStatus.OK);
     }
@@ -95,7 +95,7 @@ public class SubmissionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Unable to find batch or submission for this request",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getSubmissionInfo(final @PathVariable @NotNull UUID submissionId,
+    public ResponseEntity<?> getSubmissionInfo(final @PathVariable @NotNull UUID submissionId,
             final @PathVariable @NotNull UUID batchExportId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
 
@@ -117,7 +117,7 @@ public class SubmissionsController {
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returned completed submission exports.",
             content = @Content(mediaType = "application/json",
                     array = @ArraySchema(schema = @Schema(implementation = SubmissionExportsDTO.class)))) })
-    public ResponseEntity getCompletedSubmissionExports(@PathVariable UUID exportBatchId) {
+    public ResponseEntity<?> getCompletedSubmissionExports(@PathVariable UUID exportBatchId) {
 
         List<SubmissionExportsDTO> exports = submissionsService.getCompletedSubmissionExportsForBatch(exportBatchId);
 
@@ -125,7 +125,7 @@ public class SubmissionsController {
     }
 
     @PostMapping("/{submissionId}/export-batch/{batchExportId}/status")
-    public ResponseEntity updateExportRecordStatus(@PathVariable String batchExportId,
+    public ResponseEntity<?> updateExportRecordStatus(@PathVariable String batchExportId,
             @PathVariable String submissionId, @RequestBody GrantExportStatus newStatus,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
@@ -143,7 +143,7 @@ public class SubmissionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "500", description = "Something went wrong while updating signed url",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity updateExportRecordLocation(@PathVariable UUID batchExportId, @PathVariable UUID submissionId,
+    public ResponseEntity<?> updateExportRecordLocation(@PathVariable UUID batchExportId, @PathVariable UUID submissionId,
             @RequestBody AddingSignedUrlDTO signedUrlDTO, @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         submissionsService.addSignedUrlToSubmissionExport(submissionId, batchExportId, signedUrlDTO.getSignedUrl());

@@ -58,7 +58,7 @@ public class ApplicationFormTestData {
             ResponseTypeEnum.YesNo, Collections.singletonMap("mandatory", true), null);
 
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION_WITH_OPTIONS = new ApplicationFormQuestionDTO(
-            SAMPLE_QUESTION_ID, "ORG_TYPE", null, "Select one of the folloiwng", "Answer the question", null, null,
+            SAMPLE_QUESTION_ID, "ORG_TYPE", null, "Select one of the following", "Answer the question", null, null,
             null, ResponseTypeEnum.Dropdown, Collections.singletonMap("mandatory", true), SAMPLE_QUESTION_OPTIONS);
 
     public final static List<ApplicationFormQuestionDTO> SAMPLE_QUESTION_LIST = new LinkedList<>(
@@ -215,7 +215,7 @@ public class ApplicationFormTestData {
 
     public final static String SAMPLE_UPDATED_FIELD_TITLE = "Updated field title";
 
-    public final static List<String> SAMPLE_UPDATED_OPTIONS = new LinkedList(Arrays.asList("New 1", "New 2", "New 3"));
+    public final static List<String> SAMPLE_UPDATED_OPTIONS = Arrays.asList("New 1", "New 2", "New 3");
 
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION_GENERIC_PATCH_DTO = ApplicationFormQuestionDTO
             .builder().fieldTitle(SAMPLE_UPDATED_FIELD_TITLE).build();

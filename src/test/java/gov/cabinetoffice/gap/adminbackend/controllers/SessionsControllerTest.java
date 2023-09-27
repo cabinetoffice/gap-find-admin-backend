@@ -69,7 +69,7 @@ class SessionsControllerTest {
     }
 
     @Test
-    void testGettingNonExistantDataFromSession() throws Exception {
+    void testGettingNonExistentDataFromSession() throws Exception {
         this.mockMvc.perform(get("/sessions/testNonExistingKey")).andExpect(status().isNoContent())
                 .andExpect(content().string(""));
     }

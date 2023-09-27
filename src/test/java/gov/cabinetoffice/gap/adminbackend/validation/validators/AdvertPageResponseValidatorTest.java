@@ -129,12 +129,12 @@ class AdvertPageResponseValidatorTest {
             .id("richTextQuestionMandatory").responseType(AdvertDefinitionQuestionResponseType.RICH_TEXT)
             .validation(AdvertDefinitionQuestionValidation.builder().mandatory(true).build()).build();
 
-    private final AdvertDefinitionQuestion richTextQuestionMinLenght = AdvertDefinitionQuestion.builder()
-            .id("richTextQuestionMinLenght").responseType(AdvertDefinitionQuestionResponseType.RICH_TEXT)
+    private final AdvertDefinitionQuestion richTextQuestionMinLength = AdvertDefinitionQuestion.builder()
+            .id("richTextQuestionMinLength").responseType(AdvertDefinitionQuestionResponseType.RICH_TEXT)
             .validation(AdvertDefinitionQuestionValidation.builder().minLength(2).build()).build();
 
-    private final AdvertDefinitionQuestion richTextQuestionMaxLenght = AdvertDefinitionQuestion.builder()
-            .id("richTextQuestionMaxLenght").responseType(AdvertDefinitionQuestionResponseType.RICH_TEXT)
+    private final AdvertDefinitionQuestion richTextQuestionMaxLength = AdvertDefinitionQuestion.builder()
+            .id("richTextQuestionMaxLength").responseType(AdvertDefinitionQuestionResponseType.RICH_TEXT)
             .validation(AdvertDefinitionQuestionValidation.builder().maxLength(256).build()).build();
 
     private final AdvertDefinitionQuestion mandatoryQuestionCustomMessage = AdvertDefinitionQuestion.builder()
@@ -407,7 +407,7 @@ class AdvertPageResponseValidatorTest {
                 Arguments.of(GrantAdvertPageResponseValidationDto.builder().grantAdvertId(grantAdvertId)
                         .sectionId("grantDetails")
                         .page(GrantAdvertPageResponse.builder().questions(List.of(GrantAdvertQuestionResponse.builder()
-                                .id("richTextQuestionMaxLenght")
+                                .id("richTextQuestionMaxLength")
                                 .multiResponse(new String[] {
                                         "Veryloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
                                                 + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
@@ -424,7 +424,7 @@ class AdvertPageResponseValidatorTest {
                 Arguments.of(GrantAdvertPageResponseValidationDto.builder().grantAdvertId(grantAdvertId)
                         .sectionId("grantDetails")
                         .page(GrantAdvertPageResponse.builder()
-                                .questions(List.of(GrantAdvertQuestionResponse.builder().id("richTextQuestionMinLenght")
+                                .questions(List.of(GrantAdvertQuestionResponse.builder().id("richTextQuestionMinLength")
                                         .multiResponse(new String[] { "1", "contentful" }).build()))
                                 .build())
                         .build(), "Answer must be 2 characters or more"));
@@ -470,7 +470,7 @@ class AdvertPageResponseValidatorTest {
                                 questionToCompare, greaterThanQuestion, lessThanQuestion, comparisonWithCustomError,
                                 currencyFieldQuestion, integerGreaterThanQuestion, integerLessThanQuestion,
                                 currencyGreaterThanQuestion, currencyLessThanQuestion, richTextQuestionMandatory,
-                                richTextQuestionMinLenght, richTextQuestionMaxLenght))
+                                richTextQuestionMinLength, richTextQuestionMaxLength))
                         .build()))
                 .build();
         when(advertDefinition.getSectionById(anyString())).thenReturn(definitionSection);
@@ -521,7 +521,7 @@ class AdvertPageResponseValidatorTest {
                                 .build(),
                         "You must enter an answer"),
 
-                // Nested Comparisons - show lowest level comparison fail
+                // Nested Comparisons - show the lowest level comparison fail
                 Arguments.of(
                         GrantAdvertPageResponseValidationDto.builder().grantAdvertId(grantAdvertId)
                                 .sectionId("grantDetails").page(GrantAdvertPageResponse.builder()
@@ -535,7 +535,7 @@ class AdvertPageResponseValidatorTest {
                                 .build(),
                         "Answer must be lower than 75"),
 
-                // Nested Comparisons - show lowest level comparison fail
+                // Nested Comparisons - show the lowest level comparison fail
                 Arguments.of(
                         GrantAdvertPageResponseValidationDto.builder().grantAdvertId(grantAdvertId)
                                 .sectionId("grantDetails")
@@ -691,7 +691,7 @@ class AdvertPageResponseValidatorTest {
                 Arguments.of(GrantAdvertPageResponseValidationDto.builder().grantAdvertId(grantAdvertId)
                         .sectionId("grantDetails")
                         .page(GrantAdvertPageResponse.builder().status(GrantAdvertPageResponseStatus.COMPLETED)
-                                .questions(List.of(GrantAdvertQuestionResponse.builder().id("richTextQuestionMaxLenght")
+                                .questions(List.of(GrantAdvertQuestionResponse.builder().id("richTextQuestionMaxLength")
                                         .multiResponse(new String[] { "Sort of looooooooooooooooooong answer-ish",
                                                 "contentful" })
                                         .build()))
@@ -702,7 +702,7 @@ class AdvertPageResponseValidatorTest {
                 Arguments.of(GrantAdvertPageResponseValidationDto.builder().grantAdvertId(grantAdvertId)
                         .sectionId("grantDetails")
                         .page(GrantAdvertPageResponse.builder().status(GrantAdvertPageResponseStatus.COMPLETED)
-                                .questions(List.of(GrantAdvertQuestionResponse.builder().id("richTextQuestionMinLenght")
+                                .questions(List.of(GrantAdvertQuestionResponse.builder().id("richTextQuestionMinLength")
                                         .multiResponse(new String[] { "22", "contentful" }).build()))
                                 .build())
                         .build())
@@ -718,7 +718,7 @@ class AdvertPageResponseValidatorTest {
                         .questions(List.of(mandatoryQuestion, minLengthQuestion, maxLengthQuestion, urlQuestion,
                                 questionToCompare, greaterThanQuestion, lessThanQuestion, currencyFieldQuestion,
                                 integerGreaterThanQuestion, integerLessThanQuestion, currencyGreaterThanQuestion,
-                                currencyLessThanQuestion, richTextQuestionMaxLenght, richTextQuestionMinLenght))
+                                currencyLessThanQuestion, richTextQuestionMaxLength, richTextQuestionMinLength))
                         .build()))
                 .build();
         when(advertDefinition.getSectionById(anyString())).thenReturn(definitionSection);
@@ -1047,12 +1047,12 @@ class AdvertPageResponseValidatorTest {
     void shouldThrowConvertHtmlToMdException() {
 
         AdvertDefinitionPage advertDefinitionPage = AdvertDefinitionPage.builder().id("pageId")
-                .questions(List.of(richTextQuestionMinLenght)).build();
+                .questions(List.of(richTextQuestionMinLength)).build();
         AdvertDefinitionSection advertDefinitionSection = AdvertDefinitionSection.builder().id("sectionId")
                 .pages(List.of(advertDefinitionPage)).build();
 
         GrantAdvertQuestionResponse grantAdvertQuestionResponse = GrantAdvertQuestionResponse.builder()
-                .id("richTextQuestionMinLenght").multiResponse(new String[] { "firstString", "ewq" }).build();
+                .id("richTextQuestionMinLength").multiResponse(new String[] { "firstString", "ewq" }).build();
         GrantAdvertPageResponse grantAdvertPageResponse = GrantAdvertPageResponse.builder().id("pageId")
                 .questions(List.of(grantAdvertQuestionResponse)).build();
         GrantAdvertPageResponseValidationDto grantAdvertPageResponseValidationDto = GrantAdvertPageResponseValidationDto

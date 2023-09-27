@@ -302,7 +302,7 @@ public class SubmissionsService {
 
         try {
             URL url = new URL(exportEntity.getLocation());
-            return URLDecoder.decode(url.getPath().split("/", 3)[2], StandardCharsets.UTF_8.name());
+            return URLDecoder.decode(url.getPath().split("/", 3)[2], StandardCharsets.UTF_8);
         }
         catch (Exception e) {
             return exportEntity.getId().getSubmissionId().toString();

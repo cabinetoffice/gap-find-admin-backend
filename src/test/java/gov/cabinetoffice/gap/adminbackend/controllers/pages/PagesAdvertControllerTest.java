@@ -1,11 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.controllers.pages;
 
-import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.controllers.ControllerExceptionHandler;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertPreviewPageDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertPreviewTab;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertSummaryPageDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
@@ -90,7 +88,7 @@ class PagesAdvertControllerTest {
     }
 
     @Test
-    void testGetSectionOverviewContent__notFound_AttemptingToAccessAdvertWhichDoesntExist() throws Exception {
+    void testGetSectionOverviewContent__notFound_AttemptingToAccessAdvertWhichDoesNotExist() throws Exception {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("schemeId", SCHEME_ID);
         params.add("advertId", ADVERT_ID.toString());
@@ -149,7 +147,7 @@ class PagesAdvertControllerTest {
         }
 
         @Test
-        void notFound_AttemptingToAccessAdvertWhichDoesntExist() throws Exception {
+        void notFound_AttemptingToAccessAdvertWhichDoesNotExist() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
             final String sectionId = "mock-section-id";
             final String pageId = "mock-page-id";
@@ -253,7 +251,7 @@ class PagesAdvertControllerTest {
         }
 
         @Test
-        void testGetSectionOverviewContent__notFound_AttemptingToAccessAdvertWhichDoesntExist() throws Exception {
+        void testGetSectionOverviewContent__notFound_AttemptingToAccessAdvertWhichDoesNotExist() throws Exception {
             MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
             params.add("schemeId", schemeId);
             params.add("advertId", grantAdvertId.toString());

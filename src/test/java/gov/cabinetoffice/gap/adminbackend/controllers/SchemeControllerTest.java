@@ -78,7 +78,7 @@ class SchemeControllerTest {
     }
 
     @Test
-    void testGettingSchemeThatDoesntExist() throws Exception {
+    void testGettingSchemeThatDoesNotExist() throws Exception {
         Mockito.when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(new EntityNotFoundException());
 
         this.mockMvc.perform(get("/schemes/" + SAMPLE_SCHEME_ID)).andExpect(status().isNotFound())
@@ -252,7 +252,7 @@ class SchemeControllerTest {
     }
 
     @Test
-    void testDeletingSchemeThatDoesntExist() throws Exception {
+    void testDeletingSchemeThatDoesNotExist() throws Exception {
         Mockito.doThrow(new EntityNotFoundException()).when(this.schemeService).deleteASchemeById(SAMPLE_SCHEME_ID);
 
         this.mockMvc.perform(delete("/schemes/" + SAMPLE_SCHEME_ID)).andExpect(status().isNotFound())

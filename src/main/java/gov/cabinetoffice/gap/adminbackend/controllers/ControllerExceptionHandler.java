@@ -12,6 +12,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
 import gov.cabinetoffice.gap.adminbackend.models.ClassError;
 import gov.cabinetoffice.gap.adminbackend.models.ValidationError;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -54,7 +55,7 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(value = { ConstraintViolationException.class })
     protected ResponseEntity<Object> handleConflict(ConstraintViolationException ex, WebRequest request) {
         log.error(ex.getMessage(), ex);
-        ConstraintViolation constraintViolation = ex.getConstraintViolations().stream().findFirst().get();
+        ConstraintViolation<?> constraintViolation = ex.getConstraintViolations().stream().findFirst().get();
 
         // if validation violation was raised by NotAllNullValidator, then map to
         // ClassErrorsDto. Else, map to FieldErrorsDto
@@ -119,9 +120,12 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
      * arguments It'll spit back a json representation of a FieldErrorsDTO or a
      * ClassErrorsDTO
      */
+    @NotNull
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-            HttpHeaders headers, HttpStatus status, WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(@NotNull MethodArgumentNotValidException ex,
+                                                                  @NotNull HttpHeaders headers,
+                                                                  @NotNull HttpStatus status,
+                                                                  @NotNull WebRequest request) {
         log.error(ex.getMessage(), ex);
         BindingResult bindResults = ex.getBindingResult();
 
@@ -132,9 +136,12 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
      * This overridden method handles controller methods which cause bind exceptions It'll
      * spit back a json representation of a FieldErrorsDTO or a ClassErrorsDTO
      */
+    @NotNull
     @Override
-    protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status,
-            WebRequest request) {
+    protected ResponseEntity<Object> handleBindException(@NotNull BindException ex,
+                                                         @NotNull HttpHeaders headers,
+                                                         @NotNull HttpStatus status,
+                                                         @NotNull WebRequest request) {
         log.error(ex.getMessage(), ex);
         BindingResult bindResults = ex.getBindingResult();
 

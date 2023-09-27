@@ -7,6 +7,7 @@ import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
@@ -21,7 +22,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
 
 import org.springframework.data.domain.Pageable;
@@ -42,7 +42,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/schemes")
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class SchemeController {
 
     private final SchemeService schemeService;
@@ -57,7 +56,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<SchemeDTO> getSchemeById(@PathVariable final Integer schemeId) {
+    public ResponseEntity<?> getSchemeById(@PathVariable final Integer schemeId) {
         SchemeDTO scheme = null;
         try {
             scheme = this.schemeService.getSchemeBySchemeId(schemeId);
@@ -67,7 +66,7 @@ public class SchemeController {
             return ResponseEntity.notFound().build();
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<GenericErrorDTO>(HttpStatus.FORBIDDEN);
         }
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();
@@ -102,7 +101,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<String> updateSchemeData(@PathVariable final Integer schemeId,
+    public ResponseEntity<?> updateSchemeData(@PathVariable final Integer schemeId,
             @Valid @RequestBody SchemePatchDTO scheme) {
         try {
             this.schemeService.patchExistingScheme(schemeId, scheme);
@@ -112,7 +111,7 @@ public class SchemeController {
             return ResponseEntity.notFound().build();
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<GenericErrorDTO>(HttpStatus.FORBIDDEN);
         }
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();
@@ -128,7 +127,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<String> deleteAScheme(@PathVariable final Integer schemeId) {
+    public ResponseEntity<?> deleteAScheme(@PathVariable final Integer schemeId) {
         try {
             this.schemeService.deleteASchemeById(schemeId);
             return ResponseEntity.ok("Scheme deleted successfully");
@@ -137,7 +136,7 @@ public class SchemeController {
             return ResponseEntity.notFound().build();
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<GenericErrorDTO>(HttpStatus.FORBIDDEN);
         }
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();

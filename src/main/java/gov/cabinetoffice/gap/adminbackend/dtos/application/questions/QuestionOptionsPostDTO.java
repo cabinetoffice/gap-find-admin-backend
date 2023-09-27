@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.dtos.application.questions;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -15,6 +16,7 @@ import java.util.Map;
  * questions.
  */
 @Data
+@EqualsAndHashCode(callSuper=false)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class QuestionOptionsPostDTO extends QuestionAbstractPostDTO {
 

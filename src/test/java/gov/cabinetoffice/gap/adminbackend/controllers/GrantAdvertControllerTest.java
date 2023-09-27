@@ -115,7 +115,7 @@ class GrantAdvertControllerTest {
 
         // missing test around failed validation - I can't find a way to handcraft a
         // ConstraintViolationImpl obj
-        // if time permits, can create our own impl, but very time consuming for just this
+        // if time permits, can create our own impl, but very time-consuming for just this
         // test scenario
         // verified manually, failed validation produces expected fieldErrors and a 400
 
@@ -167,7 +167,7 @@ class GrantAdvertControllerTest {
         }
 
         @Test
-        void notFound_AttemptingToAccessAdvertWhichDoesntExist() throws Exception {
+        void notFound_AttemptingToAccessAdvertWhichDoesNotExist() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
             doThrow(NotFoundException.class).when(grantAdvertService).deleteGrantAdvert(grantAdvertId);
 
@@ -363,10 +363,9 @@ class GrantAdvertControllerTest {
 
         private final GrantAdvertStatus grantAdvertStatus = GrantAdvertStatus.DRAFT;
 
-        private final String contentfulSlug = "dummy-contentful-slug";
-
         @Test
         void getAdvertStatus_GrantAdvertStatusReturned() throws Exception {
+            String contentfulSlug = "dummy-contentful-slug";
             GetGrantAdvertStatusResponseDTO grantAdvertStatusResponseDTO = GetGrantAdvertStatusResponseDTO.builder()
                     .grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus).contentfulSlug(contentfulSlug)
                     .build();
@@ -422,8 +421,6 @@ class GrantAdvertControllerTest {
 
         private final GrantAdvertStatus grantAdvertStatus = GrantAdvertStatus.DRAFT;
 
-        private final String contentfulSlug = "dummy-contentful-slug";
-
         private final Instant dateTimeInput = Instant.parse("2022-01-01T00:00:00.00Z");
 
         private final Instant openingDate = dateTimeInput;
@@ -438,6 +435,7 @@ class GrantAdvertControllerTest {
 
         @Test
         void getAdvertPublishingInformation_GrantAdvertPublishingInformationReturned() throws Exception {
+            String contentfulSlug = "dummy-contentful-slug";
             GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponseDTO = GetGrantAdvertPublishingInformationResponseDTO
                     .builder().grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus)
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)

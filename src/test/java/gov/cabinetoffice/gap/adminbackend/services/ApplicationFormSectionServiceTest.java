@@ -199,8 +199,6 @@ class ApplicationFormSectionServiceTest {
         void addNewSection_insufficientPermissionsToAddThisSection() {
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationForm.getGrantApplicationId();
-            String sectionId = "test-section-id";
-
             Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
                     .thenReturn(Optional.of(testApplicationForm));
 
