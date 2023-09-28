@@ -10,4 +10,6 @@ public interface GapUserRepository extends JpaRepository<GapUser, Integer> {
 
     Optional<GapUser> findByUserSub(String userSub);
 
+    void deleteByUserSub(String userSub);
+
 }
