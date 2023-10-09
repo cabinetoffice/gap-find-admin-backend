@@ -36,9 +36,11 @@ import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomAppli
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -757,6 +759,28 @@ class ApplicationFormServiceTest {
                     .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
                             .isInstanceOf(AccessDeniedException.class)
                             .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+        }
+
+    }
+
+      @Nested
+    class retrieveApplicationsFromScheme {
+
+        @Test
+        void applicationsArePresent() {
+            ApplicationFormEntity applicationFormEntity = new ApplicationFormEntity();
+            when(applicationFormRepository.findByGrantSchemeId(SAMPLE_SCHEME_ID))
+                    .thenReturn(Optional.of(applicationFormEntity));
+            ApplicationFormEntity response = applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID);
+
+            assertThat(response).isEqualTo(applicationFormEntity);
+        }
+
+        @Test
+        void applicationsAreNotPresent() {
+            when(applicationFormRepository.findByGrantSchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
+            assertThrows(NoSuchElementException.class,
+                    () -> applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID));
         }
 
     }
