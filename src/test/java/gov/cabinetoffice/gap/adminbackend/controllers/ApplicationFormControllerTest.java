@@ -68,7 +68,6 @@ class ApplicationFormControllerTest {
     @MockBean
     private ApplicationFormRepository applicationFormRepository;
 
-
     @Test
     void saveApplicationFormHappyPathTest() throws Exception {
         when(this.applicationFormService.saveApplicationForm(SAMPLE_APPLICATION_POST_FORM_DTO))
@@ -262,25 +261,18 @@ class ApplicationFormControllerTest {
 
         when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
 
-        when(applicationFormService.getApplicationFromSchemeId(scheme.getId())).thenReturn(
-                ApplicationFormEntity.builder().grantApplicationId(1)
-                        .applicationName("application").grantSchemeId(scheme.getId()).build()
-        );
+        when(applicationFormService.getApplicationFromSchemeId(scheme.getId())).thenReturn(ApplicationFormEntity
+                .builder().grantApplicationId(1).applicationName("application").grantSchemeId(scheme.getId()).build());
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO, true);
 
-        this.mockMvc
-                .perform(post("/application-forms/lambda/" + SAMPLE_ADVERT_ID)
-                                .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh")
-                )
+        this.mockMvc.perform(post("/application-forms/lambda/" + SAMPLE_ADVERT_ID)
+                .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
                 .andExpect(status().isNoContent());
 
         Mockito.verify(applicationFormService, Mockito.times(1)).patchApplicationForm(1,
-                new ApplicationFormPatchDTO(
-                        ApplicationStatusEnum.REMOVED), true);
+                new ApplicationFormPatchDTO(ApplicationStatusEnum.REMOVED), true);
     }
-
-
 
     @Test
     void updateApplicationForm_SuccessfullyUpdatingApplication() throws Exception {

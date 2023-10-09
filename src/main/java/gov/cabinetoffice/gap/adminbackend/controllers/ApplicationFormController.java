@@ -147,13 +147,12 @@ public class ApplicationFormController {
         try {
             secretAuthService.authenticateSecret(authHeader);
             Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
-            ApplicationFormEntity applicationForm = applicationFormService
-                    .getApplicationFromSchemeId(schemeId);
+            ApplicationFormEntity applicationForm = applicationFormService.getApplicationFromSchemeId(schemeId);
 
-                ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
-                applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
-                this.applicationFormService.patchApplicationForm(applicationForm.getGrantApplicationId(), applicationFormPatchDTO,
-                        true);
+            ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
+            applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
+            this.applicationFormService.patchApplicationForm(applicationForm.getGrantApplicationId(),
+                    applicationFormPatchDTO, true);
 
             return ResponseEntity.noContent().build();
         }

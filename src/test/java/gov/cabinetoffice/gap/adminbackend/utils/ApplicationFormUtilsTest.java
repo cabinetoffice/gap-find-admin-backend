@@ -34,8 +34,8 @@ class ApplicationFormUtilsTest {
     void doesntCallSetLastUpdateByWhenIsLambdaEqualsTrue() {
         Instant fiveSecondsAgo = Instant.now().minusSeconds(5);
         Integer version = 1;
-        ApplicationFormEntity applicationForm = Mockito.spy(RandomApplicationFormGenerators.randomApplicationFormEntity()
-                .lastUpdateBy(007).lastUpdated(fiveSecondsAgo).version(version).build());
+        ApplicationFormEntity applicationForm = Mockito.spy(RandomApplicationFormGenerators
+                .randomApplicationFormEntity().lastUpdateBy(007).lastUpdated(fiveSecondsAgo).version(version).build());
         Mockito.verify(applicationForm, Mockito.times(0)).setLastUpdateBy(any());
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, null, true);
 

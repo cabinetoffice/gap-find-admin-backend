@@ -763,7 +763,7 @@ class ApplicationFormServiceTest {
 
     }
 
-      @Nested
+    @Nested
     class retrieveApplicationsFromScheme {
 
         @Test
