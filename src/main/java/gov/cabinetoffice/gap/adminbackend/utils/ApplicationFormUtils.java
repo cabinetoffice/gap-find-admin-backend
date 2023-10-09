@@ -8,9 +8,11 @@ import java.time.Instant;
 public class ApplicationFormUtils {
 
     public static void updateAuditDetailsAfterFormChange(ApplicationFormEntity applicationFormEntity,
-            AdminSession session) {
+            AdminSession session, boolean isLambdaCall) {
         applicationFormEntity.setLastUpdated(Instant.now());
-        applicationFormEntity.setLastUpdateBy(session.getGrantAdminId());
+        if(!isLambdaCall){
+            applicationFormEntity.setLastUpdateBy(session.getGrantAdminId());
+        }
         applicationFormEntity.setVersion(applicationFormEntity.getVersion() + 1);
     }
 

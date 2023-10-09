@@ -237,7 +237,7 @@ class ApplicationFormControllerTest {
     @Test
     void updateApplicationForm_SuccessfullyUpdatingApplication() throws Exception {
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
-                SAMPLE_PATCH_APPLICATION_DTO);
+                SAMPLE_PATCH_APPLICATION_DTO, false);
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
@@ -247,12 +247,12 @@ class ApplicationFormControllerTest {
     @Test
     void updateApplicationForm_BadRequest_NoApplicationPropertiesProvided() throws Exception {
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
-                SAMPLE_PATCH_APPLICATION_DTO);
+                SAMPLE_PATCH_APPLICATION_DTO, false);
         this.mockMvc.perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID)
                 .contentType(MediaType.APPLICATION_JSON).content("{ \"testProp\": \"doesnt exist\"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class));
+        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class), false);
     }
 
     @Test
@@ -261,13 +261,13 @@ class ApplicationFormControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{ \"applicationStatus\": \"INCORRECT\"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class));
+        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class), false);
     }
 
     @Test
     void updateApplicationForm_ApplicationFormNotFound() throws Exception {
         doThrow(new NotFoundException("Not Found Message")).when(this.applicationFormService)
-                .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO);
+                .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, false);
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
@@ -278,7 +278,7 @@ class ApplicationFormControllerTest {
     @Test
     void updateApplicationForm_AccessDenied() throws Exception {
         doThrow(new AccessDeniedException("Error")).when(this.applicationFormService)
-                .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO);
+                .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, false);
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
@@ -288,7 +288,7 @@ class ApplicationFormControllerTest {
     @Test
     void updateApplicationForm_GenericApplicationFormException() throws Exception {
         doThrow(new ApplicationFormException("Application Form Error Message")).when(this.applicationFormService)
-                .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO);
+                .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, false);
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))

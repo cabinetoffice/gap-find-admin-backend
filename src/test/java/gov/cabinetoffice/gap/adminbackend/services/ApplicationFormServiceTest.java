@@ -306,7 +306,7 @@ class ApplicationFormServiceTest {
 
             assertThat(updatedQuestion.getFieldTitle()).isEqualTo(SAMPLE_UPDATED_FIELD_TITLE);
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
 
         }
 
@@ -326,7 +326,7 @@ class ApplicationFormServiceTest {
 
             assertThat(updatedQuestion.getOptions()).isEqualTo(SAMPLE_UPDATED_OPTIONS);
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
         }
 
         @Test
@@ -413,7 +413,7 @@ class ApplicationFormServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
 
         }
 
@@ -441,7 +441,7 @@ class ApplicationFormServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
         }
 
         @Test
@@ -547,7 +547,7 @@ class ApplicationFormServiceTest {
 
             assertThat(sectionExists).isFalse();
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
             utilMock.close();
         }
 
@@ -704,14 +704,14 @@ class ApplicationFormServiceTest {
                     .thenReturn(patchedApplicationFormEntity);
 
             ApplicationFormServiceTest.this.applicationFormService.patchApplicationForm(applicationId,
-                    SAMPLE_PATCH_APPLICATION_DTO);
+                    SAMPLE_PATCH_APPLICATION_DTO, false);
 
             verify(ApplicationFormServiceTest.this.applicationFormRepository).findById(applicationId);
             verify(ApplicationFormServiceTest.this.applicationFormMapper)
                     .updateApplicationEntityFromPatchDto(SAMPLE_PATCH_APPLICATION_DTO, testApplicationFormEntity);
             verify(ApplicationFormServiceTest.this.applicationFormRepository).save(patchedApplicationFormEntity);
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
             utilMock.close();
 
         }
@@ -722,7 +722,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO))
+                    .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, false))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist.");
         }
@@ -740,7 +740,7 @@ class ApplicationFormServiceTest {
                     .thenThrow(new RuntimeException());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO))
+                    .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
                             .isInstanceOf(ApplicationFormException.class)
                             .hasMessage("Error occured when patching appliction with id of " + applicationId);
         }
@@ -754,7 +754,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO))
+                    .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
                             .isInstanceOf(AccessDeniedException.class)
                             .hasMessage("User 1 is unable to access the application form with id " + applicationId);
         }

@@ -21,7 +21,7 @@ class ApplicationFormUtilsTest {
 
         AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", "test.user@and.digital",
                 "[FIND, APPLY, ADMIN]");
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
         assertEquals(session.getGrantAdminId(), applicationForm.getLastUpdateBy());

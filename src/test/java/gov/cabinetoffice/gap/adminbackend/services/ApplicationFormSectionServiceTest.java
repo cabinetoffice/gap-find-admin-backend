@@ -164,7 +164,7 @@ class ApplicationFormSectionServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
             utilMock.close();
         }
 
@@ -238,7 +238,7 @@ class ApplicationFormSectionServiceTest {
 
             assertThat(sectionExists).isFalse();
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
             utilMock.close();
         }
 
@@ -313,7 +313,7 @@ class ApplicationFormSectionServiceTest {
                     .getSectionStatus();
 
             assertThat(newSectionStatus).isEqualTo(SectionStatusEnum.COMPLETE);
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
             utilMock.close();
         }
 
