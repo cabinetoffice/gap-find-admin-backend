@@ -142,13 +142,12 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity unpublishApplicationsAttachedToGrantAdvert(
+    public ResponseEntity removeApplicationAttachedToGrantAdvert(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable @NotNull UUID grantAdvertId) {
         try {
             secretAuthService.authenticateSecret(authHeader);
-
             Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
-            ApplicationFormNoSections applicationForm = applicationFormService
+            ApplicationFormEntity applicationForm = applicationFormService
                     .getApplicationFromSchemeId(schemeId);
 
                 ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();

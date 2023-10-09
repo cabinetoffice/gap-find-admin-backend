@@ -16,7 +16,7 @@ public interface ApplicationFormRepository extends JpaRepository<ApplicationForm
 
     Optional<ApplicationFormNoSections> findByGrantApplicationId(Integer applicationId);
 
-    Optional<ApplicationFormNoSections> findByGrantSchemeId(Integer grantSchemeId);
+    Optional<ApplicationFormEntity> findByGrantSchemeId(Integer grantSchemeId);
 
     @Query(nativeQuery = true,
             value = "SELECT q->>'responseType' from grant_application a, "

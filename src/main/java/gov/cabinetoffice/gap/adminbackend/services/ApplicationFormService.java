@@ -134,7 +134,7 @@ public class ApplicationFormService {
         this.applicationFormRepository.delete(applicationFormEntity);
     }
 
-    public ApplicationFormNoSections getApplicationFromSchemeId(Integer schemeId) {
+    public ApplicationFormEntity getApplicationFromSchemeId(Integer schemeId) {
         return applicationFormRepository.findByGrantSchemeId(schemeId).orElseThrow();
     }
 
