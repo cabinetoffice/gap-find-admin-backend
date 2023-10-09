@@ -87,7 +87,7 @@ public class GrantAdvertService {
 
         GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme).createdBy(grantAdmin)
                 .created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
-                .status(GrantAdvertStatus.DRAFT).version(1).build();
+                .status(GrantAdvertStatus.DRAFT).version(2).build();
         return this.grantAdvertRepository.save(grantAdvert);
     }
 
