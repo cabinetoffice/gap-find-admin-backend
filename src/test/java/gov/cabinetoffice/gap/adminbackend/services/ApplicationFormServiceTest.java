@@ -38,6 +38,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -308,7 +309,7 @@ class ApplicationFormServiceTest {
 
             assertThat(updatedQuestion.getFieldTitle()).isEqualTo(SAMPLE_UPDATED_FIELD_TITLE);
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
 
         }
 
@@ -328,7 +329,7 @@ class ApplicationFormServiceTest {
 
             assertThat(updatedQuestion.getOptions()).isEqualTo(SAMPLE_UPDATED_OPTIONS);
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
         }
 
         @Test
@@ -415,7 +416,7 @@ class ApplicationFormServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
 
         }
 
@@ -443,7 +444,7 @@ class ApplicationFormServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
         }
 
         @Test
@@ -549,7 +550,7 @@ class ApplicationFormServiceTest {
 
             assertThat(sectionExists).isFalse();
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
             utilMock.close();
         }
 
@@ -713,7 +714,7 @@ class ApplicationFormServiceTest {
                     .updateApplicationEntityFromPatchDto(SAMPLE_PATCH_APPLICATION_DTO, testApplicationFormEntity);
             verify(ApplicationFormServiceTest.this.applicationFormRepository).save(patchedApplicationFormEntity);
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), false));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
             utilMock.close();
 
         }
@@ -724,7 +725,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, false))
+                    .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, eq(false)))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist.");
         }

@@ -293,7 +293,7 @@ class ApplicationFormControllerTest {
                 .andExpect(status().isBadRequest());
 
         verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
-                false);
+                eq(false));
     }
 
     @Test
@@ -303,7 +303,7 @@ class ApplicationFormControllerTest {
                 .andExpect(status().isBadRequest());
 
         verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
-                false);
+                eq(false));
     }
 
     @Test
