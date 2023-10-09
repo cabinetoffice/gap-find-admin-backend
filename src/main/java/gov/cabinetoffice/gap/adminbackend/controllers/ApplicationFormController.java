@@ -148,16 +148,13 @@ public class ApplicationFormController {
             secretAuthService.authenticateSecret(authHeader);
 
             Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
-            List<ApplicationFormNoSections> applicationForms = applicationFormService
-                    .getApplicationsFromSchemeId(schemeId);
+            ApplicationFormNoSections applicationForm = applicationFormService
+                    .getApplicationFromSchemeId(schemeId);
 
-            for (ApplicationFormNoSections form : applicationForms) {
                 ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
                 applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
-                this.applicationFormService.patchApplicationForm(form.getGrantApplicationId(), applicationFormPatchDTO,
+                this.applicationFormService.patchApplicationForm(applicationForm.getGrantApplicationId(), applicationFormPatchDTO,
                         true);
-            }
-            ;
 
             return ResponseEntity.noContent().build();
         }
