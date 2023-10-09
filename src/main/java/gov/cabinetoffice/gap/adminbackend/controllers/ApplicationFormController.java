@@ -40,7 +40,9 @@ import java.util.UUID;
 public class ApplicationFormController {
 
     private final ApplicationFormService applicationFormService;
+
     private final SecretAuthService secretAuthService;
+
     private final GrantAdvertService grantAdvertService;
 
     @PostMapping
@@ -128,6 +130,7 @@ public class ApplicationFormController {
         }
 
     }
+
     @PostMapping("/lambda/{grantAdvertId}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Application form updated successfully.",
@@ -138,23 +141,23 @@ public class ApplicationFormController {
                     description = "Insufficient permissions to update this application form.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
-                    content = @Content(mediaType = "application/json")),
-    })
+                    content = @Content(mediaType = "application/json")), })
     public ResponseEntity unpublishApplicationsAttachedToGrantAdvert(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader,
-            @PathVariable @NotNull UUID grantAdvertId
-    ) {
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable @NotNull UUID grantAdvertId) {
         try {
             secretAuthService.authenticateSecret(authHeader);
 
             Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
-            List<ApplicationFormNoSections> applicationForms = applicationFormService.getApplicationsFromSchemeId(schemeId);
+            List<ApplicationFormNoSections> applicationForms = applicationFormService
+                    .getApplicationsFromSchemeId(schemeId);
 
             for (ApplicationFormNoSections form : applicationForms) {
                 ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
-                    applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
-                    this.applicationFormService.patchApplicationForm(form.getGrantApplicationId(), applicationFormPatchDTO, true);
-            };
+                applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
+                this.applicationFormService.patchApplicationForm(form.getGrantApplicationId(), applicationFormPatchDTO,
+                        true);
+            }
+            ;
 
             return ResponseEntity.noContent().build();
         }
@@ -163,7 +166,7 @@ public class ApplicationFormController {
             GenericErrorDTO genericErrorDTO = new GenericErrorDTO(nfe.getMessage());
             return new ResponseEntity(genericErrorDTO, HttpStatus.NOT_FOUND);
         }
-        catch (AccessDeniedException |  UnauthorizedException ade) {
+        catch (AccessDeniedException | UnauthorizedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
         catch (ApplicationFormException afe) {
@@ -172,7 +175,6 @@ public class ApplicationFormController {
         }
 
     }
-
 
     @PatchMapping("/{applicationId}")
     @ApiResponses(value = {

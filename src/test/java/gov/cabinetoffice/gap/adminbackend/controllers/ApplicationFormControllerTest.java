@@ -252,7 +252,8 @@ class ApplicationFormControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{ \"testProp\": \"doesnt exist\"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class), false);
+        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
+                false);
     }
 
     @Test
@@ -261,7 +262,8 @@ class ApplicationFormControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{ \"applicationStatus\": \"INCORRECT\"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class), false);
+        verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
+                false);
     }
 
     @Test

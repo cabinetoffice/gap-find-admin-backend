@@ -138,7 +138,6 @@ public class ApplicationFormService {
         return applicationFormRepository.findAllByGrantSchemeId(schemeId).orElseThrow();
     }
 
-
     public void patchQuestionValues(Integer applicationId, String sectionId, String questionId,
             ApplicationFormQuestionDTO questionDto) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -315,7 +314,7 @@ public class ApplicationFormService {
         ApplicationFormEntity application = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist."));
 
-        if(!isLambdaCall){
+        if (!isLambdaCall) {
             session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
             if (!application.getCreatedBy().equals(session.getGrantAdminId())) {

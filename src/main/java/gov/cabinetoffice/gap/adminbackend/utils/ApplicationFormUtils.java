@@ -10,7 +10,7 @@ public class ApplicationFormUtils {
     public static void updateAuditDetailsAfterFormChange(ApplicationFormEntity applicationFormEntity,
             AdminSession session, boolean isLambdaCall) {
         applicationFormEntity.setLastUpdated(Instant.now());
-        if(!isLambdaCall){
+        if (!isLambdaCall) {
             applicationFormEntity.setLastUpdateBy(session.getGrantAdminId());
         }
         applicationFormEntity.setVersion(applicationFormEntity.getVersion() + 1);
