@@ -51,6 +51,8 @@ public class XlsxGenerator {
         for (int col = 0; col < headers.size(); col++) {
             Cell cell = row.createCell(col);
             cell.setCellValue(headers.get(col));
+
+            // leaving this method call in to apply basic formatting with minimal performance hit
             worksheet.autoSizeColumn(col);
         }
     }
@@ -61,7 +63,6 @@ public class XlsxGenerator {
             for (int col = 0; col < data.get(row).size(); col++) {
                 Cell cell = dataRow.createCell(col);
                 cell.setCellValue(data.get(row).get(col));
-                worksheet.autoSizeColumn(col);
             }
         }
     }
