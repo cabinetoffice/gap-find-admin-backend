@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Configuration("contentfulConfigurationProperties")
+@Configuration("featureFlagsConfigurationProperties")
 @ConfigurationProperties(prefix = "feature")
 public class FeatureFlagsConfigurationProperties {
 
