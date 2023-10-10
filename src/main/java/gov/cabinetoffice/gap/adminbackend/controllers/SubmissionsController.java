@@ -40,6 +40,9 @@ public class SubmissionsController {
 
     @GetMapping(value = "/spotlight-export/{applicationId}", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer applicationId) {
+        log.info("Started submissions export for application " + applicationId);
+        long start = System.currentTimeMillis();
+
         final ByteArrayOutputStream stream = submissionsService.exportSpotlightChecks(applicationId);
         final String exportFileName = submissionsService.generateExportFileName(applicationId);
         final InputStreamResource resource = createTemporaryFile(stream, exportFileName);
@@ -53,6 +56,10 @@ public class SubmissionsController {
         // setting HTTP headers to tell caller we are returning a file
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentDisposition(ContentDisposition.parse("attachment; filename=" + exportFileName));
+
+        long end = System.currentTimeMillis();
+        log.info("Finished submissions export for application " + applicationId + ". Export time in millis: "
+                + (end - start));
 
         return ResponseEntity.ok().headers(headers).contentLength(length)
                 .contentType(MediaType.parseMediaType(EXPORT_CONTENT_TYPE)).body(resource);
