@@ -34,7 +34,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayOutputStream;
@@ -196,7 +195,6 @@ public class SubmissionsService {
         return dateString + "_" + ggisReference + "_" + applicationName + ".xlsx";
     }
 
-    @Transactional
     public void triggerSubmissionsExport(Integer applicationId) {
         UUID exportBatchId = UUID.randomUUID();
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
