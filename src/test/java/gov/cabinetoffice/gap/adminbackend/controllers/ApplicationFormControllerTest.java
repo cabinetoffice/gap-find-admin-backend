@@ -265,8 +265,9 @@ class ApplicationFormControllerTest {
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO, true);
 
-        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
-                .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
+        this.mockMvc
+                .perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
+                        .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
                 .andExpect(status().isNoContent());
 
         Mockito.verify(applicationFormService, Mockito.times(1)).patchApplicationForm(1,
@@ -278,7 +279,8 @@ class ApplicationFormControllerTest {
         doNothing().when(this.secretAuthService).authenticateSecret("shh");
         doThrow(NotFoundException.class).when(grantAdvertService).getAdvertById(SAMPLE_ADVERT_ID, true);
 
-        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
+        this.mockMvc
+                .perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
                         .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
                 .andExpect(status().isNotFound());
     }
@@ -289,7 +291,8 @@ class ApplicationFormControllerTest {
 
         when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenThrow(NotFoundException.class);
 
-        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
+        this.mockMvc
+                .perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
                         .contentType(MediaType.APPLICATION_JSON).header("Authorization", "not-correct"))
                 .andExpect(status().isUnauthorized());
     }
@@ -303,10 +306,11 @@ class ApplicationFormControllerTest {
         when(applicationFormService.getApplicationFromSchemeId(scheme.getId())).thenReturn(ApplicationFormEntity
                 .builder().grantApplicationId(1).applicationName("application").grantSchemeId(scheme.getId()).build());
 
-        doThrow(ApplicationFormException.class).when(this.applicationFormService).patchApplicationForm(anyInt(),
-                any(), eq(true));
+        doThrow(ApplicationFormException.class).when(this.applicationFormService).patchApplicationForm(anyInt(), any(),
+                eq(true));
 
-        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
+        this.mockMvc
+                .perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
                         .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
                 .andExpect(status().isInternalServerError());
     }
