@@ -58,8 +58,7 @@ public class SubmissionsController {
         headers.setContentDisposition(ContentDisposition.parse("attachment; filename=" + exportFileName));
 
         long end = System.currentTimeMillis();
-        log.info("Finished submissions export for application " + applicationId);
-        log.info("Export time in millis: " + (end - start));
+        log.info("Finished submissions export for application " + applicationId + ". Export time in millis: " + (end - start));
 
         return ResponseEntity.ok().headers(headers).contentLength(length)
                 .contentType(MediaType.parseMediaType(EXPORT_CONTENT_TYPE)).body(resource);

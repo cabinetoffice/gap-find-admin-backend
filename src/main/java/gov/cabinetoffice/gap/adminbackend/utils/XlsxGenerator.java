@@ -41,8 +41,8 @@ public class XlsxGenerator {
 
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet(SHEET_NAME);
-        addHeaders(sheet, headers);
         addData(sheet, data);
+        addHeaders(sheet, headers);
         return workbook;
     }
 
