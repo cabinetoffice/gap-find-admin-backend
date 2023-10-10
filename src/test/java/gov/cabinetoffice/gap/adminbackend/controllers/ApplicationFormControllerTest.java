@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
@@ -29,6 +30,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Collections;
 import java.util.List;
@@ -256,22 +258,57 @@ class ApplicationFormControllerTest {
     void removesApplicationAttachedToGrantAdvert_Successfully() throws Exception {
         SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
         GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
-
         doNothing().when(this.secretAuthService).authenticateSecret("shh");
-
         when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
-
         when(applicationFormService.getApplicationFromSchemeId(scheme.getId())).thenReturn(ApplicationFormEntity
                 .builder().grantApplicationId(1).applicationName("application").grantSchemeId(scheme.getId()).build());
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO, true);
 
-        this.mockMvc.perform(post("/application-forms/lambda/" + SAMPLE_ADVERT_ID)
+        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
                 .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
                 .andExpect(status().isNoContent());
 
         Mockito.verify(applicationFormService, Mockito.times(1)).patchApplicationForm(1,
                 new ApplicationFormPatchDTO(ApplicationStatusEnum.REMOVED), true);
+    }
+
+    @Test
+    void removesApplicationAttachedToGrantAdvert_throwsNotFoundWhenNoAdvertFound() throws Exception {
+        doNothing().when(this.secretAuthService).authenticateSecret("shh");
+        doThrow(NotFoundException.class).when(grantAdvertService).getAdvertById(SAMPLE_ADVERT_ID, true);
+
+        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
+                        .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void removesApplicationAttachedToGrantAdvert_throwsUnAuthorizedWhenNoSecretProvided() throws Exception {
+        doThrow(UnauthorizedException.class).when(this.secretAuthService).authenticateSecret(any());
+
+        when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenThrow(NotFoundException.class);
+
+        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
+                        .contentType(MediaType.APPLICATION_JSON).header("Authorization", "not-correct"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void removesApplicationAttachedToGrantAdvert_throwsApplicationFormExceptionWhenUnableToPatch() throws Exception {
+        SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
+        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
+        doNothing().when(this.secretAuthService).authenticateSecret("shh");
+        when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
+        when(applicationFormService.getApplicationFromSchemeId(scheme.getId())).thenReturn(ApplicationFormEntity
+                .builder().grantApplicationId(1).applicationName("application").grantSchemeId(scheme.getId()).build());
+
+        doThrow(ApplicationFormException.class).when(this.applicationFormService).patchApplicationForm(anyInt(),
+                any(), eq(true));
+
+        this.mockMvc.perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
+                        .contentType(MediaType.APPLICATION_JSON).header("Authorization", "shh"))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test

@@ -131,7 +131,7 @@ public class ApplicationFormController {
 
     }
 
-    @PostMapping("/lambda/{grantAdvertId}")
+    @DeleteMapping("/lambda/{grantAdvertId}/application")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Application form updated successfully.",
                     content = @Content(mediaType = "application/json")),
@@ -157,12 +157,12 @@ public class ApplicationFormController {
             return ResponseEntity.noContent().build();
         }
 
-        catch (NotFoundException nfe) {
-            GenericErrorDTO genericErrorDTO = new GenericErrorDTO(nfe.getMessage());
-            return new ResponseEntity(genericErrorDTO, HttpStatus.NOT_FOUND);
+        catch (NotFoundException error) {
+            GenericErrorDTO genericErrorDTO = new GenericErrorDTO(error.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(genericErrorDTO);
         }
-        catch (AccessDeniedException | UnauthorizedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+        catch (UnauthorizedException error) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         catch (ApplicationFormException afe) {
             GenericErrorDTO genericErrorDTO = new GenericErrorDTO(afe.getMessage());
