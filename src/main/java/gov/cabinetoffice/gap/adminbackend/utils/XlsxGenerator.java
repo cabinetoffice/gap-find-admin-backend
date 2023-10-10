@@ -52,7 +52,8 @@ public class XlsxGenerator {
             Cell cell = row.createCell(col);
             cell.setCellValue(headers.get(col));
 
-            // leaving this method call in to apply basic formatting with minimal performance hit
+            // leaving this method call in to apply basic formatting with minimal
+            // performance hit
             worksheet.autoSizeColumn(col);
         }
     }
