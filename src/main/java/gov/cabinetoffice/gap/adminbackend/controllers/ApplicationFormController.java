@@ -142,7 +142,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity removeApplicationAttachedToGrantAdvert(
+    public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable @NotNull UUID grantAdvertId) {
         try {
             secretAuthService.authenticateSecret(authHeader);
@@ -158,15 +158,13 @@ public class ApplicationFormController {
         }
 
         catch (NotFoundException error) {
-            GenericErrorDTO genericErrorDTO = new GenericErrorDTO(error.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(genericErrorDTO);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         catch (UnauthorizedException error) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        catch (ApplicationFormException afe) {
-            GenericErrorDTO genericErrorDTO = new GenericErrorDTO(afe.getMessage());
-            return ResponseEntity.internalServerError().body(genericErrorDTO);
+        catch (ApplicationFormException error) {
+            return ResponseEntity.internalServerError().build();
         }
 
     }
