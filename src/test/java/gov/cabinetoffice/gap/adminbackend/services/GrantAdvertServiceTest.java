@@ -8,6 +8,7 @@ import com.contentful.java.cma.ModuleEntries;
 import com.contentful.java.cma.model.CMAEntry;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -91,6 +92,9 @@ class GrantAdvertServiceTest {
     @Mock
     private CDAArray mockCDAArray;
 
+    @Mock
+    private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
+
     @InjectMocks
     @Spy
     private GrantAdvertService grantAdvertService;
@@ -120,6 +124,42 @@ class GrantAdvertServiceTest {
 
                 when(grantAdminRepository.findById(grantAdminId)).thenReturn(Optional.of(grantAdmin));
                 when(schemeRepository.findById(grantSchemeId)).thenReturn(Optional.of(grantScheme));
+                when(featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(false);
+                when(grantAdvertRepository.save(any())).thenAnswer(i -> {
+                    GrantAdvert output = (GrantAdvert) i.getArguments()[0];
+                    output.setId(id);
+                    return output;
+                });
+
+                GrantAdvert outputAdvert = grantAdvertService.create(grantSchemeId, grantAdminId, name);
+
+                assertThat(outputAdvert).isEqualTo(expectedAdvert);
+            }
+
+        }
+
+        @Test
+        void create_successWhenNewMandatoryQuestionFeatureFlagIsTrue() {
+            final String instantExpected = "2014-12-22T10:15:30Z";
+            final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
+            final Instant instant = Instant.now(clock);
+            final UUID id = UUID.randomUUID();
+            final int grantAdminId = 1;
+            final int grantSchemeId = 1;
+            final String name = "Test Grant Advert";
+            final GrantAdmin grantAdmin = GrantAdmin.builder().id(grantAdminId)
+                    .funder(FundingOrganisation.builder().id(1).build()).build();
+            final SchemeEntity grantScheme = SchemeEntity.builder().id(grantSchemeId).funderId(1).build();
+
+            try (MockedStatic<Instant> mockedStatic = mockStatic(Instant.class)) {
+                mockedStatic.when(Instant::now).thenReturn(instant);
+                GrantAdvert expectedAdvert = GrantAdvert.builder().id(id).grantAdvertName(name).scheme(grantScheme)
+                        .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin)
+                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).version(2).build();
+
+                when(grantAdminRepository.findById(grantAdminId)).thenReturn(Optional.of(grantAdmin));
+                when(schemeRepository.findById(grantSchemeId)).thenReturn(Optional.of(grantScheme));
+                when(featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(true);
                 when(grantAdvertRepository.save(any())).thenAnswer(i -> {
                     GrantAdvert output = (GrantAdvert) i.getArguments()[0];
                     output.setId(id);
