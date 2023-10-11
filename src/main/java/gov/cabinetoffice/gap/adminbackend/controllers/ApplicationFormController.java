@@ -3,9 +3,14 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
+import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -13,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,6 +29,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import java.util.List;
+import java.util.UUID;
 
 @Tag(name = "Application Forms", description = "API for handling organisations.")
 @RestController
@@ -31,6 +38,10 @@ import java.util.List;
 public class ApplicationFormController {
 
     private final ApplicationFormService applicationFormService;
+
+    private final SecretAuthService secretAuthService;
+
+    private final GrantAdvertService grantAdvertService;
 
     @PostMapping
     @ApiResponses(value = {
@@ -118,6 +129,45 @@ public class ApplicationFormController {
 
     }
 
+    @DeleteMapping("/lambda/{grantAdvertId}/application")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Application form updated successfully.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request body",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Insufficient permissions to update this application form.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Application not found with given id",
+                    content = @Content(mediaType = "application/json")), })
+
+    public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable @NotNull UUID grantAdvertId) {
+        try {
+            secretAuthService.authenticateSecret(authHeader);
+            Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
+            ApplicationFormEntity applicationForm = applicationFormService.getApplicationFromSchemeId(schemeId);
+
+            ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
+            applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
+            this.applicationFormService.patchApplicationForm(applicationForm.getGrantApplicationId(),
+                    applicationFormPatchDTO, true);
+
+            return ResponseEntity.noContent().build();
+        }
+
+        catch (NotFoundException error) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        catch (UnauthorizedException error) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        catch (ApplicationFormException error) {
+            return ResponseEntity.internalServerError().build();
+        }
+
+    }
+
     @PatchMapping("/{applicationId}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Application form updated successfully.",
@@ -133,7 +183,7 @@ public class ApplicationFormController {
             @Valid @RequestBody ApplicationFormPatchDTO applicationFormPatchDTO) {
 
         try {
-            this.applicationFormService.patchApplicationForm(applicationId, applicationFormPatchDTO);
+            this.applicationFormService.patchApplicationForm(applicationId, applicationFormPatchDTO, false);
             return ResponseEntity.noContent().build();
         }
         catch (NotFoundException nfe) {
