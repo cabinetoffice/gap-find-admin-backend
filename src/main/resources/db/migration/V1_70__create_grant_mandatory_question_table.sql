@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.grant_mandatory_questions (
 	city varchar(255) NULL,
 	county varchar(255) NULL,
 	postcode varchar(255) NULL,
-	orgType varchar(255) NULL,
+	org_type varchar(255) NULL,
 	companies_house_number varchar(255) NULL,
 	charity_commission_number varchar(255) NULL,
 	funding_amount varchar(255) NULL,
@@ -57,3 +57,10 @@ REFERENCES public.grant_applicant(id)
 MATCH simple
 ON DELETE CASCADE
 ON UPDATE NO ACTION;
+
+-- create index to foreign keys
+
+CREATE INDEX grant_mandatory_questions_grant_scheme_id_to_grant_scheme_table_idx ON grant_mandatory_questions (grant_scheme_id);
+CREATE INDEX grant_mandatory_questions_grant_scheme_id_to_grant_submission_table_idx ON grant_mandatory_questions (submission_id);
+CREATE INDEX grant_mandatory_questions_created_by_to_grant_applicant_table_idx ON grant_mandatory_questions (created_by);
+CREATE INDEX grant_mandatory_questions_last_updated_by_to_grant_applicant_table_idx ON grant_mandatory_questions (last_updated_by);
