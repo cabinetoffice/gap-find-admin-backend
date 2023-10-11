@@ -8,6 +8,7 @@ import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -77,17 +78,19 @@ public class GrantAdvertService {
 
     private final ContentfulConfigProperties contentfulProperties;
 
+    private final FeatureFlagsConfigurationProperties featureFlagsProperties;
+
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
-        GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
-        SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
+        final GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
+        final SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
         if (!scheme.getFunderId().equals(grantAdmin.getFunder().getId())) {
             throw new AccessDeniedException(
                     "User " + grantAdminId + " is unable to access scheme with id " + scheme.getId());
         }
-
-        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme).createdBy(grantAdmin)
+        final Integer version = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
+        final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme).createdBy(grantAdmin)
                 .created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
-                .status(GrantAdvertStatus.DRAFT).version(1).build();
+                .status(GrantAdvertStatus.DRAFT).version(version).build();
         return this.grantAdvertRepository.save(grantAdvert);
     }
 
