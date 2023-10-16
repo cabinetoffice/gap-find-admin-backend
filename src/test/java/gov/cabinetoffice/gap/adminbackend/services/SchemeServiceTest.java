@@ -8,6 +8,7 @@ import javax.persistence.EntityNotFoundException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
@@ -53,6 +54,8 @@ class SchemeServiceTest {
     @Mock
     private SchemeRepository schemeRepository;
 
+    @Mock
+    private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
     @InjectMocks
     private SchemeService schemeService;
 
@@ -163,10 +166,33 @@ class SchemeServiceTest {
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(mockEntity);
 
         when(this.schemeRepository.save(mockEntity)).thenReturn(testEntityAfterSave);
+        when(this.featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(false);
 
         Integer response = this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, mockSession);
 
         verify(mockEntity).setCreatedBy(1);
+        verify(this.schemeRepository).save(mockEntity);
+        verify(this.sessionsService).deleteObjectFromSession(SessionObjectEnum.newScheme, mockSession);
+        assertThat(response).as("Scheme ID should match value from mock object").isEqualTo(testSchemeId);
+    }
+
+    @Test
+    void postNewSchemeHappyPathTest_featureFlagForNewMandatoryQuestionIsOn() {
+        SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
+        SchemeEntity testEntityAfterSave = RandomeSchemeGenerator.randomSchemeEntity().build();
+        Integer testSchemeId = testEntityAfterSave.getId();
+
+        MockHttpSession mockSession = new MockHttpSession();
+
+        when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(mockEntity);
+
+        when(this.schemeRepository.save(mockEntity)).thenReturn(testEntityAfterSave);
+        when(this.featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(true);
+
+        Integer response = this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, mockSession);
+
+        verify(mockEntity).setCreatedBy(1);
+        verify(mockEntity).setVersion(2);
         verify(this.schemeRepository).save(mockEntity);
         verify(this.sessionsService).deleteObjectFromSession(SessionObjectEnum.newScheme, mockSession);
         assertThat(response).as("Scheme ID should match value from mock object").isEqualTo(testSchemeId);
