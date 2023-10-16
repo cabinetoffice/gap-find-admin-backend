@@ -1,3 +1,8 @@
+CREATE TYPE grant_mandatory_question_status AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED');
+CREATE TYPE grant_mandatory_question_type AS ENUM ('Limited company', 'Non-limited company','Registered charity', 'Unregistered charity', 'Other');
+
+
+
 -- grant_mandatory_questions
 CREATE TABLE IF NOT EXISTS public.grant_mandatory_questions (
 	id uuid NOT NULL,
@@ -9,12 +14,12 @@ CREATE TABLE IF NOT EXISTS public.grant_mandatory_questions (
 	city varchar(255) NULL,
 	county varchar(255) NULL,
 	postcode varchar(255) NULL,
-	org_type varchar(255) NULL,
+	org_type grant_mandatory_question_type NULL,
 	companies_house_number varchar(255) NULL,
 	charity_commission_number varchar(255) NULL,
-	funding_amount varchar(255) NULL,
+	funding_amount numeric(16,2) NULL,
 	funding_location varchar(255) NULL,
-    status varchar(255) NOT NULL,
+    status grant_mandatory_question_status NOT NULL,
     version int4 NOT NULL,
 	created timestamp NOT NULL,
 	created_by BIGINT NOT NULL,
