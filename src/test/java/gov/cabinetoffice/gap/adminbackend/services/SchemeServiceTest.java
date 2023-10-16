@@ -56,6 +56,7 @@ class SchemeServiceTest {
 
     @Mock
     private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
+
     @InjectMocks
     private SchemeService schemeService;
 

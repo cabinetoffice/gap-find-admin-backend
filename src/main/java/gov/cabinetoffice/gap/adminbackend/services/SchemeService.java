@@ -32,6 +32,7 @@ public class SchemeService {
     private final SchemeMapper schemeMapper;
 
     private final SessionsService sessionsService;
+
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
@@ -62,7 +63,7 @@ public class SchemeService {
             SchemeEntity entity = this.schemeMapper.schemePostDtoToEntity(newScheme);
             entity.setFunderId(adminSession.getFunderId());
             entity.setCreatedBy(adminSession.getGrantAdminId());
-            if(featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()){
+            if (featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()) {
                 entity.setVersion(2);
             }
             entity = this.schemeRepo.save(entity);
