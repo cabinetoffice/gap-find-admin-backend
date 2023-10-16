@@ -6,6 +6,7 @@ import java.util.List;
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 
+import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
@@ -31,6 +32,8 @@ public class SchemeService {
     private final SchemeMapper schemeMapper;
 
     private final SessionsService sessionsService;
+
+    private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -60,6 +63,9 @@ public class SchemeService {
             SchemeEntity entity = this.schemeMapper.schemePostDtoToEntity(newScheme);
             entity.setFunderId(adminSession.getFunderId());
             entity.setCreatedBy(adminSession.getGrantAdminId());
+            if (featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()) {
+                entity.setVersion(2);
+            }
             entity = this.schemeRepo.save(entity);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newScheme, session);
 
