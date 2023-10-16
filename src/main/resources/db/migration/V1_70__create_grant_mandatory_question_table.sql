@@ -1,5 +1,5 @@
 CREATE TYPE grant_mandatory_question_status AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED');
-CREATE TYPE grant_mandatory_question_type AS ENUM ('Limited company', 'Non-limited company','Registered charity', 'Unregistered charity', 'Other');
+CREATE TYPE grant_mandatory_question_type AS ENUM ('LIMITED_COMPANY', 'NON_LIMITED_COMPANY', 'REGISTERED_CHARITY', 'UNREGISTERED_CHARITY', 'OTHER');
 
 
 
