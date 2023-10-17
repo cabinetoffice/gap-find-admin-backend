@@ -1,6 +1,11 @@
 CREATE TYPE grant_mandatory_question_status AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED');
 CREATE TYPE grant_mandatory_question_type AS ENUM ('LIMITED_COMPANY', 'NON_LIMITED_COMPANY', 'REGISTERED_CHARITY', 'UNREGISTERED_CHARITY', 'OTHER');
-
+CREATE TYPE grant_mandatory_question_funding_location AS ENUM (
+    'NORTH_EAST_ENGLAND', 'NORTH_WEST_ENGLAND', 'YORKSHIRE_AND_THE_HUMBER',
+    'EAST_MIDLANDS_ENGLAND', 'WEST_MIDLANDS', 'EAST_ENGLAND', 'LONDON',
+    'SOUTH_EAST_ENGLAND', 'SOUTH_WEST_ENGLAND', 'MIDLANDS', 'SCOTLAND',
+    'WALES', 'NORTHERN_IRELAND', 'OUTSIDE_UK'
+);
 
 
 -- grant_mandatory_questions
@@ -18,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.grant_mandatory_questions (
 	companies_house_number varchar(255) NULL,
 	charity_commission_number varchar(255) NULL,
 	funding_amount numeric(16,2) NULL,
-	funding_location varchar(255) NULL,
+	funding_location grant_mandatory_question_funding_location[] NULL,
     status grant_mandatory_question_status NOT NULL,
     version int4 NOT NULL,
 	created timestamp NOT NULL,
