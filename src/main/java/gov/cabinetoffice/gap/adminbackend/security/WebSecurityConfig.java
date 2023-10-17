@@ -41,7 +41,7 @@ public class WebSecurityConfig {
                                 "/export-batch/{exportId:" + UUID_REGEX_STRING + "}/outstandingCount",
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/publish",
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/unpublish",
-                                "/users/migrate", "/users/delete/**")
+                                "/users/migrate", "/users/delete/**", "/application-forms/lambda/**")
                         .permitAll()
                         .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/swagger-ui.html",
                                 "/webjars/**")

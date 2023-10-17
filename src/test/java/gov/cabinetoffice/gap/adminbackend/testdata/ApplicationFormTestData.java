@@ -18,6 +18,8 @@ public class ApplicationFormTestData {
 
     public final static Integer SAMPLE_APPLICATION_ID = 111;
 
+    public final static UUID SAMPLE_ADVERT_ID = UUID.fromString("0-0-0-0-0");
+
     public final static Integer SAMPLE_SECOND_APPLICATION_ID = 222;
 
     public final static Integer SAMPLE_SCHEME_ID = 333;
