@@ -3,13 +3,16 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,6 +32,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Tag(name = "Application Forms", description = "API for handling organisations.")
@@ -43,6 +47,8 @@ public class ApplicationFormController {
 
     private final GrantAdvertService grantAdvertService;
 
+    private final SchemeService schemeService;
+
     @PostMapping
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Application form created successfully.",
@@ -51,7 +57,9 @@ public class ApplicationFormController {
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")), })
     public ResponseEntity postApplicationForm(@RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
-        GenericPostResponseDTO idResponse = this.applicationFormService.saveApplicationForm(applicationFormPostDTO);
+        final SchemeDTO scheme = schemeService.getSchemeBySchemeId(applicationFormPostDTO.getGrantSchemeId());
+        final GenericPostResponseDTO idResponse = this.applicationFormService
+                .saveApplicationForm(applicationFormPostDTO, scheme);
 
         return new ResponseEntity(idResponse, HttpStatus.CREATED);
     }

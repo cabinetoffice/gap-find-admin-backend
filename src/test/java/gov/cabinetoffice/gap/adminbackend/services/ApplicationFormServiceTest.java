@@ -2,8 +2,13 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPostDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundView;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.QuestionGenericPatchDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
@@ -18,7 +23,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -27,10 +37,37 @@ import javax.persistence.EntityNotFoundException;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.Validator;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
-import java.util.*;
-
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY_SECTIONS_NO_QUESTIONS;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_NAME;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_APPLICATION_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_FIELD_TITLE;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_GENERIC_INVALID_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_GENERIC_PATCH_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_GENERIC_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_CONTENT_INVALID_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_INVALID_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_PATCH_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SCHEME_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECOND_APPLICATION_FORM_ENTITY;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECTION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_UPDATED_FIELD_TITLE;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_UPDATED_OPTIONS;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormEntity;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -69,52 +106,82 @@ class ApplicationFormServiceTest {
     class saveApplicationForm {
 
         @Test
-        void saveApplicationFormHappyPathTest() {
+        void saveApplicationFormHappyPathTest_SchemeVersion1() {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             Mockito.when(ApplicationFormServiceTest.this.templateApplicationFormRepository.findById(1))
-                    .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(argument.capture()))
-                    .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
+                .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("1").build();
 
-            GenericPostResponseDTO genericPostResponseDTO = ApplicationFormServiceTest.this.applicationFormService
-                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME));
+            final GenericPostResponseDTO genericPostResponseDTO = ApplicationFormServiceTest.this.applicationFormService
+                .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME), schemeDTO);
 
             assertThat(genericPostResponseDTO.getId())
-                    .as("Verify the id returned matches the id of the entity returned by the repository after save")
-                    .isEqualTo(SAMPLE_APPLICATION_ID);
+                .as("Verify the id returned matches the id of the entity returned by the repository after save")
+                .isEqualTo(SAMPLE_APPLICATION_ID);
             assertThat(argument.getValue().getApplicationName())
-                    .as("Verify that application name has been mapped from original DTO")
-                    .isEqualTo(SAMPLE_APPLICATION_NAME);
+                .as("Verify that application name has been mapped from original DTO")
+                .isEqualTo(SAMPLE_APPLICATION_NAME);
             assertThat(argument.getValue().getDefinition().getSections())
-                    .as("Verify that the sections have been mapped from the template").asList()
-                    .hasSizeGreaterThanOrEqualTo(1);
+                .as("Verify that the sections have been mapped from the template")
+                .asList()
+                .hasSizeGreaterThanOrEqualTo(1);
+            assertThat(argument.getValue().getVersion()).as("Verify that version is 1").isEqualTo(1);
+
+        }
+
+        @Test
+        void saveApplicationFormHappyPathTest_SchemeVersion2() {
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            Mockito.when(ApplicationFormServiceTest.this.templateApplicationFormRepository.findById(2))
+                .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(argument.capture()))
+                .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("2").build();
+
+            final GenericPostResponseDTO genericPostResponseDTO = ApplicationFormServiceTest.this.applicationFormService
+                .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME), schemeDTO);
+
+            assertThat(genericPostResponseDTO.getId())
+                .as("Verify the id returned matches the id of the entity returned by the repository after save")
+                .isEqualTo(SAMPLE_APPLICATION_ID);
+            assertThat(argument.getValue().getApplicationName())
+                .as("Verify that application name has been mapped from original DTO")
+                .isEqualTo(SAMPLE_APPLICATION_NAME);
+            assertThat(argument.getValue().getDefinition().getSections())
+                .as("Verify that the sections have been mapped from the template")
+                .asList()
+                .hasSizeGreaterThanOrEqualTo(1);
+            assertThat(argument.getValue().getVersion()).as("Verify that version is 2").isEqualTo(2);
 
         }
 
         @Test
         void saveApplicationFormUnhappyPathTest_TemplateNotFoundTest() {
             Mockito.when(ApplicationFormServiceTest.this.templateApplicationFormRepository.findById(any()))
-                    .thenReturn(Optional.empty());
-
+                .thenReturn(Optional.empty());
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("1").build();
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME)))
-                            .as("Could not retrieve template application form")
-                            .isInstanceOf(ApplicationFormException.class);
+                .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME), schemeDTO))
+                .as("Could not retrieve template application form")
+                .isInstanceOf(ApplicationFormException.class);
 
         }
 
         @Test
         void saveApplicationFormUnhappyPathTest_SaveFailsTest() {
             Mockito.when(ApplicationFormServiceTest.this.templateApplicationFormRepository.findById(any()))
-                    .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(any()))
-                    .thenThrow(new RuntimeException("Generic save fails"));
-
+                .thenThrow(new RuntimeException("Generic save fails"));
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("1").build();
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME)))
-                            .isInstanceOf(ApplicationFormException.class)
-                            .hasMessage("Could save application form with name " + SAMPLE_APPLICATION_NAME);
+                .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME), schemeDTO))
+                .isInstanceOf(ApplicationFormException.class)
+                .hasMessage("Could save application form with name " + SAMPLE_APPLICATION_NAME);
 
         }
 
@@ -123,9 +190,9 @@ class ApplicationFormServiceTest {
     @Nested
     class checkIfApplicationFormExists {
 
-        private Integer grantAdminId = 1;
+        private final Integer grantAdminId = 1;
 
-        private Integer schemeId = 333;
+        private final Integer schemeId = 333;
 
         @Test
         void repositoryFindsApplicationForm() {
@@ -133,22 +200,24 @@ class ApplicationFormServiceTest {
             List<ApplicationFormsFoundView> applicationFoundViewList = Collections.singletonList(applicationFoundView);
             ApplicationFormsFoundDTO applicationFormFoundDTO = randomApplicationFormFound().build();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+            Mockito
+                .when(ApplicationFormServiceTest.this.applicationFormRepository
                     .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
-                    .thenReturn(applicationFoundViewList);
+                .thenReturn(applicationFoundViewList);
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
-                    .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
+                .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
             assertThat(response).asList().hasSize(1);
             assertThat(response.get(0)).isEqualTo(applicationFormFoundDTO);
         }
 
         @Test
         void noApplicationFormFoundInRepository() {
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+            Mockito
+                .when(ApplicationFormServiceTest.this.applicationFormRepository
                     .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
-                    .thenReturn(Collections.emptyList());
+                .thenReturn(Collections.emptyList());
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
-                    .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
+                .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
             assertThat(response).asList().isEmpty();
         }
 
@@ -161,14 +230,16 @@ class ApplicationFormServiceTest {
 
             ApplicationFormsFoundDTO applicationFormFoundDTO = randomApplicationFormFound().build();
             ApplicationFormsFoundDTO secondApplicationFormFoundDTO = randomApplicationFormFound().applicationId(2)
-                    .submissionCount(1).build();
+                .submissionCount(1)
+                .build();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+            Mockito
+                .when(ApplicationFormServiceTest.this.applicationFormRepository
                     .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
-                    .thenReturn(applicationFoundViewList);
+                .thenReturn(applicationFoundViewList);
 
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
-                    .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
+                .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
             assertThat(response).asList().hasSize(2);
             assertThat(response.get(0)).isEqualTo(applicationFormFoundDTO);
             assertThat(response.get(1)).isEqualTo(secondApplicationFormFoundDTO);
@@ -182,33 +253,33 @@ class ApplicationFormServiceTest {
         @Test
         void retrieveApplicationFormSummaryHappyPathTest() {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
             ApplicationFormDTO applicationFormDTO = ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveApplicationFormSummary(SAMPLE_APPLICATION_ID, true, true);
+                .retrieveApplicationFormSummary(SAMPLE_APPLICATION_ID, true, true);
 
             assertThat(applicationFormDTO.getGrantApplicationId())
-                    .isEqualTo(SAMPLE_APPLICATION_FORM_ENTITY.getGrantApplicationId());
+                .isEqualTo(SAMPLE_APPLICATION_FORM_ENTITY.getGrantApplicationId());
             assertThat(applicationFormDTO.getApplicationName())
-                    .isEqualTo(SAMPLE_APPLICATION_FORM_ENTITY.getApplicationName());
+                .isEqualTo(SAMPLE_APPLICATION_FORM_ENTITY.getApplicationName());
         }
 
         @Test
         void retrieveApplicationFormSummaryNotFoundTest() {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveApplicationFormSummary(SAMPLE_APPLICATION_ID, true, true))
-                            .isInstanceOf(ApplicationFormException.class)
-                            .hasMessage("No application found with id " + SAMPLE_APPLICATION_ID);
+                .retrieveApplicationFormSummary(SAMPLE_APPLICATION_ID, true, true))
+                .isInstanceOf(ApplicationFormException.class)
+                .hasMessage("No application found with id " + SAMPLE_APPLICATION_ID);
         }
 
         @Test
         void retrieveApplicationFormSummaryNoQuestionsHappyPathTest() {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_SECTIONS_NO_QUESTIONS));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_SECTIONS_NO_QUESTIONS));
             ApplicationFormDTO applicationFormDTO = ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveApplicationFormSummary(SAMPLE_APPLICATION_ID, true, false);
+                .retrieveApplicationFormSummary(SAMPLE_APPLICATION_ID, true, false);
 
             applicationFormDTO.getSections().forEach(section -> assertThat(section.getQuestions() == null));
         }
@@ -219,12 +290,11 @@ class ApplicationFormServiceTest {
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveApplicationFormSummary(applicationId, true, true))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                .retrieveApplicationFormSummary(applicationId, true, true)).isInstanceOf(AccessDeniedException.class)
+                .hasMessage("User 1 is unable to access the application form with id " + applicationId);
         }
 
     }
@@ -238,10 +308,11 @@ class ApplicationFormServiceTest {
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
-            Mockito.doNothing().when(ApplicationFormServiceTest.this.applicationFormRepository)
-                    .delete(testApplicationEntity);
+            Mockito.doNothing()
+                .when(ApplicationFormServiceTest.this.applicationFormRepository)
+                .delete(testApplicationEntity);
 
             ApplicationFormServiceTest.this.applicationFormService.deleteApplicationForm(applicationId);
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).delete(testApplicationEntity);
@@ -254,12 +325,13 @@ class ApplicationFormServiceTest {
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
             Mockito.doThrow(new EntityNotFoundException("No application found with id " + applicationId))
-                    .when(ApplicationFormServiceTest.this.applicationFormRepository).findById(applicationId);
+                .when(ApplicationFormServiceTest.this.applicationFormRepository)
+                .findById(applicationId);
 
             assertThatThrownBy(
                     () -> ApplicationFormServiceTest.this.applicationFormService.deleteApplicationForm(applicationId))
-                            .hasMessage("No application found with id " + applicationId)
-                            .isInstanceOf(EntityNotFoundException.class);
+                .hasMessage("No application found with id " + applicationId)
+                .isInstanceOf(EntityNotFoundException.class);
         }
 
         @Test
@@ -268,12 +340,12 @@ class ApplicationFormServiceTest {
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(
                     () -> ApplicationFormServiceTest.this.applicationFormService.deleteApplicationForm(applicationId))
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId)
-                            .isInstanceOf(AccessDeniedException.class);
+                .hasMessage("User 1 is unable to access the application form with id " + applicationId)
+                .isInstanceOf(AccessDeniedException.class);
         }
 
     }
@@ -298,14 +370,16 @@ class ApplicationFormServiceTest {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
                     SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO);
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
-            ApplicationFormQuestionDTO updatedQuestion = argument.getValue().getDefinition()
-                    .getSectionById(SAMPLE_SECTION_ID).getQuestionById(SAMPLE_QUESTION_ID);
+            ApplicationFormQuestionDTO updatedQuestion = argument.getValue()
+                .getDefinition()
+                .getSectionById(SAMPLE_SECTION_ID)
+                .getQuestionById(SAMPLE_QUESTION_ID);
 
             assertThat(updatedQuestion.getFieldTitle()).isEqualTo(SAMPLE_UPDATED_FIELD_TITLE);
 
@@ -318,14 +392,16 @@ class ApplicationFormServiceTest {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_SECOND_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_SECOND_APPLICATION_FORM_ENTITY));
 
             ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
                     SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_OPTIONS_PATCH_DTO);
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
-            ApplicationFormQuestionDTO updatedQuestion = argument.getValue().getDefinition()
-                    .getSectionById(SAMPLE_SECTION_ID).getQuestionById(SAMPLE_QUESTION_ID);
+            ApplicationFormQuestionDTO updatedQuestion = argument.getValue()
+                .getDefinition()
+                .getSectionById(SAMPLE_SECTION_ID)
+                .getQuestionById(SAMPLE_QUESTION_ID);
 
             assertThat(updatedQuestion.getOptions()).isEqualTo(SAMPLE_UPDATED_OPTIONS);
 
@@ -336,12 +412,12 @@ class ApplicationFormServiceTest {
         void patchQuestionValuesApplicationNotFoundPathTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
         }
 
@@ -349,15 +425,15 @@ class ApplicationFormServiceTest {
         void patchQuestionValuesValidationFailedPathTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormMapper.questionDtoToQuestionGenericPatch(any()))
-                    .thenCallRealMethod();
+                .thenCallRealMethod();
             Mockito.when(ApplicationFormServiceTest.this.validator.validate(new QuestionGenericPatchDTO()))
-                    .thenCallRealMethod();
+                .thenCallRealMethod();
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, new ApplicationFormQuestionDTO()))
-                            .isInstanceOf(ConstraintViolationException.class);
+                .isInstanceOf(ConstraintViolationException.class);
 
         }
 
@@ -367,12 +443,12 @@ class ApplicationFormServiceTest {
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
                     applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
         }
 
@@ -398,14 +474,16 @@ class ApplicationFormServiceTest {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             String questionId = ApplicationFormServiceTest.this.applicationFormService.addQuestionToApplicationForm(
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_GENERIC_POST_DTO, new MockHttpSession());
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
-            ApplicationFormQuestionDTO newQuestion = argument.getValue().getDefinition()
-                    .getSectionById(SAMPLE_SECTION_ID).getQuestionById(questionId);
+            ApplicationFormQuestionDTO newQuestion = argument.getValue()
+                .getDefinition()
+                .getSectionById(SAMPLE_SECTION_ID)
+                .getQuestionById(questionId);
 
             assertThat(newQuestion.getFieldTitle()).isEqualTo(SAMPLE_QUESTION_FIELD_TITLE);
 
@@ -425,14 +503,16 @@ class ApplicationFormServiceTest {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             String questionId = ApplicationFormServiceTest.this.applicationFormService.addQuestionToApplicationForm(
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_OPTIONS_POST_DTO, new MockHttpSession());
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
-            ApplicationFormQuestionDTO newQuestion = argument.getValue().getDefinition()
-                    .getSectionById(SAMPLE_SECTION_ID).getQuestionById(questionId);
+            ApplicationFormQuestionDTO newQuestion = argument.getValue()
+                .getDefinition()
+                .getSectionById(SAMPLE_SECTION_ID)
+                .getQuestionById(questionId);
 
             assertThat(newQuestion.getFieldTitle()).isEqualTo(SAMPLE_QUESTION_FIELD_TITLE);
             assertThat(newQuestion.getOptions()).asList().isNotEmpty();
@@ -451,13 +531,13 @@ class ApplicationFormServiceTest {
         void addNewQuestionValuesApplicationNotFoundTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
-                            SAMPLE_QUESTION_GENERIC_POST_DTO, new MockHttpSession()))
-                                    .isInstanceOf(NotFoundException.class)
-                                    .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
+                        SAMPLE_QUESTION_GENERIC_POST_DTO, new MockHttpSession()))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
         }
 
@@ -465,13 +545,13 @@ class ApplicationFormServiceTest {
         void addNewQuestionGenericValidationFailedPathTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
-                            SAMPLE_QUESTION_GENERIC_INVALID_POST_DTO, new MockHttpSession()))
-                                    .isInstanceOf(ConstraintViolationException.class)
-                                    .hasMessage("fieldTitle: Question title can not be less than 2 characters");
+                .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
+                        SAMPLE_QUESTION_GENERIC_INVALID_POST_DTO, new MockHttpSession()))
+                .isInstanceOf(ConstraintViolationException.class)
+                .hasMessage("fieldTitle: Question title can not be less than 2 characters");
 
         }
 
@@ -479,13 +559,13 @@ class ApplicationFormServiceTest {
         void addNewQuestionOptionsValidationFailedPathTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
-                            SAMPLE_QUESTION_OPTIONS_INVALID_POST_DTO, new MockHttpSession()))
-                                    .isInstanceOf(ConstraintViolationException.class)
-                                    .hasMessage("options: You must have a minimum of two options");
+                .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
+                        SAMPLE_QUESTION_OPTIONS_INVALID_POST_DTO, new MockHttpSession()))
+                .isInstanceOf(ConstraintViolationException.class)
+                .hasMessage("options: You must have a minimum of two options");
 
         }
 
@@ -493,13 +573,13 @@ class ApplicationFormServiceTest {
         void addNewQuestionOptionValueValidationFailedPathTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
-                            SAMPLE_QUESTION_OPTIONS_CONTENT_INVALID_POST_DTO, new MockHttpSession()))
-                                    .isInstanceOf(ConstraintViolationException.class)
-                                    .hasMessage("options[2].<list element>: Enter an option");
+                .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
+                        SAMPLE_QUESTION_OPTIONS_CONTENT_INVALID_POST_DTO, new MockHttpSession()))
+                .isInstanceOf(ConstraintViolationException.class)
+                .hasMessage("options[2].<list element>: Enter an option");
         }
 
         @Test
@@ -508,13 +588,13 @@ class ApplicationFormServiceTest {
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(
                     () -> ApplicationFormServiceTest.this.applicationFormService.addQuestionToApplicationForm(
                             applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_GENERIC_POST_DTO, new MockHttpSession()))
-                                    .isInstanceOf(AccessDeniedException.class).hasMessage(
-                                            "User 1 is unable to access the application form with id " + applicationId);
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
         }
 
@@ -532,21 +612,27 @@ class ApplicationFormServiceTest {
             final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(0).getSectionId();
-            final String questionId = testApplicationFormEntity.getDefinition().getSections().get(0).getQuestions()
-                    .get(0).getQuestionId();
+            final String questionId = testApplicationFormEntity.getDefinition()
+                .getSections()
+                .get(0)
+                .getQuestions()
+                .get(0)
+                .getQuestionId();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationFormEntity));
+                .thenReturn(Optional.of(testApplicationFormEntity));
 
             ApplicationFormServiceTest.this.applicationFormService.deleteQuestionFromSection(applicationId, sectionId,
                     questionId);
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
-            List<ApplicationFormQuestionDTO> questions = argument.getValue().getDefinition().getSectionById(sectionId)
-                    .getQuestions();
+            List<ApplicationFormQuestionDTO> questions = argument.getValue()
+                .getDefinition()
+                .getSectionById(sectionId)
+                .getQuestions();
 
             boolean sectionExists = questions.stream()
-                    .anyMatch(question -> Objects.equals(question.getQuestionId(), questionId));
+                .anyMatch(question -> Objects.equals(question.getQuestionId(), questionId));
 
             assertThat(sectionExists).isFalse();
 
@@ -558,12 +644,12 @@ class ApplicationFormServiceTest {
         void deleteQuestionApplicationNotFoundTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
         }
 
@@ -572,12 +658,12 @@ class ApplicationFormServiceTest {
             String incorrectId = "incorrectId";
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, incorrectId, SAMPLE_QUESTION_ID))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Section with id " + incorrectId + " does not exist");
+                .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, incorrectId, SAMPLE_QUESTION_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Section with id " + incorrectId + " does not exist");
 
         }
 
@@ -586,12 +672,12 @@ class ApplicationFormServiceTest {
             String incorrectId = "incorrectId";
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, incorrectId))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Question with id " + incorrectId + " does not exist");
+                .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, incorrectId))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Question with id " + incorrectId + " does not exist");
 
         }
 
@@ -603,12 +689,12 @@ class ApplicationFormServiceTest {
             String questionId = "test-question-id";
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(applicationId, sectionId, questionId))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                .deleteQuestionFromSection(applicationId, sectionId, questionId))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
         }
 
@@ -621,10 +707,10 @@ class ApplicationFormServiceTest {
         void getQuestionHappyPathTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             ApplicationFormQuestionDTO question = ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveQuestion(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID);
+                .retrieveQuestion(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID);
 
             assertThat(question.getQuestionId()).isEqualTo(SAMPLE_QUESTION_ID);
             assertThat(question.getFieldTitle()).isEqualTo(SAMPLE_QUESTION_FIELD_TITLE);
@@ -635,12 +721,12 @@ class ApplicationFormServiceTest {
         void getQuestionQuestionNotFoundTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveQuestion(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, "differentId"))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Question with id differentId does not exist");
+                .retrieveQuestion(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, "differentId"))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Question with id differentId does not exist");
 
         }
 
@@ -648,12 +734,12 @@ class ApplicationFormServiceTest {
         void getQuestionSectionNotFoundTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
+                .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveQuestion(SAMPLE_APPLICATION_ID, "differentId", SAMPLE_QUESTION_ID))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Section with id differentId does not exist");
+                .retrieveQuestion(SAMPLE_APPLICATION_ID, "differentId", SAMPLE_QUESTION_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Section with id differentId does not exist");
 
         }
 
@@ -661,12 +747,12 @@ class ApplicationFormServiceTest {
         void getQuestionApplicationNotFoundTest() {
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveQuestion(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                .retrieveQuestion(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
         }
 
@@ -678,11 +764,11 @@ class ApplicationFormServiceTest {
             String questionId = "test-question-id";
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveQuestion(applicationId, sectionId, questionId)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                .retrieveQuestion(applicationId, sectionId, questionId)).isInstanceOf(AccessDeniedException.class)
+                .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
         }
 
@@ -699,19 +785,20 @@ class ApplicationFormServiceTest {
             final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity()
-                    .applicationStatus(ApplicationStatusEnum.PUBLISHED).build();
+                .applicationStatus(ApplicationStatusEnum.PUBLISHED)
+                .build();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationFormEntity));
+                .thenReturn(Optional.of(testApplicationFormEntity));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(patchedApplicationFormEntity))
-                    .thenReturn(patchedApplicationFormEntity);
+                .thenReturn(patchedApplicationFormEntity);
 
             ApplicationFormServiceTest.this.applicationFormService.patchApplicationForm(applicationId,
                     SAMPLE_PATCH_APPLICATION_DTO, false);
 
             verify(ApplicationFormServiceTest.this.applicationFormRepository).findById(applicationId);
             verify(ApplicationFormServiceTest.this.applicationFormMapper)
-                    .updateApplicationEntityFromPatchDto(SAMPLE_PATCH_APPLICATION_DTO, testApplicationFormEntity);
+                .updateApplicationEntityFromPatchDto(SAMPLE_PATCH_APPLICATION_DTO, testApplicationFormEntity);
             verify(ApplicationFormServiceTest.this.applicationFormRepository).save(patchedApplicationFormEntity);
 
             utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
@@ -722,12 +809,12 @@ class ApplicationFormServiceTest {
         @Test
         void attemptingToPatchApplicationFormThatCantBeFound() {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, eq(false)))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist.");
+                .patchApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_PATCH_APPLICATION_DTO, eq(false)))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist.");
         }
 
         @Test
@@ -735,17 +822,18 @@ class ApplicationFormServiceTest {
             final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity()
-                    .applicationStatus(ApplicationStatusEnum.PUBLISHED).build();
+                .applicationStatus(ApplicationStatusEnum.PUBLISHED)
+                .build();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationFormEntity));
+                .thenReturn(Optional.of(testApplicationFormEntity));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(patchedApplicationFormEntity))
-                    .thenThrow(new RuntimeException());
+                .thenThrow(new RuntimeException());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
-                            .isInstanceOf(ApplicationFormException.class)
-                            .hasMessage("Error occured when patching appliction with id of " + applicationId);
+                .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
+                .isInstanceOf(ApplicationFormException.class)
+                .hasMessage("Error occured when patching appliction with id of " + applicationId);
         }
 
         @Test
@@ -754,12 +842,12 @@ class ApplicationFormServiceTest {
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+                .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("User 1 is unable to access the application form with id " + applicationId);
         }
 
     }
@@ -771,7 +859,7 @@ class ApplicationFormServiceTest {
         void applicationsArePresent() {
             ApplicationFormEntity applicationFormEntity = new ApplicationFormEntity();
             when(applicationFormRepository.findByGrantSchemeId(SAMPLE_SCHEME_ID))
-                    .thenReturn(Optional.of(applicationFormEntity));
+                .thenReturn(Optional.of(applicationFormEntity));
             ApplicationFormEntity response = applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID);
 
             assertThat(response).isEqualTo(applicationFormEntity);
