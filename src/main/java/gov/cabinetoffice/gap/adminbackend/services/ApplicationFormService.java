@@ -61,10 +61,9 @@ public class ApplicationFormService {
     public GenericPostResponseDTO saveApplicationForm(ApplicationFormPostDTO applicationFormDTO, SchemeDTO scheme) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
-            int templateId = scheme.getVersion().equals("1") ? 1 : 2;
             // TODO move template id to external config?
             final TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository
-                    .findById(templateId)
+                    .findById(1)
                     .orElseThrow(() -> new ApplicationFormException("Could not retrieve template application form"));
 
             final ApplicationFormEntity newFormEntity = ApplicationFormEntity.createFromTemplate(
