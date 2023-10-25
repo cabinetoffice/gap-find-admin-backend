@@ -62,8 +62,7 @@ public class ApplicationFormService {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
             // TODO move template id to external config?
-            final TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository
-                    .findById(1)
+            final TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository.findById(1)
                     .orElseThrow(() -> new ApplicationFormException("Could not retrieve template application form"));
 
             final ApplicationFormEntity newFormEntity = ApplicationFormEntity.createFromTemplate(
