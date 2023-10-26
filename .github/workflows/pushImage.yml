@@ -1,7 +1,6 @@
 name: Push Image Workflow
 
 on:
-  create:
   push:
     branches:
       - release/**
@@ -51,6 +50,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+
+    outputs:
+      docker-image-name: ${{ steps.docker-image-name.outputs.name }}
 
     steps:
       - uses: actions/checkout@v3
