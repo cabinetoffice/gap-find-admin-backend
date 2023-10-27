@@ -143,6 +143,7 @@ public class ApplicationFormService {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
+
             if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
                 throw new AccessDeniedException("User " + session.getGrantAdminId()
                         + " is unable to access the application form with id " + applicationId);
