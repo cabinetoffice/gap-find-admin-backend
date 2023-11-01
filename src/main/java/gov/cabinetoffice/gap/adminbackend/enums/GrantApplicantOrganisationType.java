@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 public enum GrantApplicantOrganisationType {
 
     LIMITED_COMPANY("Limited company"), NON_LIMITED_COMPANY("Non-limited company"),
-    UNLIMITED_COMPANY("Unlimited company"), REGISTERED_CHARITY("Registered charity"),
-    UNREGISTERED_CHARITY("Unregistered charity"), OTHER("Other");
+    UNLIMITED_COMPANY("Unlimited company"), CHARITY("Charity"), INDIVIDUAL("I am applying as an Individual"),
+    OTHER("Other");
 
     private String name;
 
