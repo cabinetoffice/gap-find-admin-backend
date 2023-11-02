@@ -24,4 +24,6 @@ public class LambdaSubmissionDefinition {
 
     private String email;
 
+    private Integer schemeVersion;
+
 }
