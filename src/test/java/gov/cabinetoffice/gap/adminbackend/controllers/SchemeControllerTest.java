@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -354,6 +355,17 @@ class SchemeControllerTest {
 
         this.mockMvc.perform(get("/schemes").param("paginate", "true")).andExpect(status().isBadRequest())
                 .andExpect(content().string("")).andReturn();
+    }
+
+    @Nested
+    class GetAdminsSchemes {
+        @Test
+        void HappyPath() throws Exception {
+            Mockito.when(schemeService.getAdminsSchemes(1)).thenReturn(SCHEME_DTOS_EXAMPLE);
+
+            mockMvc.perform(get("/schemes/admin/1")).andExpect(status().isOk())
+                    .andExpect(content().json(HelperUtils.asJsonString(SCHEME_DTOS_EXAMPLE)));
+        }
     }
 
 }

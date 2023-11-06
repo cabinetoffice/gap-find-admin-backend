@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomeSchemeGenerator;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -322,6 +323,21 @@ class SchemeServiceTest {
 
         assertThatThrownBy(() -> this.schemeService.getPaginatedSchemes(EXAMPLE_PAGINATION_PROPS))
                 .isInstanceOf(SchemeEntityException.class);
+    }
+
+    @Nested
+    class GetAdminsSchemes {
+        @Test
+        void happyPathTest() {
+            when(schemeRepository.findByCreatedBy(1))
+                    .thenReturn(SCHEME_ENTITY_LIST_EXAMPLE);
+            when(schemeMapper.schemeEntityListtoDtoList(SCHEME_ENTITY_LIST_EXAMPLE)).thenReturn(SCHEME_DTOS_EXAMPLE);
+
+            List<SchemeDTO> response = schemeService.getAdminsSchemes(1);
+
+            assertThat(response).as("Response should contain exactly 1 entry").hasSize(1);
+            assertThat(response.get(0)).as("Response contents should match given DTO").isEqualTo(SCHEME_DTO_EXAMPLE);
+        }
     }
 
 }
