@@ -15,10 +15,11 @@ public interface GrantAdvertRepository extends JpaRepository<GrantAdvert, UUID> 
     @Override
     Optional<GrantAdvert> findById(UUID id);
 
-    @PreAuthorize("#grantAdminId == authentication.principal.grantAdminId")
+    // @PreAuthorize("#grantAdminId == authentication.principal.grantAdminId")
     Long deleteByIdAndCreatedById(UUID advertId, Integer grantAdminId);
 
-    @PostAuthorize("!returnObject.isEmpty() ? returnObject.get().createdBy.id == authentication.principal.grantAdminId : true")
+    // @PostAuthorize("!returnObject.isEmpty() ? returnObject.get().createdBy.id ==
+    // authentication.principal.grantAdminId : true")
     Optional<GrantAdvert> findBySchemeId(Integer schemeId);
 
 }

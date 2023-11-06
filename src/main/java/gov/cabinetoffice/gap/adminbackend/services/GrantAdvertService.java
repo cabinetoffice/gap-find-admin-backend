@@ -535,4 +535,11 @@ public class GrantAdvertService {
         grantAdvertRepository.save(advert);
     }
 
+    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+        GrantAdvert advert = this.grantAdvertRepository.findBySchemeId(schemeId).orElseThrow(
+                () -> new NotFoundException("Grant Advert for Scheme with id " + schemeId + " does not exist"));
+            advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
+            this.grantAdvertRepository.save(advert);
+        }
+
 }

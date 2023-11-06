@@ -1,16 +1,22 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -21,11 +27,17 @@ public class UserService {
 
     private final GapUserRepository gapUserRepository;
 
+    private final GrantAdminRepository grantAdminRepository;
+
     private final GrantApplicantRepository grantApplicantRepository;
 
     private final UserServiceConfig userServiceConfig;
 
     private final RestTemplate restTemplate;
+
+    private final WebClient.Builder webClientBuilder;
+
+    private final String userServiceUrl = "http://localhost:8082";
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -62,6 +74,21 @@ public class UserService {
             throw new UnauthorizedException("Invalid roles");
         }
         return isAdminSessionValid;
+    }
+
+    public int getGrantAdminIdFromUserServiceEmail(String email) {
+        try {
+            UserV2DTO response = webClientBuilder.build().get().uri(userServiceUrl + "/user/email/" + email).retrieve()
+                    .bodyToMono(UserV2DTO.class).block();
+
+            GrantAdmin grantAdmin = grantAdminRepository.findByGapUserUserSub(response.sub())
+                    .orElseThrow(() -> new SchemeEntityException("No grant admin found for email: " + email));
+            return grantAdmin.getId();
+
+        }
+        catch (Exception e) {
+            throw new SchemeEntityException("Something went wrong while retrieving grant admin for email: " + email, e);
+        }
     }
 
 }

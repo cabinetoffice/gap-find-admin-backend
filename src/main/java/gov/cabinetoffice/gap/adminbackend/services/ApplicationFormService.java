@@ -348,4 +348,11 @@ public class ApplicationFormService {
 
     }
 
+    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+        ApplicationFormEntity application = this.applicationFormRepository.findByGrantSchemeId(schemeId).orElseThrow(
+                () -> new NotFoundException("Application with scheme id " + schemeId + " does not exist."));
+        application.setCreatedBy(adminId);
+        this.applicationFormRepository.save(application);
+    }
+
 }

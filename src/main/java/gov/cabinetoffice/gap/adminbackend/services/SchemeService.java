@@ -157,4 +157,12 @@ public class SchemeService {
         }
     }
 
+    public void patchCreatedBy(Integer grantAdminId, Integer schemeId) {
+        SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(
+                () -> new SchemeEntityException("Something went wrong while trying to find scheme with id: " + schemeId)
+        );
+        scheme.setCreatedBy(grantAdminId);
+        this.schemeRepo.save(scheme);
+    }
+
 }

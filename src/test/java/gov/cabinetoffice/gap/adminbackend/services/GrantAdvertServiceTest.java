@@ -13,10 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageRes
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
-import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.*;
 import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus;
@@ -29,6 +26,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomGrantAdvertGenerators;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -1252,4 +1250,32 @@ class GrantAdvertServiceTest {
 
     }
 
+    @Test
+    void patchCreatedByUpdatesGrantAdvert() {
+        final UUID grantAdvertId = UUID.fromString("5b30cb45-7339-466a-a700-270c3983c604");
+        final GrantAdmin testAdmin = GrantAdmin.builder().id(1).build();
+        final GrantAdmin patchedAdmin = GrantAdmin.builder().id(2).build();
+        GrantAdvert testGrantAdvert = GrantAdvert.builder().id(grantAdvertId).createdBy(testAdmin).build();
+        GrantAdvert patchedGrantAdvert = GrantAdvert.builder().id(grantAdvertId).createdBy(patchedAdmin).build();
+
+        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.findBySchemeId(1))
+                .thenReturn(Optional.of(testGrantAdvert));
+        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.save(testGrantAdvert))
+                .thenReturn(patchedGrantAdvert);
+        Mockito.when(GrantAdvertServiceTest.this.grantAdminRepository.findById(2))
+                .thenReturn(Optional.of(patchedAdmin));
+
+        GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2,1);
+        AssertionsForClassTypes.assertThat(testGrantAdvert.getCreatedBy()).isEqualTo(patchedGrantAdvert.getCreatedBy());
+    }
+
+    @Test
+    void patchCreatedByThrowsAnErrorIfSchemeIsNotPresent() {
+        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.findBySchemeId(1))
+                .thenReturn(Optional.empty());
+
+        AssertionsForClassTypes.assertThatThrownBy(() -> GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2,1))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Application with scheme id 1 does not exist.");
+    }
 }

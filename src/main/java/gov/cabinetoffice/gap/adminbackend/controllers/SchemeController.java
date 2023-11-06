@@ -4,13 +4,17 @@ import java.util.List;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -46,6 +50,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class SchemeController {
 
     private final SchemeService schemeService;
+
+    private final GrantAdvertService grantAdvertService;
+
+    private final UserService userService;
+
+    private final ApplicationFormService applicationFormService;
 
     @GetMapping("/{schemeId}")
     @Operation(summary = "Retrieve grant scheme which matches the given id.")
@@ -174,6 +184,17 @@ public class SchemeController {
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PatchMapping("/{schemeId}/scheme-ownership/")
+    @Transactional
+    public ResponseEntity updateGrantOwnership(@PathVariable final Integer schemeId,
+            @RequestBody final String newAdminEmail) {
+        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(newAdminEmail);
+        schemeService.patchCreatedBy(grantAdminId, schemeId);
+        grantAdvertService.patchCreatedBy(grantAdminId, schemeId);
+        applicationFormService.patchCreatedBy(grantAdminId, schemeId);
+        return ResponseEntity.ok("Grant ownership updated successfully");
     }
 
 }
