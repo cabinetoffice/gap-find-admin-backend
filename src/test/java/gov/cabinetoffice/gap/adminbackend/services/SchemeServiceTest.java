@@ -327,10 +327,10 @@ class SchemeServiceTest {
 
     @Nested
     class GetAdminsSchemes {
+
         @Test
         void happyPathTest() {
-            when(schemeRepository.findByCreatedBy(1))
-                    .thenReturn(SCHEME_ENTITY_LIST_EXAMPLE);
+            when(schemeRepository.findByCreatedBy(1)).thenReturn(SCHEME_ENTITY_LIST_EXAMPLE);
             when(schemeMapper.schemeEntityListtoDtoList(SCHEME_ENTITY_LIST_EXAMPLE)).thenReturn(SCHEME_DTOS_EXAMPLE);
 
             List<SchemeDTO> response = schemeService.getAdminsSchemes(1);
@@ -338,6 +338,7 @@ class SchemeServiceTest {
             assertThat(response).as("Response should contain exactly 1 entry").hasSize(1);
             assertThat(response.get(0)).as("Response contents should match given DTO").isEqualTo(SCHEME_DTO_EXAMPLE);
         }
+
     }
 
 }
