@@ -37,6 +37,7 @@ jobs:
           args: >
             --enableRetired
             --disableOssIndex true
+            --disableRetireJS true
 
       - name: Upload Test results
         uses: actions/upload-artifact@master
