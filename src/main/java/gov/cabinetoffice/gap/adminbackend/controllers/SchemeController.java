@@ -168,7 +168,8 @@ public class SchemeController {
     }
 
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable Integer adminId, final HttpServletRequest request) {
+    public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable Integer adminId,
+            final HttpServletRequest request) {
         List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);
         return ResponseEntity.ok().body(schemes);
     }

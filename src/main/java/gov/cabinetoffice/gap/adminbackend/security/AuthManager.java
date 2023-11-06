@@ -64,11 +64,8 @@ public class AuthManager implements AuthenticationManager {
             JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
         }
 
-        final List<String> roles = List.of(JWTPayload.getRoles()
-                .replace("[", "")
-                .replace("]", "")
-                .replace(" ", "")
-                .split(","));
+        final List<String> roles = List
+                .of(JWTPayload.getRoles().replace("[", "").replace("]", "").replace(" ", "").split(","));
 
         Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(JWTPayload.getSub());
 

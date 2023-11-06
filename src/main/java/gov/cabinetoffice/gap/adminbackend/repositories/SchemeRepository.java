@@ -19,4 +19,5 @@ public interface SchemeRepository extends JpaRepository<SchemeEntity, Integer> {
     @Query("select s from SchemeEntity s where s.createdBy = ?1")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     List<SchemeEntity> findByCreatedBy(Integer createdBy);
+
 }
