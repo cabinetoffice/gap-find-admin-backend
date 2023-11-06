@@ -160,9 +160,10 @@ public class SubmissionsService {
             final String addressTown = applicantAddress[2];
             final String addressCounty = applicantAddress[3];
             final String postcode = applicantAddress[4];
-            final String applicationAmount = section.getQuestionById("APPLICANT_AMOUNT").getResponse();
             final String charityNumber = section.getQuestionById("APPLICANT_ORG_CHARITY_NUMBER").getResponse();
             final String companyNumber = section.getQuestionById("APPLICANT_ORG_COMPANIES_HOUSE").getResponse();
+            final String applicationAmount = section.getQuestionById("APPLICANT_AMOUNT").getResponse();
+
 
             List<String> row = new ArrayList<>();
             row.add(mandatoryValue(subId, "GAP_ID", gapId));
