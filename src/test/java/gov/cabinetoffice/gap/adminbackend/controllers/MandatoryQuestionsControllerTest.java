@@ -45,19 +45,21 @@ class MandatoryQuestionsControllerTest {
 
     @Nested
     class doesSchemeHaveCompletedMandatoryQuestions {
+
         @Test
         void doesSchemeHaveCompletedMandatoryQuestionsReturnsTrue() throws Exception {
             when(grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(true);
-            mockMvc.perform(get("/mandatory-questions/does-scheme-have-completed-mandatory-questions/" + SCHEME_ID)).andExpect(status().isOk())
-                    .andExpect(content().string("true"));
+            mockMvc.perform(get("/mandatory-questions/does-scheme-have-completed-mandatory-questions/" + SCHEME_ID))
+                    .andExpect(status().isOk()).andExpect(content().string("true"));
         }
 
         @Test
         void doesSchemeHaveCompletedMandatoryQuestionsReturnsFalse() throws Exception {
             when(grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(false);
-            mockMvc.perform(get("/mandatory-questions/does-scheme-have-completed-mandatory-questions/" + SCHEME_ID)).andExpect(status().isOk())
-                    .andExpect(content().string("false"));
+            mockMvc.perform(get("/mandatory-questions/does-scheme-have-completed-mandatory-questions/" + SCHEME_ID))
+                    .andExpect(status().isOk()).andExpect(content().string("false"));
         }
+
     }
 
     @Nested
@@ -84,14 +86,16 @@ class MandatoryQuestionsControllerTest {
             when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID))
                     .thenThrow(new AccessDeniedException("Admin 1 is unable to access application with id 1"));
 
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID)).andExpect(status().isForbidden());
+            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
+                    .andExpect(status().isForbidden());
         }
 
         @Test
         void exportSpotlightChecksGenericErrorTest() throws Exception {
             when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID)).thenThrow(new RuntimeException());
 
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID)).andExpect(status().isInternalServerError());
+            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
+                    .andExpect(status().isInternalServerError());
         }
 
         @Test
@@ -102,7 +106,8 @@ class MandatoryQuestionsControllerTest {
             outputStream.write(data);
             when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID)).thenReturn(outputStream);
 
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID)).andExpect(status().isInternalServerError());
+            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
+                    .andExpect(status().isInternalServerError());
         }
 
     }

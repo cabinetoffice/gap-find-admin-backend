@@ -164,7 +164,6 @@ public class SubmissionsService {
             final String companyNumber = section.getQuestionById("APPLICANT_ORG_COMPANIES_HOUSE").getResponse();
             final String applicationAmount = section.getQuestionById("APPLICANT_AMOUNT").getResponse();
 
-
             List<String> row = new ArrayList<>();
             row.add(mandatoryValue(subId, "GAP_ID", gapId));
             row.add(mandatoryValue(subId, "APPLICANT_ORG_NAME", organisationName));

@@ -13,6 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class GrantMandatoryQuestionDto {
+
     private UUID id;
 
     private int schemeId;
@@ -40,4 +41,5 @@ public class GrantMandatoryQuestionDto {
     private String fundingAmount;
 
     private List<String> fundingLocation;
+
 }

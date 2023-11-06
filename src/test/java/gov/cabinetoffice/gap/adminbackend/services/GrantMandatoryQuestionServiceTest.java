@@ -41,11 +41,7 @@ class GrantMandatoryQuestionServiceTest {
 
     private final Integer SCHEME_ID = 2;
 
-    private final SchemeEntity schemeEntity = SchemeEntity.builder()
-            .id(SCHEME_ID)
-            .funderId(1)
-            .name("name")
-            .build();
+    private final SchemeEntity schemeEntity = SchemeEntity.builder().id(SCHEME_ID).funderId(1).name("name").build();
 
     @Mock
     private GrantMandatoryQuestionRepository grantMandatoryQuestionRepository;
@@ -61,26 +57,20 @@ class GrantMandatoryQuestionServiceTest {
             "9-10 St Andrew Square", "county", "Edinburgh", "EH2 2AF", "500", "12738494", "50000", "");
 
     private final GrantMandatoryQuestions grantMandatoryQuestions = GrantMandatoryQuestions.builder()
-            .name("Some company name")
-            .addressLine1("9-10 St Andrew Square")
-            .city("Edinburgh")
-            .county("county")
-            .postcode("EH2 2AF")
-            .charityCommissionNumber("500")
-            .companiesHouseNumber("12738494")
-            .fundingAmount(BigDecimal.valueOf(50000))
-            .schemeEntity(schemeEntity)
-            .gapId("GAP-ID")
-            .build();
+            .name("Some company name").addressLine1("9-10 St Andrew Square").city("Edinburgh").county("county")
+            .postcode("EH2 2AF").charityCommissionNumber("500").companiesHouseNumber("12738494")
+            .fundingAmount(BigDecimal.valueOf(50000)).schemeEntity(schemeEntity).gapId("GAP-ID").build();
 
     @Nested
-    class  GetGrantMandatoryQuestionBySchemeAndStatusTests {
+    class GetGrantMandatoryQuestionBySchemeAndStatusTests {
 
         @Test
         void validSchemeId() {
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID)).thenReturn(List.of(grantMandatoryQuestions));
+            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(List.of(grantMandatoryQuestions));
 
-            List<GrantMandatoryQuestions> result = grantMandatoryQuestionService.getGrantMandatoryQuestionBySchemeAndCompletedStatus(SCHEME_ID);
+            List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
+                    .getGrantMandatoryQuestionBySchemeAndCompletedStatus(SCHEME_ID);
 
             assertThat(result).isEqualTo(List.of(grantMandatoryQuestions));
 
@@ -94,7 +84,7 @@ class GrantMandatoryQuestionServiceTest {
                     () -> grantMandatoryQuestionService.getGrantMandatoryQuestionBySchemeAndCompletedStatus(SCHEME_ID));
 
             String actualMessage = exception.getMessage();
-            assertThat(actualMessage).isEqualTo("No completed mandatory questions with ID " + SCHEME_ID +  " was found");
+            assertThat(actualMessage).isEqualTo("No completed mandatory questions with ID " + SCHEME_ID + " was found");
         }
 
     }
@@ -113,7 +103,8 @@ class GrantMandatoryQuestionServiceTest {
         void forSingleRowWithGoodData() throws IOException {
             when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
                     .thenReturn(List.of(grantMandatoryQuestions));
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService).buildSingleSpotlightRow(grantMandatoryQuestions);
+            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
+                    .buildSingleSpotlightRow(grantMandatoryQuestions);
 
             ByteArrayOutputStream dataStream = grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID);
 
@@ -127,13 +118,8 @@ class GrantMandatoryQuestionServiceTest {
         @Test
         void ignoresBadDataRows() throws IOException {
             final GrantMandatoryQuestions badGrantMandatoryQuestions = GrantMandatoryQuestions.builder()
-                    .addressLine1("addressLine1")
-                    .addressLine2("addressLine2")
-                    .city("city")
-                    .charityCommissionNumber("123")
-                    .companiesHouseNumber("321")
-                    .schemeEntity(schemeEntity)
-                    .build();
+                    .addressLine1("addressLine1").addressLine2("addressLine2").city("city")
+                    .charityCommissionNumber("123").companiesHouseNumber("321").schemeEntity(schemeEntity).build();
 
             when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
                     .thenReturn(List.of(grantMandatoryQuestions, badGrantMandatoryQuestions));
@@ -152,7 +138,8 @@ class GrantMandatoryQuestionServiceTest {
                     () -> grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID));
 
             String actualMessage = exception.getMessage();
-            assertThat(actualMessage).isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
+            assertThat(actualMessage)
+                    .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
         }
 
     }
@@ -298,7 +285,8 @@ class GrantMandatoryQuestionServiceTest {
 
             String result = grantMandatoryQuestionService.generateExportFileName(SCHEME_ID);
 
-            assertThat(result).isEqualTo(dateString + "_" + schemeDTO.getGgisReference() + "_" + schemeDTO.getName() + ".xlsx");
+            assertThat(result)
+                    .isEqualTo(dateString + "_" + schemeDTO.getGgisReference() + "_" + schemeDTO.getName() + ".xlsx");
 
         }
 
@@ -309,7 +297,8 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void returnsTrue() {
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID)).thenReturn(List.of(grantMandatoryQuestions));
+            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(List.of(grantMandatoryQuestions));
             boolean result = grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(SCHEME_ID);
             assertThat(result).isEqualTo(true);
         }

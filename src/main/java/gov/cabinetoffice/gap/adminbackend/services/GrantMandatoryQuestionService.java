@@ -28,6 +28,7 @@ import static java.util.Optional.ofNullable;
 @Service
 @Slf4j
 public class GrantMandatoryQuestionService {
+
     static final List<String> SPOTLIGHT_HEADERS = Arrays.asList("Application number (required)",
             "Organisation name (required)", "Address street (optional)", "Address town (optional)",
             "Address county (optional)", "Address postcode (required)", "Application amount (required)",
@@ -41,21 +42,25 @@ public class GrantMandatoryQuestionService {
 
     public List<GrantMandatoryQuestions> getGrantMandatoryQuestionBySchemeAndCompletedStatus(Integer schemeId) {
         return ofNullable(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(schemeId))
-                .orElseThrow(() -> new NotFoundException(String.format("No completed mandatory questions with ID %s was found", schemeId)));
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("No completed mandatory questions with ID %s was found", schemeId)));
     }
 
     public ByteArrayOutputStream exportSpotlightChecks(Integer schemeId) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        try{
+        try {
             schemeService.getSchemeBySchemeId(schemeId);
-        } catch (EntityNotFoundException | AccessDeniedException ex) {
+        }
+        catch (EntityNotFoundException | AccessDeniedException ex) {
             throw new AccessDeniedException("Admin " + adminSession.getGrantAdminId()
                     + " is unable to access mandatory questions with scheme id " + schemeId);
         }
 
-        final List<GrantMandatoryQuestions> grantMandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatus(schemeId);
-        log.info("Found {} mandatory questions in COMPLETED state for scheme ID {}", grantMandatoryQuestions.size(), schemeId);
+        final List<GrantMandatoryQuestions> grantMandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatus(
+                schemeId);
+        log.info("Found {} mandatory questions in COMPLETED state for scheme ID {}", grantMandatoryQuestions.size(),
+                schemeId);
 
         List<List<String>> exportData = new ArrayList<>();
         grantMandatoryQuestions.forEach(grantMandatoryQuestion -> {
@@ -92,8 +97,7 @@ public class GrantMandatoryQuestionService {
             return StringUtils.defaultString(addressLine2);
         }
 
-        return String.join(", ", StringUtils.defaultString(addressLine1),
-                StringUtils.defaultString(addressLine2));
+        return String.join(", ", StringUtils.defaultString(addressLine1), StringUtils.defaultString(addressLine2));
     }
 
     /**
@@ -108,13 +112,15 @@ public class GrantMandatoryQuestionService {
 
             final String gapId = grantMandatoryQuestions.getGapId();
             final String organisationName = grantMandatoryQuestions.getName();
-            final String addressStreet = combineAddressLines(grantMandatoryQuestions.getAddressLine1(), grantMandatoryQuestions.getAddressLine2());
+            final String addressStreet = combineAddressLines(grantMandatoryQuestions.getAddressLine1(),
+                    grantMandatoryQuestions.getAddressLine2());
             final String addressTown = grantMandatoryQuestions.getCity();
             final String addressCounty = grantMandatoryQuestions.getCounty();
             final String postcode = grantMandatoryQuestions.getPostcode();
             final String charityNumber = grantMandatoryQuestions.getCharityCommissionNumber();
             final String companyNumber = grantMandatoryQuestions.getCompaniesHouseNumber();
-            final String applicationAmount = grantMandatoryQuestions.getFundingAmount() == null ? null : grantMandatoryQuestions.getFundingAmount().toString();
+            final String applicationAmount = grantMandatoryQuestions.getFundingAmount() == null ? null
+                    : grantMandatoryQuestions.getFundingAmount().toString();
 
             List<String> row = new ArrayList<>();
             row.add(mandatoryValue(schemeId, "gap id", gapId));
@@ -138,8 +144,7 @@ public class GrantMandatoryQuestionService {
     public String generateExportFileName(Integer schemeId) {
         SchemeDTO schemeDTO = schemeService.getSchemeBySchemeId(schemeId);
         String ggisReference = schemeDTO.getGgisReference();
-        String schemeName = schemeDTO.getName().replace(" ", "_").replaceAll("[^A-Za-z0-9_]",
-                "");
+        String schemeName = schemeDTO.getName().replace(" ", "_").replaceAll("[^A-Za-z0-9_]", "");
         String dateString = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
 
         return dateString + "_" + ggisReference + "_" + schemeName + ".xlsx";
@@ -154,4 +159,5 @@ public class GrantMandatoryQuestionService {
         }
 
     }
+
 }

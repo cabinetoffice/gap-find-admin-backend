@@ -27,16 +27,8 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "grant_mandatory_questions")
-@TypeDef(
-        typeClass = EnumArrayType.class,
-        defaultForType = GrantMandatoryQuestionFundingLocation[].class,
-        parameters = {
-                @Parameter(
-                        name = AbstractArrayType.SQL_ARRAY_TYPE,
-                        value = "grant_mandatory_question_funding_location"
-                )
-        }
-)
+@TypeDef(typeClass = EnumArrayType.class, defaultForType = GrantMandatoryQuestionFundingLocation[].class, parameters = {
+        @Parameter(name = AbstractArrayType.SQL_ARRAY_TYPE, value = "grant_mandatory_question_funding_location") })
 public class GrantMandatoryQuestions extends BaseEntity {
 
     @Id
@@ -81,7 +73,8 @@ public class GrantMandatoryQuestions extends BaseEntity {
     @Column(name = "charity_commission_number")
     private String charityCommissionNumber;
 
-    @Column(name = "funding_amount", precision = 16) // this should match your database column definition
+    @Column(name = "funding_amount", precision = 16) // this should match your database
+                                                     // column definition
     private BigDecimal fundingAmount;
 
     @Column(name = "funding_location")
@@ -91,7 +84,15 @@ public class GrantMandatoryQuestions extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @ColumnTransformer(write = "?::grant_mandatory_question_status")
     @Builder.Default
-    private GrantMandatoryQuestionStatus status = GrantMandatoryQuestionStatus.NOT_STARTED; // TODO what if the status is still in progress
+    private GrantMandatoryQuestionStatus status = GrantMandatoryQuestionStatus.NOT_STARTED; // TODO
+                                                                                            // what
+                                                                                            // if
+                                                                                            // the
+                                                                                            // status
+                                                                                            // is
+                                                                                            // still
+                                                                                            // in
+                                                                                            // progress
 
     @Column(name = "version", nullable = false)
     @Builder.Default

@@ -24,6 +24,7 @@ import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsControll
 @Tag(name = "Mandatory questions", description = "API for handling mandatory questions")
 @RequiredArgsConstructor
 public class GrantMandatoryQuestionsController {
+
     final private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
     @GetMapping("/does-scheme-have-completed-mandatory-questions/{schemeId}")
