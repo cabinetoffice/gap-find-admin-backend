@@ -21,7 +21,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -64,6 +64,9 @@ public class AuthManager implements AuthenticationManager {
             JWTPayload = this.jwtService.getPayloadFromJwt(decodedJWT);
         }
 
+        final List<String> roles = List
+                .of(JWTPayload.getRoles().replace("[", "").replace("]", "").replace(" ", "").split(","));
+
         Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findByGapUserUserSub(JWTPayload.getSub());
 
         // if JWT is valid and admin doesn't already exist, create admin user in database
@@ -75,7 +78,7 @@ public class AuthManager implements AuthenticationManager {
                 JWTPayload);
 
         return new UsernamePasswordAuthenticationToken(adminSession, null,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
+                roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList());
     }
 
     private GrantAdmin createNewAdmin(JwtPayload jwtPayload) {
