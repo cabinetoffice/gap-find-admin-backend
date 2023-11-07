@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,12 +11,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
@@ -35,6 +38,9 @@ class MandatoryQuestionsControllerTest {
     @MockBean
     private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
+    @MockBean
+    private FileService fileService;
+
     @Value("classpath:spotlight/XLSX_Spotlight_Template.xlsx")
     Resource exampleFile;
 
@@ -44,20 +50,20 @@ class MandatoryQuestionsControllerTest {
     private final Integer SCHEME_ID = 1;
 
     @Nested
-    class doesSchemeHaveCompletedMandatoryQuestions {
+    class hasCompletedMandatoryQuestions {
 
         @Test
         void hasCompletedMandatoryQuestionsReturnsTrue() throws Exception {
-            when(grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(true);
-            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/complete"))
-                    .andExpect(status().isOk()).andExpect(content().string("true"));
+            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(true);
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/complete")).andExpect(status().isOk())
+                    .andExpect(content().string("true"));
         }
 
         @Test
         void hasCompletedMandatoryQuestionsReturnsFalse() throws Exception {
-            when(grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(false);
-            mockMvc.perform(get("/mandatory-questions/scheme/" +  SCHEME_ID + "/complete"))
-                    .andExpect(status().isOk()).andExpect(content().string("false"));
+            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(false);
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/complete")).andExpect(status().isOk())
+                    .andExpect(content().string("false"));
         }
 
     }
@@ -71,6 +77,10 @@ class MandatoryQuestionsControllerTest {
             final byte[] data = exampleFile.getInputStream().readAllBytes();
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(data);
+            final InputStreamResource inputStream = new InputStreamResource(
+                    new ByteArrayInputStream(outputStream.toByteArray()));
+
+            when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
             when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID)).thenReturn(outputStream);
 
             mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID)).andExpect(status().isOk())
@@ -93,18 +103,6 @@ class MandatoryQuestionsControllerTest {
         @Test
         void exportSpotlightChecksGenericErrorTest() throws Exception {
             when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID)).thenThrow(new RuntimeException());
-
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
-                    .andExpect(status().isInternalServerError());
-        }
-
-        @Test
-        void createTemporaryFileThrowsError() throws Exception {
-            doReturn(null).when(grantMandatoryQuestionService).generateExportFileName(1);
-            final byte[] data = exampleFile.getInputStream().readAllBytes();
-            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(data);
-            when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID)).thenReturn(outputStream);
 
             mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
                     .andExpect(status().isInternalServerError());

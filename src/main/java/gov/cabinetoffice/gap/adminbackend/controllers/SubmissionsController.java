@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefini
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +39,8 @@ public class SubmissionsController {
 
     private final SecretAuthService secretAuthService;
 
+    private final FileService fileService;
+
     @GetMapping(value = "/spotlight-export/{applicationId}", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer applicationId) {
         log.info("Started submissions export for application " + applicationId);
@@ -45,7 +48,7 @@ public class SubmissionsController {
 
         final ByteArrayOutputStream stream = submissionsService.exportSpotlightChecks(applicationId);
         final String exportFileName = submissionsService.generateExportFileName(applicationId);
-        final InputStreamResource resource = createTemporaryFile(stream, exportFileName);
+        final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
 
         submissionsService.updateSubmissionLastRequiredChecksExport(applicationId);
 
@@ -63,20 +66,6 @@ public class SubmissionsController {
 
         return ResponseEntity.ok().headers(headers).contentLength(length)
                 .contentType(MediaType.parseMediaType(EXPORT_CONTENT_TYPE)).body(resource);
-    }
-
-    private InputStreamResource createTemporaryFile(ByteArrayOutputStream stream, String filename) {
-        try {
-            File tempFile = File.createTempFile(filename, ".xlsx");
-            try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile))) {
-                stream.writeTo(out);
-            }
-            return new InputStreamResource(new ByteArrayInputStream(stream.toByteArray()));
-        }
-        catch (Exception e) {
-            log.error("Error creating temporary for file {} problem reported {}", filename, e.getMessage());
-            throw new RuntimeException(e);
-        }
     }
 
     @PostMapping("/export-all/{applicationId}")

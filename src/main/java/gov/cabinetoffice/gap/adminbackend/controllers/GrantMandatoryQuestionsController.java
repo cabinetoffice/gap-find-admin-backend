@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +28,11 @@ public class GrantMandatoryQuestionsController {
 
     final private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
+    final private FileService fileService;
+
     @GetMapping("/scheme/{schemeId}/complete")
     public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId) {
-        return ResponseEntity.ok(grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(schemeId));
+        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId));
     }
 
     @GetMapping(value = "/spotlight-export/{schemeId}", produces = EXPORT_CONTENT_TYPE)
@@ -39,7 +42,7 @@ public class GrantMandatoryQuestionsController {
 
         final ByteArrayOutputStream stream = grantMandatoryQuestionService.exportSpotlightChecks(schemeId);
         final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId);
-        final InputStreamResource resource = createTemporaryFile(stream, exportFileName);
+        final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
 
         final int length = stream.toByteArray().length;
 
@@ -53,20 +56,6 @@ public class GrantMandatoryQuestionsController {
 
         return ResponseEntity.ok().headers(headers).contentLength(length)
                 .contentType(MediaType.parseMediaType(EXPORT_CONTENT_TYPE)).body(resource);
-    }
-
-    private InputStreamResource createTemporaryFile(ByteArrayOutputStream stream, String filename) {
-        try {
-            File tempFile = File.createTempFile(filename, ".xlsx");
-            try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile))) {
-                stream.writeTo(out);
-            }
-            return new InputStreamResource(new ByteArrayInputStream(stream.toByteArray()));
-        }
-        catch (Exception e) {
-            log.error("Error creating temporary for file {} problem reported {}", filename, e.getMessage());
-            throw new RuntimeException(e);
-        }
     }
 
 }

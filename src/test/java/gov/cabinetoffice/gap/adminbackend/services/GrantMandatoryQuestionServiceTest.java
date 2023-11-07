@@ -28,7 +28,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
-import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.*;
+import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.combineAddressLines;
+import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.mandatoryValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.doReturn;
@@ -132,7 +133,7 @@ class GrantMandatoryQuestionServiceTest {
         }
 
         @Test
-        void forSingleRowWithGoodData_throwAccessDeniedException() throws IOException {
+        void forSingleRowWithGoodData_throwAccessDeniedException() {
             when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
 
             Exception exception = assertThrows(AccessDeniedException.class,
@@ -300,14 +301,14 @@ class GrantMandatoryQuestionServiceTest {
         void returnsTrue() {
             when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
                     .thenReturn(List.of(grantMandatoryQuestions));
-            boolean result = grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(SCHEME_ID);
+            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
             assertThat(result).isEqualTo(true);
         }
 
         @Test
         void returnFalse() {
             when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID)).thenReturn(null);
-            boolean result = grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(SCHEME_ID);
+            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
             assertThat(result).isEqualTo(false);
         }
 

@@ -19,7 +19,6 @@ import javax.persistence.EntityNotFoundException;
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -144,7 +143,7 @@ public class GrantMandatoryQuestionService {
         return dateString + "_" + ggisReference + "_" + schemeName + ".xlsx";
     }
 
-    public boolean doesSchemeHaveCompletedMandatoryQuestions(Integer schemeId) {
+    public boolean hasCompletedMandatoryQuestions(Integer schemeId) {
         try {
             return !getGrantMandatoryQuestionBySchemeAndCompletedStatus(schemeId).isEmpty();
         }
