@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
@@ -28,13 +29,6 @@ import static java.util.Optional.ofNullable;
 @Service
 @Slf4j
 public class GrantMandatoryQuestionService {
-
-    static final List<String> SPOTLIGHT_HEADERS = Arrays.asList("Application number (required)",
-            "Organisation name (required)", "Address street (optional)", "Address town (optional)",
-            "Address county (optional)", "Address postcode (required)", "Application amount (required)",
-            "Charity Commission registration number (required - if applicable)",
-            "Companies House registration number (required - if applicable)",
-            "Similarities to other applications (optional)");
 
     private final GrantMandatoryQuestionRepository grantMandatoryQuestionRepository;
 
@@ -72,7 +66,7 @@ public class GrantMandatoryQuestionService {
             }
         });
 
-        return XlsxGenerator.createResource(SPOTLIGHT_HEADERS, exportData);
+        return XlsxGenerator.createResource(SpotlightHeaders.SPOTLIGHT_HEADERS, exportData);
     }
 
     static String mandatoryValue(Integer id, String identifier, String value) {

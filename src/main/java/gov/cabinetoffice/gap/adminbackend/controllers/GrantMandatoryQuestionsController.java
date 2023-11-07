@@ -27,8 +27,8 @@ public class GrantMandatoryQuestionsController {
 
     final private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
-    @GetMapping("/does-scheme-have-completed-mandatory-questions/{schemeId}")
-    public ResponseEntity<Boolean> doesSchemeHaveCompletedMandatoryQuestions(@PathVariable Integer schemeId) {
+    @GetMapping("/scheme/{schemeId}/complete")
+    public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId) {
         return ResponseEntity.ok(grantMandatoryQuestionService.doesSchemeHaveCompletedMandatoryQuestions(schemeId));
     }
 

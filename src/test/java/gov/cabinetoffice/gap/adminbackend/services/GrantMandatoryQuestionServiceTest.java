@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
@@ -110,7 +111,7 @@ class GrantMandatoryQuestionServiceTest {
 
             Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
             Row headerRow = workbook.getSheetAt(0).getRow(0);
-            assertRowIsAsExpected(headerRow, SPOTLIGHT_HEADERS);
+            assertRowIsAsExpected(headerRow, SpotlightHeaders.SPOTLIGHT_HEADERS);
             Row dataRow = workbook.getSheetAt(0).getRow(1);
             assertRowIsAsExpected(dataRow, EXPECTED_SPOTLIGHT_ROW);
         }
