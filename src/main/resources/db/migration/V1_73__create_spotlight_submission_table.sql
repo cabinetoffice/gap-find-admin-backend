@@ -1,13 +1,13 @@
 CREATE TABLE IF NOT EXISTS public.spotlight_submission (
 	id uuid NOT NULL,
 	grant_mandatory_questions_id uuid NULL,
-  grant_scheme int4 NULL,
+    grant_scheme int4 NULL,
 	status varchar(255) NOT NULL,
 	last_send_attempt timestamp NULL,
 	version int4 NULL,
 	created timestamp NOT NULL,
 	created_by BIGINT NOT NULL,
-  last_updated timestamp NOT NULL,
+    last_updated timestamp NOT NULL,
 	last_updated_by BIGINT NOT NULL,
 	CONSTRAINT spotlight_submission_pkey PRIMARY KEY (id)
 );
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.spotlight_batch (
 	version int4 NULL,
 	created timestamp NOT NULL,
 	created_by BIGINT NOT NULL,
-  last_updated timestamp NOT NULL,
+    last_updated timestamp NOT NULL,
 	last_updated_by BIGINT NOT NULL,
 	CONSTRAINT spotlight_batch_pkey PRIMARY KEY (id)
 );
