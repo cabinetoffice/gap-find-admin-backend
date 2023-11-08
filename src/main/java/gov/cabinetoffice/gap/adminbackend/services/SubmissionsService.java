@@ -6,6 +6,7 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.google.common.collect.Lists;
 import gov.cabinetoffice.gap.adminbackend.constants.AWSConstants;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
@@ -48,13 +49,6 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class SubmissionsService {
-
-    static final List<String> SPOTLIGHT_HEADERS = Arrays.asList("Application number (required)",
-            "Organisation name (required)", "Address street (optional)", "Address town (optional)",
-            "Address county (optional)", "Address postcode (required)", "Application amount (required)",
-            "Charity Commission registration number (required - if applicable)",
-            "Companies House registration number (required - if applicable)",
-            "Similarities to other applications (optional)");
 
     private final SubmissionRepository submissionRepository;
 
@@ -107,7 +101,7 @@ public class SubmissionsService {
             }
         });
 
-        return XlsxGenerator.createResource(SPOTLIGHT_HEADERS, spotlightExportData);
+        return XlsxGenerator.createResource(SpotlightHeaders.SPOTLIGHT_HEADERS, spotlightExportData);
     }
 
     public void updateSubmissionLastRequiredChecksExport(Integer applicationId) {
@@ -160,9 +154,9 @@ public class SubmissionsService {
             final String addressTown = applicantAddress[2];
             final String addressCounty = applicantAddress[3];
             final String postcode = applicantAddress[4];
-            final String applicationAmount = section.getQuestionById("APPLICANT_AMOUNT").getResponse();
             final String charityNumber = section.getQuestionById("APPLICANT_ORG_CHARITY_NUMBER").getResponse();
             final String companyNumber = section.getQuestionById("APPLICANT_ORG_COMPANIES_HOUSE").getResponse();
+            final String applicationAmount = section.getQuestionById("APPLICANT_AMOUNT").getResponse();
 
             List<String> row = new ArrayList<>();
             row.add(mandatoryValue(subId, "GAP_ID", gapId));
