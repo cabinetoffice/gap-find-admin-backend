@@ -31,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
@@ -186,6 +187,7 @@ public class SchemeController {
 
     @PatchMapping("/{schemeId}/scheme-ownership/")
     @Transactional
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity updateGrantOwnership(@PathVariable final Integer schemeId,
             @RequestBody final String newAdminEmail) {
         int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(newAdminEmail);
@@ -196,6 +198,7 @@ public class SchemeController {
     }
 
     @GetMapping("/admin/{adminId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable Integer adminId,
             final HttpServletRequest request) {
         List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);

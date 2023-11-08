@@ -76,18 +76,19 @@ public class UserService {
         return isAdminSessionValid;
     }
 
+
     public int getGrantAdminIdFromUserServiceEmail(String email) {
         try {
             UserV2DTO response = webClientBuilder.build().get().uri(userServiceUrl + "/user/email/" + email).retrieve()
                     .bodyToMono(UserV2DTO.class).block();
 
             GrantAdmin grantAdmin = grantAdminRepository.findByGapUserUserSub(response.sub())
-                    .orElseThrow(() -> new SchemeEntityException("No grant admin found for email: " + email));
+                    .orElseThrow(() -> new SchemeEntityException("Update grant ownership failed, No grant admin found for email: " + email));
             return grantAdmin.getId();
 
         }
         catch (Exception e) {
-            throw new SchemeEntityException("Something went wrong while retrieving grant admin for email: " + email, e);
+            throw new SchemeEntityException("pdate grant ownership failed, Something went wrong while retrieving grant admin for email: " + email, e);
         }
     }
 

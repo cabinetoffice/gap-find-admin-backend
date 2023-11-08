@@ -14,6 +14,7 @@ import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
@@ -142,6 +143,7 @@ public class SchemeService {
         }
     }
 
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public List<SchemeDTO> getAdminsSchemes(final Integer adminId) {
         final List<SchemeEntity> schemes = this.schemeRepo.findByCreatedBy(adminId);
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
@@ -160,9 +162,10 @@ public class SchemeService {
         }
     }
 
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void patchCreatedBy(Integer grantAdminId, Integer schemeId) {
         SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(
-                () -> new SchemeEntityException("Something went wrong while trying to find scheme with id: " + schemeId)
+                () -> new SchemeEntityException("Update grant ownership failed, Something went wrong while trying to find scheme with id: " + schemeId)
         );
         scheme.setCreatedBy(grantAdminId);
         this.schemeRepo.save(scheme);

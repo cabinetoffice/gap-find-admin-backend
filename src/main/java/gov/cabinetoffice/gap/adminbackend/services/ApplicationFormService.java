@@ -22,6 +22,7 @@ import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
@@ -348,9 +349,10 @@ public class ApplicationFormService {
 
     }
 
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void patchCreatedBy(Integer adminId, Integer schemeId) {
         ApplicationFormEntity application = this.applicationFormRepository.findByGrantSchemeId(schemeId).orElseThrow(
-                () -> new NotFoundException("Application with scheme id " + schemeId + " does not exist."));
+                () -> new NotFoundException("Update grant ownership failed, Application with scheme id " + schemeId + " does not exist."));
         application.setCreatedBy(adminId);
         this.applicationFormRepository.save(application);
     }

@@ -36,6 +36,7 @@ import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -468,14 +469,14 @@ public class GrantAdvertService {
 
     public GetGrantAdvertPublishingInformationResponseDTO getGrantAdvertPublishingInformationBySchemeId(
             Integer grantSchemeId) {
-        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
+        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeIdRestricted(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
         return this.grantAdvertMapper.grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
     }
 
     public GetGrantAdvertStatusResponseDTO getGrantAdvertStatusBySchemeId(Integer grantSchemeId) {
-        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
+        GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeIdRestricted(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
         return this.grantAdvertMapper.grantAdvertStatusResponseDtoFromGrantAdvert(grantAdvert);
@@ -535,9 +536,10 @@ public class GrantAdvertService {
         grantAdvertRepository.save(advert);
     }
 
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void patchCreatedBy(Integer adminId, Integer schemeId) {
         GrantAdvert advert = this.grantAdvertRepository.findBySchemeId(schemeId).orElseThrow(
-                () -> new NotFoundException("Grant Advert for Scheme with id " + schemeId + " does not exist"));
+                () -> new NotFoundException("Update grant ownership failed,Grant Advert for Scheme with id " + schemeId + " does not exist"));
             advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
             this.grantAdvertRepository.save(advert);
         }

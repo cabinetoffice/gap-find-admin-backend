@@ -1038,7 +1038,7 @@ class GrantAdvertServiceTest {
 
             GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
+            when(grantAdvertRepository.findBySchemeIdRestricted(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
 
             GetGrantAdvertStatusResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertStatusBySchemeId(SAMPLE_SCHEME_ID);
@@ -1052,7 +1052,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertStatusBySchemeId_GrantAdvertNotFound() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
+            when(grantAdvertRepository.findBySchemeIdRestricted(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
 
             NotFoundException thrown = assertThrows(NotFoundException.class,
                     () -> grantAdvertService.getGrantAdvertStatusBySchemeId(SAMPLE_SCHEME_ID));
@@ -1064,7 +1064,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertStatusBySchemeId_NotEnoughPermissions() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
+            when(grantAdvertRepository.findBySchemeIdRestricted(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
 
             assertThrows(AccessDeniedException.class,
                     () -> grantAdvertService.getGrantAdvertStatusBySchemeId(SAMPLE_SCHEME_ID));
@@ -1082,7 +1082,7 @@ class GrantAdvertServiceTest {
 
             GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
+            when(grantAdvertRepository.findBySchemeIdRestricted(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
 
             GetGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID);
@@ -1102,7 +1102,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertPublishInformationBySchemeId_GrantAdvertNotFound() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
+            when(grantAdvertRepository.findBySchemeIdRestricted(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
 
             NotFoundException thrown = assertThrows(NotFoundException.class,
                     () -> grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID));
@@ -1114,7 +1114,7 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertPublishInformationBySchemeId_NotEnoughPermissions() {
 
-            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
+            when(grantAdvertRepository.findBySchemeIdRestricted(SAMPLE_SCHEME_ID)).thenThrow(AccessDeniedException.class);
 
             assertThrows(AccessDeniedException.class,
                     () -> grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID));
@@ -1258,7 +1258,7 @@ class GrantAdvertServiceTest {
         GrantAdvert testGrantAdvert = GrantAdvert.builder().id(grantAdvertId).createdBy(testAdmin).build();
         GrantAdvert patchedGrantAdvert = GrantAdvert.builder().id(grantAdvertId).createdBy(patchedAdmin).build();
 
-        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.findBySchemeId(1))
+        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.findBySchemeIdRestricted(1))
                 .thenReturn(Optional.of(testGrantAdvert));
         Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.save(testGrantAdvert))
                 .thenReturn(patchedGrantAdvert);
@@ -1271,7 +1271,7 @@ class GrantAdvertServiceTest {
 
     @Test
     void patchCreatedByThrowsAnErrorIfSchemeIsNotPresent() {
-        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.findBySchemeId(1))
+        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.findBySchemeIdRestricted(1))
                 .thenReturn(Optional.empty());
 
         AssertionsForClassTypes.assertThatThrownBy(() -> GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2,1))
