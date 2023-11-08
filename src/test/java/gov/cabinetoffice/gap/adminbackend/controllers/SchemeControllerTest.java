@@ -12,6 +12,7 @@ import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
 
@@ -181,7 +183,7 @@ class SchemeControllerTest {
     @Test
     void updateSchemeData_UnexpectedError() throws Exception {
         Mockito.doThrow(new SchemeEntityException(
-                "Something went wrong while trying to update scheme with the id of: " + SAMPLE_SCHEME_ID))
+                        "Something went wrong while trying to update scheme with the id of: " + SAMPLE_SCHEME_ID))
                 .when(this.schemeService).patchExistingScheme(SAMPLE_SCHEME_ID, SCHEME_PATCH_DTO_EXAMPLE);
 
         this.mockMvc
@@ -386,4 +388,22 @@ class SchemeControllerTest {
 
     }
 
+    @Test
+    void updateGrantOwnership() throws Exception {
+        String jwt = "jwt";
+        Mockito.doNothing().when(schemeService).patchCreatedBy(1, 1);
+        Mockito.doNothing().when(grantAdvertService).patchCreatedBy(1, 1);
+        Mockito.doNothing().when(applicationFormService).patchCreatedBy(1, 1);
+
+        try (MockedStatic<HelperUtils> helperUtilsMock = Mockito.mockStatic(HelperUtils.class)) {
+            helperUtilsMock.when(() -> HelperUtils.getJwtFromCookies(any(HttpServletRequest.class), any(String.class)))
+                    .thenReturn(jwt);
+        }
+
+        Mockito.when(userService.getGrantAdminIdFromUserServiceEmail("email", jwt)).thenReturn(1);
+        mockMvc.perform(patch("/schemes/1/scheme-ownership/").contentType(MediaType.APPLICATION_JSON)
+                .content("email").header("Authorization", jwt)).andExpect(status().isOk())
+                .andExpect(content().string("Grant ownership updated successfully"));
+
+    }
 }
