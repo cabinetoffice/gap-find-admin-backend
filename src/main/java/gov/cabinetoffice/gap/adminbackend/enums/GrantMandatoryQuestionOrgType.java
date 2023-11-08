@@ -4,8 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum GrantMandatoryQuestionOrgType {
 
-    LIMITED_COMPANY("Limited company"), NON_LIMITED_COMPANY("Non-limited company"),
-    REGISTERED_CHARITY("Registered charity"), UNREGISTERED_CHARITY("Unregistered charity"), OTHER("Other");
+    LIMITED_COMPANY("Limited company"),
+    NON_LIMITED_COMPANY("Non-limited company"),
+    REGISTERED_CHARITY("Registered charity"),
+    UNREGISTERED_CHARITY("Unregistered charity"),
+    CHARITY("Charity"),
+    INDIVIDUAL("I am applying as an Individual"),
+    OTHER("Other");
 
     private String name;
 
