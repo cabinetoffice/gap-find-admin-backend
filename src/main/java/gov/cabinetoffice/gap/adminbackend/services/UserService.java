@@ -76,21 +76,23 @@ public class UserService {
         return isAdminSessionValid;
     }
 
-
-
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public int getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
-            UserV2DTO response = webClientBuilder.build().get().uri(userServiceUrl + "/user/email/" + email).cookie(userServiceConfig.getCookieName(), jwt).retrieve()
-                    .bodyToMono(UserV2DTO.class).block();
+            UserV2DTO response = webClientBuilder.build().get().uri(userServiceUrl + "/user/email/" + email)
+                    .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
             GrantAdmin grantAdmin = grantAdminRepository.findByGapUserUserSub(response.sub())
-                    .orElseThrow(() -> new NotFoundException("Update grant ownership failed: No grant admin found for email: " + email));
+                    .orElseThrow(() -> new NotFoundException(
+                            "Update grant ownership failed: No grant admin found for email: " + email));
             return grantAdmin.getId();
 
         }
         catch (Exception e) {
-            throw new NotFoundException("Update grant ownership failed: Something went wrong while retrieving grant admin for email: " + email, e);
+            throw new NotFoundException(
+                    "Update grant ownership failed: Something went wrong while retrieving grant admin for email: "
+                            + email,
+                    e);
         }
     }
 

@@ -5,7 +5,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.TemplateApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -29,7 +28,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -351,8 +349,9 @@ public class ApplicationFormService {
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void patchCreatedBy(Integer adminId, Integer schemeId) {
-        ApplicationFormEntity application = this.applicationFormRepository.findByGrantSchemeId(schemeId).orElseThrow(
-                () -> new NotFoundException("Update grant ownership failed, Application with scheme id " + schemeId + " does not exist."));
+        ApplicationFormEntity application = this.applicationFormRepository.findByGrantSchemeId(schemeId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Update grant ownership failed, Application with scheme id " + schemeId + " does not exist."));
         application.setCreatedBy(adminId);
         this.applicationFormRepository.save(application);
     }

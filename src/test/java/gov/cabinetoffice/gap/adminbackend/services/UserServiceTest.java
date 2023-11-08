@@ -188,20 +188,24 @@ class UserServiceTest {
         UserV2DTO response = UserV2DTO.builder().sub("1").emailAddress(email).build();
 
         final WebClient mockWebClient = mock(WebClient.class);
-        final WebClient.RequestHeadersUriSpec mockRequestHeaderUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
+        final WebClient.RequestHeadersUriSpec mockRequestHeaderUriSpec = Mockito
+                .mock(WebClient.RequestHeadersUriSpec.class);
         final WebClient.RequestHeadersSpec mockRequestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         final WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(mockWebClient);
         when(mockWebClient.get()).thenReturn(mockRequestHeaderUriSpec);
         when(mockRequestHeaderUriSpec.uri(userServiceUrl + "/user/email/" + email)).thenReturn(mockRequestHeadersSpec);
+        when(mockRequestHeadersSpec.cookie(anyString(), anyString())).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
         when(mockResponseSpec.bodyToMono(UserV2DTO.class)).thenReturn(Mono.just(response));
+        when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
 
-        when(grantAdminRepository.findByGapUserUserSub(response.sub())).thenReturn(Optional.of(GrantAdmin.builder().id(1).build()));
+        when(grantAdminRepository.findByGapUserUserSub(response.sub()))
+                .thenReturn(Optional.of(GrantAdmin.builder().id(1).build()));
 
-        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email);
-        assert(grantAdminId == 1);
+        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
+        assert (grantAdminId == 1);
     }
 
 }

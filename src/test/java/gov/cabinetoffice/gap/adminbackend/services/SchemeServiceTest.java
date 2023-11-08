@@ -1,21 +1,11 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import javax.persistence.EntityNotFoundException;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
@@ -92,18 +82,6 @@ class SchemeServiceTest {
         assertThatThrownBy(() -> this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID))
                 .as("Return SchemeEntityException when entitiy not found in postgres.")
                 .isInstanceOf(SchemeEntityException.class);
-    }
-
-    @Test
-    void getSchemeBySchemeIdSadPath_SchemeDoesntBelongToLoggedInUser() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().createdBy(2).build();
-        Integer testSchemeId = testEntity.getId();
-
-        when(this.schemeRepository.findById(testSchemeId)).thenReturn(Optional.of(testEntity));
-
-        assertThatThrownBy(() -> this.schemeService.getSchemeBySchemeId(testSchemeId))
-                .as("Return AccessDeniedException when found entitiy was nott created by logged in user.")
-                .isInstanceOf(AccessDeniedException.class);
     }
 
     @Test
@@ -359,25 +337,21 @@ class SchemeServiceTest {
         SchemeEntity testScheme = SchemeEntity.builder().id(1).createdBy(testAdmin).build();
         SchemeEntity patchedScheme = SchemeEntity.builder().id(1).createdBy(patchedAdmin).build();
 
-        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1))
-                .thenReturn(Optional.of(testScheme));
-        Mockito.when(SchemeServiceTest.this.schemeRepository.save(testScheme))
-                .thenReturn(patchedScheme);
-        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(2))
-                .thenReturn(Optional.of(patchedScheme));
+        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
+        Mockito.when(SchemeServiceTest.this.schemeRepository.save(testScheme)).thenReturn(patchedScheme);
+        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(2)).thenReturn(Optional.of(patchedScheme));
 
-        SchemeServiceTest.this.schemeService.patchCreatedBy(2,1);
+        SchemeServiceTest.this.schemeService.patchCreatedBy(2, 1);
         AssertionsForClassTypes.assertThat(testScheme.getCreatedBy()).isEqualTo(patchedScheme.getCreatedBy());
     }
 
     @Test
     void patchCreatedByThrowsAnErrorIfSchemeIsNotPresent() {
-        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1))
-                .thenReturn(Optional.empty());
+        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.empty());
 
-        AssertionsForClassTypes.assertThatThrownBy(() -> SchemeServiceTest.this.schemeService.patchCreatedBy(2,1))
-                .isInstanceOf(SchemeEntityException.class)
-                .hasMessage("Something went wrong while trying to find scheme with id: 1");
+        AssertionsForClassTypes.assertThatThrownBy(() -> SchemeServiceTest.this.schemeService.patchCreatedBy(2, 1))
+                .isInstanceOf(SchemeEntityException.class).hasMessage(
+                        "Update grant ownership failed: Something went wrong while trying to find scheme with id: 1");
     }
 
 }

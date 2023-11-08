@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @Repository
 public interface GrantAdvertRepository extends JpaRepository<GrantAdvert, UUID> {
+
     @Override
     Optional<GrantAdvert> findById(UUID id);
 
@@ -19,4 +20,5 @@ public interface GrantAdvertRepository extends JpaRepository<GrantAdvert, UUID> 
 
     @PostAuthorize("(!returnObject.isEmpty() ? returnObject.get().createdBy.id == authentication.principal.grantAdminId : true) or hasRole('SUPER_ADMIN')")
     Optional<GrantAdvert> findBySchemeId(Integer schemeId);
+
 }

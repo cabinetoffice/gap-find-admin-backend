@@ -1,10 +1,14 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -49,6 +53,18 @@ class SchemeControllerTest {
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
+
+    @MockBean
+    private UserServiceConfig userServiceConfig;
+
+    @MockBean
+    private GrantAdvertService grantAdvertService;
+
+    @MockBean
+    private UserService userService;
+
+    @MockBean
+    private ApplicationFormService applicationFormService;
 
     @Test
     void testSuccessfullyGettingScheme() throws Exception {

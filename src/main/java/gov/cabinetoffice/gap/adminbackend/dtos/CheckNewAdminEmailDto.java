@@ -13,7 +13,9 @@ import javax.validation.constraints.NotBlank;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CheckNewAdminEmailDto {
+
     @Email(message = "Please enter a valid email address")
     @NotBlank(message = "Please enter an email address")
     private String emailAddress;
+
 }

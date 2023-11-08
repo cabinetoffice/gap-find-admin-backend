@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
@@ -22,10 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -108,17 +105,16 @@ public class UserController {
 
     @PostMapping(value = "/validate-admin-email")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity checkNewAdminEmailIsValid(@RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
-        final Cookie[] cookies = request.getCookies();
-        final Cookie userServiceToken = Arrays.stream(cookies)
-                .filter(cookie -> cookie.getName().equals(userServiceConfig.getCookieName()))
-                .findFirst()
-                .orElseThrow(UnauthorizedException::new);
+    public ResponseEntity checkNewAdminEmailIsValid(
+            @RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
+        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
         try {
-            userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), userServiceToken.getValue());
-        } catch (Exception e) {
+            userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), jwt);
+        }
+        catch (Exception e) {
             throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
         }
         return ResponseEntity.ok().build();
     }
+
 }

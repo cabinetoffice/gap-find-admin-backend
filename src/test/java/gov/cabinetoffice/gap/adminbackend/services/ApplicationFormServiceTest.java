@@ -855,14 +855,16 @@ class ApplicationFormServiceTest {
 
     @Test
     void patchCreatedByUpdatesApplication() {
-        ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(1).build();
-        ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(2).build();
+        ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(1)
+                .build();
+        ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(2)
+                .build();
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findByGrantSchemeId(1))
                 .thenReturn(Optional.of(testApplicationFormEntity));
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(testApplicationFormEntity))
                 .thenReturn(patchedApplicationFormEntity);
 
-        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2,1);
+        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 1);
 
         assertThat(testApplicationFormEntity.getCreatedBy()).isEqualTo(2);
     }
@@ -872,20 +874,21 @@ class ApplicationFormServiceTest {
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findByGrantSchemeId(1))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2,1))
+        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 1))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessage("Application with scheme id 1 does not exist.");
+                .hasMessage("Update grant ownership failed, Application with scheme id 1 does not exist.");
     }
 
     @Test
     void patchCreatedByThrowsAnErrorIfAdminIdIsNotFound() {
-        ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(1).build();
+        ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(1)
+                .build();
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findByGrantSchemeId(1))
                 .thenReturn(Optional.of(testApplicationFormEntity));
 
-        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2,1))
+        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 2))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessage("User with id 2 does not exist.");
+                .hasMessage("Update grant ownership failed, Application with scheme id 2 does not exist.");
     }
 
 }

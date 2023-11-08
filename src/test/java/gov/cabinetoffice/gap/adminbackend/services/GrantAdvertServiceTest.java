@@ -1265,17 +1265,16 @@ class GrantAdvertServiceTest {
         Mockito.when(GrantAdvertServiceTest.this.grantAdminRepository.findById(2))
                 .thenReturn(Optional.of(patchedAdmin));
 
-        GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2,1);
+        GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2, 1);
         AssertionsForClassTypes.assertThat(testGrantAdvert.getCreatedBy()).isEqualTo(patchedGrantAdvert.getCreatedBy());
     }
 
     @Test
     void patchCreatedByThrowsAnErrorIfSchemeIsNotPresent() {
-        Mockito.when(GrantAdvertServiceTest.this.grantAdvertRepository.findBySchemeId(1))
-                .thenReturn(Optional.empty());
-
-        AssertionsForClassTypes.assertThatThrownBy(() -> GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2,1))
+        AssertionsForClassTypes
+                .assertThatThrownBy(() -> GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2, 2))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessage("Application with scheme id 1 does not exist.");
+                .hasMessage("Update grant ownership failed: Grant Advert for Scheme with id 2 does not exist");
     }
+
 }

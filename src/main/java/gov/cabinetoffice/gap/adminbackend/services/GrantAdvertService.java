@@ -539,9 +539,10 @@ public class GrantAdvertService {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void patchCreatedBy(Integer adminId, Integer schemeId) {
         GrantAdvert advert = this.grantAdvertRepository.findBySchemeId(schemeId).orElseThrow(
-                () -> new NotFoundException("Update grant ownership failed,Grant Advert for Scheme with id " + schemeId + " does not exist"));
-            advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
-            this.grantAdvertRepository.save(advert);
-        }
+                () -> new NotFoundException("Update grant ownership failed: Grant Advert for Scheme with id " + schemeId
+                        + " does not exist"));
+        advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
+        this.grantAdvertRepository.save(advert);
+    }
 
 }
