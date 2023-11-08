@@ -1,16 +1,10 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import java.util.List;
-
-import javax.persistence.EntityNotFoundException;
-import javax.servlet.http.HttpSession;
-import javax.transaction.Transactional;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
@@ -35,10 +29,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.Arrays;
 import java.util.List;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
@@ -55,6 +52,8 @@ public class SchemeController {
     private final UserService userService;
 
     private final ApplicationFormService applicationFormService;
+
+    private final UserServiceConfig userServiceConfig;
 
     @GetMapping("/{schemeId}")
     @Operation(summary = "Retrieve grant scheme which matches the given id.")
@@ -189,8 +188,14 @@ public class SchemeController {
     @Transactional
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity updateGrantOwnership(@PathVariable final Integer schemeId,
-            @RequestBody final String newAdminEmail) {
-        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(newAdminEmail);
+            @RequestBody final String newAdminEmail,
+                                               final HttpServletRequest request) {
+        final Cookie[] cookies = request.getCookies();
+        final Cookie userServiceToken = Arrays.stream(cookies)
+                .filter(cookie -> cookie.getName().equals(userServiceConfig.getCookieName()))
+                .findFirst()
+                .orElseThrow(UnauthorizedException::new);
+        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(newAdminEmail, userServiceToken.getValue());
         schemeService.patchCreatedBy(grantAdminId, schemeId);
         grantAdvertService.patchCreatedBy(grantAdminId, schemeId);
         applicationFormService.patchCreatedBy(grantAdminId, schemeId);

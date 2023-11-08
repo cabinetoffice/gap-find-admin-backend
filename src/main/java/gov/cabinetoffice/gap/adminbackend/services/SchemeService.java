@@ -34,16 +34,13 @@ public class SchemeService {
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
+    @PreAuthorize("#grantAdminId == authentication.principal.grantAdminId or hasRole('SUPER_ADMIN')")
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
 
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + " is unable to access scheme with id " + schemeId);
-            }
             return this.schemeMapper.schemeEntityToDto(scheme);
         }
         catch (EntityNotFoundException | AccessDeniedException ex) {
