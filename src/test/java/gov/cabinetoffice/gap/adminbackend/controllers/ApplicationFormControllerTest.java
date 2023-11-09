@@ -1,9 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormNoSections;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
@@ -15,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Test;
@@ -30,16 +31,30 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Collections;
 import java.util.List;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_ADVERT_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_MULTIPLE_PROPS;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_NAME;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_POST_FORM_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_RESPONSE_SUCCESS;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_CLASS_ERROR_NO_PROPS_PROVIDED;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_APPLICATION_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SCHEME_ID;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -70,9 +85,15 @@ class ApplicationFormControllerTest {
     @MockBean
     private ApplicationFormRepository applicationFormRepository;
 
+    @MockBean
+    private SchemeService schemeService;
+
     @Test
     void saveApplicationFormHappyPathTest() throws Exception {
-        when(this.applicationFormService.saveApplicationForm(SAMPLE_APPLICATION_POST_FORM_DTO))
+        final SchemeDTO schemeDTO = SchemeDTO.builder().build();
+        when(this.schemeService.getSchemeBySchemeId(SAMPLE_APPLICATION_POST_FORM_DTO.getGrantSchemeId()))
+                .thenReturn(schemeDTO);
+        when(this.applicationFormService.saveApplicationForm(SAMPLE_APPLICATION_POST_FORM_DTO, schemeDTO))
                 .thenReturn(SAMPLE_APPLICATION_RESPONSE_SUCCESS);
 
         this.mockMvc
@@ -84,7 +105,11 @@ class ApplicationFormControllerTest {
 
     @Test
     void saveApplicationFormUnhappyPathNoTemplateFound() throws Exception {
-        when(this.applicationFormService.saveApplicationForm(SAMPLE_APPLICATION_POST_FORM_DTO))
+        final SchemeDTO schemeDTO = SchemeDTO.builder().build();
+        when(this.schemeService.getSchemeBySchemeId(SAMPLE_APPLICATION_POST_FORM_DTO.getGrantSchemeId()))
+                .thenReturn(schemeDTO);
+
+        when(this.applicationFormService.saveApplicationForm(SAMPLE_APPLICATION_POST_FORM_DTO, schemeDTO))
                 .thenThrow(new ApplicationFormException("Error message"));
 
         this.mockMvc

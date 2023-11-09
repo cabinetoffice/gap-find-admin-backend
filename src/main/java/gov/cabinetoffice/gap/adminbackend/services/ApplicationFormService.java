@@ -3,7 +3,9 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.*;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.TemplateApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -33,6 +35,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.lang.Integer.parseInt;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -54,20 +58,20 @@ public class ApplicationFormService {
      * @param applicationFormDTO
      * @return
      */
-    public GenericPostResponseDTO saveApplicationForm(ApplicationFormPostDTO applicationFormDTO) {
+    public GenericPostResponseDTO saveApplicationForm(ApplicationFormPostDTO applicationFormDTO, SchemeDTO scheme) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
             // TODO move template id to external config?
-            TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository.findById(1)
+            final TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository.findById(1)
                     .orElseThrow(() -> new ApplicationFormException("Could not retrieve template application form"));
 
-            ApplicationFormEntity newFormEntity = ApplicationFormEntity.createFromTemplate(
+            final ApplicationFormEntity newFormEntity = ApplicationFormEntity.createFromTemplate(
                     applicationFormDTO.getGrantSchemeId(), applicationFormDTO.getApplicationName(),
-                    session.getGrantAdminId(), formTemplate.getDefinition());
+                    session.getGrantAdminId(), formTemplate.getDefinition(), parseInt(scheme.getVersion()));
 
             newFormEntity.setCreatedBy(session.getGrantAdminId());
 
-            ApplicationFormEntity save = this.applicationFormRepository.save(newFormEntity);
+            final ApplicationFormEntity save = this.applicationFormRepository.save(newFormEntity);
             return new GenericPostResponseDTO(save.getGrantApplicationId());
         }
         catch (ApplicationFormException e) {

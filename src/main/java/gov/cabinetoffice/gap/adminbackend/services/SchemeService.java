@@ -1,11 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import java.time.Instant;
-import java.util.List;
-
-import javax.persistence.EntityNotFoundException;
-import javax.servlet.http.HttpSession;
-
+import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
@@ -17,10 +12,14 @@ import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+
+import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpSession;
+import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +30,8 @@ public class SchemeService {
     private final SchemeMapper schemeMapper;
 
     private final SessionsService sessionsService;
+
+    private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -60,6 +61,9 @@ public class SchemeService {
             SchemeEntity entity = this.schemeMapper.schemePostDtoToEntity(newScheme);
             entity.setFunderId(adminSession.getFunderId());
             entity.setCreatedBy(adminSession.getGrantAdminId());
+            if (featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()) {
+                entity.setVersion(2);
+            }
             entity = this.schemeRepo.save(entity);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newScheme, session);
 
@@ -124,7 +128,7 @@ public class SchemeService {
 
     }
 
-    public List<SchemeDTO> getSchemes() {
+    public List<SchemeDTO> getSignedInUsersSchemes() {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
@@ -136,6 +140,11 @@ public class SchemeService {
             throw new SchemeEntityException("Something went wrong while trying to find all schemes belonging to: "
                     + adminSession.getGrantAdminId(), e);
         }
+    }
+
+    public List<SchemeDTO> getAdminsSchemes(final Integer adminId) {
+        final List<SchemeEntity> schemes = this.schemeRepo.findByCreatedBy(adminId);
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }
 
     public List<SchemeDTO> getPaginatedSchemes(Pageable pagination) {

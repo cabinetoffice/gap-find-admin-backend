@@ -2,8 +2,13 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPostDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundView;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.QuestionGenericPatchDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
@@ -18,7 +23,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -27,10 +37,37 @@ import javax.persistence.EntityNotFoundException;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.Validator;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
-import java.util.*;
-
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY_SECTIONS_NO_QUESTIONS;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_NAME;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_APPLICATION_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_FIELD_TITLE;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_GENERIC_INVALID_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_GENERIC_PATCH_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_GENERIC_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_CONTENT_INVALID_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_INVALID_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_PATCH_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS_POST_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SCHEME_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECOND_APPLICATION_FORM_ENTITY;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECTION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_UPDATED_FIELD_TITLE;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_UPDATED_OPTIONS;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormEntity;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -69,16 +106,18 @@ class ApplicationFormServiceTest {
     class saveApplicationForm {
 
         @Test
-        void saveApplicationFormHappyPathTest() {
+        void saveApplicationFormHappyPathTest_SchemeVersion1() {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             Mockito.when(ApplicationFormServiceTest.this.templateApplicationFormRepository.findById(1))
                     .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(argument.capture()))
                     .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("1").build();
 
-            GenericPostResponseDTO genericPostResponseDTO = ApplicationFormServiceTest.this.applicationFormService
-                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME));
+            final GenericPostResponseDTO genericPostResponseDTO = ApplicationFormServiceTest.this.applicationFormService
+                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME),
+                            schemeDTO);
 
             assertThat(genericPostResponseDTO.getId())
                     .as("Verify the id returned matches the id of the entity returned by the repository after save")
@@ -89,6 +128,34 @@ class ApplicationFormServiceTest {
             assertThat(argument.getValue().getDefinition().getSections())
                     .as("Verify that the sections have been mapped from the template").asList()
                     .hasSizeGreaterThanOrEqualTo(1);
+            assertThat(argument.getValue().getVersion()).as("Verify that version is 1").isEqualTo(1);
+
+        }
+
+        @Test
+        void saveApplicationFormHappyPathTest_SchemeVersion2() {
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            Mockito.when(ApplicationFormServiceTest.this.templateApplicationFormRepository.findById(1))
+                    .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(argument.capture()))
+                    .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("2").build();
+
+            final GenericPostResponseDTO genericPostResponseDTO = ApplicationFormServiceTest.this.applicationFormService
+                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME),
+                            schemeDTO);
+
+            assertThat(genericPostResponseDTO.getId())
+                    .as("Verify the id returned matches the id of the entity returned by the repository after save")
+                    .isEqualTo(SAMPLE_APPLICATION_ID);
+            assertThat(argument.getValue().getApplicationName())
+                    .as("Verify that application name has been mapped from original DTO")
+                    .isEqualTo(SAMPLE_APPLICATION_NAME);
+            assertThat(argument.getValue().getDefinition().getSections())
+                    .as("Verify that the sections have been mapped from the template").asList()
+                    .hasSizeGreaterThanOrEqualTo(1);
+            assertThat(argument.getValue().getVersion()).as("Verify that version is 2").isEqualTo(2);
 
         }
 
@@ -96,9 +163,9 @@ class ApplicationFormServiceTest {
         void saveApplicationFormUnhappyPathTest_TemplateNotFoundTest() {
             Mockito.when(ApplicationFormServiceTest.this.templateApplicationFormRepository.findById(any()))
                     .thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME)))
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("1").build();
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.saveApplicationForm(
+                    new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME), schemeDTO))
                             .as("Could not retrieve template application form")
                             .isInstanceOf(ApplicationFormException.class);
 
@@ -110,9 +177,9 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_TEMPLATE_APPLICATION_FORM_ENTITY));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(any()))
                     .thenThrow(new RuntimeException("Generic save fails"));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .saveApplicationForm(new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME)))
+            final SchemeDTO schemeDTO = SchemeDTO.builder().version("1").build();
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.saveApplicationForm(
+                    new ApplicationFormPostDTO(SAMPLE_SCHEME_ID, SAMPLE_APPLICATION_NAME), schemeDTO))
                             .isInstanceOf(ApplicationFormException.class)
                             .hasMessage("Could save application form with name " + SAMPLE_APPLICATION_NAME);
 
@@ -123,9 +190,9 @@ class ApplicationFormServiceTest {
     @Nested
     class checkIfApplicationFormExists {
 
-        private Integer grantAdminId = 1;
+        private final Integer grantAdminId = 1;
 
-        private Integer schemeId = 333;
+        private final Integer schemeId = 333;
 
         @Test
         void repositoryFindsApplicationForm() {
