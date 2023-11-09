@@ -395,10 +395,9 @@ class SchemeControllerTest {
         Mockito.doNothing().when(grantAdvertService).patchCreatedBy(1, 1);
         Mockito.doNothing().when(applicationFormService).patchCreatedBy(1, 1);
 
-        try (MockedStatic<HelperUtils> helperUtilsMock = Mockito.mockStatic(HelperUtils.class)) {
-            helperUtilsMock.when(() -> HelperUtils.getJwtFromCookies(any(HttpServletRequest.class), any(String.class)))
-                    .thenReturn(jwt);
-        }
+        MockedStatic<HelperUtils> helperUtilsMock = Mockito.mockStatic(HelperUtils.class);
+        helperUtilsMock.when(() -> HelperUtils.getJwtFromCookies(any(HttpServletRequest.class), any(String.class)))
+                .thenReturn(jwt);
 
         Mockito.when(userService.getGrantAdminIdFromUserServiceEmail("email", jwt)).thenReturn(1);
         mockMvc.perform(patch("/schemes/1/scheme-ownership/").contentType(MediaType.APPLICATION_JSON).content("email")
