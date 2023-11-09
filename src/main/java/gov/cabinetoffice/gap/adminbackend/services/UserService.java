@@ -37,8 +37,6 @@ public class UserService {
 
     private final WebClient.Builder webClientBuilder;
 
-    private final String userServiceUrl = "http://localhost:8082";
-
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
         gapUserRepository.findByUserSub(colaSub.toString()).ifPresent(gapUser -> {
@@ -79,7 +77,8 @@ public class UserService {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public int getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
-            UserV2DTO response = webClientBuilder.build().get().uri(userServiceUrl + "/user/email/" + email)
+            UserV2DTO response = webClientBuilder.build().get()
+                    .uri(userServiceConfig.getDomain() + "/user/email/" + email)
                     .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
             GrantAdmin grantAdmin = grantAdminRepository.findByGapUserUserSub(response.sub())

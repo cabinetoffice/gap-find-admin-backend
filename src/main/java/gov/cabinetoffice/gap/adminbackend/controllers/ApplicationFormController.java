@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
@@ -120,7 +119,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity deleteApplicationForm(@PathVariable @Size Integer applicationId) {
+    public ResponseEntity deleteApplicationForm(@PathVariable @NotNull Integer applicationId) {
         try {
             this.applicationFormService.deleteApplicationForm(applicationId);
             return new ResponseEntity(HttpStatus.OK);

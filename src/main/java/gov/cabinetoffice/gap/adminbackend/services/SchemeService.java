@@ -35,7 +35,7 @@ public class SchemeService {
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
-    @PostAuthorize("#returnObject.createdBy == authentication.principal.grantAdminId or hasRole('SUPER_ADMIN')")
+    @PostAuthorize("returnObject.createdBy == authentication.principal.grantAdminId or hasRole('SUPER_ADMIN')")
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 

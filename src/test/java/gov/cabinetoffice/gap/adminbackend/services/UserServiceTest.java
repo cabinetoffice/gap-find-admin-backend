@@ -184,7 +184,6 @@ class UserServiceTest {
     @Test
     public void getGrantAdminIdFromEmailReturnsAValidGrantAdminId() {
         String email = "test@test.com";
-        String userServiceUrl = "http://localhost:8082";
         UserV2DTO response = UserV2DTO.builder().sub("1").emailAddress(email).build();
 
         final WebClient mockWebClient = mock(WebClient.class);
@@ -193,9 +192,11 @@ class UserServiceTest {
         final WebClient.RequestHeadersSpec mockRequestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         final WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
 
+        when(userServiceConfig.getDomain()).thenReturn("http://localhost:8080");
         when(webClientBuilder.build()).thenReturn(mockWebClient);
         when(mockWebClient.get()).thenReturn(mockRequestHeaderUriSpec);
-        when(mockRequestHeaderUriSpec.uri(userServiceUrl + "/user/email/" + email)).thenReturn(mockRequestHeadersSpec);
+        when(mockRequestHeaderUriSpec.uri("http://localhost:8080/user/email/" + email))
+                .thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.cookie(anyString(), anyString())).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
         when(mockResponseSpec.bodyToMono(UserV2DTO.class)).thenReturn(Mono.just(response));
