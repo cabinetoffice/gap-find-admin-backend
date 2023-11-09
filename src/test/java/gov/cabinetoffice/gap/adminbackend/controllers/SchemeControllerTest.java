@@ -12,6 +12,7 @@ import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -404,6 +405,7 @@ class SchemeControllerTest {
                 .header("Authorization", jwt)).andExpect(status().isOk())
                 .andExpect(content().string("Grant ownership updated successfully"));
 
+        helperUtilsMock.close();
     }
 
 }
