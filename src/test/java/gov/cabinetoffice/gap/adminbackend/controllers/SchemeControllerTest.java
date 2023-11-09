@@ -183,7 +183,7 @@ class SchemeControllerTest {
     @Test
     void updateSchemeData_UnexpectedError() throws Exception {
         Mockito.doThrow(new SchemeEntityException(
-                        "Something went wrong while trying to update scheme with the id of: " + SAMPLE_SCHEME_ID))
+                "Something went wrong while trying to update scheme with the id of: " + SAMPLE_SCHEME_ID))
                 .when(this.schemeService).patchExistingScheme(SAMPLE_SCHEME_ID, SCHEME_PATCH_DTO_EXAMPLE);
 
         this.mockMvc
@@ -401,9 +401,10 @@ class SchemeControllerTest {
         }
 
         Mockito.when(userService.getGrantAdminIdFromUserServiceEmail("email", jwt)).thenReturn(1);
-        mockMvc.perform(patch("/schemes/1/scheme-ownership/").contentType(MediaType.APPLICATION_JSON)
-                .content("email").header("Authorization", jwt)).andExpect(status().isOk())
+        mockMvc.perform(patch("/schemes/1/scheme-ownership/").contentType(MediaType.APPLICATION_JSON).content("email")
+                .header("Authorization", jwt)).andExpect(status().isOk())
                 .andExpect(content().string("Grant ownership updated successfully"));
 
     }
+
 }
