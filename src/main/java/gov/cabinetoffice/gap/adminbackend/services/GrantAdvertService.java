@@ -316,6 +316,7 @@ public class GrantAdvertService {
 
         contentfulAdvert.setField("grantName", CONTENTFUL_LOCALE, grantAdvert.getGrantAdvertName());
         contentfulAdvert.setField("label", CONTENTFUL_LOCALE, generateUniqueSlug(grantAdvert));
+        contentfulAdvert.setField("grantUpdated", CONTENTFUL_LOCALE, true);
 
         final CMAEntry updatedAdvert = contentfulManagementClient.entries().update(contentfulAdvert);
         createRichTextQuestionsInContentful(grantAdvert, updatedAdvert);
