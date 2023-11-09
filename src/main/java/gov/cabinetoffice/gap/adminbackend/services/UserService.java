@@ -78,7 +78,7 @@ public class UserService {
     public int getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
             UserV2DTO response = webClientBuilder.build().get()
-                    .uri(userServiceConfig.getDomain() + "/user/email/" + email)
+                    .uri(userServiceConfig.getDomain() + "/user/email/" + email + "?role=ADMIN")
                     .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
             GrantAdmin grantAdmin = grantAdminRepository.findByGapUserUserSub(response.sub())

@@ -195,7 +195,7 @@ class UserServiceTest {
         when(userServiceConfig.getDomain()).thenReturn("http://localhost:8080");
         when(webClientBuilder.build()).thenReturn(mockWebClient);
         when(mockWebClient.get()).thenReturn(mockRequestHeaderUriSpec);
-        when(mockRequestHeaderUriSpec.uri("http://localhost:8080/user/email/" + email))
+        when(mockRequestHeaderUriSpec.uri("http://localhost:8080/user/email/" + email + "?role=ADMIN"))
                 .thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.cookie(anyString(), anyString())).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);

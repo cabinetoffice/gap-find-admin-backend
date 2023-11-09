@@ -76,9 +76,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -870,25 +868,10 @@ class ApplicationFormServiceTest {
     }
 
     @Test
-    void patchCreatedByThrowsAnErrorIfSchemeIsNotPresent() {
-        Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findByGrantSchemeId(1))
-                .thenReturn(Optional.empty());
+    void patchCreatedByDoesNothingIfAdminIdIsNotFound() {
+        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 2);
 
-        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 1))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("Update grant ownership failed, Application with scheme id 1 does not exist.");
-    }
-
-    @Test
-    void patchCreatedByThrowsAnErrorIfAdminIdIsNotFound() {
-        ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(1)
-                .build();
-        Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findByGrantSchemeId(1))
-                .thenReturn(Optional.of(testApplicationFormEntity));
-
-        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 2))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("Update grant ownership failed, Application with scheme id 2 does not exist.");
+        verify(applicationFormRepository, never()).save(any());
     }
 
 }

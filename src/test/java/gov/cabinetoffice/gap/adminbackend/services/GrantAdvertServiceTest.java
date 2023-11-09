@@ -1270,11 +1270,10 @@ class GrantAdvertServiceTest {
     }
 
     @Test
-    void patchCreatedByThrowsAnErrorIfSchemeIsNotPresent() {
-        AssertionsForClassTypes
-                .assertThatThrownBy(() -> GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2, 2))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("Update grant ownership failed: Grant Advert for Scheme with id 2 does not exist");
+    void patchCreatedByDoesNothingIfSchemeIsNotPresent() {
+        GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2, 2);
+
+        verify(grantAdvertRepository, never()).save(any());
     }
 
 }

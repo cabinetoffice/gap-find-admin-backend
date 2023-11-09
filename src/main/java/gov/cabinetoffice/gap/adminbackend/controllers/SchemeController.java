@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
@@ -182,13 +183,14 @@ public class SchemeController {
         }
     }
 
-    @PatchMapping("/{schemeId}/scheme-ownership/")
-    @Transactional
+    @PatchMapping("/{schemeId}/scheme-ownership")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity updateGrantOwnership(@PathVariable final Integer schemeId,
-            @RequestBody final String newAdminEmail, final HttpServletRequest request) {
+    @Transactional
+    public ResponseEntity<String> updateGrantOwnership(@PathVariable final Integer schemeId,
+            @RequestBody final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(newAdminEmail, jwt);
+        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(),
+                jwt);
         schemeService.patchCreatedBy(grantAdminId, schemeId);
         grantAdvertService.patchCreatedBy(grantAdminId, schemeId);
         applicationFormService.patchCreatedBy(grantAdminId, schemeId);
