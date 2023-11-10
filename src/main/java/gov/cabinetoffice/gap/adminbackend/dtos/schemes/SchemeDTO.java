@@ -23,4 +23,6 @@ public class SchemeDTO {
 
     private String contactEmail;
 
+    private Integer createdBy;
+
 }
