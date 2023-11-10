@@ -377,6 +377,7 @@ class SchemeControllerTest {
         @Test
         void HappyPath() throws Exception {
             when(schemeService.getAdminsSchemes(1)).thenReturn(SCHEME_DTOS_EXAMPLE);
+            when(userService.getGrantAdminIdFromSub("1")).thenReturn(1);
 
             mockMvc.perform(get("/schemes/admin/1")).andExpect(status().isOk())
                     .andExpect(content().json(HelperUtils.asJsonString(SCHEME_DTOS_EXAMPLE)));
