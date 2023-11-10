@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
@@ -32,6 +33,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
+import java.util.Optional;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -377,7 +379,7 @@ class SchemeControllerTest {
         @Test
         void HappyPath() throws Exception {
             when(schemeService.getAdminsSchemes(1)).thenReturn(SCHEME_DTOS_EXAMPLE);
-            when(userService.getGrantAdminIdFromSub("1")).thenReturn(1);
+            when(userService.getGrantAdminIdFromSub("1")).thenReturn(Optional.of(GrantAdmin.builder().id(1).build()));
 
             mockMvc.perform(get("/schemes/admin/1")).andExpect(status().isOk())
                     .andExpect(content().json(HelperUtils.asJsonString(SCHEME_DTOS_EXAMPLE)));

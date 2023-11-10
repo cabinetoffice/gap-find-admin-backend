@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
@@ -35,7 +36,9 @@ import javax.servlet.http.HttpSession;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
 @RequestMapping("/schemes")
@@ -201,9 +204,13 @@ public class SchemeController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable String sub,
             final HttpServletRequest request) {
-        final Integer adminId = userService.getGrantAdminIdFromSub(sub);
-        List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);
-        return ResponseEntity.ok().body(schemes);
+        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(sub);
+        if (grantAdmin.isPresent()) {
+            final Integer adminId = grantAdmin.get().getId();
+            List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);
+            return ResponseEntity.ok().body(schemes);
+        }
+        return ResponseEntity.ok().body(Collections.emptyList());
     }
 
 }
