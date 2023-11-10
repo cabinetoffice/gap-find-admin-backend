@@ -197,10 +197,11 @@ public class SchemeController {
         return ResponseEntity.ok("Grant ownership updated successfully");
     }
 
-    @GetMapping("/admin/{adminId}")
+    @GetMapping("/admin/{sub}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable Integer adminId,
+    public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable String sub,
             final HttpServletRequest request) {
+        final Integer adminId = userService.getGrantAdminIdFromSub(sub);
         List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);
         return ResponseEntity.ok().body(schemes);
     }
