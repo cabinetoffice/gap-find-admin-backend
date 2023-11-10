@@ -95,4 +95,9 @@ public class UserService {
         }
     }
 
+    public Integer getGrantAdminIdFromSub(final String sub) {
+        return grantAdminRepository.findByGapUserUserSub(sub)
+                .orElseThrow(() -> new NotFoundException("No grant admin found for sub: " + sub))
+                .getId();
+    }
 }

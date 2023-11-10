@@ -8,7 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface GrantAdminRepository extends JpaRepository<GrantAdmin, Integer> {
-
-    Optional<GrantAdmin> findByGapUserUserSub(String userId);
-
+    Optional<GrantAdmin> findByGapUserUserSub(String sub);
 }
