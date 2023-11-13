@@ -108,6 +108,11 @@ public class UserController {
     public ResponseEntity checkNewAdminEmailIsValid(
             @RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
+
+        if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
+            throw new FieldViolationException("emailAddress", "This user already owns this grant.");
+        }
+
         try {
             userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), jwt);
         }
