@@ -18,4 +18,6 @@ public class CheckNewAdminEmailDto {
     @NotBlank(message = "Please enter an email address")
     private String emailAddress;
 
+    private String oldEmailAddress;
+
 }
