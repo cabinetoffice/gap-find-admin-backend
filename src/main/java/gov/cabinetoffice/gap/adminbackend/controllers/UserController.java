@@ -1,8 +1,11 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
@@ -12,10 +15,13 @@ import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +38,8 @@ public class UserController {
     private final JwtService jwtService;
 
     private final UserService userService;
+
+    private final UserServiceConfig userServiceConfig;
 
     @Value("${feature.onelogin.enabled}")
     private boolean oneLoginEnabled;
@@ -91,6 +99,25 @@ public class UserController {
 
         userService.deleteUser(oneLoginSub, colaSub);
         return ResponseEntity.ok("User deleted successfully");
+    }
+
+    @PostMapping(value = "/validate-admin-email")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity checkNewAdminEmailIsValid(
+            @RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
+        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
+
+        if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
+            throw new FieldViolationException("emailAddress", "This user already owns this grant.");
+        }
+
+        try {
+            userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), jwt);
+        }
+        catch (Exception e) {
+            throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
+        }
+        return ResponseEntity.ok().build();
     }
 
 }

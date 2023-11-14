@@ -58,10 +58,10 @@ public class ApplicationFormEntity extends BaseEntity {
     private ApplicationDefinitionDTO definition;
 
     public ApplicationFormEntity(Integer grantSchemeId, String applicationName, Integer lastUpdateBy,
-            ApplicationDefinitionDTO definition) {
+            ApplicationDefinitionDTO definition, int version) {
         Instant now = Instant.now();
 
-        this.version = 1;
+        this.version = version;
         this.created = now;
         this.lastUpdated = now;
         this.applicationStatus = ApplicationStatusEnum.DRAFT;
@@ -73,8 +73,8 @@ public class ApplicationFormEntity extends BaseEntity {
     }
 
     public static ApplicationFormEntity createFromTemplate(Integer grantSchemeId, String applicationName,
-            Integer lastUpdateBy, ApplicationDefinitionDTO definition) {
-        return new ApplicationFormEntity(grantSchemeId, applicationName, lastUpdateBy, definition);
+            Integer lastUpdateBy, ApplicationDefinitionDTO definition, int version) {
+        return new ApplicationFormEntity(grantSchemeId, applicationName, lastUpdateBy, definition, version);
     }
 
     @Override

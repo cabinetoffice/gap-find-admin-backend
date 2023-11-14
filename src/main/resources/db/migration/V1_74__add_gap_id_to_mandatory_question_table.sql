@@ -1,0 +1,1 @@
+ALTER TABLE grant_mandatory_questions ADD gap_id varchar(255);

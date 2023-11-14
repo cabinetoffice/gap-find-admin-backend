@@ -60,7 +60,7 @@ public class ApplicationFormSectionService {
         boolean isUniqueSectionName = sections.stream()
                 .noneMatch(section -> Objects.equals(section.getSectionTitle(), newSection.getSectionTitle()));
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
         if (isUniqueSectionName) {
             sections.add(newSection);
@@ -91,7 +91,7 @@ public class ApplicationFormSectionService {
             throw new NotFoundException("Section with id " + sectionId + " does not exist");
         }
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
         this.applicationFormRepository.save(applicationForm);
 
@@ -111,7 +111,7 @@ public class ApplicationFormSectionService {
 
         applicationForm.getDefinition().getSectionById(sectionId).setSectionStatus(newStatus);
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
         this.applicationFormRepository.save(applicationForm);
     }

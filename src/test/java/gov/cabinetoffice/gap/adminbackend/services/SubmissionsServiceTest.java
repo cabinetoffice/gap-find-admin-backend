@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationAuditDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
@@ -116,7 +117,7 @@ class SubmissionsServiceTest {
 
             Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
             Row headerRow = workbook.getSheetAt(0).getRow(0);
-            assertRowIsAsExpected(headerRow, SPOTLIGHT_HEADERS);
+            assertRowIsAsExpected(headerRow, SpotlightHeaders.SPOTLIGHT_HEADERS);
             Row dataRow = workbook.getSheetAt(0).getRow(1);
             assertRowIsAsExpected(dataRow, EXPECTED_SPOTLIGHT_ROW);
         }

@@ -8,10 +8,17 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -23,20 +30,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
+import java.util.Collections;
+import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
 @RequestMapping("/schemes")
@@ -45,6 +49,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class SchemeController {
 
     private final SchemeService schemeService;
+
+    private final GrantAdvertService grantAdvertService;
+
+    private final UserService userService;
+
+    private final ApplicationFormService applicationFormService;
+
+    private final UserServiceConfig userServiceConfig;
 
     @GetMapping("/{schemeId}")
     @Operation(summary = "Retrieve grant scheme which matches the given id.")
@@ -164,7 +176,7 @@ public class SchemeController {
                 fundingOrgSchemes = this.schemeService.getPaginatedSchemes(pagination);
             }
             else {
-                fundingOrgSchemes = this.schemeService.getSchemes();
+                fundingOrgSchemes = this.schemeService.getSignedInUsersSchemes();
             }
 
             return ResponseEntity.ok().header("cache-control", "private, no-cache, max-age=0, must-revalidate")
@@ -173,6 +185,33 @@ public class SchemeController {
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PatchMapping("/{schemeId}/scheme-ownership")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Transactional
+    public ResponseEntity<String> updateGrantOwnership(@PathVariable final Integer schemeId,
+            @RequestBody final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
+        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
+        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(),
+                jwt);
+        schemeService.patchCreatedBy(grantAdminId, schemeId);
+        grantAdvertService.patchCreatedBy(grantAdminId, schemeId);
+        applicationFormService.patchCreatedBy(grantAdminId, schemeId);
+        return ResponseEntity.ok("Grant ownership updated successfully");
+    }
+
+    @GetMapping("/admin/{sub}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable String sub,
+            final HttpServletRequest request) {
+        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(sub);
+        if (grantAdmin.isPresent()) {
+            final Integer adminId = grantAdmin.get().getId();
+            List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);
+            return ResponseEntity.ok().body(schemes);
+        }
+        return ResponseEntity.ok().body(Collections.emptyList());
     }
 
 }

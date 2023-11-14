@@ -8,6 +8,7 @@ import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -35,6 +36,7 @@ import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -77,17 +79,19 @@ public class GrantAdvertService {
 
     private final ContentfulConfigProperties contentfulProperties;
 
+    private final FeatureFlagsConfigurationProperties featureFlagsProperties;
+
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
-        GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
-        SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
+        final GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
+        final SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
         if (!scheme.getFunderId().equals(grantAdmin.getFunder().getId())) {
             throw new AccessDeniedException(
                     "User " + grantAdminId + " is unable to access scheme with id " + scheme.getId());
         }
-
-        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme).createdBy(grantAdmin)
+        final Integer version = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
+        final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme).createdBy(grantAdmin)
                 .created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
-                .status(GrantAdvertStatus.DRAFT).version(1).build();
+                .status(GrantAdvertStatus.DRAFT).version(version).build();
         return this.grantAdvertRepository.save(grantAdvert);
     }
 
@@ -312,6 +316,7 @@ public class GrantAdvertService {
 
         contentfulAdvert.setField("grantName", CONTENTFUL_LOCALE, grantAdvert.getGrantAdvertName());
         contentfulAdvert.setField("label", CONTENTFUL_LOCALE, generateUniqueSlug(grantAdvert));
+        contentfulAdvert.setField("grantUpdated", CONTENTFUL_LOCALE, true);
 
         final CMAEntry updatedAdvert = contentfulManagementClient.entries().update(contentfulAdvert);
         createRichTextQuestionsInContentful(grantAdvert, updatedAdvert);
@@ -529,6 +534,16 @@ public class GrantAdvertService {
         final GrantAdvert advert = getAdvertById(advertId, false);
         advert.setStatus(GrantAdvertStatus.UNSCHEDULED);
         grantAdvertRepository.save(advert);
+    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+        Optional<GrantAdvert> advertOptional = this.grantAdvertRepository.findBySchemeId(schemeId);
+        if (advertOptional.isPresent()) {
+            final GrantAdvert advert = advertOptional.get();
+            advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
+            this.grantAdvertRepository.save(advert);
+        }
     }
 
 }

@@ -1,21 +1,9 @@
 name: Java CI with Maven
 
 on:
-  push:
-    branches:
-      - feature/**
-      - AFG-**
-      - bug/**
-      - GAP-**
-      - fix/**
   pull_request:
     branches:
-      - feature/**
-      - AFG-**
-      - bug/**
-      - GAP-**
-      - fix/**
-
+      - develop
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -49,6 +37,7 @@ jobs:
           args: >
             --enableRetired
             --disableOssIndex true
+            --disableRetireJS true
 
       - name: Upload Test results
         uses: actions/upload-artifact@master

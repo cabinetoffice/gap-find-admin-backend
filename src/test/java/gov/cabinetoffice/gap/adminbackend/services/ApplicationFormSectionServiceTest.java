@@ -34,6 +34,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 
 @SpringJUnitConfig
@@ -164,7 +165,7 @@ class ApplicationFormSectionServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
             utilMock.close();
         }
 
@@ -236,7 +237,7 @@ class ApplicationFormSectionServiceTest {
 
             assertThat(sectionExists).isFalse();
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
             utilMock.close();
         }
 
@@ -311,7 +312,7 @@ class ApplicationFormSectionServiceTest {
                     .getSectionStatus();
 
             assertThat(newSectionStatus).isEqualTo(SectionStatusEnum.COMPLETE);
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any()));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
             utilMock.close();
         }
 

@@ -8,10 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
-import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
-import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
-import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
-import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
+import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGenerator;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,6 +29,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import java.util.List;
@@ -63,6 +62,9 @@ class SubmissionsControllerTest {
     @MockBean
     private SecretAuthService secretAuthService;
 
+    @MockBean
+    private FileService fileService;
+
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
 
@@ -80,6 +82,10 @@ class SubmissionsControllerTest {
             final byte[] data = exampleFile.getInputStream().readAllBytes();
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(data);
+            final InputStreamResource inputStream = new InputStreamResource(
+                    new ByteArrayInputStream(outputStream.toByteArray()));
+
+            when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
             when(submissionsService.exportSpotlightChecks(1)).thenReturn(outputStream);
             doNothing().when(submissionsService).updateSubmissionLastRequiredChecksExport(1);
 
