@@ -26,7 +26,7 @@ DO $$
                                  "questions": [
                                    {
                                      "questionId": "ELIGIBILITY",
-                                     "fieldTitle": "Eligitiblity Statement",
+                                     "fieldTitle": "Eligibility Statement",
                                      "displayText": "Some admin supplied text describing what it means to be eligible to apply for this grant",
                                      "questionSuffix": "Does your organisation meet the eligibility criteria?",
                                      "responseType": "YesNo",

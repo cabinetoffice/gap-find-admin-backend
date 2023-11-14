@@ -328,7 +328,7 @@ class ApplicationFormServiceTest {
         }
 
         @Test
-        void deleteApplicationForminsufficientPermissionsToDeleteThisApplication() {
+        void deleteApplicationFormInsufficientPermissionsToDeleteThisApplication() {
             ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
@@ -810,7 +810,7 @@ class ApplicationFormServiceTest {
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
                     .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
                             .isInstanceOf(ApplicationFormException.class)
-                            .hasMessage("Error occured when patching appliction with id of " + applicationId);
+                            .hasMessage("Error occurred when patching application with id of " + applicationId);
         }
 
         @Test

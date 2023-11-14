@@ -205,7 +205,7 @@ class ApplicationFormQuestionsControllerTest {
     }
 
     @Test
-    void deleteQuestionOrSectionDoesntExistTest() throws Exception {
+    void deleteQuestionOrSectionDoesNotExistTest() throws Exception {
 
         doThrow(new NotFoundException("Error message")).when(this.applicationFormService)
                 .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, "incorrectId");
@@ -240,7 +240,7 @@ class ApplicationFormQuestionsControllerTest {
     }
 
     @Test
-    void getQuestionApplicationDoesntExistTest() throws Exception {
+    void getQuestionApplicationDoesNotExistTest() throws Exception {
 
         when(this.applicationFormService.retrieveQuestion(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID))
                 .thenThrow(new NotFoundException("Error message"));

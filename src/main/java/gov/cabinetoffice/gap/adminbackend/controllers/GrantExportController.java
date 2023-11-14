@@ -32,7 +32,7 @@ public class GrantExportController {
                             schema = @Schema(implementation = OutstandingExportCountDTO.class))),
             @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getOutstandingExportsCount(@PathVariable UUID exportId,
+    public ResponseEntity<?> getOutstandingExportsCount(@PathVariable UUID exportId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
 

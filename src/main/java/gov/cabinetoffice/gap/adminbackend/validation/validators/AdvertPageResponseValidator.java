@@ -121,7 +121,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             }
         }
 
-        // will be use to convert Html to Markdown
+        // will be used to convert Html to Markdown
         CopyDown converter = new CopyDown();
         String convertedHtml = "";
         if (isRichText) {
@@ -228,7 +228,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
                 // If the linked question has validation errors
                 if (validateQuestion != null) {
-                    // dont compare
+                    // don't compare
                     return null;
                 }
 
@@ -321,7 +321,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
                 .toArray();
 
-        // build Calendar objs to compare
+        // build Calendar objects to compare
         Calendar openingDate = new Calendar.Builder()
                 .setDate(openingResponse[2], openingResponse[1], openingResponse[0]).build();
         Calendar closingDate = new Calendar.Builder()
@@ -431,7 +431,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             // throw an exception if day is over 31,
             // but if month or year on invalid, don't throw exception
             // lastly if day is less than 31 and month and year aren't invalid, check if
-            // the day is valid for that month (ie. can June have 31)
+            // the day is valid for that month (i.e. can June have 31)
             if (day > 31 || day < 1 || ((!invalidList.contains("month") && !invalidList.contains("year"))
                     && !dayIsValidForMonth(day, month, year))) {
                 throw new NumberFormatException();
@@ -454,11 +454,11 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
     /**
      * Given a list of invalid values, will generate a concatenated error message using
-     * the provided template. ie. ["day","month","year] & "Enter a value for %s" will
+     * the provided template. i.e. ["day","month","year] & "Enter a value for %s" will
      * return "Enter a value for day, month and year"
-     *
-     * You can provide an optional string to customise the final concatenation. ie.
-     * ["day","month"] & "Date must include a %s" & " and a %s" would return "Date must
+     * <p>
+     * You can provide an optional string to customise the final concatenation. i.e.
+     * ["day","month"] & "Date must include an %s" & " and an %s" would return "Date must
      * include a day and a month"
      * @return formatted error message
      */
@@ -480,7 +480,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
     /**
      * Checks if day is valid for that particular month and year (takes into account leap
-     * years) ie. does June have 31 days
+     * years) i.e. does June have 31 days
      * @return boolean
      */
     private boolean dayIsValidForMonth(final int day, final int month, final int year) {

@@ -16,8 +16,8 @@ INSERT INTO grant_scheme VALUES (1, 1, 1, 'SCH-000003589', '2022-08-03 11:48:02.
 INSERT INTO grant_scheme VALUES (2, 1, 1, 'SCH-000003590', '2022-08-03 11:48:33.686115', NULL, NULL, 'Innovate UK Smart Grants: April 2022', 'dale.barrie@and.digital', 2);
 INSERT INTO grant_scheme VALUES (3, 1, 1, 'SCH-000003591', '2022-08-03 11:48:53.254993', NULL, NULL, 'Woodland Partnership (Forestry England)', 'chris.steele@and.digital', 1);
 INSERT INTO grant_scheme VALUES (4, 2, 1, 'SCH-000003591', '2022-08-03 11:48:53.254993', NULL, NULL, 'And Digital Grant', '', 3);
-INSERT INTO grant_scheme VALUES (5, 1, 1, 'SCH-000003592', '2022-08-03 12:48:33.686115', NULL, NULL, 'UK Tradeshow Programme (UKTP)', 'dominic.west@and.digital', 1);
-INSERT INTO grant_scheme VALUES (6, 1, 1, 'SCH-000003592', '2022-08-03 12:48:33.686115', NULL, NULL, 'UK Tradeshow Programme (UKTP) - Future', 'dominic.west@and.digital', 1);
+INSERT INTO grant_scheme VALUES (5, 1, 1, 'SCH-000003592', '2022-08-03 12:48:33.686115', NULL, NULL, 'UK Trade-show Programme (UKTP)', 'dominic.west@and.digital', 1);
+INSERT INTO grant_scheme VALUES (6, 1, 1, 'SCH-000003592', '2022-08-03 12:48:33.686115', NULL, NULL, 'UK Trade-show Programme (UKTP) - Future', 'dominic.west@and.digital', 1);
 
 INSERT INTO grant_application VALUES (1, 3, 1, '2022-09-09 14:58:24.862874', 12345, '2022-09-09 14:58:24.862875', 'Woodland Partnership Application', 'DRAFT', '{"sections":[{"sectionId":"ELIGIBILITY","sectionTitle":"Eligibility","sectionStatus":"INCOMPLETE","questions":[{"questionId":"ELIGIBILITY","fieldTitle":"Eligibility Statement","displayText":"","questionSuffix":"Does your organisation meet the eligibility criteria?","responseType":"YesNo","validation":{"mandatory":true}}]},{"sectionId":"ESSENTIAL","sectionTitle":"Required checks","sectionStatus":"INCOMPLETE","questions":[{"questionId":"APPLICANT_ORG_NAME","profileField":"ORG_NAME","fieldTitle":"Enter the name of your organisation","hintText":"This is the official name of your organisation. It could be the name that is registered with Companies House or the Charities Commission","adminSummary":"organisation legal name","responseType":"ShortAnswer","validation":{"mandatory":true,"minLength":2,"maxLength":250}},{"questionId":"APPLICANT_TYPE","profileField":"ORG_TYPE","fieldTitle":"Choose your organisation type","hintText":"Choose the option that best describes your organisation","adminSummary":"organisation type (e.g. limited company)","responseType":"Dropdown","validation":{"mandatory":true},"options":["Limited company","Non-limited company","Registered charity","Unregistered charity","Other"]},{"questionId":"APPLICANT_ORG_ADDRESS","profileField":"ORG_ADDRESS","fieldTitle":"Enter your organisation''s address","adminSummary":"registered address","responseType":"AddressInput","validation":{"mandatory":true}},{"questionId":"APPLICANT_ORG_CHARITY_NUMBER","profileField":"ORG_CHARITY_NUMBER","fieldTitle":"Please supply the Charity Commission number for your organisation - if applicable","hintText":"Funding organisation might use this to identify your organisation when you apply for a grant. It might also be used to check your organisation is legitimate.","adminSummary":"Charity Commission number (if applicable)","responseType":"ShortAnswer","validation":{"mandatory":false,"minLength":2,"maxLength":15,"validInput":"alphanumeric-nospace"}},{"questionId":"APPLICANT_ORG_COMPANIES_HOUSE","profileField":"ORG_COMPANIES_HOUSE","fieldTitle":"Please supply the Companies House number for your organisation - if applicable","hintText":"Funding organisation might use this to identify your organisation when you apply for a grant. It might also be used to check your organisation is legitimate.","adminSummary":"Companies House number (if applicable)","responseType":"ShortAnswer","validation":{"mandatory":false,"minLength":2,"maxLength":8,"validInput":"alphanumeric-nospace"}},{"questionId":"APPLICANT_AMOUNT","fieldPrefix":"£","fieldTitle":"How much does your organisation require as a grant?","hintText":"Please enter whole pounds only","adminSummary":"amount of funding required","responseType":"Numeric","validation":{"mandatory":true,"greaterThanZero":true}},{"questionId":"BENEFITIARY_LOCATION","fieldTitle":"Where will this funding be spent?","hintText":"Select the location where the grant funding will be spent. You can choose more than one, if it is being spent in more than one location.\n\nSelect all that apply:","adminSummary":"where the funding will be spent","responseType":"MultipleSelection","validation":{"mandatory":true},"options":["North East England","North West England","South East England","South West England","Midlands","Scotland","Wales","Northern Ireland"]}]}]}', 1, NULL);
 
@@ -32,7 +32,7 @@ INSERT INTO public.grant_submission VALUES ('3a6cfe2d-bf58-440d-9e07-3579c7dcf20
       "questions": [
         {
           "questionId": "ELIGIBILITY",
-          "fieldTitle": "Eligitiblity Statement",
+          "fieldTitle": "Eligibility Statement",
           "displayText": "Some admin supplied text describing what it means to be eligible to apply for this grant",
           "questionSuffix": "Does your organisation meet the eligibility criteria?",
           "responseType": "YesNo",
@@ -233,7 +233,7 @@ SELECT SETVAL((SELECT PG_GET_SERIAL_SEQUENCE('"grant_funding_organisation"', 'fu
 SELECT SETVAL((SELECT PG_GET_SERIAL_SEQUENCE('"grant_admin"', 'grant_admin_id')), (SELECT MAX(grant_admin_id) FROM grant_admin));
 
 INSERT INTO public.grant_advert (grant_advert_id, contentful_entry_id, contentful_slug, created, grant_advert_name, last_updated, response, status, version, created_by, last_updated_by, scheme_id)
-VALUES ('fa8f4b1d-d090-4ff6-97be-ccabd3b1d87d', NULL, NULL, '2022-11-28 14:36:21.628791', 'UK Tradeshow Programme (UKTP) - Advert', '2022-11-28 14:36:21.628793',
+VALUES ('fa8f4b1d-d090-4ff6-97be-ccabd3b1d87d', NULL, NULL, '2022-11-28 14:36:21.628791', 'UK Trade-Show Programme (UKTP) - Advert', '2022-11-28 14:36:21.628793',
 '{
     "sections":[
        {
@@ -243,7 +243,7 @@ VALUES ('fa8f4b1d-d090-4ff6-97be-ccabd3b1d87d', NULL, NULL, '2022-11-28 14:36:21
                    {
                       "id":"grantShortDescription",
                       "seen":true,
-                      "response":"Businesses exporting or thinking of exporting from the UK can attend UK Tradeshow Programmes selection of supported overseas tradeshows and conferences, and potentially receive grants to offset some costs.",
+                      "response":"Businesses exporting or thinking of exporting from the UK can attend UK Trade-show Programmes selection of supported overseas trade-shows and conferences, and potentially receive grants to offset some costs.",
                       "multiResponse":null
                    }
                 ],
@@ -490,7 +490,7 @@ VALUES ('fa8f4b1d-d090-4ff6-97be-ccabd3b1d87e', NULL, NULL, '2022-11-28 14:36:21
                 {
                    "id":"grantShortDescription",
                    "seen":true,
-                   "response":"Businesses exporting or thinking of exporting from the UK can attend UK Tradeshow Programmes selection of supported overseas tradeshows and conferences, and potentially receive grants to offset some costs.",
+                   "response":"Businesses exporting or thinking of exporting from the UK can attend UK Tradeshow Programmes selection of supported overseas trade-shows and conferences, and potentially receive grants to offset some costs.",
                    "multiResponse":null
                 }
              ],

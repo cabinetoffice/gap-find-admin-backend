@@ -19,13 +19,13 @@ import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRe
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
+import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
 import java.time.Instant;
@@ -35,7 +35,6 @@ import static java.lang.Integer.parseInt;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ApplicationFormService {
 
     private final ApplicationFormRepository applicationFormRepository;
@@ -57,7 +56,6 @@ public class ApplicationFormService {
     public GenericPostResponseDTO saveApplicationForm(ApplicationFormPostDTO applicationFormDTO, SchemeDTO scheme) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
-            // TODO move template id to external config?
             final TemplateApplicationFormEntity formTemplate = this.templateApplicationFormRepository.findById(1)
                     .orElseThrow(() -> new ApplicationFormException("Could not retrieve template application form"));
 
@@ -174,7 +172,7 @@ public class ApplicationFormService {
 
     private QuestionAbstractPatchDTO validatePatchQuestion(ApplicationFormQuestionDTO questionPatchDto,
             ResponseTypeEnum responseType) {
-        Set violationsSet;
+        Set<ConstraintViolation<QuestionAbstractPatchDTO>> violationsSet;
         QuestionAbstractPatchDTO mappedQuestion;
 
         // check response type, map to the correct model, and validate
@@ -241,7 +239,7 @@ public class ApplicationFormService {
     }
 
     private QuestionAbstractPostDTO validatePostQuestion(ApplicationFormQuestionDTO questionPostDto) {
-        Set violationsSet;
+        Set<ConstraintViolation<QuestionAbstractPostDTO>> violationsSet;
         QuestionAbstractPostDTO mappedQuestion;
 
         if (questionPostDto.getResponseType() == null) {
@@ -339,7 +337,8 @@ public class ApplicationFormService {
             this.applicationFormRepository.save(application);
         }
         catch (Exception e) {
-            throw new ApplicationFormException("Error occured when patching appliction with id of " + applicationId, e);
+            throw new ApplicationFormException("Error occurred when patching application with id of " + applicationId,
+                    e);
         }
 
     }

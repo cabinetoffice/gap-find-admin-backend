@@ -11,7 +11,7 @@ import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.SAMPLE_
 import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.SAMPLE_SCHEME_NAME;
 import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.SAMPLE_USER_ID;
 
-public class RandomeSchemeGenerator {
+public class RandomSchemeGenerator {
 
     public static SchemeEntity.SchemeEntityBuilder randomSchemeEntity() {
         return SchemeEntity.builder().id(SAMPLE_SCHEME_ID).funderId(SAMPLE_ORGANISATION_ID).version(1)

@@ -58,7 +58,7 @@ public class PagesAdvertController {
             @ApiResponse(responseCode = "400",
                     description = "Required path variables or request params not provided in expected format",
                     content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "You dont have permissions to access this advert",
+            @ApiResponse(responseCode = "403", description = "You don't have permissions to access this advert",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Unable to find grant advert with id provided",
                     content = @Content(mediaType = "application/json")) })

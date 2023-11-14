@@ -1,7 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.application.questions;
 
-import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
-
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
@@ -10,8 +8,6 @@ public class QuestionSessionDTO {
     @Size(min = 2, message = "Question title can not be less than 2 characters")
     @Size(max = 255, message = "Question title can not be greater than 255 characters")
     private String fieldTitle;
-
-    private ResponseTypeEnum responseType;
 
     @Size(min = 1)
     private String profileField; // Can admins ever access this field, or only available
