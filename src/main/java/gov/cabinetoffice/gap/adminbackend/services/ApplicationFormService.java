@@ -5,7 +5,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.TemplateApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -22,18 +21,15 @@ import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
-
 import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static java.lang.Integer.parseInt;
 
@@ -346,6 +342,17 @@ public class ApplicationFormService {
             throw new ApplicationFormException("Error occured when patching appliction with id of " + applicationId, e);
         }
 
+    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+        Optional<ApplicationFormEntity> applicationOptional = this.applicationFormRepository
+                .findByGrantSchemeId(schemeId);
+        if (applicationOptional.isPresent()) {
+            final ApplicationFormEntity application = applicationOptional.get();
+            application.setCreatedBy(adminId);
+            this.applicationFormRepository.save(application);
+        }
     }
 
 }

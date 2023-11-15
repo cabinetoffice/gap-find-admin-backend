@@ -4,12 +4,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.Instant;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class HelperUtils {
@@ -75,6 +78,14 @@ public class HelperUtils {
 
     public static AdminSession getAdminSessionForAuthenticatedUser() {
         return (AdminSession) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    public static String getJwtFromCookies(final HttpServletRequest request, final String userServiceCookieName) {
+        final Cookie[] cookies = request.getCookies();
+        final Cookie userServiceToken = Arrays.stream(cookies)
+                .filter(cookie -> cookie.getName().equals(userServiceCookieName)).findFirst()
+                .orElseThrow(UnauthorizedException::new);
+        return userServiceToken.getValue();
     }
 
 }
