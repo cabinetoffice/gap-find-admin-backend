@@ -23,7 +23,9 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,10 +35,13 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY;
 import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -401,6 +406,38 @@ class SchemeControllerTest {
                 .cookie(new Cookie("user-service-token", "jwt")).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(content().string("Grant ownership updated successfully"));
 
+    }
+
+    @Test
+    void hasInternalApplicationForm_HappyPath() throws Exception {
+        when(schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
+        when(applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID))
+                .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
+        mockMvc.perform(get("/schemes/1/hasInternalApplicationForm")).andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
+
+    @Test
+    void hasInternalApplicationForm_HappyPathNoInternalApplicationForm() throws Exception {
+        when(schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
+        when(applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID))
+                .thenThrow(new NoSuchElementException());
+        mockMvc.perform(get("/schemes/1/hasInternalApplicationForm")).andExpect(status().isOk())
+                .andExpect(content().string("false"));
+    }
+
+    @Test
+    void hasInternalApplicationForm_SchemeNotFound() throws Exception {
+        when(schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(new EntityNotFoundException());
+        mockMvc.perform(get("/schemes/1/hasInternalApplicationForm")).andExpect(status().isNotFound())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    void hasInternalApplicationForm_NoPermission() throws Exception {
+        when(schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(new AccessDeniedException(""));
+        mockMvc.perform(get("/schemes/1/hasInternalApplicationForm")).andExpect(status().isForbidden())
+                .andExpect(content().string("{\"error\":{\"message\":\"\"}}"));
     }
 
 }
