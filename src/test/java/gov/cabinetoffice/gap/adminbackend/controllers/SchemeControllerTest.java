@@ -411,7 +411,8 @@ class SchemeControllerTest {
     @Test
     void hasInternalApplicationForm_HappyPath() throws Exception {
         when(schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
-        when(applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID)).thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
+        when(applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID))
+                .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY);
         mockMvc.perform(get("/schemes/1/hasInternalApplicationForm")).andExpect(status().isOk())
                 .andExpect(content().string("true"));
     }
@@ -419,7 +420,8 @@ class SchemeControllerTest {
     @Test
     void hasInternalApplicationForm_HappyPathNoInternalApplicationForm() throws Exception {
         when(schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
-        when(applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID)).thenThrow(new NoSuchElementException());
+        when(applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID))
+                .thenThrow(new NoSuchElementException());
         mockMvc.perform(get("/schemes/1/hasInternalApplicationForm")).andExpect(status().isOk())
                 .andExpect(content().string("false"));
     }
