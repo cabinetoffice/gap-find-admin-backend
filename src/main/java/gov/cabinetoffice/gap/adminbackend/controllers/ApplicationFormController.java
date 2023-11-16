@@ -154,8 +154,9 @@ public class ApplicationFormController {
         try {
             secretAuthService.authenticateSecret(authHeader);
             Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
-            Optional<ApplicationFormEntity> applicationForm = applicationFormService.getOptionalApplicationFromSchemeId(schemeId);
-            if(applicationForm.isEmpty()){
+            Optional<ApplicationFormEntity> applicationForm = applicationFormService
+                    .getOptionalApplicationFromSchemeId(schemeId);
+            if (applicationForm.isEmpty()) {
                 log.info("No application form attached to grant advert with id: " + grantAdvertId + " was found.");
                 return ResponseEntity.noContent().build();
             }
