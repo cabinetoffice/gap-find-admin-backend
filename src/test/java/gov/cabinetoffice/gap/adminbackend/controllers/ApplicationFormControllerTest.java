@@ -286,8 +286,9 @@ class ApplicationFormControllerTest {
         GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
         doNothing().when(this.secretAuthService).authenticateSecret("shh");
         when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
-        when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId())).thenReturn(Optional.of(ApplicationFormEntity
-                .builder().grantApplicationId(1).applicationName("application").grantSchemeId(scheme.getId()).build()));
+        when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
+                .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
+                        .applicationName("application").grantSchemeId(scheme.getId()).build()));
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO, true);
 
@@ -329,8 +330,9 @@ class ApplicationFormControllerTest {
         GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
         doNothing().when(this.secretAuthService).authenticateSecret("shh");
         when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
-        when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId())).thenReturn(Optional.of(ApplicationFormEntity
-                .builder().grantApplicationId(1).applicationName("application").grantSchemeId(scheme.getId()).build()));
+        when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
+                .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
+                        .applicationName("application").grantSchemeId(scheme.getId()).build()));
 
         doThrow(ApplicationFormException.class).when(this.applicationFormService).patchApplicationForm(anyInt(), any(),
                 eq(true));
