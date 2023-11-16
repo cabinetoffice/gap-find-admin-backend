@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
@@ -38,6 +39,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
@@ -211,6 +213,35 @@ public class SchemeController {
             return ResponseEntity.ok().body(schemes);
         }
         return ResponseEntity.ok().body(Collections.emptyList());
+    }
+
+    @GetMapping("/{schemeId}/hasInternalApplicationForm")
+    @Operation(summary = "Retrieve grant scheme which matches the given id.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found scheme which matched the given id.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = SchemeDTO.class))),
+            @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity<Boolean> hasInternalApplicationForm(@PathVariable final Integer schemeId) {
+        SchemeDTO scheme = null;
+        ApplicationFormEntity application = null;
+        try {
+            scheme = this.schemeService.getSchemeBySchemeId(schemeId);
+        }
+        catch (EntityNotFoundException enfe) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            application = this.applicationFormService.getApplicationFromSchemeId(schemeId);
+            return ResponseEntity.ok(true);
+        }
+        catch (NoSuchElementException exception) {
+            return ResponseEntity.ok(false);
+        }
     }
 
 }
