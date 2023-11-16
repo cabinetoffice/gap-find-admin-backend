@@ -226,22 +226,19 @@ public class SchemeController {
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity<Boolean> hasInternalApplicationForm(@PathVariable final Integer schemeId) {
-        SchemeDTO scheme = null;
-        ApplicationFormEntity application = null;
         try {
-            scheme = this.schemeService.getSchemeBySchemeId(schemeId);
+            this.schemeService.getSchemeBySchemeId(schemeId);
         }
         catch (EntityNotFoundException enfe) {
             return ResponseEntity.notFound().build();
         }
 
-        try {
-            application = this.applicationFormService.getApplicationFromSchemeId(schemeId);
-            return ResponseEntity.ok(true);
-        }
-        catch (NoSuchElementException exception) {
+        Optional<ApplicationFormEntity> optionalApplication = this.applicationFormService
+                .getOptionalApplicationFromSchemeId(schemeId);
+        if (optionalApplication.isEmpty()) {
             return ResponseEntity.ok(false);
         }
+        return ResponseEntity.ok(true);
     }
 
 }
