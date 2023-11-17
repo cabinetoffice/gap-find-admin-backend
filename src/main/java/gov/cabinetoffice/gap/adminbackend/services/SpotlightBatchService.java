@@ -18,7 +18,7 @@ public class SpotlightBatchService {
 
     private final SpotlightBatchRepository spotlightBatchRepository;
 
-    public Boolean spotlightBatchWithStatusExists(SpotlightBatchStatus status, int maxSize) {
+    public boolean spotlightBatchWithStatusExists(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.existsByStatus(status, maxSize);
     }
 
