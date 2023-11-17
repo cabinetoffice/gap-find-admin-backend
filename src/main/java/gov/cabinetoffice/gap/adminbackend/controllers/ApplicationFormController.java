@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,12 +31,14 @@ import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Tag(name = "Application Forms", description = "API for handling organisations.")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/application-forms")
+@Slf4j
 public class ApplicationFormController {
 
     private final ApplicationFormService applicationFormService;
@@ -151,11 +154,16 @@ public class ApplicationFormController {
         try {
             secretAuthService.authenticateSecret(authHeader);
             Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
-            ApplicationFormEntity applicationForm = applicationFormService.getApplicationFromSchemeId(schemeId);
+            Optional<ApplicationFormEntity> applicationForm = applicationFormService
+                    .getOptionalApplicationFromSchemeId(schemeId);
+            if (applicationForm.isEmpty()) {
+                log.info("No application form attached to grant advert with id: " + grantAdvertId + " was found.");
+                return ResponseEntity.noContent().build();
+            }
 
             ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
             applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
-            this.applicationFormService.patchApplicationForm(applicationForm.getGrantApplicationId(),
+            this.applicationFormService.patchApplicationForm(applicationForm.get().getGrantApplicationId(),
                     applicationFormPatchDTO, true);
 
             return ResponseEntity.noContent().build();
