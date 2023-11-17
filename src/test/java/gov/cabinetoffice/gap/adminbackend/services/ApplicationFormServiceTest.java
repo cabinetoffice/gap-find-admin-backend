@@ -837,16 +837,17 @@ class ApplicationFormServiceTest {
             ApplicationFormEntity applicationFormEntity = new ApplicationFormEntity();
             when(applicationFormRepository.findByGrantSchemeId(SAMPLE_SCHEME_ID))
                     .thenReturn(Optional.of(applicationFormEntity));
-            ApplicationFormEntity response = applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID);
-
-            assertThat(response).isEqualTo(applicationFormEntity);
+            Optional<ApplicationFormEntity> response = applicationFormService
+                    .getOptionalApplicationFromSchemeId(SAMPLE_SCHEME_ID);
+            assertThat(response.get()).isEqualTo(applicationFormEntity);
         }
 
         @Test
         void applicationsAreNotPresent() {
             when(applicationFormRepository.findByGrantSchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.empty());
-            assertThrows(NoSuchElementException.class,
-                    () -> applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID));
+            Optional<ApplicationFormEntity> response = applicationFormService
+                    .getOptionalApplicationFromSchemeId(SAMPLE_SCHEME_ID);
+            assertThat(response).isEmpty();
         }
 
     }
