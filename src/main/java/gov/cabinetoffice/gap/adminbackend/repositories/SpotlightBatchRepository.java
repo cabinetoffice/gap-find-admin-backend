@@ -13,9 +13,9 @@ import java.util.UUID;
 public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, UUID> {
 
     @Query("select (count(s) > 0) from SpotlightBatch s where s.status = ?1 AND SIZE(s.spotlightSubmissions) < ?2")
-    Boolean existsByStatus(SpotlightBatchStatus status, int maxSize);
+    Boolean existsByStatus(String status, int maxSize);
 
     @Query("SELECT sb FROM SpotlightBatch sb WHERE sb.status = ?1 AND SIZE(sb.spotlightSubmissions) < ?2")
-    Optional<SpotlightBatch> findByStatusAndSpotlightSubmissionsSizeLessThan(SpotlightBatchStatus status, int maxSize);
+    Optional<SpotlightBatch> findByStatusAndSpotlightSubmissionsSizeLessThan(String status, int maxSize);
 
 }
