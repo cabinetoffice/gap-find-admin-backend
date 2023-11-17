@@ -47,7 +47,8 @@ public class WebSecurityConfig {
                                 "/webjars/**")
                         .permitAll()
                         // TODO list all the endpoint for the spotlightPublisherLambda
-                        .antMatchers("/spotlight-batch/**").permitAll().anyRequest().authenticated())
+                        .antMatchers("/spotlight-batch/**", "/spotlight-submissions/**").permitAll().anyRequest()
+                        .authenticated())
 
                 .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable().exceptionHandling()
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
