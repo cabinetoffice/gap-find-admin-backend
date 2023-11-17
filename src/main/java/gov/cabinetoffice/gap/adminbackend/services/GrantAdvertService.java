@@ -36,6 +36,7 @@ import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -534,6 +535,16 @@ public class GrantAdvertService {
         final GrantAdvert advert = getAdvertById(advertId, false);
         advert.setStatus(GrantAdvertStatus.UNSCHEDULED);
         grantAdvertRepository.save(advert);
+    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+        Optional<GrantAdvert> advertOptional = this.grantAdvertRepository.findBySchemeId(schemeId);
+        if (advertOptional.isPresent()) {
+            final GrantAdvert advert = advertOptional.get();
+            advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
+            this.grantAdvertRepository.save(advert);
+        }
     }
 
 }

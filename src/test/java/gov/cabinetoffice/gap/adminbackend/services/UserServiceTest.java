@@ -1,19 +1,25 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +46,12 @@ class UserServiceTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    @Mock
+    private WebClient.Builder webClientBuilder;
+
+    @Mock
+    private GrantAdminRepository grantAdminRepository;
 
     private final String oneLoginSub = "oneLoginSub";
 
@@ -167,6 +179,34 @@ class UserServiceTest {
         when(userServiceConfig.getDomain()).thenReturn("http://example.com");
 
         assertThrows(UnauthorizedException.class, () -> userService.verifyAdminRoles(emailAddress, roles));
+    }
+
+    @Test
+    public void getGrantAdminIdFromEmailReturnsAValidGrantAdminId() {
+        String email = "test@test.com";
+        UserV2DTO response = UserV2DTO.builder().sub("1").emailAddress(email).build();
+
+        final WebClient mockWebClient = mock(WebClient.class);
+        final WebClient.RequestHeadersUriSpec mockRequestHeaderUriSpec = Mockito
+                .mock(WebClient.RequestHeadersUriSpec.class);
+        final WebClient.RequestHeadersSpec mockRequestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        final WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(userServiceConfig.getDomain()).thenReturn("http://localhost:8080");
+        when(webClientBuilder.build()).thenReturn(mockWebClient);
+        when(mockWebClient.get()).thenReturn(mockRequestHeaderUriSpec);
+        when(mockRequestHeaderUriSpec.uri("http://localhost:8080/user/email/" + email + "?role=ADMIN"))
+                .thenReturn(mockRequestHeadersSpec);
+        when(mockRequestHeadersSpec.cookie(anyString(), anyString())).thenReturn(mockRequestHeadersSpec);
+        when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
+        when(mockResponseSpec.bodyToMono(UserV2DTO.class)).thenReturn(Mono.just(response));
+        when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
+
+        when(grantAdminRepository.findByGapUserUserSub(response.sub()))
+                .thenReturn(Optional.of(GrantAdmin.builder().id(1).build()));
+
+        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
+        assert (grantAdminId == 1);
     }
 
 }

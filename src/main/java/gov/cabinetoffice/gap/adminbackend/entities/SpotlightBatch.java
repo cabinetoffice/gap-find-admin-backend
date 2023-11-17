@@ -1,6 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
-import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
+import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,41 +13,32 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "spotlight_submission")
+@Table(name = "spotlight_batch")
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SpotlightSubmission {
+public class SpotlightBatch {
 
     @Id
     @GeneratedValue
     private UUID id;
 
-    @OneToOne
-    @JoinColumn(name = "grant_mandatory_questions_id")
-    private GrantMandatoryQuestions mandatoryQuestions;
-
-    @ManyToOne
-    @JoinColumn(name = "grant_scheme")
-    private SchemeEntity grantScheme;
-
+    @Column(name = "status", nullable = false)
     @Builder.Default
-    @Column
-    private String status = SpotlightSubmissionStatus.QUEUED.toString();
+    private SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
 
-    @Column(name = "last_send_attempt")
+    @Column
     private Instant lastSendAttempt;
 
     @Column
@@ -57,10 +48,12 @@ public class SpotlightSubmission {
     @Builder.Default
     private Instant created = Instant.now();
 
-    @Column(name = "last_updated", nullable = false)
+    @Column(name = "last_updated")
     private Instant lastUpdated;
 
     @ManyToMany
-    private List<SpotlightBatch> batches;
+    @JoinTable(name = "spotlight_batch_submission", joinColumns = @JoinColumn(name = "spotlight_batch_id"),
+            inverseJoinColumns = @JoinColumn(name = "spotlight_submission_id"))
+    private List<SpotlightSubmission> spotlightSubmissions;
 
 }

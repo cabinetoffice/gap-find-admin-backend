@@ -76,9 +76,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -851,6 +849,29 @@ class ApplicationFormServiceTest {
                     () -> applicationFormService.getApplicationFromSchemeId(SAMPLE_SCHEME_ID));
         }
 
+    }
+
+    @Test
+    void patchCreatedByUpdatesApplication() {
+        ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(1)
+                .build();
+        ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity().grantSchemeId(1).createdBy(2)
+                .build();
+        Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findByGrantSchemeId(1))
+                .thenReturn(Optional.of(testApplicationFormEntity));
+        Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(testApplicationFormEntity))
+                .thenReturn(patchedApplicationFormEntity);
+
+        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 1);
+
+        assertThat(testApplicationFormEntity.getCreatedBy()).isEqualTo(2);
+    }
+
+    @Test
+    void patchCreatedByDoesNothingIfAdminIdIsNotFound() {
+        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 2);
+
+        verify(applicationFormRepository, never()).save(any());
     }
 
 }

@@ -1,9 +1,17 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -20,14 +28,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
 @RequestMapping("/schemes")
@@ -37,6 +50,14 @@ import java.util.List;
 public class SchemeController {
 
     private final SchemeService schemeService;
+
+    private final GrantAdvertService grantAdvertService;
+
+    private final UserService userService;
+
+    private final ApplicationFormService applicationFormService;
+
+    private final UserServiceConfig userServiceConfig;
 
     @GetMapping("/{schemeId}")
     @Operation(summary = "Retrieve grant scheme which matches the given id.")
@@ -167,11 +188,60 @@ public class SchemeController {
         }
     }
 
-    @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable Integer adminId,
+    @PatchMapping("/{schemeId}/scheme-ownership")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Transactional
+    public ResponseEntity<String> updateGrantOwnership(@PathVariable final Integer schemeId,
+            @RequestBody final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
+        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
+        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(),
+                jwt);
+        schemeService.patchCreatedBy(grantAdminId, schemeId);
+        grantAdvertService.patchCreatedBy(grantAdminId, schemeId);
+        applicationFormService.patchCreatedBy(grantAdminId, schemeId);
+        return ResponseEntity.ok("Grant ownership updated successfully");
+    }
+
+    @GetMapping("/admin/{sub}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<SchemeDTO>> getAdminsSchemes(final @PathVariable String sub,
             final HttpServletRequest request) {
-        List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);
-        return ResponseEntity.ok().body(schemes);
+        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(sub);
+        if (grantAdmin.isPresent()) {
+            final Integer adminId = grantAdmin.get().getId();
+            List<SchemeDTO> schemes = this.schemeService.getAdminsSchemes(adminId);
+            return ResponseEntity.ok().body(schemes);
+        }
+        return ResponseEntity.ok().body(Collections.emptyList());
+    }
+
+    @GetMapping("/{schemeId}/hasInternalApplicationForm")
+    @Operation(summary = "Retrieve grant scheme which matches the given id.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found scheme which matched the given id.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = SchemeDTO.class))),
+            @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity<Boolean> hasInternalApplicationForm(@PathVariable final Integer schemeId) {
+        SchemeDTO scheme = null;
+        ApplicationFormEntity application = null;
+        try {
+            scheme = this.schemeService.getSchemeBySchemeId(schemeId);
+        }
+        catch (EntityNotFoundException enfe) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            application = this.applicationFormService.getApplicationFromSchemeId(schemeId);
+            return ResponseEntity.ok(true);
+        }
+        catch (NoSuchElementException exception) {
+            return ResponseEntity.ok(false);
+        }
     }
 
 }

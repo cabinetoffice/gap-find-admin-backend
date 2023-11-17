@@ -45,7 +45,10 @@ public class WebSecurityConfig {
                         .permitAll()
                         .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/swagger-ui.html",
                                 "/webjars/**")
-                        .permitAll().anyRequest().authenticated())
+                        .permitAll()
+                        // TODO list all the endpoint for the spotlightPublisherLambda
+                        .antMatchers("/spotlight-batch/**", "/spotlight-submissions/**").permitAll().anyRequest()
+                        .authenticated())
 
                 .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable().exceptionHandling()
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));

@@ -1,6 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.repositories;
 
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
