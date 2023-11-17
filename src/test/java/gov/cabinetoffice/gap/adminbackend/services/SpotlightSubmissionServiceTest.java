@@ -1,11 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
-import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
-import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
-import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
+import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
 import org.junit.jupiter.api.Nested;
@@ -14,21 +12,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
+import java.time.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
@@ -47,7 +40,10 @@ class SpotlightSubmissionServiceTest {
 
     private final Integer SCHEME_ID = 1;
 
-    private final LocalDateTime DATE = LocalDateTime.of(2023, 9, 25, 12, 0);
+    private final LocalDate date = LocalDate.of(2023, 9, 25);
+    private final LocalTime time = LocalTime.of(0, 0, 0);
+    private final LocalDateTime dateTime = LocalDateTime.of(date, time);
+    private final Instant DATE = dateTime.toInstant(ZoneOffset.UTC);
 
     private final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(UUID.randomUUID())
             .lastSendAttempt(DATE).build();

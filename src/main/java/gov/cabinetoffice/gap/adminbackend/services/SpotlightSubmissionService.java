@@ -6,23 +6,14 @@ import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.UUID;
-
-import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
-import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
-import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -57,8 +48,12 @@ public class SpotlightSubmissionService {
 
     public String getLastSubmissionDate(Integer schemeId, SpotlightSubmissionStatus status) {
         final List<SpotlightSubmission> spotlightSubmissions = getSubmissionsByBySchemeIdAndStatus(schemeId, status);
-        return spotlightSubmissions.stream().map(SpotlightSubmission::getLastSendAttempt).max(LocalDateTime::compareTo)
-                .map(date -> date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))).orElse(null);
+
+        return spotlightSubmissions.stream()
+                .map(SpotlightSubmission::getLastSendAttempt)
+                .max(Instant::compareTo)
+                .map(date -> date.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
+                .orElse(null);
     }
 
 }
