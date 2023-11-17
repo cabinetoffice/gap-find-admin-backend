@@ -19,12 +19,13 @@ public class SpotlightBatchService {
     private final SpotlightBatchRepository spotlightBatchRepository;
 
     public Boolean spotlightBatchWithStatusExists(SpotlightBatchStatus status, int maxSize) {
-        return spotlightBatchRepository.existsByStatus(status, maxSize);
+        return spotlightBatchRepository.existsByStatus(status.toString(), maxSize);
     }
 
     public SpotlightBatch getSpotlightBatchWithStatus(SpotlightBatchStatus status, int maxSize) {
-        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize).orElseThrow(
-                () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
+        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status.toString(), maxSize)
+                .orElseThrow(
+                        () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
     }
 
     public SpotlightBatch createSpotlightBatch() {
