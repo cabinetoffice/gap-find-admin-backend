@@ -164,8 +164,8 @@ public class SpotlightBatchControllerTest {
 
         @Test
         void notFoundAddSpotlightSubmissionToSpotlightBatch() throws Exception {
-            UUID spotlightBatchId = UUID.randomUUID();
-            UUID spotlightSubmissionId = UUID.randomUUID();
+            final UUID spotlightBatchId = UUID.randomUUID();
+            final UUID spotlightSubmissionId = UUID.randomUUID();
 
             when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
                     .thenThrow(NotFoundException.class);

@@ -52,6 +52,7 @@ public class SpotlightBatchController {
     public ResponseEntity<Boolean> spotlightBatchWithStatusExist(@PathVariable final SpotlightBatchStatus status,
             @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
+        log.info("Checking if a spotlight batch with status {} exists", status);
         return ResponseEntity.ok()
                 .body(spotlightBatchService.spotlightBatchWithStatusExists(status, Integer.parseInt(batchSizeLimit)));
     }
@@ -74,6 +75,7 @@ public class SpotlightBatchController {
     public ResponseEntity<SpotlightBatch> retrieveSpotlightBatchWithStatus(
             @PathVariable final SpotlightBatchStatus status, @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
+        log.info("Retrieving spotlight batch with status {}", status);
         return ResponseEntity.ok()
                 .body(spotlightBatchService.getSpotlightBatchWithStatus(status, Integer.parseInt(batchSizeLimit)));
     }
@@ -91,6 +93,7 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")) })
     @SpotlightPublisherHeaderValidator
     public ResponseEntity<SpotlightBatch> createSpotlightBatch() {
+        log.info("Creating spotlight batch");
         return ResponseEntity.ok().body(spotlightBatchService.createSpotlightBatch());
     }
 
@@ -108,12 +111,20 @@ public class SpotlightBatchController {
     @SpotlightPublisherHeaderValidator
     public ResponseEntity<String> addSpotlightSubmissionToSpotlightBatch(@PathVariable final UUID spotlightBatchId,
             @PathVariable final UUID spotlightSubmissionId) {
+        log.info("Adding spotlight submission with id {} to spotlight batch with id {}", spotlightSubmissionId,
+                spotlightBatchId);
+
         final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
                 .getSpotlightSubmission(spotlightSubmissionId);
 
         final SpotlightBatch spotlightBatch = spotlightBatchService
                 .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
+        log.info("Spotlight submission with id {} added to spotlight batch with id {}", spotlightSubmissionId,
+                spotlightBatchId);
+
         spotlightSubmissionService.addSpotlightBatchToSpotlightSubmission(spotlightSubmissionId, spotlightBatch);
+        log.info("Spotlight batch with id {} added to spotlight submission with id {}", spotlightBatchId,
+                spotlightSubmissionId);
 
         return ResponseEntity.ok()
                 .body(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
