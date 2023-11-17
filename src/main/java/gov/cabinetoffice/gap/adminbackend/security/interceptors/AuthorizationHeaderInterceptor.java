@@ -22,12 +22,14 @@ public class AuthorizationHeaderInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        log.info("Intercepting request: " + request.getRequestURI());
         if (handler instanceof HandlerMethod) {
             final HandlerMethod handlerMethod = (HandlerMethod) handler;
             final Method method = handlerMethod.getMethod();
 
             SpotlightPublisherHeaderValidator annotation = method
                     .getAnnotation(SpotlightPublisherHeaderValidator.class);
+            log.info("SpotlightPublisherHeaderValidator: " + annotation);
 
             if (annotation != null) {
                 final String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
