@@ -66,7 +66,7 @@ public class SpotlightBatchControllerTest {
             final String batchSizeLimit = "150";
             final Boolean expectedResult = true;
 
-            when(mockSpotlightBatchService.spotlightBatchWithStatusExists(status, Integer.parseInt(batchSizeLimit)))
+            when(mockSpotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)))
                     .thenReturn(expectedResult);
 
             mockMvc.perform(get("/spotlight-batch/status/{status}/exists", status)

@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.vladmihalcea.hibernate.type.array.EnumArrayType;
 import com.vladmihalcea.hibernate.type.array.internal.AbstractArrayType;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
@@ -42,6 +43,7 @@ public class GrantMandatoryQuestions extends BaseEntity {
 
     @OneToOne
     @JoinColumn(name = "submission_id", referencedColumnName = "id")
+    @JsonIgnoreProperties({ "application", "scheme", "applicant", "createdBy", "lastUpdatedBy", "definition" })
     private Submission submission;
 
     @Column(name = "name")
@@ -84,17 +86,8 @@ public class GrantMandatoryQuestions extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @ColumnTransformer(write = "?::grant_mandatory_question_status")
     @Builder.Default
-    private GrantMandatoryQuestionStatus status = GrantMandatoryQuestionStatus.NOT_STARTED; // TODO
-                                                                                            // what
-                                                                                            // if
-                                                                                            // the
-                                                                                            // status
-                                                                                            // is
-                                                                                            // still
-                                                                                            // in
-                                                                                            // progress
+    private GrantMandatoryQuestionStatus status = GrantMandatoryQuestionStatus.NOT_STARTED;
 
-    @Column(name = "version", nullable = false)
     @Builder.Default
     private Integer version = 1;
 
@@ -104,6 +97,7 @@ public class GrantMandatoryQuestions extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "id")
+    @JsonIgnoreProperties({ "submissions", "organisationProfile" })
     private GrantApplicant createdBy;
 
     @Column(name = "last_updated")
@@ -111,6 +105,7 @@ public class GrantMandatoryQuestions extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_updated_by", referencedColumnName = "id")
+    @JsonIgnoreProperties({ "submissions", "organisationProfile" })
     private GrantApplicant lastUpdatedBy;
 
     @Column
