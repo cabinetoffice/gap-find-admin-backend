@@ -1,9 +1,11 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
+import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +38,8 @@ public class SpotlightBatchController {
 
     private final SpotlightSubmissionService spotlightSubmissionService;
 
+    private final SpotlightBatchMapper spotlightBatchMapper;
+
     @GetMapping("/status/{status}/exists")
     @Operation(summary = "Check if a spotlight batch with the given status exists")
     @ApiResponses(value = {
@@ -53,9 +57,8 @@ public class SpotlightBatchController {
             @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
         log.info("Checking if a spotlight batch with status {} exists", status);
-        log.info("Batch size limit: {}", batchSizeLimit);
         return ResponseEntity.ok()
-                .body(spotlightBatchService.spotlightBatchWithStatusExists(status, Integer.parseInt(batchSizeLimit)));
+                .body(spotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)));
     }
 
     @GetMapping("/status/{status}")
@@ -73,12 +76,15 @@ public class SpotlightBatchController {
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
     @SpotlightPublisherHeaderValidator
-    public ResponseEntity<SpotlightBatch> retrieveSpotlightBatchWithStatus(
+    public ResponseEntity<SpotlightBatchDto> retrieveSpotlightBatchWithStatus(
             @PathVariable final SpotlightBatchStatus status, @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
         log.info("Retrieving spotlight batch with status {}", status);
-        return ResponseEntity.ok()
-                .body(spotlightBatchService.getSpotlightBatchWithStatus(status, Integer.parseInt(batchSizeLimit)));
+
+        final SpotlightBatch spotlightBatch = spotlightBatchService.getSpotlightBatchWithStatus(status,
+                Integer.parseInt(batchSizeLimit));
+
+        return ResponseEntity.ok().body(spotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch));
     }
 
     @PostMapping()
@@ -93,9 +99,12 @@ public class SpotlightBatchController {
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
     @SpotlightPublisherHeaderValidator
-    public ResponseEntity<SpotlightBatch> createSpotlightBatch() {
+    public ResponseEntity<SpotlightBatchDto> createSpotlightBatch() {
         log.info("Creating spotlight batch");
-        return ResponseEntity.ok().body(spotlightBatchService.createSpotlightBatch());
+
+        final SpotlightBatch spotlightBatch = spotlightBatchService.createSpotlightBatch();
+
+        return ResponseEntity.ok().body(spotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch));
     }
 
     @PatchMapping("/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}")
@@ -118,18 +127,12 @@ public class SpotlightBatchController {
         final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
                 .getSpotlightSubmission(spotlightSubmissionId);
 
-        final SpotlightBatch spotlightBatch = spotlightBatchService
-                .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
-        log.info("Spotlight submission with id {} added to spotlight batch with id {}", spotlightSubmissionId,
-                spotlightBatchId);
+        spotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
 
-        spotlightSubmissionService.addSpotlightBatchToSpotlightSubmission(spotlightSubmissionId, spotlightBatch);
-        log.info("Spotlight batch with id {} added to spotlight submission with id {}", spotlightBatchId,
-                spotlightSubmissionId);
+        log.info("Successfully added spotlight submission with id {} to spotlight batch with id {}",
+                spotlightSubmissionId, spotlightBatchId);
 
-        return ResponseEntity.ok()
-                .body(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
-                        spotlightSubmissionId, spotlightBatchId));
+        return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
     }
 
 }

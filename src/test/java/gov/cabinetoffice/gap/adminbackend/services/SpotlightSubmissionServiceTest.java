@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
-import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
@@ -22,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
@@ -29,8 +30,6 @@ import static org.mockito.Mockito.when;
 class SpotlightSubmissionServiceTest {
 
     private static final UUID spotlightSubmissionId = UUID.fromString("00000000-0000-0000-0000-000000000000");
-
-    private static final UUID spotlightBatchId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     @Mock
     private SpotlightSubmissionRepository spotlightSubmissionRepository;
@@ -124,45 +123,6 @@ class SpotlightSubmissionServiceTest {
 
             final NotFoundException exception = assertThrows(NotFoundException.class,
                     () -> spotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId));
-
-            assertEquals("A spotlight submission with id " + spotlightSubmissionId + " could not be found",
-                    exception.getMessage());
-        }
-
-    }
-
-    @Nested
-    class addSpotlightBatchToSpotlightSubmission {
-
-        @Test
-        void addSpotlightBatchToSpotlightSubmission() {
-
-            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
-                    .batches(new ArrayList<>()).build();
-
-            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(spotlightBatchId).build();
-
-            when(spotlightSubmissionRepository.findById(spotlightSubmissionId))
-                    .thenReturn(Optional.of(spotlightSubmission));
-            when(spotlightSubmissionRepository.save(any(SpotlightSubmission.class)))
-                    .thenAnswer(invocation -> invocation.getArgument(0));
-
-            spotlightSubmissionService.addSpotlightBatchToSpotlightSubmission(spotlightSubmissionId, spotlightBatch);
-
-            assertNotNull(spotlightSubmission.getBatches());
-            assertEquals(1, spotlightSubmission.getBatches().size());
-            assertTrue(spotlightSubmission.getBatches().contains(spotlightBatch));
-        }
-
-        @Test
-        void addSpotlightBatchToSpotlightSubmissionSubmissionNotFound() {
-
-            when(spotlightSubmissionRepository.findById(spotlightSubmissionId)).thenReturn(Optional.empty());
-
-            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(spotlightBatchId).build();
-
-            final NotFoundException exception = assertThrows(NotFoundException.class, () -> spotlightSubmissionService
-                    .addSpotlightBatchToSpotlightSubmission(spotlightSubmissionId, spotlightBatch));
 
             assertEquals("A spotlight submission with id " + spotlightSubmissionId + " could not be found",
                     exception.getMessage());

@@ -10,6 +10,7 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,7 +53,7 @@ public class SpotlightSubmission {
     @Column(name = "last_updated", nullable = false)
     private Instant lastUpdated;
 
-    @ManyToMany
-    private List<SpotlightBatch> batches;
+    @ManyToMany(mappedBy = "spotlightSubmissions")
+    private List<SpotlightBatch> batches = new ArrayList<>();
 
 }

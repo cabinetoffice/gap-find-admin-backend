@@ -1,10 +1,12 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
@@ -57,6 +59,9 @@ public class SpotlightBatchControllerTest {
     @MockBean
     private SpotlightPublisherInterceptor mockSpotlightPublisherInterceptor;
 
+    @MockBean
+    private SpotlightBatchMapper mockSpotlightBatchMapper;
+
     @Nested
     class spotlightBatchWithStatusExist {
 
@@ -66,7 +71,7 @@ public class SpotlightBatchControllerTest {
             final String batchSizeLimit = "150";
             final Boolean expectedResult = true;
 
-            when(mockSpotlightBatchService.spotlightBatchWithStatusExists(status, Integer.parseInt(batchSizeLimit)))
+            when(mockSpotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)))
                     .thenReturn(expectedResult);
 
             mockMvc.perform(get("/spotlight-batch/status/{status}/exists", status)
@@ -88,9 +93,12 @@ public class SpotlightBatchControllerTest {
         void successfullyRetrieveSpotlightBatchWithStatus() throws Exception {
             final SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
             final String batchSizeLimit = "150";
-            final SpotlightBatch expectedResult = SpotlightBatch.builder().id(uuid).build();
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
+            final SpotlightBatchDto expectedResult = SpotlightBatchDto.builder().id(uuid).build();
 
             when(mockSpotlightBatchService.getSpotlightBatchWithStatus(status, Integer.parseInt(batchSizeLimit)))
+                    .thenReturn(spotlightBatch);
+            when(mockSpotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch))
                     .thenReturn(expectedResult);
 
             mockMvc.perform(get("/spotlight-batch/status/{status}", status).param("batchSizeLimit", batchSizeLimit)
@@ -122,9 +130,12 @@ public class SpotlightBatchControllerTest {
 
         @Test
         void successfullyCreateSpotlightBatch() throws Exception {
-            final SpotlightBatch expectedResult = SpotlightBatch.builder().id(uuid).build();
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
+            final SpotlightBatchDto expectedResult = SpotlightBatchDto.builder().id(uuid).build();
 
-            when(mockSpotlightBatchService.createSpotlightBatch()).thenReturn(expectedResult);
+            when(mockSpotlightBatchService.createSpotlightBatch()).thenReturn(spotlightBatch);
+            when(mockSpotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch))
+                    .thenReturn(expectedResult);
 
             mockMvc.perform(post("/spotlight-batch").header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.id").exists());
@@ -157,9 +168,7 @@ public class SpotlightBatchControllerTest {
                             spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
                                     LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk())
-                    .andExpect(content()
-                            .string(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
-                                    spotlightSubmissionId, spotlightBatchId)));
+                    .andExpect(content().string("Successfully added spotlight submission to spotlight batch"));
         }
 
         @Test
