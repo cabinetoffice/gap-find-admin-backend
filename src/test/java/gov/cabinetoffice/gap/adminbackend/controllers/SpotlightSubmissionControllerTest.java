@@ -1,8 +1,10 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightSubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
@@ -47,6 +49,9 @@ class SpotlightSubmissionControllerTest {
     @MockBean
     private SpotlightPublisherInterceptor mockSpotlightPublisherInterceptor;
 
+    @MockBean
+    private SpotlightSubmissionMapper spotlightSubmissionMapper;
+
     @Nested
     class getSpotlightSubmissionById {
 
@@ -54,15 +59,25 @@ class SpotlightSubmissionControllerTest {
         void successfullyRetrieveSpotlightSubmission() throws Exception {
             final UUID spotlightSubmissionId = UUID.randomUUID();
             final Instant now = Instant.now();
-            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
-                    .created(now).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .id(spotlightSubmissionId)
+                .created(now)
+                .build();
+            final SpotlightSubmissionDto expectedResult = SpotlightSubmissionDto.builder()
+                .id(spotlightSubmissionId)
+                .created(now)
+                .build();
 
             when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                    .thenReturn(spotlightSubmission);
+                .thenReturn(spotlightSubmission);
+            when(spotlightSubmissionMapper.spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission))
+                .thenReturn(expectedResult);
 
-            mockMvc.perform(get("/spotlight-submissions/{spotlightSubmissionId}", spotlightSubmissionId)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").exists());
+            mockMvc
+                .perform(get("/spotlight-submissions/{spotlightSubmissionId}", spotlightSubmissionId)
+                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").exists());
         }
 
         @Test
@@ -71,10 +86,12 @@ class SpotlightSubmissionControllerTest {
             final UUID spotlightSubmissionId = UUID.randomUUID();
 
             when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                    .thenThrow(NotFoundException.class);
+                .thenThrow(NotFoundException.class);
 
-            mockMvc.perform(get("/spotlight-submissions/{spotlightSubmissionId}", spotlightSubmissionId)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isNotFound());
+            mockMvc
+                .perform(get("/spotlight-submissions/{spotlightSubmissionId}", spotlightSubmissionId)
+                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                .andExpect(status().isNotFound());
         }
 
     }
