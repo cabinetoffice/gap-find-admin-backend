@@ -58,7 +58,7 @@ public class SpotlightBatchController {
                     defaultValue = "200") final String batchSizeLimit) {
         log.info("Checking if a spotlight batch with status {} exists", status);
         return ResponseEntity.ok()
-            .body(spotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)));
+                .body(spotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)));
     }
 
     @GetMapping("/status/{status}")
@@ -125,10 +125,10 @@ public class SpotlightBatchController {
                 spotlightBatchId);
 
         final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
-            .getSpotlightSubmission(spotlightSubmissionId);
+                .getSpotlightSubmission(spotlightSubmissionId);
 
         final SpotlightBatch spotlightBatch = spotlightBatchService
-            .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
+                .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
         log.info("Spotlight submission with id {} added to spotlight batch with id {}", spotlightSubmissionId,
                 spotlightBatchId);
 
@@ -137,8 +137,8 @@ public class SpotlightBatchController {
                 spotlightSubmissionId);
 
         return ResponseEntity.ok()
-            .body(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
-                    spotlightSubmissionId, spotlightBatchId));
+                .body(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
+                        spotlightSubmissionId, spotlightBatchId));
     }
 
 }

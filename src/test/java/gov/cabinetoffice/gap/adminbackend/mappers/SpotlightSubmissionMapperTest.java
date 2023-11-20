@@ -36,41 +36,20 @@ class SpotlightSubmissionMapperTest {
 
     private final Submission submission = Submission.builder().id(submissionId).scheme(schemeEntity).build();
 
-    private final GrantMandatoryQuestions mandatoryQuestions = GrantMandatoryQuestions.builder()
-        .id(mandatoryQuestionId)
-        .schemeEntity(schemeEntity)
-        .submission(submission)
-        .name("Sample Question")
-        .addressLine1("123 Street")
-        .addressLine2("Apt 456")
-        .city("Cityville")
-        .county("County")
-        .postcode("12345")
-        .orgType(GrantMandatoryQuestionOrgType.LIMITED_COMPANY)
-        .companiesHouseNumber("ABC123")
-        .charityCommissionNumber("XYZ789")
-        .fundingAmount(BigDecimal.TEN)
-        .fundingLocation(new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.LONDON,
-                GrantMandatoryQuestionFundingLocation.EAST_ENGLAND })
-        .status(GrantMandatoryQuestionStatus.IN_PROGRESS)
-        .version(1)
-        .created(now)
-        .lastUpdated(now)
-        .createdBy(applicant)
-        .lastUpdatedBy(applicant)
-        .gapId("GAP123")
-        .build();
+    private final GrantMandatoryQuestions mandatoryQuestions = GrantMandatoryQuestions.builder().id(mandatoryQuestionId)
+            .schemeEntity(schemeEntity).submission(submission).name("Sample Question").addressLine1("123 Street")
+            .addressLine2("Apt 456").city("Cityville").county("County").postcode("12345")
+            .orgType(GrantMandatoryQuestionOrgType.LIMITED_COMPANY).companiesHouseNumber("ABC123")
+            .charityCommissionNumber("XYZ789").fundingAmount(BigDecimal.TEN)
+            .fundingLocation(new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.LONDON,
+                    GrantMandatoryQuestionFundingLocation.EAST_ENGLAND })
+            .status(GrantMandatoryQuestionStatus.IN_PROGRESS).version(1).created(now).lastUpdated(now)
+            .createdBy(applicant).lastUpdatedBy(applicant).gapId("GAP123").build();
 
-    private final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
-        .id(spotlightSubmissionId)
-        .mandatoryQuestions(mandatoryQuestions)
-        .grantScheme(schemeEntity)
-        .status(SpotlightSubmissionStatus.QUEUED.toString())
-        .lastSendAttempt(now)
-        .version(1)
-        .created(now)
-        .lastUpdated(now)
-        .build();
+    private final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
+            .mandatoryQuestions(mandatoryQuestions).grantScheme(schemeEntity)
+            .status(SpotlightSubmissionStatus.QUEUED.toString()).lastSendAttempt(now).version(1).created(now)
+            .lastUpdated(now).build();
 
     @InjectMocks
     private SpotlightSubmissionMapper spotlightSubmissionMapper = Mappers.getMapper(SpotlightSubmissionMapper.class);
@@ -78,7 +57,7 @@ class SpotlightSubmissionMapperTest {
     @Test
     public void testSpotlighSubmissionToSpotlightSubmissionDto() {
         final SpotlightSubmissionDto spotlightSubmissionDto = spotlightSubmissionMapper
-            .spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission);
+                .spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission);
 
         assertThat(spotlightSubmissionDto).isNotNull();
         assertThat(spotlightSubmissionDto.getId()).isEqualTo(spotlightSubmission.getId());
@@ -91,38 +70,38 @@ class SpotlightSubmissionMapperTest {
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getId()).isEqualTo(mandatoryQuestions.getId());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getName()).isEqualTo(mandatoryQuestions.getName());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getAddressLine1())
-            .isEqualTo(mandatoryQuestions.getAddressLine1());
+                .isEqualTo(mandatoryQuestions.getAddressLine1());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getAddressLine2())
-            .isEqualTo(mandatoryQuestions.getAddressLine2());
+                .isEqualTo(mandatoryQuestions.getAddressLine2());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getCity()).isEqualTo(mandatoryQuestions.getCity());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getCounty())
-            .isEqualTo(mandatoryQuestions.getCounty());
+                .isEqualTo(mandatoryQuestions.getCounty());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getPostcode())
-            .isEqualTo(mandatoryQuestions.getPostcode());
+                .isEqualTo(mandatoryQuestions.getPostcode());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getOrgType())
-            .isEqualTo(mandatoryQuestions.getOrgType().name());
+                .isEqualTo(mandatoryQuestions.getOrgType().name());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getCompaniesHouseNumber())
-            .isEqualTo(mandatoryQuestions.getCompaniesHouseNumber());
+                .isEqualTo(mandatoryQuestions.getCompaniesHouseNumber());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getCharityCommissionNumber())
-            .isEqualTo(mandatoryQuestions.getCharityCommissionNumber());
+                .isEqualTo(mandatoryQuestions.getCharityCommissionNumber());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getFundingAmount())
-            .isEqualTo(mandatoryQuestions.getFundingAmount());
+                .isEqualTo(mandatoryQuestions.getFundingAmount());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getFundingLocation())
-            .isEqualTo(new String[] { GrantMandatoryQuestionFundingLocation.LONDON.toString(),
-                    GrantMandatoryQuestionFundingLocation.EAST_ENGLAND.toString() });
+                .isEqualTo(new String[] { GrantMandatoryQuestionFundingLocation.LONDON.toString(),
+                        GrantMandatoryQuestionFundingLocation.EAST_ENGLAND.toString() });
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getStatus())
-            .isEqualTo(mandatoryQuestions.getStatus().toString());
+                .isEqualTo(mandatoryQuestions.getStatus().toString());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getVersion())
-            .isEqualTo(mandatoryQuestions.getVersion());
+                .isEqualTo(mandatoryQuestions.getVersion());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getCreated())
-            .isEqualTo(mandatoryQuestions.getCreated());
+                .isEqualTo(mandatoryQuestions.getCreated());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getCreatedBy())
-            .isEqualTo(mandatoryQuestions.getCreatedBy().getId());
+                .isEqualTo(mandatoryQuestions.getCreatedBy().getId());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getGapId()).isEqualTo(mandatoryQuestions.getGapId());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getSchemeId())
-            .isEqualTo(mandatoryQuestions.getSchemeEntity().getId());
+                .isEqualTo(mandatoryQuestions.getSchemeEntity().getId());
         assertThat(spotlightSubmissionDto.getMandatoryQuestions().getSubmissionId())
-            .isEqualTo(mandatoryQuestions.getSubmission().getId());
+                .isEqualTo(mandatoryQuestions.getSubmission().getId());
     }
 
 }

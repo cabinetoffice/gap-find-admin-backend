@@ -51,9 +51,9 @@ public class SpotlightSubmissionController {
 
         log.info("Getting spotlight submission with id {}", spotlightSubmissionId);
         final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
-            .getSpotlightSubmission(spotlightSubmissionId);
+                .getSpotlightSubmission(spotlightSubmissionId);
         return ResponseEntity.ok()
-            .body(spotlightSubmissionMapper.spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission));
+                .body(spotlightSubmissionMapper.spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission));
     }
 
 }

@@ -72,13 +72,11 @@ public class SpotlightBatchControllerTest {
             final Boolean expectedResult = true;
 
             when(mockSpotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)))
-                .thenReturn(expectedResult);
+                    .thenReturn(expectedResult);
 
-            mockMvc
-                .perform(get("/spotlight-batch/status/{status}/exists", status).param("batchSizeLimit", batchSizeLimit)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
-                .andExpect(status().isOk())
-                .andExpect(content().string("true"));
+            mockMvc.perform(get("/spotlight-batch/status/{status}/exists", status)
+                    .param("batchSizeLimit", batchSizeLimit).header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isOk()).andExpect(content().string("true"));
         }
 
         @Test
@@ -99,15 +97,13 @@ public class SpotlightBatchControllerTest {
             final SpotlightBatchDto expectedResult = SpotlightBatchDto.builder().id(uuid).build();
 
             when(mockSpotlightBatchService.getSpotlightBatchWithStatus(status, Integer.parseInt(batchSizeLimit)))
-                .thenReturn(spotlightBatch);
+                    .thenReturn(spotlightBatch);
             when(mockSpotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch))
-                .thenReturn(expectedResult);
+                    .thenReturn(expectedResult);
 
-            mockMvc
-                .perform(get("/spotlight-batch/status/{status}", status).param("batchSizeLimit", batchSizeLimit)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").exists());
+            mockMvc.perform(get("/spotlight-batch/status/{status}", status).param("batchSizeLimit", batchSizeLimit)
+                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").exists());
         }
 
         @Test
@@ -116,12 +112,10 @@ public class SpotlightBatchControllerTest {
             final String batchSizeLimit = "150";
 
             when(mockSpotlightBatchService.getSpotlightBatchWithStatus(status, Integer.parseInt(batchSizeLimit)))
-                .thenThrow(NotFoundException.class);
+                    .thenThrow(NotFoundException.class);
 
-            mockMvc
-                .perform(get("/spotlight-batch/status/{status}", status).param("batchSizeLimit", batchSizeLimit)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
-                .andExpect(status().isNotFound());
+            mockMvc.perform(get("/spotlight-batch/status/{status}", status).param("batchSizeLimit", batchSizeLimit)
+                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isNotFound());
         }
 
         @Test
@@ -141,11 +135,10 @@ public class SpotlightBatchControllerTest {
 
             when(mockSpotlightBatchService.createSpotlightBatch()).thenReturn(spotlightBatch);
             when(mockSpotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch))
-                .thenReturn(expectedResult);
+                    .thenReturn(expectedResult);
 
             mockMvc.perform(post("/spotlight-batch").header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").exists());
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.id").exists());
         }
 
         @Test
@@ -166,19 +159,18 @@ public class SpotlightBatchControllerTest {
             final SpotlightBatch spotlightBatch = new SpotlightBatch();
 
             when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                .thenReturn(spotlightSubmission);
+                    .thenReturn(spotlightSubmission);
             when(mockSpotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission,
-                    spotlightBatchId))
-                .thenReturn(spotlightBatch);
+                    spotlightBatchId)).thenReturn(spotlightBatch);
 
-            mockMvc
-                .perform(patch("/spotlight-batch/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}",
-                        spotlightBatchId, spotlightSubmissionId)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
-                .andExpect(status().isOk())
-                .andExpect(content()
-                    .string(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
-                            spotlightSubmissionId, spotlightBatchId)));
+            mockMvc.perform(
+                    patch("/spotlight-batch/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}",
+                            spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
+                                    LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isOk())
+                    .andExpect(content()
+                            .string(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
+                                    spotlightSubmissionId, spotlightBatchId)));
         }
 
         @Test
@@ -187,19 +179,19 @@ public class SpotlightBatchControllerTest {
             final UUID spotlightSubmissionId = UUID.randomUUID();
 
             when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                .thenThrow(NotFoundException.class);
+                    .thenThrow(NotFoundException.class);
 
-            mockMvc
-                .perform(patch("/spotlight-batch/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}",
-                        spotlightBatchId, spotlightSubmissionId)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
-                .andExpect(status().isNotFound());
+            mockMvc.perform(
+                    patch("/spotlight-batch/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}",
+                            spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
+                                    LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isNotFound());
         }
 
         @Test
         void badRequestAddSpotlightSubmissionToSpotlightBatch() throws Exception {
             mockMvc.perform(patch("/spotlight-batch/INVALID_PATH/add-spotlight-submission/INVALID_PATH"))
-                .andExpect(status().isBadRequest());
+                    .andExpect(status().isBadRequest());
         }
 
     }
