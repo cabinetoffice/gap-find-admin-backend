@@ -134,8 +134,8 @@ public class ApplicationFormService {
         this.applicationFormRepository.delete(applicationFormEntity);
     }
 
-    public ApplicationFormEntity getApplicationFromSchemeId(Integer schemeId) {
-        return applicationFormRepository.findByGrantSchemeId(schemeId).orElseThrow();
+    public Optional<ApplicationFormEntity> getOptionalApplicationFromSchemeId(Integer schemeId) {
+        return applicationFormRepository.findByGrantSchemeId(schemeId);
     }
 
     public void patchQuestionValues(Integer applicationId, String sectionId, String questionId,

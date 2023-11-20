@@ -18,6 +18,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,6 +62,6 @@ public class SpotlightSubmission {
     private Instant lastUpdated;
 
     @ManyToMany
-    private List<SpotlightBatch> batches;
+    private List<SpotlightBatch> batches = new ArrayList<>();
 
 }
