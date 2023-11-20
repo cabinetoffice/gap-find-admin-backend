@@ -1,7 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
+import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightSubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,6 +30,8 @@ public class SpotlightSubmissionController {
 
     private final SpotlightSubmissionService spotlightSubmissionService;
 
+    private final SpotlightSubmissionMapper spotlightSubmissionMapper;
+
     @GetMapping("/{spotlightSubmissionId}")
     @Operation(summary = "Get spotlight submission by id")
     @ApiResponses(value = {
@@ -42,11 +46,14 @@ public class SpotlightSubmissionController {
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
     @SpotlightPublisherHeaderValidator
-    public ResponseEntity<SpotlightSubmission> getSpotlightSubmissionById(
+    public ResponseEntity<SpotlightSubmissionDto> getSpotlightSubmissionById(
             @PathVariable final UUID spotlightSubmissionId) {
 
         log.info("Getting spotlight submission with id {}", spotlightSubmissionId);
-        return ResponseEntity.ok().body(spotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId));
+        final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
+                .getSpotlightSubmission(spotlightSubmissionId);
+        return ResponseEntity.ok()
+                .body(spotlightSubmissionMapper.spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission));
     }
 
 }
