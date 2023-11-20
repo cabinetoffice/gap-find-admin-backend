@@ -20,6 +20,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,6 +60,7 @@ public class SpotlightBatch {
     @JoinTable(name = "spotlight_batch_submission", joinColumns = @JoinColumn(name = "spotlight_batch_id"),
             inverseJoinColumns = @JoinColumn(name = "spotlight_submission_id"))
     @JsonIgnoreProperties("batches")
-    private List<SpotlightSubmission> spotlightSubmissions;
+    @Builder.Default
+    private List<SpotlightSubmission> spotlightSubmissions = new ArrayList<>();
 
 }
