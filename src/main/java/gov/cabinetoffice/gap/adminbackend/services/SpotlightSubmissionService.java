@@ -38,20 +38,17 @@ public class SpotlightSubmissionService {
     }
 
     public List<SpotlightSubmission> getSubmissionsByBySchemeIdAndStatus(Integer schemeId,
-                                                                         SpotlightSubmissionStatus status) {
-        return spotlightSubmissionRepository.findBySchemeIdAndStatus(schemeId, status);
+            SpotlightSubmissionStatus status) {
+        return spotlightSubmissionRepository.findByGrantSchemeIdAndStatus(schemeId, status.toString());
     }
 
     public long getCountBySchemeIdAndStatus(Integer schemeId, SpotlightSubmissionStatus status) {
-        return spotlightSubmissionRepository.countBySchemeIdAndStatus(schemeId, status);
+        return spotlightSubmissionRepository.countByGrantSchemeIdAndStatus(schemeId, status.toString());
     }
 
     public String getLastSubmissionDate(Integer schemeId, SpotlightSubmissionStatus status) {
         final List<SpotlightSubmission> spotlightSubmissions = getSubmissionsByBySchemeIdAndStatus(schemeId, status);
-
-        return spotlightSubmissions.stream()
-                .map(SpotlightSubmission::getLastSendAttempt)
-                .max(Instant::compareTo)
+        return spotlightSubmissions.stream().map(SpotlightSubmission::getLastSendAttempt).max(Instant::compareTo)
                 .map(date -> date.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
                 .orElse(null);
     }

@@ -41,8 +41,11 @@ class SpotlightSubmissionServiceTest {
     private final Integer SCHEME_ID = 1;
 
     private final LocalDate date = LocalDate.of(2023, 9, 25);
+
     private final LocalTime time = LocalTime.of(0, 0, 0);
+
     private final LocalDateTime dateTime = LocalDateTime.of(date, time);
+
     private final Instant DATE = dateTime.toInstant(ZoneOffset.UTC);
 
     private final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(UUID.randomUUID())
@@ -50,45 +53,52 @@ class SpotlightSubmissionServiceTest {
 
     @Test
     void getSubmissionsByBySchemeIdAndStatus_ReturnsList() {
-        when(spotlightSubmissionRepository.findBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
-                .thenReturn(List.of(spotlightSubmission));
+        when(spotlightSubmissionRepository.findByGrantSchemeIdAndStatus(SCHEME_ID,
+                SpotlightSubmissionStatus.SENT.toString())).thenReturn(List.of(spotlightSubmission));
 
         final List<SpotlightSubmission> result = spotlightSubmissionService
                 .getSubmissionsByBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT);
 
-        verify(spotlightSubmissionRepository).findBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT);
+        verify(spotlightSubmissionRepository).findByGrantSchemeIdAndStatus(SCHEME_ID,
+                SpotlightSubmissionStatus.SENT.toString());
         assertThat(result).isEqualTo(List.of(spotlightSubmission));
     }
 
     @Test
     void getCountBySchemeIdAndStatus_ReturnsCount() {
-        when(spotlightSubmissionRepository.countBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
-                .thenReturn(Long.valueOf(2));
+        when(spotlightSubmissionRepository.countByGrantSchemeIdAndStatus(SCHEME_ID,
+                SpotlightSubmissionStatus.SENT.toString())).thenReturn(Long.valueOf(2));
 
         final long result = spotlightSubmissionService.getCountBySchemeIdAndStatus(SCHEME_ID,
                 SpotlightSubmissionStatus.SENT);
 
-        verify(spotlightSubmissionRepository).countBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT);
+        verify(spotlightSubmissionRepository).countByGrantSchemeIdAndStatus(SCHEME_ID,
+                SpotlightSubmissionStatus.SENT.toString());
         assertThat(result).isEqualTo(2);
 
     }
 
-    @Test
-    void getLastSubmissionDate_NoSubmissions() {
-        when(spotlightSubmissionRepository.findBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
-                .thenReturn(List.of());
-        final String result = spotlightSubmissionService.getLastSubmissionDate(SCHEME_ID,
-                SpotlightSubmissionStatus.SENT);
-        assertThat(result).isNull();
-    }
+    @Nested
+    class getLastSubmissionDate {
 
-    @Test
-    void getLastSubmissionDate_HasSubmissions() {
-        when(spotlightSubmissionRepository.findBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
-                .thenReturn(List.of(spotlightSubmission));
-        final String result = spotlightSubmissionService.getLastSubmissionDate(SCHEME_ID,
-                SpotlightSubmissionStatus.SENT);
-        assertThat(result).isEqualTo("25 September 2023");
+        @Test
+        void getLastSubmissionDate_NoSubmissions() {
+            when(spotlightSubmissionRepository.findByGrantSchemeIdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT.toString())).thenReturn(List.of());
+            final String result = spotlightSubmissionService.getLastSubmissionDate(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
+            assertThat(result).isNull();
+        }
+
+        @Test
+        void getLastSubmissionDate_HasSubmissions() {
+            when(spotlightSubmissionRepository.findByGrantSchemeIdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT.toString())).thenReturn(List.of(spotlightSubmission));
+            final String result = spotlightSubmissionService.getLastSubmissionDate(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
+            assertThat(result).isEqualTo("25 September 2023");
+        }
+
     }
 
     @Nested
