@@ -61,7 +61,7 @@ public class SpotlightSubmission {
     @Column(name = "last_updated", nullable = false)
     private Instant lastUpdated;
 
-    @ManyToMany
+    @ManyToMany(mappedBy = "spotlightSubmissions")
     private List<SpotlightBatch> batches = new ArrayList<>();
 
 }
