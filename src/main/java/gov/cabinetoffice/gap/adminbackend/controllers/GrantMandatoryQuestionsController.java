@@ -35,13 +35,13 @@ public class GrantMandatoryQuestionsController {
         return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId));
     }
 
-    @GetMapping(value = "/spotlight-export/{schemeId}", produces = EXPORT_CONTENT_TYPE)
-    public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer schemeId) {
-        log.info("Started mandatory questions export for scheme " + schemeId);
+    @GetMapping(value = "/due-diligence/{schemeId}", produces = EXPORT_CONTENT_TYPE)
+    public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId) {
+        log.info("Started due diligence data export for scheme " + schemeId);
         long start = System.currentTimeMillis();
 
-        final ByteArrayOutputStream stream = grantMandatoryQuestionService.exportSpotlightChecks(schemeId);
-        final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId);
+        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId);
+        final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId, null);
         final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
 
         final int length = stream.toByteArray().length;
@@ -51,8 +51,29 @@ public class GrantMandatoryQuestionsController {
         headers.setContentDisposition(ContentDisposition.parse("attachment; filename=" + exportFileName));
 
         long end = System.currentTimeMillis();
-        log.info("Finished mandatory questions export for scheme " + schemeId + ". Export time in millis: "
+        log.info("Finished due diligence data export for scheme " + schemeId + ". Export time in millis: "
                 + (end - start));
+
+        return ResponseEntity.ok().headers(headers).contentLength(length)
+                .contentType(MediaType.parseMediaType(EXPORT_CONTENT_TYPE)).body(resource);
+    }
+
+    @GetMapping(value = "/spotlight-export/{schemeId}", produces = EXPORT_CONTENT_TYPE)
+    public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer schemeId) {
+        log.info("Started spotlight export for scheme " + schemeId);
+        long start = System.currentTimeMillis();
+
+        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getSpotlightChecks(schemeId);
+        final String exportFileName = "spotlight_checks.zip";
+        final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
+
+        final int length = stream.toByteArray().length;
+
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.parse("attachment; filename=" + exportFileName));
+
+        long end = System.currentTimeMillis();
+        log.info("Finished spotlight export for scheme " + schemeId + ". Export time in millis: " + (end - start));
 
         return ResponseEntity.ok().headers(headers).contentLength(length)
                 .contentType(MediaType.parseMediaType(EXPORT_CONTENT_TYPE)).body(resource);
