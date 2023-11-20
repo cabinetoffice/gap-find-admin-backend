@@ -168,9 +168,7 @@ public class SpotlightBatchControllerTest {
                             spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
                                     LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk())
-                    .andExpect(content()
-                            .string(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
-                                    spotlightSubmissionId, spotlightBatchId)));
+                    .andExpect(content().string("Successfully added spotlight submission to spotlight batch"));
         }
 
         @Test
