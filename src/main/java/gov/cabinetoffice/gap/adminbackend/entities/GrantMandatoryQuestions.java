@@ -88,8 +88,6 @@ public class GrantMandatoryQuestions extends BaseEntity {
     @Builder.Default
     private GrantMandatoryQuestionStatus status = GrantMandatoryQuestionStatus.NOT_STARTED;
 
-    // TODO what if the status is still in progress
-
     @Builder.Default
     private Integer version = 1;
 

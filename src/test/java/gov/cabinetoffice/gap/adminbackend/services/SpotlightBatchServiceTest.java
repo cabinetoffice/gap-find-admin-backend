@@ -42,9 +42,9 @@ class SpotlightBatchServiceTest {
 
         @Test
         void spotlightBatchWithStatusExists() {
-            when(spotlightBatchRepository.existsByStatus(any(), anyInt())).thenReturn(true);
+            when(spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(any(), anyInt())).thenReturn(true);
 
-            final boolean result = spotlightBatchService.spotlightBatchWithStatusExists(SpotlightBatchStatus.QUEUED,
+            final boolean result = spotlightBatchService.existsByStatusAndMaxBatchSize(SpotlightBatchStatus.QUEUED,
                     200);
 
             assertTrue(result);
@@ -52,9 +52,9 @@ class SpotlightBatchServiceTest {
 
         @Test
         void spotlightBatchWithStatusDoesNotExist() {
-            when(spotlightBatchRepository.existsByStatus(any(), anyInt())).thenReturn(false);
+            when(spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(any(), anyInt())).thenReturn(false);
 
-            final boolean result = spotlightBatchService.spotlightBatchWithStatusExists(SpotlightBatchStatus.QUEUED,
+            final boolean result = spotlightBatchService.existsByStatusAndMaxBatchSize(SpotlightBatchStatus.QUEUED,
                     200);
 
             assertFalse(result);
