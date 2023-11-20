@@ -127,18 +127,12 @@ public class SpotlightBatchController {
         final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
                 .getSpotlightSubmission(spotlightSubmissionId);
 
-        final SpotlightBatch spotlightBatch = spotlightBatchService
-                .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
-        log.info("Spotlight submission with id {} added to spotlight batch with id {}", spotlightSubmissionId,
-                spotlightBatchId);
+        spotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
 
-        spotlightSubmissionService.addSpotlightBatchToSpotlightSubmission(spotlightSubmissionId, spotlightBatch);
-        log.info("Spotlight batch with id {} added to spotlight submission with id {}", spotlightBatchId,
-                spotlightSubmissionId);
+        log.info("Successfully added spotlight submission with id {} to spotlight batch with id {}",
+                spotlightSubmissionId, spotlightBatchId);
 
-        return ResponseEntity.ok()
-                .body(String.format("Spotlight submission with id %s added to spotlight batch with id %s",
-                        spotlightSubmissionId, spotlightBatchId));
+        return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
     }
 
 }
