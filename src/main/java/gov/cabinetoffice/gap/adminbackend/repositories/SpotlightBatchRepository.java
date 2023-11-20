@@ -15,7 +15,8 @@ public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, 
 
     @Query("SELECT (COUNT(s) > 0 ) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
 
-    boolean existsByStatusAndSpotlightSubmissionsSizeLessThan(@Param("status") SpotlightBatchStatus status, @Param("maxSize") int maxSize);
+    boolean existsByStatusAndSpotlightSubmissionsSizeLessThan(@Param("status") SpotlightBatchStatus status,
+            @Param("maxSize") int maxSize);
 
     @Query("SELECT s FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
     Optional<SpotlightBatch> findByStatusAndSpotlightSubmissionsSizeLessThan(
