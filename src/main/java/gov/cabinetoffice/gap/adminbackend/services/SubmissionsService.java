@@ -5,13 +5,14 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.google.common.collect.Lists;
+import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
 import gov.cabinetoffice.gap.adminbackend.constants.AWSConstants;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
-import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionSection;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportBatchEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.Submission;
@@ -31,10 +32,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -68,6 +65,8 @@ public class SubmissionsService {
     private final GrantExportBatchRepository grantExportBatchRepository;
 
     private final GrantAttachmentRepository grantAttachmentRepository;
+
+    private final UserServiceClient userServiceClient;
 
     @Value("${cloud.aws.sqs.submissions-export-queue}")
     private String submissionsExportQueue;
@@ -224,8 +223,7 @@ public class SubmissionsService {
         return GrantExportStatus.COMPLETE;
     }
 
-    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId,
-            final String authHeader) {
+    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId) {
 
         if (!grantExportRepository
                 .existsById(GrantExportId.builder().exportBatchId(exportBatchId).submissionId(submissionId).build())) {
@@ -235,7 +233,9 @@ public class SubmissionsService {
         final Submission submission = submissionRepository.findByIdWithApplicant(submissionId)
                 .orElseThrow(NotFoundException::new);
         final String userId = submission.getApplicant().getUserId();
-        final String email = getEmailFromUserId(userId, authHeader);
+        final UserDto userDto = userServiceClient.getUserForSub(userId);
+        final String email = Objects.requireNonNull(userDto).getEmailAddress();
+
         final boolean hasAttachments = grantAttachmentRepository.existsBySubmissionId(submissionId);
 
 
@@ -386,16 +386,5 @@ public class SubmissionsService {
         catch (Exception e) {
             return exportEntity.getId().getSubmissionId().toString();
         }
-
     }
-
-    private String getEmailFromUserId(final String userId, final String authHeader) {
-        final String url = userServiceUrl + "/user?userSub=" + userId;
-        final HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.add("Authorization", authHeader);
-        HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
-        final ResponseEntity<UserV2DTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserV2DTO.class);
-        return Objects.requireNonNull(user.getBody()).emailAddress();
-    }
-
 }
