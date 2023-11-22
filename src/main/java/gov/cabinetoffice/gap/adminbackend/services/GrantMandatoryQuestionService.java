@@ -37,9 +37,7 @@ public class GrantMandatoryQuestionService {
     private final ZipService zipService;
 
     public List<GrantMandatoryQuestions> getGrantMandatoryQuestionBySchemeAndCompletedStatus(Integer schemeId) {
-        return ofNullable(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(schemeId))
-                .orElseThrow(() -> new NotFoundException(
-                        String.format("No completed mandatory questions with ID %s was found", schemeId)));
+        return grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 
     public List<GrantMandatoryQuestions> getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
