@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -212,7 +213,22 @@ public class SpotlightBatchControllerTest {
                     .thenReturn(batchDtoList);
 
             mockMvc.perform(get("/spotlight-batch/status/{status}/all", status).header(HttpHeaders.AUTHORIZATION,
-                    LAMBDA_AUTH_HEADER)).andExpect(status().isOk()).andExpect(jsonPath("$.id").exists());
+                    LAMBDA_AUTH_HEADER)).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].id").exists());
+        }
+
+        @Test
+        void returnEmptyListWhenNoBatchesWithStatusAreFound() throws Exception {
+            final SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
+            final List<SpotlightBatch> batchList = List.of();
+
+            when(mockSpotlightBatchService.getSpotlightBatchesByStatus(status)).thenReturn(batchList);
+            when(mockSpotlightBatchMapper.spotlightBatchListToGetSpotlightBatchDtoList(batchList))
+                    .thenReturn(List.of());
+
+            mockMvc.perform(get("/spotlight-batch/status/{status}/all", status).header(HttpHeaders.AUTHORIZATION,
+                    LAMBDA_AUTH_HEADER)).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(0)))
+                    .andExpect(jsonPath("$[0].id").doesNotExist());
         }
 
     }

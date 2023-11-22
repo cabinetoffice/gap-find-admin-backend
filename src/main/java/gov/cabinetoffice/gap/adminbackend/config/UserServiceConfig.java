@@ -23,4 +23,7 @@ public class UserServiceConfig {
     @NotNull
     private String cookieName;
 
+    @NotNull
+    private String secret;
+
 }
