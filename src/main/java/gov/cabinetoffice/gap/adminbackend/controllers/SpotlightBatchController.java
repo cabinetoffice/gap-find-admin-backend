@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @Log4j2
@@ -133,6 +134,16 @@ public class SpotlightBatchController {
                 spotlightSubmissionId, spotlightBatchId);
 
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
+    }
+
+    @GetMapping("/status/{status}/all")
+    public ResponseEntity<List<SpotlightBatchDto>> getSpotlightBatchesByStatus(
+            @PathVariable final SpotlightBatchStatus status) {
+        log.info("fetching Spotlight batches with status {}", status);
+
+        final List<SpotlightBatch> batches = spotlightBatchService.getSpotlightBatchesByStatus(status);
+
+        return ResponseEntity.ok().body(spotlightBatchMapper.spotlightBatchListToGetSpotlightBatchDtoList(batches));
     }
 
 }

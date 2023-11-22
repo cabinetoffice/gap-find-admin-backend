@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +23,8 @@ public class SpotlightBatchService {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
     }
 
+    // TODO refactor this - it can potentially return more than one result and will cause
+    // errors
     public SpotlightBatch getSpotlightBatchWithStatus(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize).orElseThrow(
                 () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
@@ -49,6 +52,10 @@ public class SpotlightBatchService {
     private SpotlightBatch getSpotlightBatch(UUID spotlightBatchId) {
         return spotlightBatchRepository.findById(spotlightBatchId).orElseThrow(
                 () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
+    }
+
+    public List<SpotlightBatch> getSpotlightBatchesByStatus(SpotlightBatchStatus status) {
+        return spotlightBatchRepository.findByStatus(status).orElse(new ArrayList<>());
     }
 
 }

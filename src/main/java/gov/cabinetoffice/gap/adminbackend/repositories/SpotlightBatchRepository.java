@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,12 +15,13 @@ import java.util.UUID;
 public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, UUID> {
 
     @Query("SELECT (COUNT(s) > 0 ) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
-
     boolean existsByStatusAndSpotlightSubmissionsSizeLessThan(@Param("status") SpotlightBatchStatus status,
             @Param("maxSize") int maxSize);
 
     @Query("SELECT s FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
     Optional<SpotlightBatch> findByStatusAndSpotlightSubmissionsSizeLessThan(
             @Param("status") SpotlightBatchStatus status, @Param("maxSize") int maxSize);
+
+    Optional<List<SpotlightBatch>> findByStatus(@Param("status") SpotlightBatchStatus status);
 
 }

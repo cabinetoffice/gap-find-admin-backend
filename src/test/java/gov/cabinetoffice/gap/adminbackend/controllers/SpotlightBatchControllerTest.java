@@ -21,6 +21,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.when;
@@ -190,6 +191,28 @@ public class SpotlightBatchControllerTest {
         void badRequestAddSpotlightSubmissionToSpotlightBatch() throws Exception {
             mockMvc.perform(patch("/spotlight-batch/INVALID_PATH/add-spotlight-submission/INVALID_PATH"))
                     .andExpect(status().isBadRequest());
+        }
+
+    }
+
+    @Nested
+    class getSpotlightBatchesByStatus {
+
+        @Test
+        void successfullyRetrieveSpotlightBatchWithStatus() throws Exception {
+            final SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
+            final List<SpotlightBatch> batchList = List.of(spotlightBatch);
+
+            final SpotlightBatchDto expectedResult = SpotlightBatchDto.builder().id(uuid).build();
+            final List<SpotlightBatchDto> batchDtoList = List.of(expectedResult);
+
+            when(mockSpotlightBatchService.getSpotlightBatchesByStatus(status)).thenReturn(batchList);
+            when(mockSpotlightBatchMapper.spotlightBatchListToGetSpotlightBatchDtoList(batchList))
+                    .thenReturn(batchDtoList);
+
+            mockMvc.perform(get("/spotlight-batch/status/{status}/all", status).header(HttpHeaders.AUTHORIZATION,
+                    LAMBDA_AUTH_HEADER)).andExpect(status().isOk()).andExpect(jsonPath("$.id").exists());
         }
 
     }
