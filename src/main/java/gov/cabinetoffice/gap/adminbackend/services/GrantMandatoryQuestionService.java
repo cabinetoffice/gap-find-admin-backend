@@ -4,7 +4,6 @@ import gov.cabinetoffice.gap.adminbackend.constants.DueDiligenceHeaders;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantMandatoryQuestionRepository;
@@ -22,8 +21,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-
-import static java.util.Optional.ofNullable;
 
 @RequiredArgsConstructor
 @Service
@@ -90,16 +87,8 @@ public class GrantMandatoryQuestionService {
         log.info("Found {} mandatory questions in COMPLETED state for scheme ID {}", grantMandatoryQuestions.size(),
                 schemeId);
 
-        List<List<String>> exportData = new ArrayList<>();
-        grantMandatoryQuestions.forEach(grantMandatoryQuestion -> {
-            try {
-                exportData.add(buildSingleSpotlightRow(grantMandatoryQuestion, addOrgType));
-            }
-            catch (SpotlightExportException e) {
-                log.error("Problem extracting data: " + e.getMessage());
-            }
-        });
-        return exportData;
+        return grantMandatoryQuestions.stream()
+                .map(grantMandatoryQuestion -> buildSingleSpotlightRow(grantMandatoryQuestion, addOrgType)).toList();
     }
 
     static String mandatoryValue(Integer id, String identifier, String value) {
@@ -134,37 +123,22 @@ public class GrantMandatoryQuestionService {
      */
     public List<String> buildSingleSpotlightRow(GrantMandatoryQuestions grantMandatoryQuestions, boolean addOrgType) {
         try {
-
             final Integer schemeId = grantMandatoryQuestions.getSchemeEntity().getId();
-
-            final String gapId = grantMandatoryQuestions.getGapId();
-            final String organisationName = grantMandatoryQuestions.getName();
-            final String addressStreet = combineAddressLines(grantMandatoryQuestions.getAddressLine1(),
-                    grantMandatoryQuestions.getAddressLine2());
-            final String addressTown = grantMandatoryQuestions.getCity();
-            final String addressCounty = grantMandatoryQuestions.getCounty();
-            final String postcode = grantMandatoryQuestions.getPostcode();
-            final String charityNumber = grantMandatoryQuestions.getCharityCommissionNumber();
-            final String companyNumber = grantMandatoryQuestions.getCompaniesHouseNumber();
-            final String orgType = grantMandatoryQuestions.getOrgType().toString();
-            final String applicationAmount = grantMandatoryQuestions.getFundingAmount() == null ? null
-                    : grantMandatoryQuestions.getFundingAmount().toString();
-
-            List<String> row = new ArrayList<>();
-            row.add(mandatoryValue(schemeId, "gap id", gapId));
-            row.add(mandatoryValue(schemeId, "organisation name", organisationName));
-            row.add(addressStreet);
-            row.add(addressTown);
-            row.add(addressCounty);
-            row.add(mandatoryValue(schemeId, "postcode", postcode));
-            row.add(mandatoryValue(schemeId, "application amount", applicationAmount));
-            row.add(charityNumber);
-            row.add(companyNumber);
+            final List<String> row = new ArrayList<>(
+                    List.of(mandatoryValue(schemeId, "gap id", grantMandatoryQuestions.getGapId()),
+                            mandatoryValue(schemeId, "organisation name", grantMandatoryQuestions.getName()),
+                            combineAddressLines(grantMandatoryQuestions.getAddressLine1(),
+                                    grantMandatoryQuestions.getAddressLine2()),
+                            grantMandatoryQuestions.getCity(), grantMandatoryQuestions.getCounty(),
+                            mandatoryValue(schemeId, "postcode", grantMandatoryQuestions.getPostcode()),
+                            mandatoryValue(schemeId, "application amount",
+                                    grantMandatoryQuestions.getFundingAmount().toString()),
+                            grantMandatoryQuestions.getCharityCommissionNumber(),
+                            grantMandatoryQuestions.getCompaniesHouseNumber()));
             if (addOrgType) {
-                row.add(mandatoryValue(schemeId, "organisation type", orgType));
+                row.add(mandatoryValue(schemeId, "organisation type", grantMandatoryQuestions.getOrgType().toString()));
             }
             row.add(""); // similarities data - should always be blank
-
             return row;
         }
         catch (NullPointerException e) {
@@ -182,13 +156,7 @@ public class GrantMandatoryQuestionService {
     }
 
     public boolean hasCompletedMandatoryQuestions(Integer schemeId) {
-        try {
-            return !getGrantMandatoryQuestionBySchemeAndCompletedStatus(schemeId).isEmpty();
-        }
-        catch (NotFoundException ex) {
-            return false;
-        }
-
+        return grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 
 }

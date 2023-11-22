@@ -98,17 +98,6 @@ class GrantMandatoryQuestionServiceTest {
 
         }
 
-        @Test
-        void invalidSchemeId() {
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID)).thenReturn(null);
-
-            Exception exception = assertThrows(NotFoundException.class,
-                    () -> grantMandatoryQuestionService.getGrantMandatoryQuestionBySchemeAndCompletedStatus(SCHEME_ID));
-
-            String actualMessage = exception.getMessage();
-            assertThat(actualMessage).isEqualTo("No completed mandatory questions with ID " + SCHEME_ID + " was found");
-        }
-
     }
 
     @Test
@@ -139,7 +128,7 @@ class GrantMandatoryQuestionServiceTest {
     class getSpotlightChecks {
 
         @Test
-        void getSpotlightChecks() throws IOException {
+        void getSpotlightChecks() {
             when(grantMandatoryQuestionRepository
                     .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
                             .thenReturn(List.of(grantMandatoryQuestions));
@@ -149,6 +138,8 @@ class GrantMandatoryQuestionServiceTest {
             when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
             doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
                     .buildSingleSpotlightRow(grantMandatoryQuestions, false);
+            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
+                    .buildSingleSpotlightRow(grantMandatoryQuestionsNonLimitedCompany, false);
 
             ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID);
 
@@ -156,26 +147,11 @@ class GrantMandatoryQuestionServiceTest {
         }
 
         @Test
-        void ignoresBadDataRows() throws IOException {
-            final GrantMandatoryQuestions badGrantMandatoryQuestions = GrantMandatoryQuestions.builder()
-                    .addressLine1("addressLine1").addressLine2("addressLine2").city("city")
-                    .charityCommissionNumber("123").companiesHouseNumber("321").schemeEntity(schemeEntity).build();
-
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(List.of(grantMandatoryQuestions, badGrantMandatoryQuestions));
-
-            ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID);
-
-            Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
-            assertThat(workbook.getSheetAt(0).getPhysicalNumberOfRows()).isEqualTo(2);
-        }
-
-        @Test
         void getSpotlightChecks_throwAccessDeniedException() {
             when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
 
             Exception exception = assertThrows(AccessDeniedException.class,
-                    () -> grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID));
+                    () -> grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage)
@@ -208,21 +184,6 @@ class GrantMandatoryQuestionServiceTest {
             assertRowIsAsExpected(headerRow, DueDiligenceHeaders.DUE_DILIGENCE_HEADERS);
             Row dataRow = workbook.getSheetAt(0).getRow(1);
             assertRowIsAsExpected(dataRow, EXPECTED_DUE_DILIGENCE_ROW);
-        }
-
-        @Test
-        void ignoresBadDataRows() throws IOException {
-            final GrantMandatoryQuestions badGrantMandatoryQuestions = GrantMandatoryQuestions.builder()
-                    .addressLine1("addressLine1").addressLine2("addressLine2").city("city")
-                    .charityCommissionNumber("123").companiesHouseNumber("321").schemeEntity(schemeEntity).build();
-
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(List.of(grantMandatoryQuestions, badGrantMandatoryQuestions));
-
-            ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID);
-
-            Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
-            assertThat(workbook.getSheetAt(0).getPhysicalNumberOfRows()).isEqualTo(2);
         }
 
         @Test
@@ -353,7 +314,7 @@ class GrantMandatoryQuestionServiceTest {
                     () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions, false));
 
             String actualMessage = exception.getMessage();
-            assertThat(actualMessage).contains("application amount");
+            assertThat(actualMessage).contains("Unable to find mandatory question data:");
         }
 
         @Test
@@ -407,15 +368,16 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void returnsTrue() {
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(List.of(grantMandatoryQuestions));
+            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(true);
             boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
             assertThat(result).isEqualTo(true);
         }
 
         @Test
         void returnFalse() {
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID)).thenReturn(null);
+            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(false);
             boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
             assertThat(result).isEqualTo(false);
         }

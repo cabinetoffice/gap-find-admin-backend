@@ -26,4 +26,8 @@ public interface GrantMandatoryQuestionRepository extends JpaRepository<GrantMan
             + "and g.orgType = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY")
     List<GrantMandatoryQuestions> findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(Integer id);
 
+    @Query("select (count(g) > 0) from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
+            + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED")
+    boolean existsBySchemeEntity_IdAndCompletedStatus(Integer id);
+
 }
