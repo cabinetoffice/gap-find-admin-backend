@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.spotlight;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,8 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 public class SpotlightSchemeDto {
 
-    private String GGISSchemeId;
+    @JsonProperty("GGISSchemeId")
+    private String ggisSchemeId;
 
-    private List<DraftAssessmentDto> DraftAssessments;
+    @JsonProperty("DraftAssessments")
+    private List<DraftAssessmentDto> draftAssessments;
 
 }

@@ -26,58 +26,83 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
             return null;
         }
 
-        DraftAssessmentDto.DraftAssessmentDtoBuilder draftAssessmentDto = DraftAssessmentDto.builder();
+        final DraftAssessmentDto.DraftAssessmentDtoBuilder draftAssessmentDto = DraftAssessmentDto.builder();
 
-        draftAssessmentDto.OrganisationName(mandatoryQuestions.getName());
-        draftAssessmentDto.AddressPostcode(mandatoryQuestions.getPostcode());
+        draftAssessmentDto.organisationName(mandatoryQuestions.getName());
+        draftAssessmentDto.addressPostcode(mandatoryQuestions.getPostcode());
+        draftAssessmentDto.country("United Kingdom");
+        draftAssessmentDto.cityTown(mandatoryQuestions.getCity());
+        draftAssessmentDto.addressLine1(mandatoryQuestions.getAddressLine1());
+        draftAssessmentDto.charityCommissionRegNo(mandatoryQuestions.getCharityCommissionNumber());
+        draftAssessmentDto.companiesHouseRegNo(mandatoryQuestions.getCompaniesHouseNumber());
+        draftAssessmentDto.ggisSchemeId(mandatoryQuestionsSchemeEntityGgisIdentifier(mandatoryQuestions));
+
         if (mandatoryQuestions.getFundingAmount() != null) {
-            draftAssessmentDto.ApplicationAmount(mandatoryQuestions.getFundingAmount().toString());
+            draftAssessmentDto.applicationAmount(mandatoryQuestions.getFundingAmount().toString());
         }
-        draftAssessmentDto.Country(mandatoryQuestions.getCounty());
-        draftAssessmentDto.CityTown(mandatoryQuestions.getCity());
-        draftAssessmentDto.AddressLine1(mandatoryQuestions.getAddressLine1());
-        draftAssessmentDto.CharityCommissionRegNo(mandatoryQuestions.getCharityCommissionNumber());
-        draftAssessmentDto.CompaniesHouseRegNo(mandatoryQuestions.getCompaniesHouseNumber());
+
         if (mandatoryQuestions.getOrgType() != null) {
-            draftAssessmentDto.OrganisationType(mandatoryQuestions.getOrgType().name());
+            draftAssessmentDto.organisationType(mandatoryQuestions.getOrgType().name());
         }
-        draftAssessmentDto.GGISSchemeId(mandatoryQuestionsSchemeEntityGgisIdentifier(mandatoryQuestions));
 
-        UUID id = mandatoryQuestionsSubmissionId(mandatoryQuestions);
+        final UUID id = mandatoryQuestionsSubmissionId(mandatoryQuestions);
+
         if (id != null) {
-            draftAssessmentDto.ApplicationNumber(id.toString());
+            draftAssessmentDto.applicationNumber(id.toString());
         }
 
-        draftAssessmentDto.FunderID(getFunderID(mandatoryQuestions.getSchemeEntity().getCreatedBy()));
+        draftAssessmentDto.funderID(getFunderID(getSchemeCreatorId(mandatoryQuestions)));
 
         return draftAssessmentDto.build();
+    }
+
+    private Integer getSchemeCreatorId(GrantMandatoryQuestions mandatoryQuestions) {
+        if (mandatoryQuestions == null) {
+            return null;
+        }
+
+        final SchemeEntity schemeEntity = mandatoryQuestions.getSchemeEntity();
+
+        if (schemeEntity == null) {
+            return null;
+        }
+
+        return schemeEntity.getCreatedBy();
     }
 
     private String mandatoryQuestionsSchemeEntityGgisIdentifier(GrantMandatoryQuestions grantMandatoryQuestions) {
         if (grantMandatoryQuestions == null) {
             return null;
         }
-        SchemeEntity schemeEntity = grantMandatoryQuestions.getSchemeEntity();
+
+        final SchemeEntity schemeEntity = grantMandatoryQuestions.getSchemeEntity();
+
         if (schemeEntity == null) {
             return null;
         }
-        String ggisIdentifier = schemeEntity.getGgisIdentifier();
-        return ggisIdentifier;
+
+        return schemeEntity.getGgisIdentifier();
     }
 
     private UUID mandatoryQuestionsSubmissionId(GrantMandatoryQuestions grantMandatoryQuestions) {
         if (grantMandatoryQuestions == null) {
             return null;
         }
-        Submission submission = grantMandatoryQuestions.getSubmission();
+
+        final Submission submission = grantMandatoryQuestions.getSubmission();
+
         if (submission == null) {
             return null;
         }
-        UUID id = submission.getId();
-        return id;
+
+        return submission.getId();
     }
 
-    private String getFunderID(Integer adminId) {
+    protected String getFunderID(Integer adminId) {
+        if (adminId == null) {
+            return null;
+        }
+
         try {
             return userService.getDepartmentGGISId(adminId);
         }

@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
@@ -136,14 +137,26 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
     }
 
-    @GetMapping("/status/{status}/all")
-    public ResponseEntity<List<SpotlightBatchDto>> getSpotlightBatchesByStatus(
+    @GetMapping("/status/{status}/generate-data-for-spotlight")
+    @Operation(summary = "Generate the List of Dto that we send to Spotlight ")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully created the list of dtos",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Boolean.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to created Dto",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request",
+                    content = @Content(mediaType = "application/json")) })
+    @SpotlightPublisherHeaderValidator
+    public ResponseEntity<List<SendToSpotlightDto>> generateDataForSpotlightForBatchesWithStatus(
             @PathVariable final SpotlightBatchStatus status) {
-        log.info("fetching Spotlight batches with status {}", status);
+        log.info("Generationg data for Spotlight by retrieving batches with status {}", status);
 
-        final List<SpotlightBatch> batches = spotlightBatchService.getSpotlightBatchesByStatus(status);
+        final List<SendToSpotlightDto> batches = spotlightBatchService.generateSendToSpotlightDtosList(status);
 
-        return ResponseEntity.ok().body(spotlightBatchMapper.spotlightBatchListToGetSpotlightBatchDtoList(batches));
+        log.info("Successfully generated data for Spotlight");
+
+        return ResponseEntity.ok().body(batches);
     }
 
 }

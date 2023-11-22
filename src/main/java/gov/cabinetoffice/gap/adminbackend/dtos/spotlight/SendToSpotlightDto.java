@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.spotlight;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 public class SendToSpotlightDto {
 
-    private List<SpotlightSchemeDto> Schemes;
+    @JsonProperty("Schemes")
+    private List<SpotlightSchemeDto> schemes;
 
 }

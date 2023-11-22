@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.spotlight;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,28 +12,40 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DraftAssessmentDto {
 
-    private String OrganisationName;
+    @JsonProperty("OrganisationName")
+    private String organisationName;
 
-    private String AddressPostcode;
+    @JsonProperty("AddressPostcode")
+    private String addressPostcode;
 
-    private String ApplicationAmount;
+    @JsonProperty("ApplicationAmount")
+    private String applicationAmount;
 
-    private String Country;
+    @JsonProperty("Country")
+    private String country;
 
-    private String CityTown;
+    @JsonProperty("CityTown")
+    private String cityTown;
 
-    private String AddressLine1;
+    @JsonProperty("AddressLine1")
+    private String addressLine1;
 
-    private String CharityCommissionRegNo;
+    @JsonProperty("CharityCommissionRegNo")
+    private String charityCommissionRegNo;
 
-    private String CompaniesHouseRegNo;
+    @JsonProperty("CompaniesHouseRegNo")
+    private String companiesHouseRegNo;
 
-    private String OrganisationType;
+    @JsonProperty("OrganisationType")
+    private String organisationType;
 
-    private String GGISSchemeId;
+    @JsonProperty("GGISSchemeId")
+    private String ggisSchemeId;
 
-    private String FunderID;
+    @JsonProperty("FunderID")
+    private String funderID;
 
-    private String ApplicationNumber;
+    @JsonProperty("ApplicationNumber")
+    private String applicationNumber;
 
 }
