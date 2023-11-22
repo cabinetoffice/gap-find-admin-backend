@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,7 +23,28 @@ import java.util.UUID;
 public class SpotlightBatchService {
 
     private final SpotlightBatchRepository spotlightBatchRepository;
+
     private final MandatoryQuestionsMapper mandatoryQuestionsMapper;
+
+    @NotNull
+    public static List<String> getUniqueSchemeIds(List<SpotlightSubmission> spotlightSubmissions) {
+        return spotlightSubmissions.stream()
+            .map(submission -> submission.getMandatoryQuestions().getSchemeEntity().getGgisIdentifier())
+            .distinct()
+            .toList();
+
+    }
+
+    @NotNull
+    private static List<SpotlightSubmission> getSpotlightSubmissionByGGisIdentifier(String uniqueSchemeId,
+            List<SpotlightSubmission> spotlightSubmissions) {
+        return spotlightSubmissions.stream()
+            .filter(submission -> submission.getMandatoryQuestions()
+                .getSchemeEntity()
+                .getGgisIdentifier()
+                .equals(uniqueSchemeId))
+            .toList();
+    }
 
     public boolean existsByStatusAndMaxBatchSize(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
@@ -31,8 +53,9 @@ public class SpotlightBatchService {
     // TODO refactor this - it can potentially return more than one result and will cause
     // errors
     public SpotlightBatch getSpotlightBatchWithStatus(SpotlightBatchStatus status, int maxSize) {
-        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize).orElseThrow(
-                () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
+        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize)
+            .orElseThrow(
+                    () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
     }
 
     public SpotlightBatch createSpotlightBatch() {
@@ -55,8 +78,9 @@ public class SpotlightBatchService {
     }
 
     private SpotlightBatch getSpotlightBatch(UUID spotlightBatchId) {
-        return spotlightBatchRepository.findById(spotlightBatchId).orElseThrow(
-                () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
+        return spotlightBatchRepository.findById(spotlightBatchId)
+            .orElseThrow(() -> new NotFoundException(
+                    "A spotlight batch with id " + spotlightBatchId + " could not be found"));
     }
 
     public List<SpotlightBatch> getSpotlightBatchesByStatus(SpotlightBatchStatus status) {
@@ -64,38 +88,47 @@ public class SpotlightBatchService {
     }
 
     public SendToSpotlightDto generateSendToSpotlightDto() {
-        // get all the batches
+
         final List<SpotlightBatch> spotlightBatches = getSpotlightBatchesByStatus(SpotlightBatchStatus.QUEUED);
-        final List<SpotlightSchemeDto> schemesDto = new ArrayList<>();
+        final List<SpotlightSchemeDto> schemes = new ArrayList<>();
 
         for (SpotlightBatch spotlightBatch : spotlightBatches) {
-
-            // get each batch's submissions
-
-            final List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
-
-            // get all the schemeId present in the submissions
-            final List<String> uniqueSchemeIds = spotlightSubmissions.stream()
-                    .map(submission -> submission.getMandatoryQuestions().getSchemeEntity().getGgisIdentifier())
-                    .distinct().toList();
-
-            // for each scheme ggis id build a spotlightSchemeDto
-            for (String uniqueSchemeId : uniqueSchemeIds) {
-                final SpotlightSchemeDto schemeDto = SpotlightSchemeDto.builder().GGISSchemeId(uniqueSchemeId).build();
-                final List<SpotlightSubmission> filteredBySchemeIdSubmissions = spotlightSubmissions.stream()
-                        .filter(submission -> submission.getMandatoryQuestions().getSchemeEntity().getGgisIdentifier()
-                                .equals(uniqueSchemeId))
-                        .toList();
-
-                for (SpotlightSubmission submission : filteredBySchemeIdSubmissions) {
-                    DraftAssessmentDto draftAssessmentDto = mandatoryQuestionsMapper.mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions());
-                    schemeDto.getDraftAssessments().add(draftAssessmentDto);
-                }
-
-                schemesDto.add(schemeDto);
-            }
+            addSpotlightSchemeDtoToList(spotlightBatch, schemes);
         }
-        return SendToSpotlightDto.builder().Schemes(schemesDto).build();
+
+        return SendToSpotlightDto.builder().Schemes(schemes).build();
+    }
+
+    private void addSpotlightSchemeDtoToList(SpotlightBatch spotlightBatch, List<SpotlightSchemeDto> schemes) {
+
+        final List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
+
+        // get all the schemeId present in the submissions
+        final List<String> uniqueSchemeIds = getUniqueSchemeIds(spotlightSubmissions);
+
+        // for each scheme ggis id build a spotlightSchemeDto
+        uniqueSchemeIds.stream()
+            .map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, spotlightSubmissions))
+            .forEach(schemes::add);
+    }
+
+    private SpotlightSchemeDto generateSchemeDto(String schemeId, List<SpotlightSubmission> spotlightSubmissions) {
+        final List<DraftAssessmentDto> draftAssessments = generateDraftAssessmentsFromMandatoryQuestions(schemeId, spotlightSubmissions);
+
+        return SpotlightSchemeDto.builder().GGISSchemeId(schemeId).DraftAssessments(draftAssessments).build();
+    }
+
+    @NotNull
+    private List<DraftAssessmentDto> generateDraftAssessmentsFromMandatoryQuestions(String uniqueSchemeId,
+                                                                                    List<SpotlightSubmission> spotlightSubmissions) {
+
+        final List<SpotlightSubmission> filteredSubmissions = getSpotlightSubmissionByGGisIdentifier(uniqueSchemeId,
+                spotlightSubmissions);
+
+        return filteredSubmissions.stream()
+            .map(submission -> mandatoryQuestionsMapper
+                .mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions()))
+            .toList();
 
     }
 
