@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
+import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightSubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
@@ -23,8 +24,7 @@ import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(SchemeController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -51,6 +51,26 @@ class SpotlightSubmissionControllerTest {
 
     @MockBean
     private SpotlightSubmissionMapper spotlightSubmissionMapper;
+
+    private final Integer SCHEME_ID = 1;
+
+    private final String DATE = "25 September 2023";
+
+    @Test
+    void getSpotlightSubmissionCount() throws Exception {
+        when(mockSpotlightSubmissionService.getCountBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
+                .thenReturn(Long.valueOf(2));
+        mockMvc.perform(get("/spotlight-submissions/count/{schemeId}", SCHEME_ID)).andExpect(status().isOk())
+                .andExpect(content().string("2"));
+    }
+
+    @Test
+    void getLastUpdatedDate() throws Exception {
+        when(mockSpotlightSubmissionService.getLastSubmissionDate(SCHEME_ID, SpotlightSubmissionStatus.SENT))
+                .thenReturn(DATE);
+        mockMvc.perform(get("/spotlight-submissions/last-updated/{schemeId}", SCHEME_ID)).andExpect(status().isOk())
+                .andExpect(content().string(DATE));
+    }
 
     @Nested
     class getSpotlightSubmissionById {
