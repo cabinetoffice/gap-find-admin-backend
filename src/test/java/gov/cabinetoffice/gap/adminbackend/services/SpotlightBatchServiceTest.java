@@ -1,9 +1,12 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
+import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import org.junit.jupiter.api.Nested;
@@ -12,21 +15,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -153,4 +150,173 @@ class SpotlightBatchServiceTest {
 
     }
 
+    @Nested
+    class GetSpotlightBatchErrorCountTests {
+        final Integer schemeId = 1;
+        final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).build();
+        final SpotlightBatch spotlightBatch = SpotlightBatch.builder().spotlightSubmissions(new ArrayList<>()).build();
+
+        @Test
+        void noSubmissionsForSchemeId() {
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            assertEquals(0, result.getErrorCount());
+            assertEquals("OK", result.getErrorStatus());
+            assertFalse(result.isErrorFound());
+        }
+
+        @Test
+        void returnAPIError() {
+
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().status(SpotlightSubmissionStatus.SEND_ERROR.toString()).grantScheme(schemeEntity).build();
+            spotlightBatch.getSpotlightSubmissions().add(spotlightSubmission);
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            assertTrue(result.getErrorCount() > 0);
+            assertEquals("API", result.getErrorStatus());
+            assertTrue(result.isErrorFound());
+        }
+
+        @Test
+        void returnGGISError() {
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().status(SpotlightSubmissionStatus.GGIS_ERROR.toString()).grantScheme(schemeEntity).build();
+            spotlightBatch.getSpotlightSubmissions().add(spotlightSubmission);
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            assertTrue(result.getErrorCount() > 0);
+            assertEquals("GGIS", result.getErrorStatus());
+            assertTrue(result.isErrorFound());
+        }
+
+        @Test
+        void returnValidationError() {
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().status(SpotlightSubmissionStatus.VALIDATION_ERROR.toString()).grantScheme(schemeEntity).build();
+            spotlightBatch.getSpotlightSubmissions().add(spotlightSubmission);
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            assertTrue(result.getErrorCount() > 0);
+            assertEquals("VALIDATION", result.getErrorStatus());
+            assertTrue(result.isErrorFound());
+        }
+
+    }
+
+    @Nested
+    class OrderSpotlightErrorStatusesByPriorityTests {
+        final int schemeId1 = 1;
+        final int schemeId2 = 2;
+
+        final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId1).build();
+
+        private SpotlightBatch createSpotlightBatchWithSubmissions(int schemeId, SpotlightSubmissionStatus... statuses) {
+            final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).build();
+            final List<SpotlightSubmission> spotlightSubmissions = Arrays.stream(statuses)
+                    .map(status -> SpotlightSubmission.builder().status(status.toString()).grantScheme(schemeEntity).build())
+                    .collect(Collectors.toList());
+
+            return SpotlightBatch.builder().spotlightSubmissions(spotlightSubmissions).build();
+        }
+
+        @Test
+        void orderSpotlightErrorStatusesByHighestPriority_API() {
+            final SpotlightBatch spotlightBatch = createSpotlightBatchWithSubmissions(schemeId1,
+                    SpotlightSubmissionStatus.GGIS_ERROR,
+                    SpotlightSubmissionStatus.SEND_ERROR,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
+
+            assertEquals(1, result.getErrorCount());
+            assertEquals("API", result.getErrorStatus());
+            assertTrue(result.isErrorFound());
+        }
+
+
+        @Test
+        void orderSpotlightErrorStatusesBySecondPriority_GGIS() {
+            final SpotlightBatch spotlightBatch = createSpotlightBatchWithSubmissions(schemeId1,
+                    SpotlightSubmissionStatus.GGIS_ERROR,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
+
+            assertEquals(1, result.getErrorCount());
+            assertEquals("GGIS", result.getErrorStatus());
+            assertTrue(result.isErrorFound());
+        }
+
+        @Test
+        void orderSpotlightErrorStatusesByLowestPriority_VALIDATION() {
+            final SpotlightBatch spotlightBatch = createSpotlightBatchWithSubmissions(schemeId1,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
+
+            assertEquals(1, result.getErrorCount());
+            assertEquals("VALIDATION", result.getErrorStatus());
+            assertTrue(result.isErrorFound());
+        }
+
+        @Test
+        void orderSpotlightErrorStatusesByPriorityAndFilterBySchemeId() {
+            // Priority - API > GGIS > VALIDATION
+
+            final SpotlightBatch spotlightBatch1 = createSpotlightBatchWithSubmissions(schemeId1,
+                    SpotlightSubmissionStatus.GGIS_ERROR,
+                    SpotlightSubmissionStatus.GGIS_ERROR,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+
+            final SpotlightBatch spotlightBatch2 = createSpotlightBatchWithSubmissions(schemeId2,
+                    SpotlightSubmissionStatus.GGIS_ERROR,
+                    SpotlightSubmissionStatus.SEND_ERROR);
+
+            final List<SpotlightSubmission> spotlightSubmissions = Stream.concat(spotlightBatch1.getSpotlightSubmissions().stream(), spotlightBatch2.getSpotlightSubmissions().stream())
+                    .toList();
+
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder()
+                    .spotlightSubmissions(spotlightSubmissions)
+                    .build();
+
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
+
+            assertEquals(2, result.getErrorCount());
+            assertEquals("GGIS", result.getErrorStatus());
+            assertTrue(result.isErrorFound());
+        }
+
+        @Test
+        void orderSpotlightErrorStatusesByPriorityAndFilterBySchemeId_NoErrors() {
+
+            final SpotlightBatch spotlightBatch = createSpotlightBatchWithSubmissions(schemeId2,
+                    SpotlightSubmissionStatus.GGIS_ERROR,
+                    SpotlightSubmissionStatus.SEND_ERROR,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
+
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
+
+            assertEquals(0, result.getErrorCount());
+            assertEquals("OK", result.getErrorStatus());
+            assertFalse(result.isErrorFound());
+        }
+
+    }
 }
+

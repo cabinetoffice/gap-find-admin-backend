@@ -77,7 +77,7 @@ public class SpotlightBatchService {
             return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
         }
 
-        // Priority order: API > GGIS > VALIDATION. Validation is the lowest priority
+        // Priority order: API > GGIS > VALIDATION. Validation is the lowest/default priority
         // and will be overwritten if any higher-priority statuses exist.
         int errorCount = validationErrorCount;
         String errorStatus = "VALIDATION";
@@ -93,6 +93,7 @@ public class SpotlightBatchService {
     }
 
     public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
+        // TODO: This will need to be refactored to get multiple batches if they all share the most recent timestamp date
         final SpotlightBatch spotlightBatch = spotlightBatchRepository.findMostRecentSpotlightBatch();
         final List<SpotlightSubmission> filteredSubmissions = spotlightBatch.getSpotlightSubmissions().stream().filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
 
