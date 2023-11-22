@@ -7,7 +7,6 @@ import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionReposi
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,16 +18,6 @@ public class SpotlightSubmissionService {
     public SpotlightSubmission getSpotlightSubmission(UUID spotlightSubmissionId) {
         return spotlightSubmissionRepository.findById(spotlightSubmissionId).orElseThrow(() -> new NotFoundException(
                 "A spotlight submission with id " + spotlightSubmissionId + " could not be found"));
-    }
-
-    public void addSpotlightBatchToSpotlightSubmission(UUID spotlightSubmissionId, SpotlightBatch spotlightBatch) {
-        final SpotlightSubmission spotlightSubmission = getSpotlightSubmission(spotlightSubmissionId);
-
-        final List<SpotlightBatch> existingBatch = spotlightSubmission.getBatches();
-        existingBatch.add(spotlightBatch);
-        spotlightSubmission.setBatches(existingBatch);
-
-        spotlightSubmissionRepository.save(spotlightSubmission);
     }
 
 }

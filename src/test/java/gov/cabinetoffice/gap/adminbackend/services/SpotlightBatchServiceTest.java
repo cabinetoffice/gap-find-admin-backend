@@ -13,16 +13,19 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
@@ -112,19 +115,27 @@ class SpotlightBatchServiceTest {
 
         @Test
         void addSpotlightSubmissionToSpotlightBatch() {
-            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().build();
-            final SpotlightBatch existingSpotlightBatch = SpotlightBatch.builder().id(uuid)
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().batches(new ArrayList<>())
+                    .build();
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid)
                     .spotlightSubmissions(new ArrayList<>()).build();
 
-            when(spotlightBatchRepository.findById(uuid)).thenReturn(Optional.of(existingSpotlightBatch));
+            when(spotlightBatchRepository.findById(uuid)).thenReturn(Optional.of(spotlightBatch));
             when(spotlightBatchRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
             final SpotlightBatch result = spotlightBatchService
                     .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, uuid);
 
-            assertNotNull(result);
-            assertEquals(1, result.getSpotlightSubmissions().size());
-            assertTrue(result.getSpotlightSubmissions().contains(spotlightSubmission));
+            verify(spotlightBatchRepository, times(1)).findById(uuid);
+            verify(spotlightBatchRepository, times(1)).save(spotlightBatch);
+
+            List<SpotlightSubmission> resultSubmissions = result.getSpotlightSubmissions();
+            List<SpotlightBatch> resultBatches = spotlightSubmission.getBatches();
+
+            assertThat(resultSubmissions).hasSize(1);
+            assertThat(resultBatches).hasSize(1);
+            assertThat(resultSubmissions.get(0)).isEqualTo(spotlightSubmission);
+            assertThat(resultBatches.get(0)).isEqualTo(result);
         }
 
         @Test

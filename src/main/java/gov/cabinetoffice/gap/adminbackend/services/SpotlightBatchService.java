@@ -34,10 +34,14 @@ public class SpotlightBatchService {
     public SpotlightBatch addSpotlightSubmissionToSpotlightBatch(SpotlightSubmission spotlightSubmission,
             UUID spotlightBatchId) {
         final SpotlightBatch spotlightBatch = getSpotlightBatch(spotlightBatchId);
-        final List<SpotlightSubmission> existingSubmissions = spotlightBatch.getSpotlightSubmissions();
+        final List<SpotlightSubmission> existingSpotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
+        final List<SpotlightBatch> existingSpotlightBatches = spotlightSubmission.getBatches();
 
-        existingSubmissions.add(spotlightSubmission);
-        spotlightBatch.setSpotlightSubmissions(existingSubmissions);
+        existingSpotlightSubmissions.add(spotlightSubmission);
+        existingSpotlightBatches.add(spotlightBatch);
+
+        spotlightBatch.setSpotlightSubmissions(existingSpotlightSubmissions);
+        spotlightSubmission.setBatches(existingSpotlightBatches);
 
         return spotlightBatchRepository.save(spotlightBatch);
     }
