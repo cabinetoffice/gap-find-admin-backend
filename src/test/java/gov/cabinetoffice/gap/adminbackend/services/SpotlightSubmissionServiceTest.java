@@ -12,17 +12,14 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.time.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
@@ -86,7 +83,7 @@ class SpotlightSubmissionServiceTest {
                     SpotlightSubmissionStatus.SENT.toString())).thenReturn(List.of());
             final String result = spotlightSubmissionService.getLastSubmissionDate(SCHEME_ID,
                     SpotlightSubmissionStatus.SENT);
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
 
         @Test

@@ -48,7 +48,7 @@ public class SpotlightSubmissionService {
         final List<SpotlightSubmission> spotlightSubmissions = getSubmissionsByBySchemeIdAndStatus(schemeId, status);
         return spotlightSubmissions.stream().map(SpotlightSubmission::getLastSendAttempt).max(Instant::compareTo)
                 .map(date -> date.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
-                .orElse(null);
+                .orElse("");
     }
 
 }
