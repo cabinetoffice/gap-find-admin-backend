@@ -20,10 +20,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -69,11 +70,11 @@ class MandatoryQuestionsControllerTest {
     }
 
     @Nested
-    class exportSpotlightChecks {
+    class exportDueDiligenceData {
 
         @Test
-        void exportSpotlightChecksHappyPathTest() throws Exception {
-            doReturn("test_file_name").when(grantMandatoryQuestionService).generateExportFileName(SCHEME_ID);
+        void exportDueDiligenceDataHappyPathTest() throws Exception {
+            doReturn("test_file_name").when(grantMandatoryQuestionService).generateExportFileName(SCHEME_ID, null);
             final byte[] data = exampleFile.getInputStream().readAllBytes();
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(data);
@@ -81,9 +82,9 @@ class MandatoryQuestionsControllerTest {
                     new ByteArrayInputStream(outputStream.toByteArray()));
 
             when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
-            when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID)).thenReturn(outputStream);
+            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID)).thenReturn(outputStream);
 
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID)).andExpect(status().isOk())
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID)).andExpect(status().isOk())
                     .andExpect(
                             header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_file_name\""))
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
@@ -92,9 +93,53 @@ class MandatoryQuestionsControllerTest {
         }
 
         @Test
-        void exportSpotlightChecksWrongAdminTest() throws Exception {
-            when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID))
-                    .thenThrow(new AccessDeniedException("Admin 1 is unable to access application with id 1"));
+        void exportDueDiligenceDataWrongAdminTest() throws Exception {
+            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID)).thenThrow(
+                    new AccessDeniedException("Admin 1 is unable to access mandatory questions with scheme id 1"));
+
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID)).andExpect(status().isForbidden());
+        }
+
+        @Test
+        void exportDueDiligenceDataGenericErrorTest() throws Exception {
+            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID)).thenThrow(new RuntimeException());
+
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID))
+                    .andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class exportSpotlightChecks {
+
+        @Test
+        void exportSpotlightChecks() throws Exception {
+            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
+                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
+                zipOut.putNextEntry(entry);
+                zipOut.write("Mock Excel File Content".getBytes());
+                zipOut.closeEntry();
+            }
+
+            when(grantMandatoryQuestionService.getSpotlightChecks(anyInt())).thenReturn(zipStream);
+            when(fileService.createTemporaryFile(zipStream, "spotlight_checks.zip"))
+                    .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
+
+            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID)).andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"spotlight_checks.zip\""))
+                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
+                    .andExpect(
+                            header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
+                    .andExpect(content().bytes(zipStream.toByteArray()));
+        }
+
+        @Test
+        void exportSpotlightChecksDataWrongAdminTest() throws Exception {
+            when(grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID)).thenThrow(
+                    new AccessDeniedException("Admin 1 is unable to access mandatory questions with scheme id 1"));
 
             mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
                     .andExpect(status().isForbidden());
@@ -102,7 +147,7 @@ class MandatoryQuestionsControllerTest {
 
         @Test
         void exportSpotlightChecksGenericErrorTest() throws Exception {
-            when(grantMandatoryQuestionService.exportSpotlightChecks(SCHEME_ID)).thenThrow(new RuntimeException());
+            when(grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID)).thenThrow(new RuntimeException());
 
             mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
                     .andExpect(status().isInternalServerError());
