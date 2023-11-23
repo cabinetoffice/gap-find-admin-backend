@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -133,8 +134,8 @@ public class GrantMandatoryQuestionService {
                             mandatoryValue(schemeId, "postcode", grantMandatoryQuestions.getPostcode()),
                             mandatoryValue(schemeId, "application amount",
                                     grantMandatoryQuestions.getFundingAmount().toString()),
-                            grantMandatoryQuestions.getCharityCommissionNumber(),
-                            grantMandatoryQuestions.getCompaniesHouseNumber()));
+                            Objects.requireNonNullElse(grantMandatoryQuestions.getCharityCommissionNumber(), ""),
+                            Objects.requireNonNullElse(grantMandatoryQuestions.getCompaniesHouseNumber(), "")));
             if (addOrgType) {
                 row.add(mandatoryValue(schemeId, "organisation type", grantMandatoryQuestions.getOrgType().toString()));
             }

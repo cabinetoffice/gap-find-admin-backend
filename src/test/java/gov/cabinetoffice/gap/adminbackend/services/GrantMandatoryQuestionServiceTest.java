@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantMandatoryQuestionRepository;
 import org.apache.poi.ss.usermodel.Row;
@@ -326,6 +325,15 @@ class GrantMandatoryQuestionServiceTest {
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("Unable to find mandatory question data:");
+        }
+
+        @Test
+        void givenDataWithoutCharityNumber_returnsExpectedData() {
+            grantMandatoryQuestions.setCharityCommissionNumber(null);
+            EXPECTED_SPOTLIGHT_ROW.set(6,"");
+            List<String> spotlightRow = grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions,
+                    false);
+            assertThat(spotlightRow).containsAll(EXPECTED_SPOTLIGHT_ROW);
         }
 
     }
