@@ -11,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import lombok.RequiredArgsConstructor;
@@ -201,9 +202,7 @@ public class SpotlightBatchService {
         }
         catch (JsonProcessingException e) {
             log.error("could not read json value ", e);
-
-            // TODO add custom exception
-            throw new RuntimeException();
+            throw new SecretValueException();
         }
     }
 

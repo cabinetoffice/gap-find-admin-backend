@@ -100,7 +100,7 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
     protected String getFunderID(Integer adminId) {
 
         if (adminId == null) {
-            // TODO throw an exception
+            throw new IllegalArgumentException("A user ID must be provided");
         }
 
         return userService.getDepartmentGGISId(adminId);
