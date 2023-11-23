@@ -330,7 +330,7 @@ class GrantMandatoryQuestionServiceTest {
         @Test
         void givenDataWithoutCharityNumber_returnsExpectedData() {
             grantMandatoryQuestions.setCharityCommissionNumber(null);
-            EXPECTED_SPOTLIGHT_ROW.set(6,"");
+            EXPECTED_SPOTLIGHT_ROW.set(6, "");
             List<String> spotlightRow = grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions,
                     false);
             assertThat(spotlightRow).containsAll(EXPECTED_SPOTLIGHT_ROW);
