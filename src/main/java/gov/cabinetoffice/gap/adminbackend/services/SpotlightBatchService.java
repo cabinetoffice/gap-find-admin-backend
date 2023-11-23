@@ -1,5 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
@@ -12,7 +16,13 @@ import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,9 +34,19 @@ import java.util.UUID;
 @Log4j2
 public class SpotlightBatchService {
 
+    public static final String ACCESS_TOKEN = "access_token";
+
     private final SpotlightBatchRepository spotlightBatchRepository;
 
     private final MandatoryQuestionsMapper mandatoryQuestionsMapper;
+
+    private final SecretsManagerClient secretsManagerClient;
+
+    private final SpotlightConfigProperties spotlightConfig;
+
+    private final ObjectMapper jacksonObjectMapper;
+
+    private final RestTemplate restTemplate;
 
     public boolean existsByStatusAndMaxBatchSize(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
@@ -68,15 +88,17 @@ public class SpotlightBatchService {
     }
 
     public List<SendToSpotlightDto> generateSendToSpotlightDtosList(SpotlightBatchStatus status) {
+
         final List<SendToSpotlightDto> sendToSpotlightDtos = new ArrayList<>();
         final List<SpotlightBatch> spotlightBatches = getSpotlightBatchesByStatus(status);
 
-        if (spotlightBatches.isEmpty()) {
-            log.info("No batches to process");
-            return List.of();
-        }
-
+        // gav comment - think we could turn this loop into a stream to make the method
+        // smaller
         for (SpotlightBatch spotlightBatch : spotlightBatches) {
+
+            // gav comment - we could make this method return a list then we don't need to
+            // initialise and pass in an empty one
+            // since all we do is add to it anyway
             final List<SpotlightSchemeDto> schemes = new ArrayList<>();
             addSpotlightSchemeDtoToList(spotlightBatch, schemes);
 
@@ -131,6 +153,58 @@ public class SpotlightBatchService {
         return filteredSubmissions.stream().map(submission -> mandatoryQuestionsMapper
                 .mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions())).toList();
 
+    }
+
+    public void sendQueuedBatchesToSpotlight() {
+
+        final List<SendToSpotlightDto> spotlightData = this
+                .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+
+        // grab authorization header from AWS secrets manager
+        final String accessToken = getAccessTokenFromSecretsManager();
+        log.info("Secret: {}", accessToken);
+
+        // loop round the DTOs for each batch
+        for (SendToSpotlightDto spotlightBatch : spotlightData) {
+
+            System.out.println(spotlightBatch.toString());
+
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", accessToken);
+
+            // TODO convert the batch to a JSON string
+            final HttpEntity<String> requestEntity = new HttpEntity<>(spotlightBatch.toString(), requestHeaders);
+
+            final String draftAssessmentsEndpoint = spotlightConfig.getSpotlightUrl()
+                    + "/services/apexrest/DraftAssessments";
+            restTemplate.postForObject(draftAssessmentsEndpoint, requestEntity, String.class);
+
+            // process response
+        }
+    }
+
+    private String getAccessTokenFromSecretsManager() {
+        log.info("Getting secret {}...", spotlightConfig.getSecretName());
+
+        final GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
+                .secretId(spotlightConfig.getSecretName()).build();
+        final GetSecretValueResponse valueResponse = secretsManagerClient.getSecretValue(valueRequest);
+
+        return getSecretValue(ACCESS_TOKEN, valueResponse.secretString());
+    }
+
+    private String getSecretValue(String objectKey, String secretString) {
+        try {
+            final JsonNode apiNode = jacksonObjectMapper.readTree(secretString).get(objectKey);
+
+            return jacksonObjectMapper.readValue(apiNode.toString(), String.class);
+        }
+        catch (JsonProcessingException e) {
+            log.error("could not read json value ", e);
+
+            // TODO add custom exception
+            throw new RuntimeException();
+        }
     }
 
 }

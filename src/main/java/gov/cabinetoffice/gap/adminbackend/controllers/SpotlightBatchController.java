@@ -137,8 +137,8 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
     }
 
-    @GetMapping("/status/{status}/generate-data-for-spotlight")
-    @Operation(summary = "Generate the List of Dto that we send to Spotlight ")
+    @PostMapping("/send-to-spotlight")
+    @Operation(summary = "send queued batches to spotlight")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully created the list of dtos",
                     content = @Content(mediaType = "application/json",
@@ -148,15 +148,14 @@ public class SpotlightBatchController {
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
     @SpotlightPublisherHeaderValidator
-    public ResponseEntity<List<SendToSpotlightDto>> generateDataForSpotlightForBatchesWithStatus(
-            @PathVariable final SpotlightBatchStatus status) {
-        log.info("Generationg data for Spotlight by retrieving batches with status {}", status);
+    public ResponseEntity<String> sendQueuedBatchesAndProcessSpotlightResponse() {
+        log.info("Sending queued batches to Spotlight");
 
-        final List<SendToSpotlightDto> batches = spotlightBatchService.generateSendToSpotlightDtosList(status);
+        spotlightBatchService.sendQueuedBatchesToSpotlight();
 
         log.info("Successfully generated data for Spotlight");
 
-        return ResponseEntity.ok().body(batches);
+        return ResponseEntity.ok().body("");
     }
 
 }

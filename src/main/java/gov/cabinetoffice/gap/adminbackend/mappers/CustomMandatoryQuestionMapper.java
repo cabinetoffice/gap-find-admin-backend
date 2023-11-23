@@ -4,7 +4,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.Submission;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UserNotFoundException;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +18,7 @@ import java.util.UUID;
 @Slf4j
 public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
 
-    private UserService userService;
+    private final UserService userService;
 
     public DraftAssessmentDto mandatoryQuestionsToDraftAssessmentDto(GrantMandatoryQuestions mandatoryQuestions) {
         if (mandatoryQuestions == null) {
@@ -99,17 +98,12 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
     }
 
     protected String getFunderID(Integer adminId) {
+
         if (adminId == null) {
-            return null;
+            // TODO throw an exception
         }
 
-        try {
-            return userService.getDepartmentGGISId(adminId);
-        }
-        catch (UserNotFoundException e) {
-            log.error("User not found");
-            return "User not found";
-        }
+        return userService.getDepartmentGGISId(adminId);
     }
 
 }
