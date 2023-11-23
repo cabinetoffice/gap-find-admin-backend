@@ -37,17 +37,17 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
         draftAssessmentDto.ggisSchemeId(mandatoryQuestionsSchemeEntityGgisIdentifier(mandatoryQuestions));
 
         if (mandatoryQuestions.getFundingAmount() != null) {
-            draftAssessmentDto.applicationAmount(mandatoryQuestions.getFundingAmount().toString());
+            draftAssessmentDto.applicationAmount(mandatoryQuestions.getFundingAmount().toString()); //TODO make it as a string with 2 decimal point
         }
 
         if (mandatoryQuestions.getOrgType() != null) {
-            draftAssessmentDto.organisationType(mandatoryQuestions.getOrgType().name());
+            draftAssessmentDto.organisationType(mandatoryQuestions.getOrgType().name()); //TODO create a switch to map the enum to the string needed by the tech design
         }
 
         final UUID id = mandatoryQuestionsSubmissionId(mandatoryQuestions);
 
         if (id != null) {
-            draftAssessmentDto.applicationNumber(id.toString());
+            draftAssessmentDto.applicationNumber(id.toString()); //TODO this needs to be the mq gap_id
         }
 
         draftAssessmentDto.funderID(getFunderID(getSchemeCreatorId(mandatoryQuestions)));

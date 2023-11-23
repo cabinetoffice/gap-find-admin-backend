@@ -164,7 +164,6 @@ public class SpotlightBatchService {
 
         // grab authorization header from AWS secrets manager
         final String accessToken = getAccessTokenFromSecretsManager();
-        log.info("Secret: {}", accessToken);
 
         for (SendToSpotlightDto spotlightBatch : spotlightData) {
             sendBatchToSpotlight(spotlightBatch, accessToken);
@@ -173,10 +172,12 @@ public class SpotlightBatchService {
 
     private void sendBatchToSpotlight(SendToSpotlightDto spotlightBatch, String accessToken) {
         final HttpHeaders requestHeaders = new HttpHeaders();
+        //TODO add Bearer
         requestHeaders.add("Authorization", accessToken);
         requestHeaders.add("Content-Type", "application/json");
 
         final String spotlightBatchAsJsonString = convertBatchToJsonString(spotlightBatch);
+
         final HttpEntity<String> requestEntity = new HttpEntity<>(spotlightBatchAsJsonString, requestHeaders);
 
         final String draftAssessmentsEndpoint = spotlightConfig.getSpotlightUrl()
