@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
@@ -172,15 +173,25 @@ public class SpotlightBatchService {
 
             final HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.add("Authorization", accessToken);
+            requestHeaders.add("Content-Type", "application/json");
 
-            // TODO convert the batch to a JSON string
-            final HttpEntity<String> requestEntity = new HttpEntity<>(spotlightBatch.toString(), requestHeaders);
+            final String spotlightBatchAsJsonString = convertBatchToJsonString(spotlightBatch);
+            final HttpEntity<String> requestEntity = new HttpEntity<>(spotlightBatchAsJsonString, requestHeaders);
 
             final String draftAssessmentsEndpoint = spotlightConfig.getSpotlightUrl()
                     + "/services/apexrest/DraftAssessments";
-            restTemplate.postForObject(draftAssessmentsEndpoint, requestEntity, String.class);
 
-            // process response
+            restTemplate.postForObject(draftAssessmentsEndpoint, requestEntity, String.class);
+        }
+    }
+
+    private String convertBatchToJsonString(SendToSpotlightDto spotlightBatch) {
+        try {
+            return jacksonObjectMapper.writeValueAsString(spotlightBatch);
+        }
+        catch (JsonProcessingException e) {
+            log.error("Could not convert dto to json string ", e);
+            throw new JsonParseException("could not convert dto to json string");
         }
     }
 
