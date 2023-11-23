@@ -141,7 +141,7 @@ public class SubmissionsController {
         return ResponseEntity.ok(new UrlDTO(presignedUrl));
     }
 
-    @PatchMapping("/{submissionId}/export-batch/{batchExportId}/signedUrl")
+    @PatchMapping("/{submissionId}/export-batch/{batchExportId}/s3-object-key")
     @Operation(summary = "Add AWS S3 object key to batch export for download")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully added S3 key",

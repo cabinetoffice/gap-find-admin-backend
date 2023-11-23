@@ -266,9 +266,9 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <configuration>
-                    <url>jdbc:postgresql://localhost:5432/gap_admin</url>
-                    <user>root</user>
-                    <password>root</password>
+                    <url>jdbc:postgresql://localhost:5432/gapapply</url>
+                    <user>postgres</user>
+                    <password>mysecretpassword</password>
                     <cleanDisabled>false</cleanDisabled>
                 </configuration>
             </plugin>
