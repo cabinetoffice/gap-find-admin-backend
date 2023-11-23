@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.dtos.AddingSignedUrlDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
@@ -52,6 +53,9 @@ class SubmissionsControllerTest {
 
     @MockBean
     private SubmissionsService submissionsService;
+
+    @MockBean
+    private S3Service s3Service;
 
     @MockBean
     private ApplicationFormService applicationFormService;
@@ -282,9 +286,9 @@ class SubmissionsControllerTest {
 
         @Test
         void updateExportRecordLocation_SuccessfullyUpdate() throws Exception {
-            AddingSignedUrlDTO mockRequest = new AddingSignedUrlDTO("link_to_aws.com/path/filename.zip");
+            S3ObjectKeyDTO mockRequest = new S3ObjectKeyDTO("link_to_aws.com/path/filename.zip");
 
-            doNothing().when(submissionsService).addSignedUrlToSubmissionExport(any(), any(), anyString());
+            doNothing().when(submissionsService).addS3ObjectKeyToSubmissionExport(any(), any(), anyString());
 
             MvcResult res = mockMvc.perform(
                     patch("/submissions/" + UUID.randomUUID() + "/export-batch/" + UUID.randomUUID() + "/signedUrl")
@@ -293,6 +297,28 @@ class SubmissionsControllerTest {
                     .andExpect(status().isNoContent()).andReturn();
 
             System.out.println(res);
+        }
+
+    }
+
+    @Nested
+    class getPresignedUrl {
+
+        void getPresignedUrl_HappyPath() throws Exception {
+            doReturn("www.fakeamazon.com/test_file_name").when(s3Service)
+                    .generateExportDocSignedUrl("path/filename.zip");
+            S3ObjectKeyDTO mockRequest = new S3ObjectKeyDTO("path/filename.zip");
+            UrlDTO mockResponse = new UrlDTO("www.fakeamazon.com/test_file_name");
+
+            mockMvc.perform(post("/submissions/signed-url").contentType(MediaType.APPLICATION_JSON)
+                    .content(HelperUtils.asJsonString(mockRequest))).andExpect(status().isOk())
+                    .andExpect(content().json(HelperUtils.asJsonString(mockResponse)));
+        }
+
+        void getPresignedUrl_BadRequest_Body() throws Exception {
+            UrlDTO mockRequest = new UrlDTO("www.doesntmatter.com");
+            mockMvc.perform(post("/submissions/signed-url").contentType(MediaType.APPLICATION_JSON)
+                    .content(HelperUtils.asJsonString(mockRequest))).andExpect(status().isBadRequest());
         }
 
     }
@@ -307,7 +333,7 @@ class SubmissionsControllerTest {
 
         @Test
         void updateExportRecordLocation_BadRequest_PathVariables() throws Exception {
-            AddingSignedUrlDTO mockRequest = new AddingSignedUrlDTO("link_to_aws.com/path/filename.zip");
+            S3ObjectKeyDTO mockRequest = new S3ObjectKeyDTO("path/filename.zip");
 
             mockMvc.perform(patch("/submissions/1234/export-batch/12345/signedUrl")
                     .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(mockRequest))
@@ -322,10 +348,10 @@ class SubmissionsControllerTest {
         }
 
         @Test
-        void updateExportRecordLocation_UnexpectedErrorOccures() throws Exception {
-            AddingSignedUrlDTO mockRequest = new AddingSignedUrlDTO("link_to_aws.com/path/filename.zip");
+        void updateExportRecordLocation_UnexpectedErrorOccurs() throws Exception {
+            S3ObjectKeyDTO mockRequest = new S3ObjectKeyDTO("path/filename.zip");
 
-            doThrow(new RuntimeException()).when(submissionsService).addSignedUrlToSubmissionExport(any(), any(),
+            doThrow(new RuntimeException()).when(submissionsService).addS3ObjectKeyToSubmissionExport(any(), any(),
                     anyString());
 
             mockMvc.perform(

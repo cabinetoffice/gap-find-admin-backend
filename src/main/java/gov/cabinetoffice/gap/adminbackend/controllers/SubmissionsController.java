@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.dtos.AddingSignedUrlDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
@@ -8,6 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
+import gov.cabinetoffice.gap.adminbackend.services.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,6 +38,8 @@ public class SubmissionsController {
     static final String EXPORT_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     private final SubmissionsService submissionsService;
+
+    private final S3Service s3Service;
 
     private final SecretAuthService secretAuthService;
 
@@ -129,20 +133,29 @@ public class SubmissionsController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @PostMapping("/signed-url")
+    @Operation(summary = "Get presigned link for S3 object key")
+    public ResponseEntity<UrlDTO> getPresignedUrl(@RequestBody S3ObjectKeyDTO s3ObjectKeyDTO) {
+        final String objectKey = s3ObjectKeyDTO.getS3ObjectKey();
+        final String presignedUrl = s3Service.generateExportDocSignedUrl(objectKey);
+        return ResponseEntity.ok(new UrlDTO(presignedUrl));
+    }
+
     @PatchMapping("/{submissionId}/export-batch/{batchExportId}/signedUrl")
-    @Operation(summary = "Add AWS signed url to batch export for download")
+    @Operation(summary = "Add AWS S3 object key to batch export for download")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Successfully added signed url",
+            @ApiResponse(responseCode = "204", description = "Successfully added S3 key",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400",
                     description = "Required path variables and body not provided in expected format",
                     content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "500", description = "Something went wrong while updating signed url",
+            @ApiResponse(responseCode = "500", description = "Something went wrong while updating S3 key",
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity updateExportRecordLocation(@PathVariable UUID batchExportId, @PathVariable UUID submissionId,
-            @RequestBody AddingSignedUrlDTO signedUrlDTO, @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+            @RequestBody S3ObjectKeyDTO s3ObjectKeyDTO, @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
-        submissionsService.addSignedUrlToSubmissionExport(submissionId, batchExportId, signedUrlDTO.getSignedUrl());
+        submissionsService.addS3ObjectKeyToSubmissionExport(submissionId, batchExportId,
+                s3ObjectKeyDTO.getS3ObjectKey());
         return ResponseEntity.noContent().build();
     }
 

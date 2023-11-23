@@ -32,9 +32,9 @@ public interface GrantExportRepository extends JpaRepository<GrantExportEntity, 
 
     @Transactional
     @Modifying
-    @Query("UPDATE GrantExportEntity e SET e.location = :signedUrl WHERE e.id.exportBatchId = :exportBatchId AND e.id.submissionId = :submissionId")
+    @Query("UPDATE GrantExportEntity e SET e.location = :s3ObjectKey WHERE e.id.exportBatchId = :exportBatchId AND e.id.submissionId = :submissionId")
     void updateExportRecordLocation(@Param("submissionId") UUID submissionId,
-            @Param("exportBatchId") UUID exportBatchId, @Param("signedUrl") String signedUrl);
+            @Param("exportBatchId") UUID exportBatchId, @Param("s3ObjectKey") String s3ObjectKey);
 
     Long countByIdExportBatchIdAndStatusNot(UUID exportGrantId, GrantExportStatus status);
 
