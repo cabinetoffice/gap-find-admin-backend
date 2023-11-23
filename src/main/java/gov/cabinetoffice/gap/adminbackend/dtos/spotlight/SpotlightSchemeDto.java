@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 public class SpotlightSchemeDto {
 
-    @JsonProperty("GGISSchemeId")
+    @JsonProperty("GGISSchemeID")
     private String ggisSchemeId;
 
     @JsonProperty("DraftAssessments")

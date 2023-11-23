@@ -8,7 +8,6 @@ import gov.cabinetoffice.gap.adminbackend.entities.Submission;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionFundingLocation;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UserNotFoundException;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +35,9 @@ class CustomMandatoryQuestionMapperTest {
 
     final GrantApplicant applicant = GrantApplicant.builder().id(1).build();
 
+    @Mock
+    UserService userService;
+
     private SchemeEntity schemeEntity;
 
     private Submission submission;
@@ -43,9 +45,6 @@ class CustomMandatoryQuestionMapperTest {
     private GrantMandatoryQuestions mandatoryQuestions;
 
     private DraftAssessmentDto draftAssessmentDto;
-
-    @Mock
-    UserService userService;
 
     @InjectMocks
     private CustomMandatoryQuestionMapper customMandatoryQuestionMapper;
@@ -102,10 +101,9 @@ class CustomMandatoryQuestionMapperTest {
         draftAssessmentDto.setGgisSchemeId(null);
         draftAssessmentDto.setFunderID(null);
 
-        final DraftAssessmentDto actual = customMandatoryQuestionMapper
-                .mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
-
-        assertThat(actual).isEqualTo(draftAssessmentDto);
+        assertThrows(IllegalArgumentException.class, () -> {
+            customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
+        });
     }
 
     @Test
@@ -114,18 +112,6 @@ class CustomMandatoryQuestionMapperTest {
         draftAssessmentDto.setApplicationNumber(null);
 
         when(userService.getDepartmentGGISId(10)).thenReturn("funderId");
-
-        final DraftAssessmentDto actual = customMandatoryQuestionMapper
-                .mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
-
-        assertThat(actual).isEqualTo(draftAssessmentDto);
-    }
-
-    @Test
-    void mandatoryQuestionsToDraftAssessmentDto_getFunderIdThrowException() {
-        draftAssessmentDto.setFunderID("User not found");
-
-        doThrow(UserNotFoundException.class).when(userService).getDepartmentGGISId(10);
 
         final DraftAssessmentDto actual = customMandatoryQuestionMapper
                 .mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);

@@ -56,10 +56,6 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
     }
 
     private Integer getSchemeCreatorId(GrantMandatoryQuestions mandatoryQuestions) {
-        if (mandatoryQuestions == null) {
-            return null;
-        }
-
         final SchemeEntity schemeEntity = mandatoryQuestions.getSchemeEntity();
 
         if (schemeEntity == null) {
@@ -70,10 +66,6 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
     }
 
     private String mandatoryQuestionsSchemeEntityGgisIdentifier(GrantMandatoryQuestions grantMandatoryQuestions) {
-        if (grantMandatoryQuestions == null) {
-            return null;
-        }
-
         final SchemeEntity schemeEntity = grantMandatoryQuestions.getSchemeEntity();
 
         if (schemeEntity == null) {
@@ -84,10 +76,6 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
     }
 
     private UUID mandatoryQuestionsSubmissionId(GrantMandatoryQuestions grantMandatoryQuestions) {
-        if (grantMandatoryQuestions == null) {
-            return null;
-        }
-
         final Submission submission = grantMandatoryQuestions.getSubmission();
 
         if (submission == null) {

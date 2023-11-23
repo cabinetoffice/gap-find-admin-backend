@@ -39,7 +39,7 @@ public class DraftAssessmentDto {
     @JsonProperty("OrganisationType")
     private String organisationType;
 
-    @JsonProperty("GGISSchemeId")
+    @JsonProperty("GGISSchemeID")
     private String ggisSchemeId;
 
     @JsonProperty("FunderID")

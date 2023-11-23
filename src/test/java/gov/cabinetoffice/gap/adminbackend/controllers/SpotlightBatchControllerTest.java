@@ -24,10 +24,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -200,44 +200,15 @@ public class SpotlightBatchControllerTest {
     }
 
     @Nested
-    class generateDataForSpotlightForBatchesWithStatus {
+    class sendQueuedBatchesAndProcessSpotlightResponse {
 
         @Test
-        void successfullyGenerateDataForSpotlightForBatchesWithStatus() throws Exception {
-            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().addressLine1("address1")
-                    .ggisSchemeId("id1").build();
+        void sendQueuedBatchesAndProcessSpotlightResponse_success() throws Exception {
+            mockMvc.perform(
+                    post("/spotlight-batch/send-to-spotlight").header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isOk()).andExpect(content().string("Success"));
 
-            final DraftAssessmentDto draftAssessmentDto2 = DraftAssessmentDto.builder().addressLine1("address2")
-                    .ggisSchemeId("id2").build();
-
-            final DraftAssessmentDto draftAssessmentDto3 = DraftAssessmentDto.builder().addressLine1("address3")
-                    .ggisSchemeId("id1").build();
-            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder().ggisSchemeId("id1")
-                    .draftAssessments(List.of(draftAssessmentDto, draftAssessmentDto3)).build();
-            final SpotlightSchemeDto spotlightSchemeDto2 = SpotlightSchemeDto.builder().ggisSchemeId("id2")
-                    .draftAssessments(List.of(draftAssessmentDto2)).build();
-            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
-                    .schemes(List.of(spotlightSchemeDto2, spotlightSchemeDto)).build();
-            final List<SendToSpotlightDto> sendToSpotlightDtos = List.of(sendToSpotlightDto);
-
-            final SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
-
-            when(mockSpotlightBatchService.generateSendToSpotlightDtosList(status)).thenReturn(sendToSpotlightDtos);
-
-            mockMvc.perform(get("/spotlight-batch/status/{status}/generate-data-for-spotlight", status)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(1))).andExpect(jsonPath("$[0].Schemes").exists());
-        }
-
-        @Test
-        void returnEmptyListWhenNoBatchesWithStatusAreFound() throws Exception {
-            final SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
-
-            when(mockSpotlightBatchService.generateSendToSpotlightDtosList(status)).thenReturn(List.of());
-
-            mockMvc.perform(get("/spotlight-batch/status/{status}/generate-data-for-spotlight", status)
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(0))).andExpect(jsonPath("$[0].Schemes").doesNotExist());
+            verify(mockSpotlightBatchService, times(1)).sendQueuedBatchesToSpotlight();
         }
 
     }

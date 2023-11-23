@@ -166,23 +166,23 @@ public class SpotlightBatchService {
         final String accessToken = getAccessTokenFromSecretsManager();
         log.info("Secret: {}", accessToken);
 
-        // loop round the DTOs for each batch
         for (SendToSpotlightDto spotlightBatch : spotlightData) {
-
-            System.out.println(spotlightBatch.toString());
-
-            final HttpHeaders requestHeaders = new HttpHeaders();
-            requestHeaders.add("Authorization", accessToken);
-            requestHeaders.add("Content-Type", "application/json");
-
-            final String spotlightBatchAsJsonString = convertBatchToJsonString(spotlightBatch);
-            final HttpEntity<String> requestEntity = new HttpEntity<>(spotlightBatchAsJsonString, requestHeaders);
-
-            final String draftAssessmentsEndpoint = spotlightConfig.getSpotlightUrl()
-                    + "/services/apexrest/DraftAssessments";
-
-            restTemplate.postForObject(draftAssessmentsEndpoint, requestEntity, String.class);
+            sendBatchToSpotlight(spotlightBatch, accessToken);
         }
+    }
+
+    private void sendBatchToSpotlight(SendToSpotlightDto spotlightBatch, String accessToken) {
+        final HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add("Authorization", accessToken);
+        requestHeaders.add("Content-Type", "application/json");
+
+        final String spotlightBatchAsJsonString = convertBatchToJsonString(spotlightBatch);
+        final HttpEntity<String> requestEntity = new HttpEntity<>(spotlightBatchAsJsonString, requestHeaders);
+
+        final String draftAssessmentsEndpoint = spotlightConfig.getSpotlightUrl()
+                + "/services/apexrest/DraftAssessments";
+
+        restTemplate.postForObject(draftAssessmentsEndpoint, requestEntity, String.class);
     }
 
     private String convertBatchToJsonString(SendToSpotlightDto spotlightBatch) {

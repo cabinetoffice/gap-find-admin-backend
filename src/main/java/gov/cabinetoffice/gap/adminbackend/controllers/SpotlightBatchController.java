@@ -155,7 +155,7 @@ public class SpotlightBatchController {
 
         log.info("Successfully generated data for Spotlight");
 
-        return ResponseEntity.ok().body("");
+        return ResponseEntity.ok().body("Success");
     }
 
 }
