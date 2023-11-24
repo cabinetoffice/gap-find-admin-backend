@@ -10,7 +10,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GetSpotlightBatchErrorCountDTO {
-        private String errorStatus;
-        private int errorCount;
-        private boolean errorFound;
+
+    private String errorStatus;
+
+    private int errorCount;
+
+    private boolean errorFound;
+
 }

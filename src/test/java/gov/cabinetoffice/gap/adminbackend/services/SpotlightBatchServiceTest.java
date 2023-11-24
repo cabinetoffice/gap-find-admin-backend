@@ -152,8 +152,11 @@ class SpotlightBatchServiceTest {
 
     @Nested
     class GetSpotlightBatchErrorCountTests {
+
         final Integer schemeId = 1;
+
         final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).build();
+
         final SpotlightBatch spotlightBatch = SpotlightBatch.builder().spotlightSubmissions(new ArrayList<>()).build();
 
         @Test
@@ -170,7 +173,8 @@ class SpotlightBatchServiceTest {
         @Test
         void returnAPIError() {
 
-            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().status(SpotlightSubmissionStatus.SEND_ERROR.toString()).grantScheme(schemeEntity).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                    .status(SpotlightSubmissionStatus.SEND_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatch.getSpotlightSubmissions().add(spotlightSubmission);
             when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
 
@@ -183,7 +187,8 @@ class SpotlightBatchServiceTest {
 
         @Test
         void returnGGISError() {
-            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().status(SpotlightSubmissionStatus.GGIS_ERROR.toString()).grantScheme(schemeEntity).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                    .status(SpotlightSubmissionStatus.GGIS_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatch.getSpotlightSubmissions().add(spotlightSubmission);
             when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
 
@@ -196,7 +201,8 @@ class SpotlightBatchServiceTest {
 
         @Test
         void returnValidationError() {
-            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().status(SpotlightSubmissionStatus.VALIDATION_ERROR.toString()).grantScheme(schemeEntity).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                    .status(SpotlightSubmissionStatus.VALIDATION_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatch.getSpotlightSubmissions().add(spotlightSubmission);
             when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
 
@@ -211,15 +217,18 @@ class SpotlightBatchServiceTest {
 
     @Nested
     class OrderSpotlightErrorStatusesByPriorityTests {
+
         final int schemeId1 = 1;
+
         final int schemeId2 = 2;
 
         final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId1).build();
 
-        private SpotlightBatch createSpotlightBatchWithSubmissions(int schemeId, SpotlightSubmissionStatus... statuses) {
+        private SpotlightBatch createSpotlightBatchWithSubmissions(int schemeId,
+                SpotlightSubmissionStatus... statuses) {
             final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).build();
-            final List<SpotlightSubmission> spotlightSubmissions = Arrays.stream(statuses)
-                    .map(status -> SpotlightSubmission.builder().status(status.toString()).grantScheme(schemeEntity).build())
+            final List<SpotlightSubmission> spotlightSubmissions = Arrays.stream(statuses).map(
+                    status -> SpotlightSubmission.builder().status(status.toString()).grantScheme(schemeEntity).build())
                     .collect(Collectors.toList());
 
             return SpotlightBatch.builder().spotlightSubmissions(spotlightSubmissions).build();
@@ -228,8 +237,7 @@ class SpotlightBatchServiceTest {
         @Test
         void orderSpotlightErrorStatusesByHighestPriority_API() {
             final SpotlightBatch spotlightBatch = createSpotlightBatchWithSubmissions(schemeId1,
-                    SpotlightSubmissionStatus.GGIS_ERROR,
-                    SpotlightSubmissionStatus.SEND_ERROR,
+                    SpotlightSubmissionStatus.GGIS_ERROR, SpotlightSubmissionStatus.SEND_ERROR,
                     SpotlightSubmissionStatus.VALIDATION_ERROR);
 
             when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
@@ -241,12 +249,10 @@ class SpotlightBatchServiceTest {
             assertTrue(result.isErrorFound());
         }
 
-
         @Test
         void orderSpotlightErrorStatusesBySecondPriority_GGIS() {
             final SpotlightBatch spotlightBatch = createSpotlightBatchWithSubmissions(schemeId1,
-                    SpotlightSubmissionStatus.GGIS_ERROR,
-                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+                    SpotlightSubmissionStatus.GGIS_ERROR, SpotlightSubmissionStatus.VALIDATION_ERROR);
 
             when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
 
@@ -276,19 +282,18 @@ class SpotlightBatchServiceTest {
             // Priority - API > GGIS > VALIDATION
 
             final SpotlightBatch spotlightBatch1 = createSpotlightBatchWithSubmissions(schemeId1,
-                    SpotlightSubmissionStatus.GGIS_ERROR,
-                    SpotlightSubmissionStatus.GGIS_ERROR,
+                    SpotlightSubmissionStatus.GGIS_ERROR, SpotlightSubmissionStatus.GGIS_ERROR,
                     SpotlightSubmissionStatus.VALIDATION_ERROR);
 
             final SpotlightBatch spotlightBatch2 = createSpotlightBatchWithSubmissions(schemeId2,
-                    SpotlightSubmissionStatus.GGIS_ERROR,
-                    SpotlightSubmissionStatus.SEND_ERROR);
+                    SpotlightSubmissionStatus.GGIS_ERROR, SpotlightSubmissionStatus.SEND_ERROR);
 
-            final List<SpotlightSubmission> spotlightSubmissions = Stream.concat(spotlightBatch1.getSpotlightSubmissions().stream(), spotlightBatch2.getSpotlightSubmissions().stream())
+            final List<SpotlightSubmission> spotlightSubmissions = Stream
+                    .concat(spotlightBatch1.getSpotlightSubmissions().stream(),
+                            spotlightBatch2.getSpotlightSubmissions().stream())
                     .toList();
 
-            final SpotlightBatch spotlightBatch = SpotlightBatch.builder()
-                    .spotlightSubmissions(spotlightSubmissions)
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().spotlightSubmissions(spotlightSubmissions)
                     .build();
 
             when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
@@ -304,8 +309,7 @@ class SpotlightBatchServiceTest {
         void orderSpotlightErrorStatusesByPriorityAndFilterBySchemeId_NoErrors() {
 
             final SpotlightBatch spotlightBatch = createSpotlightBatchWithSubmissions(schemeId2,
-                    SpotlightSubmissionStatus.GGIS_ERROR,
-                    SpotlightSubmissionStatus.SEND_ERROR,
+                    SpotlightSubmissionStatus.GGIS_ERROR, SpotlightSubmissionStatus.SEND_ERROR,
                     SpotlightSubmissionStatus.VALIDATION_ERROR);
 
             when(spotlightBatchRepository.findMostRecentSpotlightBatch()).thenReturn(spotlightBatch);
@@ -318,5 +322,5 @@ class SpotlightBatchServiceTest {
         }
 
     }
-}
 
+}

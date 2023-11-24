@@ -34,7 +34,7 @@ public class SpotlightBatchService {
     }
 
     public SpotlightBatch addSpotlightSubmissionToSpotlightBatch(SpotlightSubmission spotlightSubmission,
-                                                                 UUID spotlightBatchId) {
+            UUID spotlightBatchId) {
         final SpotlightBatch spotlightBatch = getSpotlightBatch(spotlightBatchId);
         final List<SpotlightSubmission> existingSpotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
         final List<SpotlightBatch> existingSpotlightBatches = spotlightSubmission.getBatches();
@@ -53,7 +53,8 @@ public class SpotlightBatchService {
                 () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
     }
 
-    private GetSpotlightBatchErrorCountDTO orderSpotlightErrorStatusesByPriority(List<SpotlightSubmission> filteredSubmissions) {
+    private GetSpotlightBatchErrorCountDTO orderSpotlightErrorStatusesByPriority(
+            List<SpotlightSubmission> filteredSubmissions) {
         int apiErrorCount = 0;
         int ggisErrorCount = 0;
         int validationErrorCount = 0;
@@ -77,7 +78,8 @@ public class SpotlightBatchService {
             return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
         }
 
-        // Priority order: API > GGIS > VALIDATION. Validation is the lowest/default priority
+        // Priority order: API > GGIS > VALIDATION. Validation is the lowest/default
+        // priority
         // and will be overwritten if any higher-priority statuses exist.
         int errorCount = validationErrorCount;
         String errorStatus = "VALIDATION";
@@ -85,21 +87,26 @@ public class SpotlightBatchService {
         if (apiErrorCount > 0) {
             errorCount = apiErrorCount;
             errorStatus = "API";
-        } else if (ggisErrorCount > 0) {
+        }
+        else if (ggisErrorCount > 0) {
             errorCount = ggisErrorCount;
             errorStatus = "GGIS";
         }
-        return GetSpotlightBatchErrorCountDTO.builder().errorCount(errorCount).errorStatus(errorStatus).errorFound(true).build();
+        return GetSpotlightBatchErrorCountDTO.builder().errorCount(errorCount).errorStatus(errorStatus).errorFound(true)
+                .build();
     }
 
     public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
-        // TODO: This will need to be refactored to get multiple batches if they all share the most recent timestamp date
+        // TODO: This will need to be refactored to get multiple batches if they all share
+        // the most recent timestamp date
         final SpotlightBatch spotlightBatch = spotlightBatchRepository.findMostRecentSpotlightBatch();
-        final List<SpotlightSubmission> filteredSubmissions = spotlightBatch.getSpotlightSubmissions().stream().filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+        final List<SpotlightSubmission> filteredSubmissions = spotlightBatch.getSpotlightSubmissions().stream()
+                .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
 
         if (filteredSubmissions.isEmpty()) {
             return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
         }
         return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
     }
+
 }
