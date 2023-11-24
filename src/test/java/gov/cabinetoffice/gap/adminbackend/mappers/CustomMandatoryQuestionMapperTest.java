@@ -119,8 +119,8 @@ class CustomMandatoryQuestionMapperTest {
     }
 
     @Test
-    void mandatoryQuestionsToDraftAssessmentDto_AnyOtherOrgType() {
-        mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.INDIVIDUAL);
+    void mandatoryQuestionsToDraftAssessmentDto_SoleTrader() {
+        mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.SOLE_TRADER);
         draftAssessmentDto.setOrganisationType("Sole Trader");
 
         when(userService.getDepartmentGGISId(10)).thenReturn("funderId");
@@ -129,6 +129,16 @@ class CustomMandatoryQuestionMapperTest {
                 .mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
 
         assertThat(actual).isEqualTo(draftAssessmentDto);
+    }
+
+    @Test
+    void mandatoryQuestionsToDraftAssessmentDto_AnyOtherOrgType() {
+        mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.INDIVIDUAL);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
+        });
+
     }
 
 }

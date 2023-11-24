@@ -58,7 +58,8 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
         return switch (orgType) {
             case LIMITED_COMPANY -> "Company";
             case CHARITY -> "Charity";
-            default -> "Sole Trader";
+            case SOLE_TRADER -> "Sole Trader";
+            default -> throw new IllegalArgumentException("Unexpected value: " + orgType);
         };
     }
 
