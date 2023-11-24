@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSub
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
+import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -37,6 +38,8 @@ public interface SpotlightBatchMapper {
     @Mapping(source = "createdBy.id", target = "createdBy")
     SpotlightMandatoryQuestionDto mandatoryQuestionsToSpotlightMandatoryQuestions(
             GrantMandatoryQuestions mandatoryQuestions);
+
+    List<SpotlightBatchDto> spotlightBatchListToGetSpotlightBatchDtoList(List<SpotlightBatch> spotlightBatches);
 
     default List<SpotlightSubmissionDto> spotlightSubmissionListToSpotlightSubmissionDtoList(
             List<SpotlightSubmission> submissions) {

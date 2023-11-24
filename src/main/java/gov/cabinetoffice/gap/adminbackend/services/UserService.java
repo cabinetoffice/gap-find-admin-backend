@@ -1,8 +1,10 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
@@ -36,6 +38,8 @@ public class UserService {
     private final RestTemplate restTemplate;
 
     private final WebClient.Builder webClientBuilder;
+
+    private final UserServiceClient userServiceClient;
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -97,6 +101,14 @@ public class UserService {
 
     public Optional<GrantAdmin> getGrantAdminIdFromSub(final String sub) {
         return grantAdminRepository.findByGapUserUserSub(sub);
+    }
+
+    public String getDepartmentGGISId(Integer adminId) {
+        final GrantAdmin admin = grantAdminRepository.findById(adminId)
+                .orElseThrow(() -> new NotFoundException("No admin found for id: " + adminId));
+        final UserDto userDto = userServiceClient.getUserForSub(admin.getGapUser().getUserSub());
+
+        return userDto.getDepartment().getGgisID();
     }
 
 }
