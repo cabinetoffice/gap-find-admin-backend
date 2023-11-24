@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DraftAssessmentResponseDto {
+
     @JsonProperty("Status")
     private String status;
 
@@ -22,4 +23,5 @@ public class DraftAssessmentResponseDto {
 
     @JsonProperty("ApplicationNumber")
     private String applicationNumber;
+
 }

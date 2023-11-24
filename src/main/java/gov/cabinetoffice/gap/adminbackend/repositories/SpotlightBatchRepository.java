@@ -27,6 +27,4 @@ public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, 
     @Query("select s from SpotlightBatch s inner join s.spotlightSubmissions spotlightSubmissions where spotlightSubmissions.mandatoryQuestions.gapId = ?1")
     Optional<SpotlightBatch> findBySpotlightSubmissions_MandatoryQuestions_GapId(String gapId);
 
-
-
 }

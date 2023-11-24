@@ -1,26 +1,20 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
-import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
@@ -33,15 +27,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -73,6 +59,10 @@ public class SpotlightBatchService {
 
     private final RestTemplate restTemplate;
 
+    private final SpotlightQueueConfigProperties spotlightQueueProperties;
+
+    private final AmazonSQS amazonSqs;
+
     public boolean existsByStatusAndMaxBatchSize(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
     }
@@ -80,9 +70,8 @@ public class SpotlightBatchService {
     // TODO refactor this - it can potentially return more than one result and will cause
     // errors
     public SpotlightBatch getSpotlightBatchWithStatus(SpotlightBatchStatus status, int maxSize) {
-        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize)
-            .orElseThrow(
-                    () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
+        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize).orElseThrow(
+                () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
     }
 
     public SpotlightBatch createSpotlightBatch() {
@@ -105,16 +94,15 @@ public class SpotlightBatchService {
     }
 
     private SpotlightBatch getSpotlightBatch(UUID spotlightBatchId) {
-        return spotlightBatchRepository.findById(spotlightBatchId)
-            .orElseThrow(() -> new NotFoundException(
-                    "A spotlight batch with id " + spotlightBatchId + " could not be found"));
+        return spotlightBatchRepository.findById(spotlightBatchId).orElseThrow(
+                () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
     }
 
     private SpotlightBatch getSpotlightBatchByMandatoryQuestionGapId(String gapId) {
         return spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(gapId)
-            .orElseThrow(() -> new NotFoundException(
-                    "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
-                            + " could not be found"));
+                .orElseThrow(() -> new NotFoundException(
+                        "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
+                                + " could not be found"));
     }
 
     public List<SpotlightBatch> getSpotlightBatchesByStatus(SpotlightBatchStatus status) {
@@ -145,20 +133,15 @@ public class SpotlightBatchService {
 
     public List<String> getUniqueSchemeIds(List<SpotlightSubmission> spotlightSubmissions) {
         return spotlightSubmissions.stream()
-            .map(submission -> submission.getMandatoryQuestions().getSchemeEntity().getGgisIdentifier())
-            .distinct()
-            .toList();
+                .map(submission -> submission.getMandatoryQuestions().getSchemeEntity().getGgisIdentifier()).distinct()
+                .toList();
 
     }
 
     private List<SpotlightSubmission> getSpotlightSubmissionByGGisIdentifier(String uniqueSchemeId,
             List<SpotlightSubmission> spotlightSubmissions) {
-        return spotlightSubmissions.stream()
-            .filter(submission -> submission.getMandatoryQuestions()
-                .getSchemeEntity()
-                .getGgisIdentifier()
-                .equals(uniqueSchemeId))
-            .toList();
+        return spotlightSubmissions.stream().filter(submission -> submission.getMandatoryQuestions().getSchemeEntity()
+                .getGgisIdentifier().equals(uniqueSchemeId)).toList();
     }
 
     protected void addSpotlightSchemeDtoToList(SpotlightBatch spotlightBatch, List<SpotlightSchemeDto> schemes) {
@@ -171,9 +154,8 @@ public class SpotlightBatchService {
         log.info("uniqueSchemeIds: {}", uniqueSchemeIds);
 
         // for each scheme ggis id build a spotlightSchemeDto
-        uniqueSchemeIds.stream()
-            .map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, spotlightSubmissions))
-            .forEach(schemes::add);
+        uniqueSchemeIds.stream().map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, spotlightSubmissions))
+                .forEach(schemes::add);
     }
 
     private SpotlightSchemeDto generateSchemeDto(String schemeId, List<SpotlightSubmission> spotlightSubmissions) {
@@ -190,17 +172,15 @@ public class SpotlightBatchService {
         final List<SpotlightSubmission> filteredSubmissions = getSpotlightSubmissionByGGisIdentifier(uniqueSchemeId,
                 spotlightSubmissions);
 
-        return filteredSubmissions.stream()
-            .map(submission -> mandatoryQuestionsMapper
-                .mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions()))
-            .toList();
+        return filteredSubmissions.stream().map(submission -> mandatoryQuestionsMapper
+                .mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions())).toList();
 
     }
 
     public void sendQueuedBatchesToSpotlight() {
 
         final List<SendToSpotlightDto> spotlightData = this
-            .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+                .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
         // grab authorization header from AWS secrets manager
         final String accessToken = getAccessTokenFromSecretsManager();
@@ -231,20 +211,28 @@ public class SpotlightBatchService {
             list = mapToDto(response.getBody());
         }
         catch (HttpClientErrorException e) {
+
             if (e.getStatusCode().equals(HttpStatus.NOT_ACCEPTABLE) || e.getStatusCode().equals(HttpStatus.CONFLICT)) {
                 return mapToDto(e.getResponseBodyAsString());
             }
-            log.error("Hitting {} returned status code {} with body", draftAssessmentsEndpoint, e.getStatusCode(),
+
+            log.error("Hitting {} returned status code {} with body {}", draftAssessmentsEndpoint, e.getStatusCode(),
                     e.getResponseBodyAsString());
+
             // 401 throw and log.error update status of batch and spotlightSubmission +
             // requeue
             updateSpotlightBatchAndSubmissionStatus(spotlightBatch);
+            addMessageToQueue(spotlightBatch);
         }
         catch (HttpServerErrorException e) {
+
             if (e.getStatusCode().is5xxServerError()) {
-                log.error("Hitting {} returned status code {} with body", draftAssessmentsEndpoint, e.getStatusCode(),
-                        e.getResponseBodyAsString());
+
+                log.error("Hitting {} returned status code {} with body {}", draftAssessmentsEndpoint,
+                        e.getStatusCode(), e.getResponseBodyAsString());
+
                 updateSpotlightBatchAndSubmissionStatus(spotlightBatch);
+                addMessageToQueue(spotlightBatch);
             }
         }
 
@@ -263,26 +251,26 @@ public class SpotlightBatchService {
         spotlightBatchRepository.save(spotlightBatch);
     }
 
-    private void addMessageToQueue(SendToSpotlightDto spotlightBatchDto, SpotlightBatchStatus status) {
+    private void addMessageToQueue(SendToSpotlightDto spotlightBatchDto) {
         final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
         List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
-        spotlightSubmissions.forEach(spotlightSubmission ->  );
+        spotlightSubmissions.forEach(this::sendMessageToQueue);
     }
 
-    private void sendMessageToQueue(SpotlightSubmission spotlightSubmission){
+    private void sendMessageToQueue(SpotlightSubmission spotlightSubmission) {
         final UUID messageId = UUID.randomUUID();
 
         final SendMessageRequest messageRequest = new SendMessageRequest()
-                .withQueueUrl(spotlightQueueProperties.getQueueUrl())
-                .withMessageGroupId(messageId.toString())
+                .withQueueUrl(spotlightQueueProperties.getQueueUrl()).withMessageGroupId(messageId.toString())
                 .withMessageBody(spotlightSubmission.getId().toString())
                 .withMessageDeduplicationId(messageId.toString());
 
         amazonSqs.sendMessage(messageRequest);
     }
 
-    private void updateSpotlightSubmissionStatus(SendToSpotlightDto spotlightBatchDto) {
+    private void updateSpotlightSubmissionStatus(SendToSpotlightDto spotlightBatchDto,
+            SpotlightSubmissionStatus status) {
         final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
         List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
@@ -315,8 +303,7 @@ public class SpotlightBatchService {
         log.info("Getting secret {}...", spotlightConfig.getSecretName());
 
         final GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
-            .secretId(spotlightConfig.getSecretName())
-            .build();
+                .secretId(spotlightConfig.getSecretName()).build();
         final GetSecretValueResponse valueResponse = secretsManagerClient.getSecretValue(valueRequest);
 
         return getSecretValue(ACCESS_TOKEN, valueResponse.secretString());
