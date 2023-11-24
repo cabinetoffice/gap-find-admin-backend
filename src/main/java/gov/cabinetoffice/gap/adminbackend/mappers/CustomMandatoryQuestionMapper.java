@@ -3,14 +3,15 @@ package gov.cabinetoffice.gap.adminbackend.mappers;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.Submission;
+import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @RequiredArgsConstructor
 @Component
@@ -37,22 +38,34 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
         draftAssessmentDto.ggisSchemeId(mandatoryQuestionsSchemeEntityGgisIdentifier(mandatoryQuestions));
 
         if (mandatoryQuestions.getFundingAmount() != null) {
-            draftAssessmentDto.applicationAmount(mandatoryQuestions.getFundingAmount().toString()); //TODO make it as a string with 2 decimal point
+            draftAssessmentDto.applicationAmount(addDecimalPoints(mandatoryQuestions.getFundingAmount()));
         }
 
         if (mandatoryQuestions.getOrgType() != null) {
-            draftAssessmentDto.organisationType(mandatoryQuestions.getOrgType().name()); //TODO create a switch to map the enum to the string needed by the tech design
+            draftAssessmentDto.organisationType(convertEnumToString(mandatoryQuestions.getOrgType()));
         }
 
-        final UUID id = mandatoryQuestionsSubmissionId(mandatoryQuestions);
-
-        if (id != null) {
-            draftAssessmentDto.applicationNumber(id.toString()); //TODO this needs to be the mq gap_id
+        if (mandatoryQuestions.getGapId() != null) {
+            draftAssessmentDto.applicationNumber(mandatoryQuestions.getGapId());
         }
 
         draftAssessmentDto.funderID(getFunderID(getSchemeCreatorId(mandatoryQuestions)));
 
         return draftAssessmentDto.build();
+    }
+
+    private String convertEnumToString(GrantMandatoryQuestionOrgType orgType) {
+        return switch (orgType) {
+            case LIMITED_COMPANY -> "Company";
+            case CHARITY -> "Charity";
+            default -> "Sole Trader";
+        };
+    }
+
+    private String addDecimalPoints(BigDecimal amount) {
+        BigDecimal amountWithDecimalPoints = amount.setScale(2, RoundingMode.HALF_UP);
+        return amountWithDecimalPoints.toString();
+
     }
 
     private Integer getSchemeCreatorId(GrantMandatoryQuestions mandatoryQuestions) {
@@ -73,16 +86,6 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
         }
 
         return schemeEntity.getGgisIdentifier();
-    }
-
-    private UUID mandatoryQuestionsSubmissionId(GrantMandatoryQuestions grantMandatoryQuestions) {
-        final Submission submission = grantMandatoryQuestions.getSubmission();
-
-        if (submission == null) {
-            return null;
-        }
-
-        return submission.getId();
     }
 
     protected String getFunderID(Integer adminId) {

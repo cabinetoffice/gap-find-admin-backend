@@ -68,12 +68,11 @@ class CustomMandatoryQuestionMapperTest {
 
         draftAssessmentDto = DraftAssessmentDto.builder().addressLine1(mandatoryQuestions.getAddressLine1())
                 .ggisSchemeId(mandatoryQuestions.getSchemeEntity().getGgisIdentifier())
-                .addressPostcode(mandatoryQuestions.getPostcode())
-                .applicationAmount(mandatoryQuestions.getFundingAmount().toString())
-                .applicationNumber(mandatoryQuestions.getSubmission().getId().toString()).country("United Kingdom")
+                .addressPostcode(mandatoryQuestions.getPostcode()).applicationAmount("10.00")
+                .applicationNumber(mandatoryQuestions.getGapId()).country("United Kingdom")
                 .charityCommissionRegNo(mandatoryQuestions.getCharityCommissionNumber())
                 .companiesHouseRegNo(mandatoryQuestions.getCompaniesHouseNumber())
-                .organisationName(mandatoryQuestions.getName()).organisationType(mandatoryQuestions.getOrgType().name())
+                .organisationName(mandatoryQuestions.getName()).organisationType("Company")
                 .cityTown(mandatoryQuestions.getCity()).funderID("funderId").build();
     }
 
@@ -107,9 +106,22 @@ class CustomMandatoryQuestionMapperTest {
     }
 
     @Test
-    void mandatoryQuestionsToDraftAssessmentDto_submissionIsNull() {
-        mandatoryQuestions.setSubmission(null);
-        draftAssessmentDto.setApplicationNumber(null);
+    void mandatoryQuestionsToDraftAssessmentDto_Charity() {
+        mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.CHARITY);
+        draftAssessmentDto.setOrganisationType("Charity");
+
+        when(userService.getDepartmentGGISId(10)).thenReturn("funderId");
+
+        final DraftAssessmentDto actual = customMandatoryQuestionMapper
+                .mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
+
+        assertThat(actual).isEqualTo(draftAssessmentDto);
+    }
+
+    @Test
+    void mandatoryQuestionsToDraftAssessmentDto_AnyOtherOrgType() {
+        mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.INDIVIDUAL);
+        draftAssessmentDto.setOrganisationType("Sole Trader");
 
         when(userService.getDepartmentGGISId(10)).thenReturn("funderId");
 
