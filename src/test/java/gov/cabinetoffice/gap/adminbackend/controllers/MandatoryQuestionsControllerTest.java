@@ -156,17 +156,17 @@ class MandatoryQuestionsControllerTest {
     }
 
     @Nested
-    class hasCompletedMandatoryQuestionsForCompaniesAndCharities {
+    class hasCompletedMandatoryQuestionsForSpotlightExport {
 
         @Test
-        void hasCompletedMandatoryQuestionsForCompaniesAndCharitiesReturnsTrue() throws Exception {
+        void hasCompletedMandatoryQuestionsForSpotlightExportReturnsTrue() throws Exception {
             when(grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID)).thenReturn(true);
             mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/spotlight-complete"))
                     .andExpect(status().isOk()).andExpect(content().string("true"));
         }
 
         @Test
-        void hasCompletedMandatoryQuestionsForCompaniesAndCharitiesReturnsFalse() throws Exception {
+        void hasCompletedMandatoryQuestionsForSpotlightExportReturnsFalse() throws Exception {
             when(grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID)).thenReturn(false);
             mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/spotlight-complete"))
                     .andExpect(status().isOk()).andExpect(content().string("false"));

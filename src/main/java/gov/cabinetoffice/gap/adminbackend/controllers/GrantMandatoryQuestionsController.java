@@ -37,8 +37,7 @@ public class GrantMandatoryQuestionsController {
     }
 
     @GetMapping("/scheme/{schemeId}/spotlight-complete")
-    public ResponseEntity<Boolean> hasCompletedMandatoryQuestionsForCompaniesAndCharities(
-            @PathVariable Integer schemeId) {
+    public ResponseEntity<Boolean> hasCompletedMandatoryQuestionsForSpotlightExport(@PathVariable Integer schemeId) {
         return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedDataForSpotlight(schemeId));
     }
 
