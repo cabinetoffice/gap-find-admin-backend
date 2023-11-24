@@ -274,7 +274,7 @@ public class SubmissionsService {
         List<GrantExportEntity> exports = grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(
                 exportBatchId, GrantExportStatus.COMPLETE, adminSession.getGrantAdminId());
 
-        return exports.stream().map(entity -> SubmissionExportsDTO.builder().url(entity.getLocation())
+        return exports.stream().map(entity -> SubmissionExportsDTO.builder().s3key(entity.getLocation())
                 .label(getFilenameFromExportsSignedUrl(entity)).build()).toList();
     }
 
@@ -346,8 +346,8 @@ public class SubmissionsService {
         }
     }
 
-    public void addSignedUrlToSubmissionExport(UUID submissionId, UUID exportId, String signedUrl) {
-        grantExportRepository.updateExportRecordLocation(submissionId, exportId, signedUrl);
+    public void addS3ObjectKeyToSubmissionExport(UUID submissionId, UUID exportId, String s3ObjectKey) {
+        grantExportRepository.updateExportRecordLocation(submissionId, exportId, s3ObjectKey);
     }
 
 }
