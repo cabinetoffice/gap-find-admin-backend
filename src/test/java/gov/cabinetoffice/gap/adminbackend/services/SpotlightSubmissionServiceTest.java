@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.*;
+import org.mockito.Spy;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.time.*;
@@ -19,8 +21,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -31,6 +31,7 @@ class SpotlightSubmissionServiceTest {
     @Mock
     private SpotlightSubmissionRepository spotlightSubmissionRepository;
 
+    @Spy
     @InjectMocks
     private SpotlightSubmissionService spotlightSubmissionService;
 
@@ -127,4 +128,29 @@ class SpotlightSubmissionServiceTest {
 
     }
 
+    @Nested
+    class getSpotlightSubmissionById {
+
+        @Test
+        void returnsExpectedSubmission() {
+            final SpotlightSubmission mockSpotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
+                    .build();
+
+            doReturn(mockSpotlightSubmission).when(spotlightSubmissionService).getSpotlightSubmission(spotlightSubmissionId);
+
+            final Optional<SpotlightSubmission> result = spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId);
+
+            assertEquals(Optional.of(mockSpotlightSubmission), result);
+        }
+
+        @Test
+        void returnsOptionalEmpty() {
+
+            doThrow(NotFoundException.class).when(spotlightSubmissionService).getSpotlightSubmission(spotlightSubmissionId);
+
+            final Optional<SpotlightSubmission> result = spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId);
+
+            assertEquals(Optional.empty(), result);
+        }
+    }
 }

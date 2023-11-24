@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.Mockito.times;
@@ -163,8 +164,8 @@ public class SpotlightBatchControllerTest {
             final SpotlightSubmission spotlightSubmission = new SpotlightSubmission();
             final SpotlightBatch spotlightBatch = new SpotlightBatch();
 
-            when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                    .thenReturn(spotlightSubmission);
+            when(mockSpotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId))
+                    .thenReturn(Optional.of(spotlightSubmission));
             when(mockSpotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission,
                     spotlightBatchId)).thenReturn(spotlightBatch);
 
@@ -181,14 +182,14 @@ public class SpotlightBatchControllerTest {
             final UUID spotlightBatchId = UUID.randomUUID();
             final UUID spotlightSubmissionId = UUID.randomUUID();
 
-            when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                    .thenThrow(NotFoundException.class);
+            when(mockSpotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId))
+                    .thenReturn(Optional.empty());
 
             mockMvc.perform(
                     patch("/spotlight-batch/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}",
                             spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
                                     LAMBDA_AUTH_HEADER))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isOk());
         }
 
         @Test

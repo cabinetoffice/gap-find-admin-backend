@@ -172,8 +172,7 @@ public class SpotlightBatchService {
 
     private void sendBatchToSpotlight(SendToSpotlightDto spotlightBatch, String accessToken) {
         final HttpHeaders requestHeaders = new HttpHeaders();
-        // TODO add Bearer
-        requestHeaders.add("Authorization", accessToken);
+        requestHeaders.add("Authorization", "Bearer " + accessToken);
         requestHeaders.add("Content-Type", "application/json");
 
         final String spotlightBatchAsJsonString = convertBatchToJsonString(spotlightBatch);

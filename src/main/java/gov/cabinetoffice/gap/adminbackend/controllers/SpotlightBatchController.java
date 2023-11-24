@@ -123,16 +123,16 @@ public class SpotlightBatchController {
     @SpotlightPublisherHeaderValidator
     public ResponseEntity<String> addSpotlightSubmissionToSpotlightBatch(@PathVariable final UUID spotlightBatchId,
             @PathVariable final UUID spotlightSubmissionId) {
+
         log.info("Adding spotlight submission with id {} to spotlight batch with id {}", spotlightSubmissionId,
                 spotlightBatchId);
 
-        final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
-                .getSpotlightSubmission(spotlightSubmissionId);
+        spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId).ifPresent(s -> {
+            spotlightBatchService.addSpotlightSubmissionToSpotlightBatch(s, spotlightBatchId);
 
-        spotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
-
-        log.info("Successfully added spotlight submission with id {} to spotlight batch with id {}",
-                spotlightSubmissionId, spotlightBatchId);
+            log.info("Successfully added spotlight submission with id {} to spotlight batch with id {}",
+                    spotlightSubmissionId, spotlightBatchId);
+        });
 
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
     }
