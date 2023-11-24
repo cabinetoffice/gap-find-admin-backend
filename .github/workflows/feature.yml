@@ -23,7 +23,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: AWS_REGION="ew-west-2" mvn -B package --file pom.xml
 
       - name: DependencyCheck
         uses: dependency-check/Dependency-Check_Action@main

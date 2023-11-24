@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantMandatoryQuestionRepository;
 import org.apache.poi.ss.usermodel.Row;
@@ -328,6 +327,15 @@ class GrantMandatoryQuestionServiceTest {
             assertThat(actualMessage).contains("Unable to find mandatory question data:");
         }
 
+        @Test
+        void givenDataWithoutCharityNumber_returnsExpectedData() {
+            grantMandatoryQuestions.setCharityCommissionNumber(null);
+            EXPECTED_SPOTLIGHT_ROW.set(6, "");
+            List<String> spotlightRow = grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions,
+                    false);
+            assertThat(spotlightRow).containsAll(EXPECTED_SPOTLIGHT_ROW);
+        }
+
     }
 
     @Nested
@@ -379,6 +387,27 @@ class GrantMandatoryQuestionServiceTest {
             when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
                     .thenReturn(false);
             boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
+            assertThat(result).isEqualTo(false);
+        }
+
+    }
+
+    @Nested
+    class doesSchemeHaveCompletedDataForSpotlight {
+
+        @Test
+        void returnsTrue() {
+            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
+                    .thenReturn(true);
+            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
+            assertThat(result).isEqualTo(true);
+        }
+
+        @Test
+        void returnFalse() {
+            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
+                    .thenReturn(false);
+            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
             assertThat(result).isEqualTo(false);
         }
 
