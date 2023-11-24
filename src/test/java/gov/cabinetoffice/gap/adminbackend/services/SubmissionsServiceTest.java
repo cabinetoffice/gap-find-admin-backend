@@ -505,7 +505,7 @@ class SubmissionsServiceTest {
         @Test
         void getCompletedSubmissionExports() {
             UUID testUUID = UUID.randomUUID();
-            String urlToTest = "https://testing.com/directory_of_file/filename.zip";
+            String urlToTest = "directory_of_file/filename.zip";
 
             GrantExportEntity mockEntity = RandomGrantExportEntityGenerator.randomGrantExportEntityBuilder()
                     .location(urlToTest).build();
@@ -526,7 +526,7 @@ class SubmissionsServiceTest {
         @Test
         void getCompletedSubmissionExportsWithDecodedLabels() {
             UUID testUUID = UUID.randomUUID();
-            String urlToTest = "https://testing.com/directory_of_file/file%20name.zip";
+            String urlToTest = "directory_of_file/file%20name.zip";
 
             GrantExportEntity mockEntity = RandomGrantExportEntityGenerator.randomGrantExportEntityBuilder()
                     .location(urlToTest).build();
