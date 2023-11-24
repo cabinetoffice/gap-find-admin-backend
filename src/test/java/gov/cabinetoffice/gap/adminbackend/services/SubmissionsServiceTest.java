@@ -524,30 +524,9 @@ class SubmissionsServiceTest {
         }
 
         @Test
-        void getCompletedSubmissionExportsWithDecodedLabels() {
+        void getLabelFallbackWhenInvalidS3KeyPassed() {
             UUID testUUID = UUID.randomUUID();
-            String urlToTest = "directory_of_file/file%20name.zip";
-
-            GrantExportEntity mockEntity = RandomGrantExportEntityGenerator.randomGrantExportEntityBuilder()
-                    .location(urlToTest).build();
-            List<GrantExportEntity> mockEntityList = Collections.singletonList(mockEntity);
-
-            when(grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(testUUID,
-                    GrantExportStatus.COMPLETE, 1)).thenReturn(mockEntityList);
-
-            List<SubmissionExportsDTO> submissionExports = submissionsService
-                    .getCompletedSubmissionExportsForBatch(testUUID);
-
-            assertEquals(mockEntityList.size(), submissionExports.size());
-            assertEquals("file name.zip", submissionExports.get(0).getLabel());
-            assertEquals(urlToTest, submissionExports.get(0).getS3key());
-
-        }
-
-        @Test
-        void getLabelFallbackWhenInvalidURLIsFound() {
-            UUID testUUID = UUID.randomUUID();
-            String urlToTest = "https/testing/directory_of_file/filename.zip";
+            String urlToTest = "abcd";
             String submissionId = "cfb42c03-e39c-4972-adb5-5dc096c82bf4";
 
             GrantExportId mockIdWithSubmissionIdToTest = RandomGrantExportEntityGenerator

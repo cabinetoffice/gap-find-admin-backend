@@ -293,8 +293,7 @@ public class SubmissionsService {
     private String getFilenameFromExportsS3Key(GrantExportEntity exportEntity) {
 
         try {
-            URL url = new URL(exportEntity.getLocation());
-            return URLDecoder.decode(url.getPath().split("/", 3)[1], StandardCharsets.UTF_8.name());
+            return exportEntity.getLocation().split("/", 3)[1];
         }
         catch (Exception e) {
             return exportEntity.getId().getSubmissionId().toString();
