@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
@@ -133,6 +134,28 @@ public class SpotlightBatchController {
                 spotlightSubmissionId, spotlightBatchId);
 
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
+    }
+
+    @GetMapping("/get-spotlight-scheme-errors/{schemeId}")
+    @Operation(summary = "Fetches the highest-priority Spotlight error type and any associated counts")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Retrieved error type and count",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Boolean.class))),
+            @ApiResponse(responseCode = "404", description = "No Spotlight errors exist",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to check Spotlight errors",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request",
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity<GetSpotlightBatchErrorCountDTO> retrieveSpotlightBatchErrorCount(
+            @PathVariable final String schemeId) {
+        log.info("Retrieving Spotlight errors for scheme {}", schemeId);
+
+        final GetSpotlightBatchErrorCountDTO spotlightBatchErrorCount = spotlightBatchService
+                .getSpotlightBatchErrorCount(Integer.parseInt(schemeId));
+
+        return ResponseEntity.ok().body(spotlightBatchErrorCount);
     }
 
 }

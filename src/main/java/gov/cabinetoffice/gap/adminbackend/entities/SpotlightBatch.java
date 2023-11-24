@@ -43,7 +43,7 @@ public class SpotlightBatch {
     @Enumerated(EnumType.STRING)
     private SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
 
-    @Column
+    @Column(name = "last_send_attempt")
     private Instant lastSendAttempt;
 
     @Column

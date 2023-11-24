@@ -8,6 +8,8 @@ import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -99,7 +101,9 @@ public class SpotlightBatchService {
     public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
         // TODO: This will need to be refactored to get multiple batches if they all share
         // the most recent timestamp date
-        final SpotlightBatch spotlightBatch = spotlightBatchRepository.findMostRecentSpotlightBatch();
+        Pageable pageable = PageRequest.of(0, 1);
+        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
+        final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
         final List<SpotlightSubmission> filteredSubmissions = spotlightBatch.getSpotlightSubmissions().stream()
                 .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
 
