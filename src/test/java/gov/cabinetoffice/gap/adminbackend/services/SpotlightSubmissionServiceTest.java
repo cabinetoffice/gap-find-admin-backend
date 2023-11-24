@@ -136,9 +136,11 @@ class SpotlightSubmissionServiceTest {
             final SpotlightSubmission mockSpotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
                     .build();
 
-            doReturn(mockSpotlightSubmission).when(spotlightSubmissionService).getSpotlightSubmission(spotlightSubmissionId);
+            doReturn(mockSpotlightSubmission).when(spotlightSubmissionService)
+                    .getSpotlightSubmission(spotlightSubmissionId);
 
-            final Optional<SpotlightSubmission> result = spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId);
+            final Optional<SpotlightSubmission> result = spotlightSubmissionService
+                    .getSpotlightSubmissionById(spotlightSubmissionId);
 
             assertEquals(Optional.of(mockSpotlightSubmission), result);
         }
@@ -146,11 +148,15 @@ class SpotlightSubmissionServiceTest {
         @Test
         void returnsOptionalEmpty() {
 
-            doThrow(NotFoundException.class).when(spotlightSubmissionService).getSpotlightSubmission(spotlightSubmissionId);
+            doThrow(NotFoundException.class).when(spotlightSubmissionService)
+                    .getSpotlightSubmission(spotlightSubmissionId);
 
-            final Optional<SpotlightSubmission> result = spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId);
+            final Optional<SpotlightSubmission> result = spotlightSubmissionService
+                    .getSpotlightSubmissionById(spotlightSubmissionId);
 
             assertEquals(Optional.empty(), result);
         }
+
     }
+
 }
