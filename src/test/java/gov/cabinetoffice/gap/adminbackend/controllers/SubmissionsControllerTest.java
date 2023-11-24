@@ -291,7 +291,7 @@ class SubmissionsControllerTest {
             doNothing().when(submissionsService).addS3ObjectKeyToSubmissionExport(any(), any(), anyString());
 
             MvcResult res = mockMvc.perform(
-                    patch("/submissions/" + UUID.randomUUID() + "/export-batch/" + UUID.randomUUID() + "/signedUrl")
+                    patch("/submissions/" + UUID.randomUUID() + "/export-batch/" + UUID.randomUUID() + "/s3-object-key")
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(mockRequest))
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isNoContent()).andReturn();
@@ -335,14 +335,14 @@ class SubmissionsControllerTest {
         void updateExportRecordLocation_BadRequest_PathVariables() throws Exception {
             S3ObjectKeyDTO mockRequest = new S3ObjectKeyDTO("path/filename.zip");
 
-            mockMvc.perform(patch("/submissions/1234/export-batch/12345/signedUrl")
+            mockMvc.perform(patch("/submissions/1234/export-batch/12345/s3-object-key")
                     .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(mockRequest))
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isBadRequest());
         }
 
         @Test
         void updateExportRecordLocation_BadRequest_RequestBody() throws Exception {
-            mockMvc.perform(patch("/submissions/1234/export-batch/12345/signedUrl")
+            mockMvc.perform(patch("/submissions/1234/export-batch/12345/s3-object-key")
                     .contentType(MediaType.APPLICATION_JSON).content("\"link_to_aws.com/path/filename.zip\"")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isBadRequest());
         }
@@ -355,7 +355,7 @@ class SubmissionsControllerTest {
                     anyString());
 
             mockMvc.perform(
-                    patch("/submissions/" + UUID.randomUUID() + "/export-batch/" + UUID.randomUUID() + "/signedUrl")
+                    patch("/submissions/" + UUID.randomUUID() + "/export-batch/" + UUID.randomUUID() + "/s3-object-key")
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(mockRequest))
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isInternalServerError());
