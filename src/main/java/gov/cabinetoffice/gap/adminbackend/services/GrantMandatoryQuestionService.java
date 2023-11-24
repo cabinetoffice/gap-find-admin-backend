@@ -48,6 +48,11 @@ public class GrantMandatoryQuestionService {
         return grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
     }
 
+    public boolean hasCompletedDataForSpotlight(Integer schemeId) {
+        return grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(schemeId);
+
+    }
+
     public ByteArrayOutputStream getSpotlightChecks(Integer schemeId) {
         final List<GrantMandatoryQuestions> companiesAndCharitiesQuestions = getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
                 schemeId);

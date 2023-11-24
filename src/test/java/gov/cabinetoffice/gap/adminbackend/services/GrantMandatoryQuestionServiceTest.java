@@ -392,4 +392,25 @@ class GrantMandatoryQuestionServiceTest {
 
     }
 
+    @Nested
+    class doesSchemeHaveCompletedDataForSpotlight {
+
+        @Test
+        void returnsTrue() {
+            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
+                    .thenReturn(true);
+            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
+            assertThat(result).isEqualTo(true);
+        }
+
+        @Test
+        void returnFalse() {
+            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
+                    .thenReturn(false);
+            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
+            assertThat(result).isEqualTo(false);
+        }
+
+    }
+
 }
