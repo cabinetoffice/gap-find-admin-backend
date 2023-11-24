@@ -155,4 +155,23 @@ class MandatoryQuestionsControllerTest {
 
     }
 
+    @Nested
+    class hasCompletedMandatoryQuestionsForCompaniesAndCharities {
+
+        @Test
+        void hasCompletedMandatoryQuestionsForCompaniesAndCharitiesReturnsTrue() throws Exception {
+            when(grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID)).thenReturn(true);
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/spotlight-complete"))
+                    .andExpect(status().isOk()).andExpect(content().string("true"));
+        }
+
+        @Test
+        void hasCompletedMandatoryQuestionsForCompaniesAndCharitiesReturnsFalse() throws Exception {
+            when(grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID)).thenReturn(false);
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/spotlight-complete"))
+                    .andExpect(status().isOk()).andExpect(content().string("false"));
+        }
+
+    }
+
 }
