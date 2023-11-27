@@ -697,4 +697,5 @@ class SpotlightBatchServiceTest {
         }
 
     }
+
 }
