@@ -99,8 +99,6 @@ public class SpotlightBatchService {
     }
 
     public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
-        // TODO: This will need to be refactored to get multiple batches if they all share
-        // the most recent timestamp date
         Pageable pageable = PageRequest.of(0, 1);
         final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
         final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
