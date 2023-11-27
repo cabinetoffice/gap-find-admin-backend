@@ -20,8 +20,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class SpotlightSubmissionService {
-
+    //make sure to don't use SpotlighBatchService here, otherwise you will get a circular dependency
     private final SpotlightSubmissionRepository spotlightSubmissionRepository;
+
 
     public SpotlightSubmission getSpotlightSubmission(UUID spotlightSubmissionId) {
         return spotlightSubmissionRepository.findById(spotlightSubmissionId).orElseThrow(() -> new NotFoundException(

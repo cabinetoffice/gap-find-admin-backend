@@ -9,6 +9,9 @@ import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.DraftAssessmentResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
@@ -29,9 +32,10 @@ import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionReposi
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.http.RequestEntity;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
@@ -45,6 +49,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -64,19 +70,14 @@ import static org.mockito.Mockito.when;
 class SpotlightBatchServiceTest {
 
     private static final UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
-
-    @Mock
-    private SpotlightBatchRepository spotlightBatchRepository;
-
-    @Mock
-    private MandatoryQuestionsMapper mandatoryQuestionsMapper;
-
     @Mock
     SecretsManagerClient secretsManagerClient;
-
     @Mock
     RestTemplate restTemplate;
-
+    @Mock
+    private SpotlightBatchRepository spotlightBatchRepository;
+    @Mock
+    private MandatoryQuestionsMapper mandatoryQuestionsMapper;
     private SpotlightBatchService spotlightBatchService;
 
     private SpotlightConfigProperties spotlightConfigProperties;
@@ -87,20 +88,27 @@ class SpotlightBatchServiceTest {
 
     private AmazonSQS amazonSqs;
 
+    @Mock
     private SpotlightSubmissionService spotlightSubmissionService;
 
+    @Mock
     private SpotlightSubmissionRepository spotlightSubmissionRepository;
+
+    @Captor
+    private ArgumentCaptor<SpotlightSubmission> argumentCaptor;
 
     @BeforeEach
     void setup() {
-        spotlightConfigProperties = SpotlightConfigProperties.builder().spotlightUrl("spotlightUrl")
-                .secretName("secretName").build();
+        spotlightConfigProperties = SpotlightConfigProperties.builder()
+            .spotlightUrl("spotlightUrl")
+            .secretName("secretName")
+            .build();
         objectMapper = Mockito.spy(new ObjectMapper());
         spotlightQueueProperties = SpotlightQueueConfigProperties.builder().queueUrl("queueUrl").build();
-
-        spotlightBatchService = Mockito.spy(new SpotlightBatchService(spotlightBatchRepository,
-                mandatoryQuestionsMapper, secretsManagerClient,restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper ,
-                spotlightQueueProperties, amazonSqs, spotlightSubmissionService));
+        spotlightBatchService = Mockito
+            .spy(new SpotlightBatchService(spotlightBatchRepository, mandatoryQuestionsMapper, secretsManagerClient,
+                    restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper,
+                    spotlightQueueProperties, amazonSqs, spotlightSubmissionService));
     }
 
     @Nested
@@ -137,7 +145,7 @@ class SpotlightBatchServiceTest {
         void spotlightBatchWithStatusExists() {
             final SpotlightBatch mockSpotlightBatch = SpotlightBatch.builder().id(uuid).build();
             when(spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(any(), anyInt()))
-                    .thenReturn(Optional.of(mockSpotlightBatch));
+                .thenReturn(Optional.of(mockSpotlightBatch));
 
             final SpotlightBatch result = spotlightBatchService.getSpotlightBatchWithStatus(SpotlightBatchStatus.QUEUED,
                     200);
@@ -178,16 +186,19 @@ class SpotlightBatchServiceTest {
 
         @Test
         void addSpotlightSubmissionToSpotlightBatch() {
-            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().batches(new ArrayList<>())
-                    .build();
-            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid)
-                    .spotlightSubmissions(new ArrayList<>()).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .batches(new ArrayList<>())
+                .build();
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder()
+                .id(uuid)
+                .spotlightSubmissions(new ArrayList<>())
+                .build();
 
             when(spotlightBatchRepository.findById(uuid)).thenReturn(Optional.of(spotlightBatch));
             when(spotlightBatchRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
             final SpotlightBatch result = spotlightBatchService
-                    .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, uuid);
+                .addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, uuid);
 
             verify(spotlightBatchRepository, times(1)).findById(uuid);
             verify(spotlightBatchRepository, times(1)).save(spotlightBatch);
@@ -226,7 +237,7 @@ class SpotlightBatchServiceTest {
             when(spotlightBatchRepository.findByStatus(any())).thenReturn(Optional.of(spotlightBatches));
 
             final List<SpotlightBatch> result = spotlightBatchService
-                    .getSpotlightBatchesByStatus(SpotlightBatchStatus.QUEUED);
+                .getSpotlightBatchesByStatus(SpotlightBatchStatus.QUEUED);
 
             assertThat(result).isEqualTo(spotlightBatches);
         }
@@ -278,122 +289,223 @@ class SpotlightBatchServiceTest {
 
         final GrantApplicant applicant2 = GrantApplicant.builder().id(2).build();
 
-        final SchemeEntity schemeEntity = SchemeEntity.builder().id(1).name("Test Scheme").ggisIdentifier("ggisId1")
-                .build();
+        final SchemeEntity schemeEntity = SchemeEntity.builder()
+            .id(1)
+            .name("Test Scheme")
+            .ggisIdentifier("ggisId1")
+            .build();
 
-        final SchemeEntity schemeEntity2 = SchemeEntity.builder().id(2).name("Test Scheme 2").ggisIdentifier("ggisId2")
-                .build();
+        final SchemeEntity schemeEntity2 = SchemeEntity.builder()
+            .id(2)
+            .name("Test Scheme 2")
+            .ggisIdentifier("ggisId2")
+            .build();
 
         final Submission submission = Submission.builder().id(submissionId).scheme(schemeEntity).build();
 
-        final GrantMandatoryQuestions mandatoryQuestions = GrantMandatoryQuestions.builder().id(mandatoryQuestionId)
-                .schemeEntity(schemeEntity).submission(submission).name("Sample Question").addressLine1("123 Street")
-                .addressLine2("Apt 456").city("Cityville").county("County").postcode("12345")
-                .orgType(GrantMandatoryQuestionOrgType.LIMITED_COMPANY).companiesHouseNumber("ABC123")
-                .charityCommissionNumber("XYZ789").fundingAmount(BigDecimal.TEN)
-                .fundingLocation(
-                        new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.LONDON,
-                                GrantMandatoryQuestionFundingLocation.EAST_ENGLAND })
-                .status(GrantMandatoryQuestionStatus.IN_PROGRESS).version(1).created(now).lastUpdated(now)
-                .createdBy(applicant).lastUpdatedBy(applicant).gapId("GAP123").build();
+        final GrantMandatoryQuestions mandatoryQuestions = GrantMandatoryQuestions.builder()
+            .id(mandatoryQuestionId)
+            .schemeEntity(schemeEntity)
+            .submission(submission)
+            .name("Sample Question")
+            .addressLine1("123 Street")
+            .addressLine2("Apt 456")
+            .city("Cityville")
+            .county("County")
+            .postcode("12345")
+            .orgType(GrantMandatoryQuestionOrgType.LIMITED_COMPANY)
+            .companiesHouseNumber("ABC123")
+            .charityCommissionNumber("XYZ789")
+            .fundingAmount(BigDecimal.TEN)
+            .fundingLocation(new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.LONDON,
+                    GrantMandatoryQuestionFundingLocation.EAST_ENGLAND })
+            .status(GrantMandatoryQuestionStatus.IN_PROGRESS)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .createdBy(applicant)
+            .lastUpdatedBy(applicant)
+            .gapId("GAP123")
+            .build();
 
-        final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
-                .mandatoryQuestions(mandatoryQuestions).grantScheme(schemeEntity)
-                .status(SpotlightSubmissionStatus.QUEUED.toString()).lastSendAttempt(now).version(1).created(now)
-                .lastUpdated(now).build();
+        final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+            .id(spotlightSubmissionId)
+            .mandatoryQuestions(mandatoryQuestions)
+            .grantScheme(schemeEntity)
+            .status(SpotlightSubmissionStatus.QUEUED.toString())
+            .lastSendAttempt(now)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .build();
 
-        final GrantMandatoryQuestions mandatoryQuestions4 = GrantMandatoryQuestions.builder().id(mandatoryQuestionId4)
-                .schemeEntity(schemeEntity).submission(submission).name("Sample Question").addressLine1("123 Street")
-                .addressLine2("Apt 456").city("Cityville").county("County").postcode("12345")
-                .orgType(GrantMandatoryQuestionOrgType.LIMITED_COMPANY).companiesHouseNumber("ABC123")
-                .charityCommissionNumber("XYZ789").fundingAmount(BigDecimal.TEN)
-                .fundingLocation(
-                        new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.LONDON,
-                                GrantMandatoryQuestionFundingLocation.EAST_ENGLAND })
-                .status(GrantMandatoryQuestionStatus.IN_PROGRESS).version(1).created(now).lastUpdated(now)
-                .createdBy(applicant).lastUpdatedBy(applicant).gapId("GAP123").build();
+        final GrantMandatoryQuestions mandatoryQuestions4 = GrantMandatoryQuestions.builder()
+            .id(mandatoryQuestionId4)
+            .schemeEntity(schemeEntity)
+            .submission(submission)
+            .name("Sample Question")
+            .addressLine1("123 Street")
+            .addressLine2("Apt 456")
+            .city("Cityville")
+            .county("County")
+            .postcode("12345")
+            .orgType(GrantMandatoryQuestionOrgType.LIMITED_COMPANY)
+            .companiesHouseNumber("ABC123")
+            .charityCommissionNumber("XYZ789")
+            .fundingAmount(BigDecimal.TEN)
+            .fundingLocation(new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.LONDON,
+                    GrantMandatoryQuestionFundingLocation.EAST_ENGLAND })
+            .status(GrantMandatoryQuestionStatus.IN_PROGRESS)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .createdBy(applicant)
+            .lastUpdatedBy(applicant)
+            .gapId("GAP123")
+            .build();
 
-        final SpotlightSubmission spotlightSubmission4 = SpotlightSubmission.builder().id(spotligtSubmissionId4)
-                .mandatoryQuestions(mandatoryQuestions4).grantScheme(schemeEntity)
-                .status(SpotlightSubmissionStatus.QUEUED.toString()).lastSendAttempt(now).version(1).created(now)
-                .lastUpdated(now).build();
+        final SpotlightSubmission spotlightSubmission4 = SpotlightSubmission.builder()
+            .id(spotligtSubmissionId4)
+            .mandatoryQuestions(mandatoryQuestions4)
+            .grantScheme(schemeEntity)
+            .status(SpotlightSubmissionStatus.QUEUED.toString())
+            .lastSendAttempt(now)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .build();
 
-        final SpotlightBatch spotlightBatch2 = SpotlightBatch.builder().id(spotlightBatchId2)
-                .status(SpotlightBatchStatus.QUEUED).lastSendAttempt(now).version(1).created(now).lastUpdated(now)
-                .spotlightSubmissions(List.of(spotlightSubmission4)).build();
+        final SpotlightBatch spotlightBatch2 = SpotlightBatch.builder()
+            .id(spotlightBatchId2)
+            .status(SpotlightBatchStatus.QUEUED)
+            .lastSendAttempt(now)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .spotlightSubmissions(List.of(spotlightSubmission4))
+            .build();
 
         final Submission submission2 = Submission.builder().id(submissionId2).scheme(schemeEntity).build();
 
-        final GrantMandatoryQuestions mandatoryQuestions2 = GrantMandatoryQuestions.builder().id(mandatoryQuestion2Id)
-                .schemeEntity(schemeEntity).submission(submission2).name("name").addressLine1("addressLine1")
-                .city("city").postcode("g315sx").orgType(GrantMandatoryQuestionOrgType.CHARITY)
-                .fundingAmount(BigDecimal.valueOf(1000))
-                .fundingLocation(
-                        new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.MIDLANDS })
-                .status(GrantMandatoryQuestionStatus.COMPLETED).version(1).created(now).lastUpdated(now)
-                .createdBy(applicant2).lastUpdatedBy(applicant2).gapId("GAP987").build();
+        final GrantMandatoryQuestions mandatoryQuestions2 = GrantMandatoryQuestions.builder()
+            .id(mandatoryQuestion2Id)
+            .schemeEntity(schemeEntity)
+            .submission(submission2)
+            .name("name")
+            .addressLine1("addressLine1")
+            .city("city")
+            .postcode("g315sx")
+            .orgType(GrantMandatoryQuestionOrgType.CHARITY)
+            .fundingAmount(BigDecimal.valueOf(1000))
+            .fundingLocation(
+                    new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.MIDLANDS })
+            .status(GrantMandatoryQuestionStatus.COMPLETED)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .createdBy(applicant2)
+            .lastUpdatedBy(applicant2)
+            .gapId("GAP987")
+            .build();
 
-        final SpotlightSubmission spotlightSubmission2 = SpotlightSubmission.builder().id(spotlightSubmissionId2)
-                .mandatoryQuestions(mandatoryQuestions2).grantScheme(schemeEntity)
-                .status(SpotlightSubmissionStatus.QUEUED.toString()).lastSendAttempt(now).version(1).created(now)
-                .lastUpdated(now).build();
+        final SpotlightSubmission spotlightSubmission2 = SpotlightSubmission.builder()
+            .id(spotlightSubmissionId2)
+            .mandatoryQuestions(mandatoryQuestions2)
+            .grantScheme(schemeEntity)
+            .status(SpotlightSubmissionStatus.QUEUED.toString())
+            .lastSendAttempt(now)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .build();
 
         final Submission submission3 = Submission.builder().id(submissionId3).scheme(schemeEntity2).build();
 
-        final GrantMandatoryQuestions mandatoryQuestions3 = GrantMandatoryQuestions.builder().id(mandatoryQuestionsId3)
-                .schemeEntity(schemeEntity2).submission(submission3).name("MqName").addressLine1("MqaddressLine1")
-                .city("city").postcode("g315sx").orgType(GrantMandatoryQuestionOrgType.CHARITY)
-                .fundingAmount(BigDecimal.valueOf(1000))
-                .fundingLocation(
-                        new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.MIDLANDS })
-                .status(GrantMandatoryQuestionStatus.COMPLETED).version(1).created(now).lastUpdated(now)
-                .createdBy(applicant2).lastUpdatedBy(applicant2).gapId("GAP987").build();
+        final GrantMandatoryQuestions mandatoryQuestions3 = GrantMandatoryQuestions.builder()
+            .id(mandatoryQuestionsId3)
+            .schemeEntity(schemeEntity2)
+            .submission(submission3)
+            .name("MqName")
+            .addressLine1("MqaddressLine1")
+            .city("city")
+            .postcode("g315sx")
+            .orgType(GrantMandatoryQuestionOrgType.CHARITY)
+            .fundingAmount(BigDecimal.valueOf(1000))
+            .fundingLocation(
+                    new GrantMandatoryQuestionFundingLocation[] { GrantMandatoryQuestionFundingLocation.MIDLANDS })
+            .status(GrantMandatoryQuestionStatus.COMPLETED)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .createdBy(applicant2)
+            .lastUpdatedBy(applicant2)
+            .gapId("GAP987")
+            .build();
 
-        final SpotlightSubmission spotlightSubmission3 = SpotlightSubmission.builder().id(spotlightSubmissionId3)
-                .mandatoryQuestions(mandatoryQuestions3).grantScheme(schemeEntity2)
-                .status(SpotlightSubmissionStatus.QUEUED.toString()).lastSendAttempt(now).version(1).created(now)
-                .lastUpdated(now).build();
+        final SpotlightSubmission spotlightSubmission3 = SpotlightSubmission.builder()
+            .id(spotlightSubmissionId3)
+            .mandatoryQuestions(mandatoryQuestions3)
+            .grantScheme(schemeEntity2)
+            .status(SpotlightSubmissionStatus.QUEUED.toString())
+            .lastSendAttempt(now)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .build();
 
-        final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(spotlightBatchId)
-                .status(SpotlightBatchStatus.QUEUED).lastSendAttempt(now).version(1).created(now).lastUpdated(now)
-                .spotlightSubmissions(List.of(spotlightSubmission, spotlightSubmission2, spotlightSubmission3)).build();
+        final SpotlightBatch spotlightBatch = SpotlightBatch.builder()
+            .id(spotlightBatchId)
+            .status(SpotlightBatchStatus.QUEUED)
+            .lastSendAttempt(now)
+            .version(1)
+            .created(now)
+            .lastUpdated(now)
+            .spotlightSubmissions(List.of(spotlightSubmission, spotlightSubmission2, spotlightSubmission3))
+            .build();
 
         final List<SpotlightBatch> spotlightBatches = List.of(spotlightBatch, spotlightBatch2);
 
         @Test
         void successfullyGenerateSendToSpotlightDto() {
             final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder()
-                    .addressLine1(mandatoryQuestions.getAddressLine1())
-                    .ggisSchemeId(mandatoryQuestions.getSchemeEntity().getGgisIdentifier()).build();
+                .addressLine1(mandatoryQuestions.getAddressLine1())
+                .ggisSchemeId(mandatoryQuestions.getSchemeEntity().getGgisIdentifier())
+                .build();
 
             final DraftAssessmentDto draftAssessmentDto2 = DraftAssessmentDto.builder()
-                    .addressLine1(mandatoryQuestions2.getAddressLine1())
-                    .ggisSchemeId(mandatoryQuestions2.getSchemeEntity().getGgisIdentifier()).build();
+                .addressLine1(mandatoryQuestions2.getAddressLine1())
+                .ggisSchemeId(mandatoryQuestions2.getSchemeEntity().getGgisIdentifier())
+                .build();
 
             final DraftAssessmentDto draftAssessmentDto3 = DraftAssessmentDto.builder()
-                    .addressLine1(mandatoryQuestions3.getAddressLine1())
-                    .ggisSchemeId(mandatoryQuestions3.getSchemeEntity().getGgisIdentifier()).build();
+                .addressLine1(mandatoryQuestions3.getAddressLine1())
+                .ggisSchemeId(mandatoryQuestions3.getSchemeEntity().getGgisIdentifier())
+                .build();
 
             final DraftAssessmentDto draftAssessmentDto4 = DraftAssessmentDto.builder()
-                    .addressLine1(mandatoryQuestions4.getAddressLine1())
-                    .ggisSchemeId(mandatoryQuestions4.getSchemeEntity().getGgisIdentifier())
-                    .addressPostcode(mandatoryQuestions4.getPostcode())
-                    .applicationAmount(mandatoryQuestions4.getFundingAmount().toString())
-                    .applicationNumber(mandatoryQuestions4.getSubmission().getId().toString()).country("United Kingdom")
-                    .charityCommissionRegNo(mandatoryQuestions4.getCharityCommissionNumber())
-                    .companiesHouseRegNo(mandatoryQuestions4.getCompaniesHouseNumber())
-                    .organisationName(mandatoryQuestions4.getName())
-                    .organisationType(mandatoryQuestions4.getOrgType().toString())
-                    .cityTown(mandatoryQuestions4.getCity()).funderID("funderId")
+                .addressLine1(mandatoryQuestions4.getAddressLine1())
+                .ggisSchemeId(mandatoryQuestions4.getSchemeEntity().getGgisIdentifier())
+                .addressPostcode(mandatoryQuestions4.getPostcode())
+                .applicationAmount(mandatoryQuestions4.getFundingAmount().toString())
+                .applicationNumber(mandatoryQuestions4.getSubmission().getId().toString())
+                .country("United Kingdom")
+                .charityCommissionRegNo(mandatoryQuestions4.getCharityCommissionNumber())
+                .companiesHouseRegNo(mandatoryQuestions4.getCompaniesHouseNumber())
+                .organisationName(mandatoryQuestions4.getName())
+                .organisationType(mandatoryQuestions4.getOrgType().toString())
+                .cityTown(mandatoryQuestions4.getCity())
+                .funderID("funderId")
 
-                    .build();
+                .build();
 
             when(spotlightBatchRepository.findByStatus(any())).thenReturn(Optional.of(spotlightBatches));
             when(mandatoryQuestionsMapper.mandatoryQuestionsToDraftAssessmentDto(any())).thenReturn(draftAssessmentDto)
-                    .thenReturn(draftAssessmentDto2).thenReturn(draftAssessmentDto3).thenReturn(draftAssessmentDto4);
+                .thenReturn(draftAssessmentDto2)
+                .thenReturn(draftAssessmentDto3)
+                .thenReturn(draftAssessmentDto4);
 
             final List<SendToSpotlightDto> result = spotlightBatchService
-                    .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+                .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
             assertThat(result).hasSize(2);
 
@@ -411,13 +523,13 @@ class SpotlightBatchServiceTest {
 
             assertThat(dto1Scheme1DraftAssessment1.getAddressLine1()).isEqualTo(mandatoryQuestions.getAddressLine1());
             assertThat(dto1Scheme1DraftAssessment1.getGgisSchemeId())
-                    .isEqualTo(mandatoryQuestions.getSchemeEntity().getGgisIdentifier());
+                .isEqualTo(mandatoryQuestions.getSchemeEntity().getGgisIdentifier());
 
             final DraftAssessmentDto dto1Scheme1DraftAssessment2 = dto1Scheme1.getDraftAssessments().get(1);
 
             assertThat(dto1Scheme1DraftAssessment2.getAddressLine1()).isEqualTo(mandatoryQuestions2.getAddressLine1());
             assertThat(dto1Scheme1DraftAssessment2.getGgisSchemeId())
-                    .isEqualTo(mandatoryQuestions2.getSchemeEntity().getGgisIdentifier());
+                .isEqualTo(mandatoryQuestions2.getSchemeEntity().getGgisIdentifier());
 
             final SpotlightSchemeDto dto1Scheme2 = dto1.getSchemes().get(1);
 
@@ -428,7 +540,7 @@ class SpotlightBatchServiceTest {
 
             assertThat(dto1Scheme2DraftAssessment1.getAddressLine1()).isEqualTo(mandatoryQuestions3.getAddressLine1());
             assertThat(dto1Scheme2DraftAssessment1.getGgisSchemeId())
-                    .isEqualTo(mandatoryQuestions3.getSchemeEntity().getGgisIdentifier());
+                .isEqualTo(mandatoryQuestions3.getSchemeEntity().getGgisIdentifier());
 
             // DTO 2
             final SendToSpotlightDto dto2 = result.get(1);
@@ -444,7 +556,7 @@ class SpotlightBatchServiceTest {
 
             assertThat(dto2Scheme1DraftAssessment1.getAddressLine1()).isEqualTo(mandatoryQuestions4.getAddressLine1());
             assertThat(dto2Scheme1DraftAssessment1.getGgisSchemeId())
-                    .isEqualTo(mandatoryQuestions4.getSchemeEntity().getGgisIdentifier());
+                .isEqualTo(mandatoryQuestions4.getSchemeEntity().getGgisIdentifier());
 
         }
 
@@ -461,26 +573,27 @@ class SpotlightBatchServiceTest {
     }
 
     @Nested
-    class getSpotlightBatchByMandatoryQuestionGapId{
+    class getSpotlightBatchByMandatoryQuestionGapId {
 
-     	@Test
-     	void getSpotlightBatchByMandatoryQuestionGapId_success() {
-     		final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
+        @Test
+        void getSpotlightBatchByMandatoryQuestionGapId_success() {
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
 
+            when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any()))
+                .thenReturn(Optional.of(spotlightBatch));
 
-     		when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any())).thenReturn(Optional.of(spotlightBatch));
+            final SpotlightBatch result = spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123");
 
-     		final SpotlightBatch result = spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123");
+            assertThat(result).isEqualTo(spotlightBatch);
+        }
 
-     		assertThat(result).isEqualTo(spotlightBatch);
-     	}
-
-     	@Test
+        @Test
      	void getSpotlightBatchByMandatoryQuestionGapId_notFound() {
      		when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any())).thenReturn(Optional.empty());
 
             assertThrows(NotFoundException.class, () -> spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123"));
      	}
+
     }
 
     @Nested
@@ -491,19 +604,23 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().build();
             final List<SendToSpotlightDto> sendToSpotlightDtos = List.of(sendToSpotlightDto);
             final GetSecretValueResponse getSecretValueResponse = GetSecretValueResponse.builder()
-                    .secretString("{\"access_token\":\"token\"}").build();
+                .secretString("{\"access_token\":\"token\"}")
+                .build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder().build();
 
             doReturn(sendToSpotlightDtos).when(spotlightBatchService)
-                    .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+                .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
-            when(restTemplate.postForObject(any(), eq(RequestEntity.class), eq(String.class))).thenReturn("success");
+            doReturn(spotlightResponseResults).when(spotlightBatchService)
+                .sendBatchToSpotlight(sendToSpotlightDto, "token");
+            doNothing().when(spotlightBatchService)
+                .processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
 
             spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem();
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
-
-            verify(restTemplate, times(1)).postForObject(eq("spotlightUrl/services/apexrest/DraftAssessments"), any(),
-                    eq(String.class));
+            verify(spotlightBatchService, times(1)).processSpotlightResponse(sendToSpotlightDto,
+                    spotlightResponseResults);
 
         }
 
@@ -512,14 +629,16 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().build();
             final List<SendToSpotlightDto> sendToSpotlightDtos = List.of(sendToSpotlightDto);
             final GetSecretValueResponse getSecretValueResponse = GetSecretValueResponse.builder()
-                    .secretString("{\"access_token\":\"token\"}").build();
+                .secretString("{\"access_token\":\"token\"}")
+                .build();
 
             doThrow(JsonProcessingException.class).when(objectMapper).writeValueAsString(sendToSpotlightDto);
             doReturn(sendToSpotlightDtos).when(spotlightBatchService)
-                    .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+                .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
 
-            assertThrows(JsonParseException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
+            assertThrows(JsonParseException.class,
+                    () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
@@ -530,16 +649,282 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().build();
             final List<SendToSpotlightDto> sendToSpotlightDtos = List.of(sendToSpotlightDto);
             final GetSecretValueResponse getSecretValueResponse = GetSecretValueResponse.builder()
-                    .secretString("Wrong Json").build();
+                .secretString("Wrong Json")
+                .build();
 
             doReturn(sendToSpotlightDtos).when(spotlightBatchService)
-                    .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+                .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
 
-            assertThrows(SecretValueException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
+            assertThrows(SecretValueException.class,
+                    () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
+        }
+
+    }
+
+    @Nested
+    class processSpotlightResponse {
+
+        @Test
+        void spotlightResponsesResultIsNull() {
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder().build();
+
+            doNothing().when(spotlightBatchService)
+                .updateSpotlightBatchStatus(sendToSpotlightDto, SpotlightBatchStatus.FAILURE);
+            doNothing().when(spotlightBatchService)
+                .updateSpotlightSubmissionStatus(sendToSpotlightDto, SpotlightSubmissionStatus.SEND_ERROR);
+            doNothing().when(spotlightBatchService).addMessageToQueue(sendToSpotlightDto);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            verify(spotlightBatchService, times(1)).updateSpotlightSubmissionStatus(sendToSpotlightDto,
+                    SpotlightSubmissionStatus.SEND_ERROR);
+            verify(spotlightBatchService, times(1)).addMessageToQueue(sendToSpotlightDto);
+
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsSuccess() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                .status(SUCCESS.toString())
+                .applicationNumber("applicationNumber")
+                .build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessmentsResults(List.of(draftAssessmentResponseDto))
+                .build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                .results(List.of(response))
+                .build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .id(uuid)
+                .status(SpotlightSubmissionStatus.QUEUED.toString())
+                .build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder()
+                .ggisSchemeId("ggisId1")
+                .applicationNumber("applicationNumber")
+                .build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessments(List.of(draftAssessmentDto))
+                .build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                .schemes(List.of(spotlightSchemeDto))
+                .build();
+
+            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService)
+                .updateSpotlightBatchStatus(sendToSpotlightDto, SpotlightBatchStatus.SUCCESS);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.SENT.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.SUCCESS);
+
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsNull() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                .status("anyNonSuccessStatus")
+                .applicationNumber("applicationNumber")
+                .build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessmentsResults(List.of(draftAssessmentResponseDto))
+                .build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                .results(List.of(response))
+                .build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .id(uuid)
+                .status(SpotlightSubmissionStatus.QUEUED.toString())
+                .build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder()
+                .ggisSchemeId("ggisId1")
+                .applicationNumber("applicationNumber")
+                .build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessments(List.of(draftAssessmentDto))
+                .build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                .schemes(List.of(spotlightSchemeDto))
+                .build();
+
+            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService)
+                .updateSpotlightBatchStatus(sendToSpotlightDto, SpotlightBatchStatus.FAILURE);
+            doNothing().when(spotlightBatchService).sendMessageToQueue(spotlightSubmission);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.SEND_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            verify(spotlightBatchService, times(1)).sendMessageToQueue(spotlightSubmission);
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsFor406error() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                .status(FAILURE.toString())
+                .applicationNumber("applicationNumber")
+                .message("Scheme Does Not Exist here")
+                .build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessmentsResults(List.of(draftAssessmentResponseDto))
+                .build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                .results(List.of(response))
+                .build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .id(uuid)
+                .status(SpotlightSubmissionStatus.QUEUED.toString())
+                .build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder()
+                .ggisSchemeId("ggisId1")
+                .applicationNumber("applicationNumber")
+                .build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessments(List.of(draftAssessmentDto))
+                .build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                .schemes(List.of(spotlightSchemeDto))
+                .build();
+
+            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService)
+                .updateSpotlightBatchStatus(sendToSpotlightDto, SpotlightBatchStatus.FAILURE);
+            doNothing().when(spotlightBatchService).sendMessageToQueue(spotlightSubmission);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.GGIS_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            verify(spotlightBatchService, times(1)).sendMessageToQueue(spotlightSubmission);
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsFor409error__FieldMissing() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                .status(FAILURE.toString())
+                .applicationNumber("applicationNumber")
+                .message("Required fields are missing")
+                .build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessmentsResults(List.of(draftAssessmentResponseDto))
+                .build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                .results(List.of(response))
+                .build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .id(uuid)
+                .status(SpotlightSubmissionStatus.QUEUED.toString())
+                .build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder()
+                .ggisSchemeId("ggisId1")
+                .applicationNumber("applicationNumber")
+                .build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessments(List.of(draftAssessmentDto))
+                .build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                .schemes(List.of(spotlightSchemeDto))
+                .build();
+
+            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService)
+                .updateSpotlightBatchStatus(sendToSpotlightDto, SpotlightBatchStatus.FAILURE);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsFor409error__ValueTooLong() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                .status(FAILURE.toString())
+                .applicationNumber("applicationNumber")
+                .message("data value too large")
+                .build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessmentsResults(List.of(draftAssessmentResponseDto))
+                .build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                .results(List.of(response))
+                .build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .id(uuid)
+                .status(SpotlightSubmissionStatus.QUEUED.toString())
+                .build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder()
+                .ggisSchemeId("ggisId1")
+                .applicationNumber("applicationNumber")
+                .build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .ggisSchemeId("ggisId1")
+                .draftAssessments(List.of(draftAssessmentDto))
+                .build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                .schemes(List.of(spotlightSchemeDto))
+                .build();
+
+            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService)
+                .updateSpotlightBatchStatus(sendToSpotlightDto, SpotlightBatchStatus.FAILURE);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
         }
 
     }
