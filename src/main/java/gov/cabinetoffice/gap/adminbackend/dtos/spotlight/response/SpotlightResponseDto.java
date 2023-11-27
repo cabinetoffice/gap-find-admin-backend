@@ -20,7 +20,7 @@ public class SpotlightResponseDto {
     @JsonProperty("GGISSchemeID")
     private String ggisSchemeId;
 
-    @JsonProperty("DraftAssessments")
-    private List<DraftAssessmentResponseDto> draftAssessments;
+    @JsonProperty("DraftAssessmentsResults")
+    private List<DraftAssessmentResponseDto> draftAssessmentsResults;
 
 }

@@ -10,9 +10,12 @@ import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.DraftAssessmentResponseDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
+import gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
@@ -20,6 +23,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
@@ -40,12 +44,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.*;
+
 @Service
 @RequiredArgsConstructor
 @Log4j2
 public class SpotlightBatchService {
+    private final SpotlightSubmissionRepository spotlightSubmissionRepository;
 
     public static final String ACCESS_TOKEN = "access_token";
+
+    private static final String RESPONSE_MESSAGE_406_SCHEME_NOT_EXIST = "Scheme Does Not Exist";
+
+    private static final String RESPONSE_MESSAGE_409_FIELD_MISSING = "Required fields are missing";
+
+    private static final String RESPONSE_MESSAGE_409_LENGTH = "data value too large";
 
     private final SpotlightBatchRepository spotlightBatchRepository;
 
@@ -62,6 +75,8 @@ public class SpotlightBatchService {
     private final SpotlightQueueConfigProperties spotlightQueueProperties;
 
     private final AmazonSQS amazonSqs;
+
+    private final SpotlightSubmissionService spotlightSubmissionService;
 
     public boolean existsByStatusAndMaxBatchSize(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
@@ -186,11 +201,55 @@ public class SpotlightBatchService {
         final String accessToken = getAccessTokenFromSecretsManager();
 
         for (SendToSpotlightDto spotlightBatch : spotlightData) {
-            sendBatchToSpotlight(spotlightBatch, accessToken);
+            final SpotlightResponseResultsDto spotlightResponses = sendBatchToSpotlight(spotlightBatch, accessToken);
+            processSpotlightResponse(spotlightBatch, spotlightResponses);
         }
     }
 
-    private SpotlightResponseDto[] sendBatchToSpotlight(SendToSpotlightDto spotlightBatch, String accessToken) {
+    // test the mapping, and check you didn't forget anything else
+    private void processSpotlightResponse(SendToSpotlightDto spotlightBatch,
+                                          SpotlightResponseResultsDto spotlightResponses) {
+        if (spotlightResponses.getResults() == null) {
+            //for the 4xx and 5xx codes, we don't get a response body, so we requeue the submission and update their status
+            updateSpotlightBatchAndSubmissionStatus(spotlightBatch);
+            addMessageToQueue(spotlightBatch);
+        }
+        else {
+            for (SpotlightResponseDto spotlightResponse : spotlightResponses.getResults()) {
+                for (DraftAssessmentResponseDto draftAssessmentResponse : spotlightResponse.getDraftAssessmentsResults()) {
+                    final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
+                            .getSpotligtSubmissionByMandatoryQuestionGapId(
+                                    draftAssessmentResponse.getApplicationNumber());
+                    //based on the response status, update the submission status
+                    if (draftAssessmentResponse.getStatus().equals(SUCCESS.toString())) {
+                        spotlightSubmission.setStatus(SpotlightSubmissionStatus.SENT.toString());
+                    }
+
+                    if (draftAssessmentResponse.getStatus().equals(FAILURE.toString())
+                            && draftAssessmentResponse.getMessage()!= null && draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_406_SCHEME_NOT_EXIST)) {
+                        spotlightSubmission.setStatus(SpotlightSubmissionStatus.GGIS_ERROR.toString());
+                        sendMessageToQueue(spotlightSubmission);
+                    }
+
+                    if (draftAssessmentResponse.getStatus().equals(FAILURE.toString())
+                            && (draftAssessmentResponse.getMessage()!= null && draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_409_FIELD_MISSING))
+                            || (draftAssessmentResponse.getMessage()!= null && draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_409_LENGTH))) {
+
+                        spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
+//                        sendMessageToQueue(spotlightSubmission); TODO ask why we are not sending to queue
+                    }
+
+                    spotlightSubmission.setLastUpdated(Instant.now());
+                    spotlightSubmission.setLastSendAttempt(Instant.now());
+                    spotlightSubmissionRepository.save(spotlightSubmission);
+                }
+                //TODO needs to update batch status
+                //TODO if there is a failure in one submission, but the other 199 are fine, which status should the batch have?
+            }
+        }
+    }
+
+    private SpotlightResponseResultsDto sendBatchToSpotlight(SendToSpotlightDto spotlightBatch, String accessToken) {
         final HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.add("Authorization", "Bearer " + accessToken);
         requestHeaders.add("Content-Type", "application/json");
@@ -201,38 +260,30 @@ public class SpotlightBatchService {
 
         final String draftAssessmentsEndpoint = spotlightConfig.getSpotlightUrl()
                 + "/services/apexrest/DraftAssessments";
-        // 200 status? map to this dto
-        // 406 status? map to this dto
-        // 500 status? map to this dto
-        SpotlightResponseDto[] list = new SpotlightResponseDto[0];
+
+        SpotlightResponseResultsDto list = SpotlightResponseResultsDto.builder().build();
         try {
             final ResponseEntity<String> response = restTemplate.postForEntity(draftAssessmentsEndpoint, requestEntity,
                     String.class);
+            //try to map the response for a 200 status code
             list = mapToDto(response.getBody());
         }
-        catch (HttpClientErrorException e) {
+        catch (HttpClientErrorException e) { //4xx codes
 
+            //if 406 or 409, map the response
             if (e.getStatusCode().equals(HttpStatus.NOT_ACCEPTABLE) || e.getStatusCode().equals(HttpStatus.CONFLICT)) {
                 return mapToDto(e.getResponseBodyAsString());
             }
-
+            //otherwise leave the list empty but log error
             log.error("Hitting {} returned status code {} with body {}", draftAssessmentsEndpoint, e.getStatusCode(),
                     e.getResponseBodyAsString());
-
-            // 401 throw and log.error update status of batch and spotlightSubmission +
-            // requeue
-            updateSpotlightBatchAndSubmissionStatus(spotlightBatch);
-            addMessageToQueue(spotlightBatch);
         }
         catch (HttpServerErrorException e) {
 
-            if (e.getStatusCode().is5xxServerError()) {
-
+            if (e.getStatusCode().is5xxServerError()) { //5xx codes
+                // leave the list empty but log error
                 log.error("Hitting {} returned status code {} with body {}", draftAssessmentsEndpoint,
                         e.getStatusCode(), e.getResponseBodyAsString());
-
-                updateSpotlightBatchAndSubmissionStatus(spotlightBatch);
-                addMessageToQueue(spotlightBatch);
             }
         }
 
@@ -247,14 +298,38 @@ public class SpotlightBatchService {
     private void updateSpotlightBatchStatus(SendToSpotlightDto spotlightBatchDto, SpotlightBatchStatus status) {
         final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
+
         spotlightBatch.setStatus(status);
+        spotlightBatch.setLastUpdated(Instant.now());
+        spotlightBatch.setLastSendAttempt(Instant.now());
+
+        spotlightBatchRepository.save(spotlightBatch);
+    }
+
+    private void updateSpotlightSubmissionStatus(SendToSpotlightDto spotlightBatchDto,
+            SpotlightSubmissionStatus status) {
+        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
+                spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
+
+        List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
+
+        spotlightSubmissions.forEach(spotlightSubmission -> {
+            spotlightSubmission.setStatus(status.toString());
+            spotlightSubmission.setLastUpdated(Instant.now());
+            spotlightSubmission.setLastSendAttempt(Instant.now());
+        });
+
+        spotlightBatch.setSpotlightSubmissions(spotlightSubmissions);
+
         spotlightBatchRepository.save(spotlightBatch);
     }
 
     private void addMessageToQueue(SendToSpotlightDto spotlightBatchDto) {
         final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
-        List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
+
+        final List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
+
         spotlightSubmissions.forEach(this::sendMessageToQueue);
     }
 
@@ -269,19 +344,9 @@ public class SpotlightBatchService {
         amazonSqs.sendMessage(messageRequest);
     }
 
-    private void updateSpotlightSubmissionStatus(SendToSpotlightDto spotlightBatchDto,
-            SpotlightSubmissionStatus status) {
-        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
-                spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
-        List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
-        spotlightSubmissions.forEach(spotlightSubmission -> spotlightSubmission.setStatus(status.toString()));
-        spotlightBatch.setSpotlightSubmissions(spotlightSubmissions);
-        spotlightBatchRepository.save(spotlightBatch);
-    }
-
-    private SpotlightResponseDto[] mapToDto(String responseBodyAsString) {
+    private SpotlightResponseResultsDto mapToDto(String responseBodyAsString) {
         try {
-            return jacksonObjectMapper.readValue(responseBodyAsString, SpotlightResponseDto[].class);
+            return jacksonObjectMapper.readValue(responseBodyAsString, SpotlightResponseResultsDto.class);
         }
         catch (JsonProcessingException e) {
             log.error("Could not convert dto to json string ", e);

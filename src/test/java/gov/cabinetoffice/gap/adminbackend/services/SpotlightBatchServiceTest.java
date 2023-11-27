@@ -1,9 +1,11 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
@@ -80,14 +82,22 @@ class SpotlightBatchServiceTest {
 
     private ObjectMapper objectMapper;
 
+    private SpotlightQueueConfigProperties spotlightQueueProperties;
+
+    private AmazonSQS amazonSqs;
+
+    private SpotlightSubmissionService spotlightSubmissionService;
+
     @BeforeEach
     void setup() {
         spotlightConfigProperties = SpotlightConfigProperties.builder().spotlightUrl("spotlightUrl")
                 .secretName("secretName").build();
         objectMapper = Mockito.spy(new ObjectMapper());
+        spotlightQueueProperties = SpotlightQueueConfigProperties.builder().queueUrl("queueUrl").build();
 
         spotlightBatchService = Mockito.spy(new SpotlightBatchService(spotlightBatchRepository,
-                mandatoryQuestionsMapper, secretsManagerClient, spotlightConfigProperties, objectMapper, restTemplate));
+                mandatoryQuestionsMapper, secretsManagerClient, spotlightConfigProperties, objectMapper, restTemplate,
+                spotlightQueueProperties, amazonSqs, spotlightSubmissionService));
     }
 
     @Nested

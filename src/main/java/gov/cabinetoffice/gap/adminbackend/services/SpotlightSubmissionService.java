@@ -67,4 +67,9 @@ public class SpotlightSubmissionService {
                 .orElse("");
     }
 
+    public SpotlightSubmission getSpotligtSubmissionByMandatoryQuestionGapId(String gapId) {
+        return spotlightSubmissionRepository.findByMandatoryQuestions_GapId(gapId).orElseThrow(
+                () -> new NotFoundException("A spotlight submission with gapId " + gapId + " could not be found"));
+    }
+
 }
