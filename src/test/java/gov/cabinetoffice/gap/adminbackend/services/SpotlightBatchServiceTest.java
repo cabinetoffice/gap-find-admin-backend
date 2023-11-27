@@ -83,6 +83,7 @@ class SpotlightBatchServiceTest {
     private static final UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
     public static final String APPLICATION_NUMBER = "GAP-an-environment-name-20231115-1-5550";
+
     Pageable pageable = PageRequest.of(0, 1);
 
     @Mock
@@ -1109,6 +1110,7 @@ class SpotlightBatchServiceTest {
         }
 
     }
+
     @Nested
     class GetSpotlightBatchErrorCountTests {
 
@@ -1184,10 +1186,10 @@ class SpotlightBatchServiceTest {
         final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId1).build();
 
         private SpotlightBatch createSpotlightBatchWithSubmissions(int schemeId,
-                                                                   SpotlightSubmissionStatus... statuses) {
+                SpotlightSubmissionStatus... statuses) {
             final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).build();
             final List<SpotlightSubmission> spotlightSubmissions = Arrays.stream(statuses).map(
-                            status -> SpotlightSubmission.builder().status(status.toString()).grantScheme(schemeEntity).build())
+                    status -> SpotlightSubmission.builder().status(status.toString()).grantScheme(schemeEntity).build())
                     .collect(Collectors.toList());
 
             return SpotlightBatch.builder().spotlightSubmissions(spotlightSubmissions).build();

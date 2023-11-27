@@ -136,6 +136,27 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
     }
 
+    @PostMapping("/send-to-spotlight")
+    @Operation(summary = "send queued batches to spotlight")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully created the list of dtos",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Boolean.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to created Dto",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request",
+                    content = @Content(mediaType = "application/json")) })
+    @SpotlightPublisherHeaderValidator
+    public ResponseEntity<String> sendQueuedBatchesAndProcessSpotlightResponse() {
+        log.info("Sending queued batches to Spotlight");
+
+        spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem();
+
+        log.info("Successfully generated data for Spotlight");
+
+        return ResponseEntity.ok().body("Success");
+    }
+
     @GetMapping("/get-spotlight-scheme-errors/{schemeId}")
     @Operation(summary = "Fetches the highest-priority Spotlight error type and any associated counts")
     @ApiResponses(value = {
@@ -156,27 +177,6 @@ public class SpotlightBatchController {
                 .getSpotlightBatchErrorCount(Integer.parseInt(schemeId));
 
         return ResponseEntity.ok().body(spotlightBatchErrorCount);
-    }
-
-    @PostMapping("/send-to-spotlight")
-    @Operation(summary = "send queued batches to spotlight")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully created the list of dtos",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Boolean.class))),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions to created Dto",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "400", description = "Bad request",
-                    content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
-    public ResponseEntity<String> sendQueuedBatchesAndProcessSpotlightResponse() {
-        log.info("Sending queued batches to Spotlight");
-
-        spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem();
-
-        log.info("Successfully generated data for Spotlight");
-
-        return ResponseEntity.ok().body("Success");
     }
 
 }

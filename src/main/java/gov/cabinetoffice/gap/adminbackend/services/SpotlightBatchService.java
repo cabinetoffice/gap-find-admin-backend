@@ -362,6 +362,7 @@ public class SpotlightBatchService {
                 .withMessageDeduplicationId(messageId.toString());
 
         amazonSqs.sendMessage(messageRequest);
+        log.info("Message sent to queue for spotlight_submission {}", spotlightSubmission.getId().toString());
     }
 
     private SpotlightResponseResultsDto mapToDto(String responseBodyAsString) {
