@@ -1,6 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.contentful.java.cma.model.CMAHttpException;
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
@@ -13,11 +15,11 @@ import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertPageResponse;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertQuestionResponse;
+import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,15 +69,47 @@ class GrantAdvertControllerTest {
     private ValidationErrorMapperImpl validationErrorMapper;
 
     @MockBean
+    private EventLogService eventLogService;
+
+    @MockBean
     private Validator validator;
 
-    @Disabled
     @Nested
     class createAdvert {
 
+        Integer grantSchemeId = 1;
+        String advertName = "AdvertName";
+
+        CreateGrantAdvertDto dto = CreateGrantAdvertDto.builder()
+                .grantSchemeId(grantSchemeId)
+                .name(advertName)
+                .build();
+
+        UUID advertId = UUID.randomUUID();
+
+        GrantAdvert expectedAdvert = GrantAdvert.builder()
+                .id(advertId)
+                .grantAdvertName(advertName)
+
+                .build();
+
         @Test
-        void createAdvert_HappyPath() {
-            // TODO write me
+        @WithAdminSession
+        void createAdvert_HappyPath() throws Exception {
+
+            when(grantAdvertService.create(eq(grantSchemeId), any(), eq(advertName))).thenReturn(expectedAdvert);
+
+            mockMvc.perform(
+                            post("/grant-advert/create")
+                                    .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(dto)))
+                    .andExpect(status().isOk());
+
+            verify(grantAdvertService).create(eq(grantSchemeId), anyInt(), eq(advertName));
+            verify(eventLogService).logAdvertCreatedEvent(any(), anyString(), anyLong(), eq(advertId.toString()));
+
+            // Could probably do with verifying the response entity here too if someone has some time.
+            // I'm just writing this to test the event log service stuff
+
         }
 
     }
@@ -103,14 +137,17 @@ class GrantAdvertControllerTest {
                 .grantAdvertId(grantAdvertId).sectionId(sectionId).page(samplePage).build();
 
         @Test
+        @WithAdminSession
         void updatePageResponse_HappyPath() throws Exception {
             when(validator.validate(pagePatchDto)).thenReturn(Set.of());
             doNothing().when(grantAdvertService).updatePageResponse(pagePatchDto);
 
             mockMvc.perform(
-                    patch(String.format("/grant-advert/%s/sections/%s/pages/%s", grantAdvertId, sectionId, pageId))
-                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(samplePage)))
+                            patch(String.format("/grant-advert/%s/sections/%s/pages/%s", grantAdvertId, sectionId, pageId))
+                                    .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(samplePage)))
                     .andExpect(status().isOk());
+
+            verify(eventLogService).logAdvertUpdatedEvent(any(), anyString(), anyLong(), eq(grantAdvertId.toString()));
         }
 
         // missing test around failed validation - I can't find a way to handcraft a
@@ -120,6 +157,7 @@ class GrantAdvertControllerTest {
         // verified manually, failed validation produces expected fieldErrors and a 400
 
         @Test
+        @WithAdminSession
         void updatePageResponse_NoGrantAdvert() throws Exception {
             when(validator.validate(pagePatchDto)).thenReturn(Set.of());
             doThrow(new NotFoundException()).when(grantAdvertService).updatePageResponse(any());
@@ -185,14 +223,18 @@ class GrantAdvertControllerTest {
                 .contentfulSlug("slug").build();
 
         @Test
+        @WithAdminSession
         void publishesAndReturnsExpectedResponse() throws Exception {
             when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenReturn(grantAdvert);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish").contentType(MediaType.APPLICATION_JSON)
                     .content(HelperUtils.asJsonStringWithNulls(grantAdvert))).andExpect(status().isOk());
 
+            verify(eventLogService).logAdvertPublishedEvent(any(), anyString(), anyLong(), eq(grantAdvertId.toString()));
+
         }
 
         @Test
+        @WithAdminSession
         void publishAndReturnsNotFound() throws Exception {
             when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(NotFoundException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish")).andExpect(status().isNotFound());
@@ -200,6 +242,7 @@ class GrantAdvertControllerTest {
         }
 
         @Test
+        @WithAdminSession
         void publishAndReturnsNotEnoughPermissions() throws Exception {
             when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(AccessDeniedException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish")).andExpect(status().isForbidden());
@@ -494,11 +537,15 @@ class GrantAdvertControllerTest {
         final UUID grantAdvertId = UUID.fromString("5b30cb45-7339-466a-a700-270c3983c604");
 
         @Test
+        @WithAdminSession
         void scheduledGrantAdvert_Success() throws Exception {
 
             doNothing().when(grantAdvertService).scheduleGrantAdvert(grantAdvertId);
 
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/schedule")).andExpect(status().isOk());
+
+
+            verify(eventLogService).logAdvertPublishedEvent(any(), anyString(), anyLong(), eq(grantAdvertId.toString()));
         }
 
         @Test
