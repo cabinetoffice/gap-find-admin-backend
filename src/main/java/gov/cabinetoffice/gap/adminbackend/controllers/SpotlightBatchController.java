@@ -1,6 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @Log4j2
@@ -121,18 +124,61 @@ public class SpotlightBatchController {
     @SpotlightPublisherHeaderValidator
     public ResponseEntity<String> addSpotlightSubmissionToSpotlightBatch(@PathVariable final UUID spotlightBatchId,
             @PathVariable final UUID spotlightSubmissionId) {
+
         log.info("Adding spotlight submission with id {} to spotlight batch with id {}", spotlightSubmissionId,
                 spotlightBatchId);
 
-        final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
-                .getSpotlightSubmission(spotlightSubmissionId);
+        spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId).ifPresent(s -> {
+            spotlightBatchService.addSpotlightSubmissionToSpotlightBatch(s, spotlightBatchId);
 
-        spotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission, spotlightBatchId);
-
-        log.info("Successfully added spotlight submission with id {} to spotlight batch with id {}",
-                spotlightSubmissionId, spotlightBatchId);
+            log.info("Successfully added spotlight submission with id {} to spotlight batch with id {}",
+                    spotlightSubmissionId, spotlightBatchId);
+        });
 
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
+    }
+
+    @GetMapping("/get-spotlight-scheme-errors/{schemeId}")
+    @Operation(summary = "Fetches the highest-priority Spotlight error type and any associated counts")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Retrieved error type and count",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Boolean.class))),
+            @ApiResponse(responseCode = "404", description = "No Spotlight errors exist",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to check Spotlight errors",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request",
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity<GetSpotlightBatchErrorCountDTO> retrieveSpotlightBatchErrorCount(
+            @PathVariable final String schemeId) {
+        log.info("Retrieving Spotlight errors for scheme {}", schemeId);
+
+        final GetSpotlightBatchErrorCountDTO spotlightBatchErrorCount = spotlightBatchService
+                .getSpotlightBatchErrorCount(Integer.parseInt(schemeId));
+
+        return ResponseEntity.ok().body(spotlightBatchErrorCount);
+    }
+
+    @PostMapping("/send-to-spotlight")
+    @Operation(summary = "send queued batches to spotlight")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully created the list of dtos",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Boolean.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to created Dto",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request",
+                    content = @Content(mediaType = "application/json")) })
+    @SpotlightPublisherHeaderValidator
+    public ResponseEntity<String> sendQueuedBatchesAndProcessSpotlightResponse() {
+        log.info("Sending queued batches to Spotlight");
+
+        spotlightBatchService.sendQueuedBatchesToSpotlight();
+
+        log.info("Successfully generated data for Spotlight");
+
+        return ResponseEntity.ok().body("Success");
     }
 
 }

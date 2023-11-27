@@ -36,6 +36,11 @@ public class GrantMandatoryQuestionsController {
         return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId));
     }
 
+    @GetMapping("/scheme/{schemeId}/spotlight-complete")
+    public ResponseEntity<Boolean> hasCompletedMandatoryQuestionsForSpotlightExport(@PathVariable Integer schemeId) {
+        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedDataForSpotlight(schemeId));
+    }
+
     @GetMapping(value = "/due-diligence/{schemeId}", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId) {
         final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId);

@@ -6,14 +6,17 @@ import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SpotlightSubmissionService {
@@ -23,6 +26,19 @@ public class SpotlightSubmissionService {
     public SpotlightSubmission getSpotlightSubmission(UUID spotlightSubmissionId) {
         return spotlightSubmissionRepository.findById(spotlightSubmissionId).orElseThrow(() -> new NotFoundException(
                 "A spotlight submission with id " + spotlightSubmissionId + " could not be found"));
+    }
+
+    public Optional<SpotlightSubmission> getSpotlightSubmissionById(UUID spotlightSubmissionId) {
+        Optional<SpotlightSubmission> spotlightSubmission = Optional.empty();
+
+        try {
+            spotlightSubmission = Optional.of(this.getSpotlightSubmission(spotlightSubmissionId));
+        }
+        catch (NotFoundException e) {
+            log.error("No spotlight submission with ID {} found", spotlightSubmissionId);
+        }
+
+        return spotlightSubmission;
     }
 
     public void addSpotlightBatchToSpotlightSubmission(UUID spotlightSubmissionId, SpotlightBatch spotlightBatch) {

@@ -26,6 +26,7 @@ import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGe
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -504,7 +505,7 @@ class SubmissionsServiceTest {
         @Test
         void getCompletedSubmissionExports() {
             UUID testUUID = UUID.randomUUID();
-            String urlToTest = "https://testing.com/directory_of_file/filename.zip";
+            String urlToTest = "directory_of_file/filename.zip";
 
             GrantExportEntity mockEntity = RandomGrantExportEntityGenerator.randomGrantExportEntityBuilder()
                     .location(urlToTest).build();
@@ -518,35 +519,14 @@ class SubmissionsServiceTest {
 
             assertEquals(mockEntityList.size(), submissionExports.size());
             assertEquals("filename.zip", submissionExports.get(0).getLabel());
-            assertEquals(urlToTest, submissionExports.get(0).getUrl());
+            assertEquals(urlToTest, submissionExports.get(0).getS3key());
 
         }
 
         @Test
-        void getCompletedSubmissionExportsWithDecodedLabels() {
+        void getLabelFallbackWhenInvalidS3KeyPassed() {
             UUID testUUID = UUID.randomUUID();
-            String urlToTest = "https://testing.com/directory_of_file/file%20name.zip";
-
-            GrantExportEntity mockEntity = RandomGrantExportEntityGenerator.randomGrantExportEntityBuilder()
-                    .location(urlToTest).build();
-            List<GrantExportEntity> mockEntityList = Collections.singletonList(mockEntity);
-
-            when(grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(testUUID,
-                    GrantExportStatus.COMPLETE, 1)).thenReturn(mockEntityList);
-
-            List<SubmissionExportsDTO> submissionExports = submissionsService
-                    .getCompletedSubmissionExportsForBatch(testUUID);
-
-            assertEquals(mockEntityList.size(), submissionExports.size());
-            assertEquals("file name.zip", submissionExports.get(0).getLabel());
-            assertEquals(urlToTest, submissionExports.get(0).getUrl());
-
-        }
-
-        @Test
-        void getLabelFallbackWhenInvalidURLIsFound() {
-            UUID testUUID = UUID.randomUUID();
-            String urlToTest = "https/testing/directory_of_file/filename.zip";
+            String urlToTest = "abcd";
             String submissionId = "cfb42c03-e39c-4972-adb5-5dc096c82bf4";
 
             GrantExportId mockIdWithSubmissionIdToTest = RandomGrantExportEntityGenerator
@@ -563,7 +543,7 @@ class SubmissionsServiceTest {
 
             assertEquals(mockEntityList.size(), submissionExports.size());
             assertEquals(submissionId, submissionExports.get(0).getLabel());
-            assertEquals(urlToTest, submissionExports.get(0).getUrl());
+            assertEquals(urlToTest, submissionExports.get(0).getS3key());
 
         }
 
@@ -577,7 +557,7 @@ class SubmissionsServiceTest {
             List<SubmissionExportsDTO> submissionExports = submissionsService
                     .getCompletedSubmissionExportsForBatch(testUUID);
 
-            assertTrue(submissionExports.isEmpty());
+            Assertions.assertTrue(submissionExports.isEmpty());
 
         }
 
@@ -626,12 +606,12 @@ class SubmissionsServiceTest {
             doNothing().when(grantExportRepository).updateExportRecordLocation(mockSubmissionId, mockBatchId,
                     mockLocation);
 
-            submissionsService.addSignedUrlToSubmissionExport(mockSubmissionId, mockBatchId, mockLocation);
+            submissionsService.addS3ObjectKeyToSubmissionExport(mockSubmissionId, mockBatchId, mockLocation);
             verify(grantExportRepository).updateExportRecordLocation(mockSubmissionId, mockBatchId, mockLocation);
         }
 
         @Test
-        void errorOccuresWhileAddingLocation() {
+        void errorOccursWhileAddingLocation() {
             UUID mockSubmissionId = UUID.randomUUID();
             UUID mockBatchId = UUID.randomUUID();
             String mockLocation = "aws_domain.com/path_to/filename.zip";
@@ -639,7 +619,7 @@ class SubmissionsServiceTest {
             doThrow(new RuntimeException()).when(grantExportRepository).updateExportRecordLocation(mockSubmissionId,
                     mockBatchId, mockLocation);
 
-            assertThatThrownBy(() -> submissionsService.addSignedUrlToSubmissionExport(mockSubmissionId, mockBatchId,
+            assertThatThrownBy(() -> submissionsService.addS3ObjectKeyToSubmissionExport(mockSubmissionId, mockBatchId,
                     mockLocation)).isInstanceOf(RuntimeException.class);
 
         }

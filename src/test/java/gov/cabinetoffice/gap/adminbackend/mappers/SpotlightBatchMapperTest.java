@@ -194,4 +194,13 @@ public class SpotlightBatchMapperTest {
 
     }
 
+    @Test
+    public void testSpotlightBatchListToSpotlightBatchDtoList() {
+        final List<SpotlightBatchDto> spotlightBatchDtoList = spotlightBatchMapper
+                .spotlightBatchListToGetSpotlightBatchDtoList(List.of(spotlightBatch));
+
+        assertThat(spotlightBatchDtoList).isNotNull();
+        assertThat(spotlightBatchDtoList.size()).isEqualTo(1);
+    }
+
 }

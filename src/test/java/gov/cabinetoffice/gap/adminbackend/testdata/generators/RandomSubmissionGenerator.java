@@ -70,7 +70,7 @@ public class RandomSubmissionGenerator {
     }
 
     public static SubmissionExportsDTO.SubmissionExportsDTOBuilder randomSubmissionDTOBuilder() {
-        return SubmissionExportsDTO.builder().label("test_file.zip").url("/test/path_to/s3_location/");
+        return SubmissionExportsDTO.builder().label("test_file.zip").s3key("/test/path_to/s3_location/");
     }
 
 }

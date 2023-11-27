@@ -7,23 +7,16 @@ import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import javax.validation.constraints.NotNull;
-
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Configuration("cognitoConfigurationProperties")
-@ConfigurationProperties(prefix = "user-service")
-public class UserServiceConfig {
+@Configuration("spotlightProperties")
+@ConfigurationProperties(prefix = "spotlight")
+public class SpotlightConfigProperties {
 
-    @NotNull
-    private String domain;
+    private String spotlightUrl;
 
-    @NotNull
-    private String cookieName;
-
-    @NotNull
-    private String secret;
+    private String secretName;
 
 }

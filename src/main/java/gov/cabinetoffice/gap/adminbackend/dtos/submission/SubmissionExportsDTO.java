@@ -9,6 +9,6 @@ public class SubmissionExportsDTO {
 
     private String label;
 
-    private String url;
+    private String s3key;
 
 }
