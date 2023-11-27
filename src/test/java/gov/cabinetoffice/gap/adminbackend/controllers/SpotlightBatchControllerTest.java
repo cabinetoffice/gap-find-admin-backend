@@ -102,7 +102,7 @@ public class SpotlightBatchControllerTest {
             final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
             final SpotlightBatchDto expectedResult = SpotlightBatchDto.builder().id(uuid).build();
 
-            when(mockSpotlightBatchService.getSpotlightBatchWithStatus(status, Integer.parseInt(batchSizeLimit)))
+            when(mockSpotlightBatchService.getMostRecentSpotlightBatchByStatus(status))
                     .thenReturn(spotlightBatch);
             when(mockSpotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch))
                     .thenReturn(expectedResult);
@@ -117,7 +117,7 @@ public class SpotlightBatchControllerTest {
             final SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
             final String batchSizeLimit = "150";
 
-            when(mockSpotlightBatchService.getSpotlightBatchWithStatus(status, Integer.parseInt(batchSizeLimit)))
+            when(mockSpotlightBatchService.getMostRecentSpotlightBatchByStatus(status))
                     .thenThrow(NotFoundException.class);
 
             mockMvc.perform(get("/spotlight-batch/status/{status}", status).param("batchSizeLimit", batchSizeLimit)

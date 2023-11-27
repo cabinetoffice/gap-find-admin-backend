@@ -22,6 +22,8 @@ public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, 
     Optional<SpotlightBatch> findByStatusAndSpotlightSubmissionsSizeLessThan(
             @Param("status") SpotlightBatchStatus status, @Param("maxSize") int maxSize);
 
+    Optional<SpotlightBatch> findFirstByStatusOrderByCreatedDesc(SpotlightBatchStatus status);
+
     Optional<List<SpotlightBatch>> findByStatus(@Param("status") SpotlightBatchStatus status);
 
 }

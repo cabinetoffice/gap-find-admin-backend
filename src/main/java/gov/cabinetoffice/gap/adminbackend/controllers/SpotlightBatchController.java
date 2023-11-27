@@ -83,8 +83,7 @@ public class SpotlightBatchController {
                     defaultValue = "200") final String batchSizeLimit) {
         log.info("Retrieving spotlight batch with status {}", status);
 
-        final SpotlightBatch spotlightBatch = spotlightBatchService.getSpotlightBatchWithStatus(status,
-                Integer.parseInt(batchSizeLimit));
+        final SpotlightBatch spotlightBatch = spotlightBatchService.getMostRecentSpotlightBatchByStatus(status);
 
         return ResponseEntity.ok().body(spotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch));
     }
@@ -127,12 +126,12 @@ public class SpotlightBatchController {
         log.info("Adding spotlight submission with id {} to spotlight batch with id {}", spotlightSubmissionId,
                 spotlightBatchId);
 
-        spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId).ifPresent(s -> {
+        spotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId).ifPresentOrElse(s -> {
             spotlightBatchService.addSpotlightSubmissionToSpotlightBatch(s, spotlightBatchId);
 
             log.info("Successfully added spotlight submission with id {} to spotlight batch with id {}",
                     spotlightSubmissionId, spotlightBatchId);
-        });
+        }, () -> log.info("No Spotlight submission found with ID {} so batch {} has not been updated.", spotlightSubmissionId, spotlightBatchId));
 
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
     }

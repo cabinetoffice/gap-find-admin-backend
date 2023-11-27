@@ -61,6 +61,11 @@ public class SpotlightBatchService {
                 () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
     }
 
+    public SpotlightBatch getMostRecentSpotlightBatchByStatus(SpotlightBatchStatus status) {
+        return spotlightBatchRepository.findFirstByStatusOrderByCreatedDesc(status).orElseThrow(
+                () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
+    }
+
     public SpotlightBatch createSpotlightBatch() {
         return spotlightBatchRepository.save(SpotlightBatch.builder().version(1).lastUpdated(Instant.now()).build());
     }
@@ -94,17 +99,11 @@ public class SpotlightBatchService {
         final List<SendToSpotlightDto> sendToSpotlightDtos = new ArrayList<>();
         final List<SpotlightBatch> spotlightBatches = getSpotlightBatchesByStatus(status);
 
-        // gav comment - think we could turn this loop into a stream to make the method
-        // smaller
         for (SpotlightBatch spotlightBatch : spotlightBatches) {
 
-            // gav comment - we could make this method return a list then we don't need to
-            // initialise and pass in an empty one
-            // since all we do is add to it anyway
-            final List<SpotlightSchemeDto> schemes = new ArrayList<>();
-            addSpotlightSchemeDtoToList(spotlightBatch, schemes);
-
+            final List<SpotlightSchemeDto> schemes = addSpotlightSchemeDtoToList(spotlightBatch);
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(schemes).build();
+
             sendToSpotlightDtos.add(sendToSpotlightDto);
         }
 
@@ -124,7 +123,7 @@ public class SpotlightBatchService {
                 .getGgisIdentifier().equals(uniqueSchemeId)).toList();
     }
 
-    protected void addSpotlightSchemeDtoToList(SpotlightBatch spotlightBatch, List<SpotlightSchemeDto> schemes) {
+    protected List<SpotlightSchemeDto> addSpotlightSchemeDtoToList(SpotlightBatch spotlightBatch) {
 
         final List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
 
@@ -134,8 +133,8 @@ public class SpotlightBatchService {
         log.info("uniqueSchemeIds: {}", uniqueSchemeIds);
 
         // for each scheme ggis id build a spotlightSchemeDto
-        uniqueSchemeIds.stream().map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, spotlightSubmissions))
-                .forEach(schemes::add);
+        return uniqueSchemeIds.stream().map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, spotlightSubmissions))
+                .toList();
     }
 
     private SpotlightSchemeDto generateSchemeDto(String schemeId, List<SpotlightSubmission> spotlightSubmissions) {
