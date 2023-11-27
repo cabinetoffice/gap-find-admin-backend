@@ -25,6 +25,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -88,6 +89,8 @@ class SpotlightBatchServiceTest {
 
     private SpotlightSubmissionService spotlightSubmissionService;
 
+    private SpotlightSubmissionRepository spotlightSubmissionRepository;
+
     @BeforeEach
     void setup() {
         spotlightConfigProperties = SpotlightConfigProperties.builder().spotlightUrl("spotlightUrl")
@@ -96,7 +99,7 @@ class SpotlightBatchServiceTest {
         spotlightQueueProperties = SpotlightQueueConfigProperties.builder().queueUrl("queueUrl").build();
 
         spotlightBatchService = Mockito.spy(new SpotlightBatchService(spotlightBatchRepository,
-                mandatoryQuestionsMapper, secretsManagerClient, spotlightConfigProperties, objectMapper, restTemplate,
+                mandatoryQuestionsMapper, secretsManagerClient,restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper ,
                 spotlightQueueProperties, amazonSqs, spotlightSubmissionService));
     }
 
@@ -458,6 +461,29 @@ class SpotlightBatchServiceTest {
     }
 
     @Nested
+    class getSpotlightBatchByMandatoryQuestionGapId{
+
+     	@Test
+     	void getSpotlightBatchByMandatoryQuestionGapId_success() {
+     		final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
+
+
+     		when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any())).thenReturn(Optional.of(spotlightBatch));
+
+     		final SpotlightBatch result = spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123");
+
+     		assertThat(result).isEqualTo(spotlightBatch);
+     	}
+
+     	@Test
+     	void getSpotlightBatchByMandatoryQuestionGapId_notFound() {
+     		when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any())).thenReturn(Optional.empty());
+
+            assertThrows(NotFoundException.class, () -> spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123"));
+     	}
+    }
+
+    @Nested
     class sendQueuedBatchesToSpotlight {
 
         @Test
@@ -472,7 +498,7 @@ class SpotlightBatchServiceTest {
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
             when(restTemplate.postForObject(any(), eq(RequestEntity.class), eq(String.class))).thenReturn("success");
 
-            spotlightBatchService.sendQueuedBatchesToSpotlight();
+            spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem();
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
@@ -493,7 +519,7 @@ class SpotlightBatchServiceTest {
                     .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
 
-            assertThrows(JsonParseException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlight());
+            assertThrows(JsonParseException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
@@ -510,7 +536,7 @@ class SpotlightBatchServiceTest {
                     .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
 
-            assertThrows(SecretValueException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlight());
+            assertThrows(SecretValueException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 

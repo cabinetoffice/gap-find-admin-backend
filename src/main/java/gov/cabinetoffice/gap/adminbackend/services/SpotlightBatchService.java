@@ -15,7 +15,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightRespo
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
-import gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
@@ -44,38 +43,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.*;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 
 @Service
 @RequiredArgsConstructor
 @Log4j2
 public class SpotlightBatchService {
-    private final SpotlightSubmissionRepository spotlightSubmissionRepository;
 
     public static final String ACCESS_TOKEN = "access_token";
-
     private static final String RESPONSE_MESSAGE_406_SCHEME_NOT_EXIST = "Scheme Does Not Exist";
-
     private static final String RESPONSE_MESSAGE_409_FIELD_MISSING = "Required fields are missing";
-
     private static final String RESPONSE_MESSAGE_409_LENGTH = "data value too large";
-
     private final SpotlightBatchRepository spotlightBatchRepository;
-
     private final MandatoryQuestionsMapper mandatoryQuestionsMapper;
-
     private final SecretsManagerClient secretsManagerClient;
-
-    private final SpotlightConfigProperties spotlightConfig;
-
-    private final ObjectMapper jacksonObjectMapper;
-
     private final RestTemplate restTemplate;
-
+    private final SpotlightSubmissionRepository spotlightSubmissionRepository;
+    private final SpotlightConfigProperties spotlightConfig;
+    private final ObjectMapper jacksonObjectMapper;
     private final SpotlightQueueConfigProperties spotlightQueueProperties;
-
     private final AmazonSQS amazonSqs;
-
     private final SpotlightSubmissionService spotlightSubmissionService;
 
     public boolean existsByStatusAndMaxBatchSize(SpotlightBatchStatus status, int maxSize) {
@@ -85,8 +73,9 @@ public class SpotlightBatchService {
     // TODO refactor this - it can potentially return more than one result and will cause
     // errors
     public SpotlightBatch getSpotlightBatchWithStatus(SpotlightBatchStatus status, int maxSize) {
-        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize).orElseThrow(
-                () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
+        return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize)
+            .orElseThrow(
+                    () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
     }
 
     public SpotlightBatch createSpotlightBatch() {
@@ -109,15 +98,16 @@ public class SpotlightBatchService {
     }
 
     private SpotlightBatch getSpotlightBatch(UUID spotlightBatchId) {
-        return spotlightBatchRepository.findById(spotlightBatchId).orElseThrow(
-                () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
+        return spotlightBatchRepository.findById(spotlightBatchId)
+            .orElseThrow(() -> new NotFoundException(
+                    "A spotlight batch with id " + spotlightBatchId + " could not be found"));
     }
 
-    private SpotlightBatch getSpotlightBatchByMandatoryQuestionGapId(String gapId) {
+    public SpotlightBatch getSpotlightBatchByMandatoryQuestionGapId(String gapId) {
         return spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(gapId)
-                .orElseThrow(() -> new NotFoundException(
-                        "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
-                                + " could not be found"));
+            .orElseThrow(() -> new NotFoundException(
+                    "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
+                            + " could not be found"));
     }
 
     public List<SpotlightBatch> getSpotlightBatchesByStatus(SpotlightBatchStatus status) {
@@ -148,15 +138,20 @@ public class SpotlightBatchService {
 
     public List<String> getUniqueSchemeIds(List<SpotlightSubmission> spotlightSubmissions) {
         return spotlightSubmissions.stream()
-                .map(submission -> submission.getMandatoryQuestions().getSchemeEntity().getGgisIdentifier()).distinct()
-                .toList();
+            .map(submission -> submission.getMandatoryQuestions().getSchemeEntity().getGgisIdentifier())
+            .distinct()
+            .toList();
 
     }
 
     private List<SpotlightSubmission> getSpotlightSubmissionByGGisIdentifier(String uniqueSchemeId,
             List<SpotlightSubmission> spotlightSubmissions) {
-        return spotlightSubmissions.stream().filter(submission -> submission.getMandatoryQuestions().getSchemeEntity()
-                .getGgisIdentifier().equals(uniqueSchemeId)).toList();
+        return spotlightSubmissions.stream()
+            .filter(submission -> submission.getMandatoryQuestions()
+                .getSchemeEntity()
+                .getGgisIdentifier()
+                .equals(uniqueSchemeId))
+            .toList();
     }
 
     protected void addSpotlightSchemeDtoToList(SpotlightBatch spotlightBatch, List<SpotlightSchemeDto> schemes) {
@@ -169,8 +164,9 @@ public class SpotlightBatchService {
         log.info("uniqueSchemeIds: {}", uniqueSchemeIds);
 
         // for each scheme ggis id build a spotlightSchemeDto
-        uniqueSchemeIds.stream().map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, spotlightSubmissions))
-                .forEach(schemes::add);
+        uniqueSchemeIds.stream()
+            .map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, spotlightSubmissions))
+            .forEach(schemes::add);
     }
 
     private SpotlightSchemeDto generateSchemeDto(String schemeId, List<SpotlightSubmission> spotlightSubmissions) {
@@ -187,65 +183,89 @@ public class SpotlightBatchService {
         final List<SpotlightSubmission> filteredSubmissions = getSpotlightSubmissionByGGisIdentifier(uniqueSchemeId,
                 spotlightSubmissions);
 
-        return filteredSubmissions.stream().map(submission -> mandatoryQuestionsMapper
-                .mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions())).toList();
+        return filteredSubmissions.stream()
+            .map(submission -> mandatoryQuestionsMapper
+                .mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions()))
+            .toList();
 
     }
 
-    public void sendQueuedBatchesToSpotlight() {
+    public void sendQueuedBatchesToSpotlightAndProcessThem() {
 
         final List<SendToSpotlightDto> spotlightData = this
-                .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+            .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
         // grab authorization header from AWS secrets manager
         final String accessToken = getAccessTokenFromSecretsManager();
 
         for (SendToSpotlightDto spotlightBatch : spotlightData) {
+
             final SpotlightResponseResultsDto spotlightResponses = sendBatchToSpotlight(spotlightBatch, accessToken);
+
             processSpotlightResponse(spotlightBatch, spotlightResponses);
+
         }
     }
 
-    // test the mapping, and check you didn't forget anything else
     private void processSpotlightResponse(SendToSpotlightDto spotlightBatch,
-                                          SpotlightResponseResultsDto spotlightResponses) {
+            SpotlightResponseResultsDto spotlightResponses) {
+
         if (spotlightResponses.getResults() == null) {
-            //for the 4xx and 5xx codes, we don't get a response body, so we requeue the submission and update their status
-            updateSpotlightBatchAndSubmissionStatus(spotlightBatch);
+
+            updateSpotlightBatchStatus(spotlightBatch, SpotlightBatchStatus.FAILURE);
+            updateSpotlightSubmissionStatus(spotlightBatch, SpotlightSubmissionStatus.SEND_ERROR);
             addMessageToQueue(spotlightBatch);
         }
         else {
+            int errorCount = 0;
+
             for (SpotlightResponseDto spotlightResponse : spotlightResponses.getResults()) {
-                for (DraftAssessmentResponseDto draftAssessmentResponse : spotlightResponse.getDraftAssessmentsResults()) {
+                for (DraftAssessmentResponseDto draftAssessmentResponse : spotlightResponse
+                    .getDraftAssessmentsResults()) {
+
                     final SpotlightSubmission spotlightSubmission = spotlightSubmissionService
-                            .getSpotligtSubmissionByMandatoryQuestionGapId(
-                                    draftAssessmentResponse.getApplicationNumber());
-                    //based on the response status, update the submission status
+                        .getSpotligtSubmissionByMandatoryQuestionGapId(draftAssessmentResponse.getApplicationNumber());
+
                     if (draftAssessmentResponse.getStatus().equals(SUCCESS.toString())) {
                         spotlightSubmission.setStatus(SpotlightSubmissionStatus.SENT.toString());
                     }
 
                     if (draftAssessmentResponse.getStatus().equals(FAILURE.toString())
-                            && draftAssessmentResponse.getMessage()!= null && draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_406_SCHEME_NOT_EXIST)) {
-                        spotlightSubmission.setStatus(SpotlightSubmissionStatus.GGIS_ERROR.toString());
-                        sendMessageToQueue(spotlightSubmission);
-                    }
+                            && draftAssessmentResponse.getMessage() != null) {
 
-                    if (draftAssessmentResponse.getStatus().equals(FAILURE.toString())
-                            && (draftAssessmentResponse.getMessage()!= null && draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_409_FIELD_MISSING))
-                            || (draftAssessmentResponse.getMessage()!= null && draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_409_LENGTH))) {
+                        if (draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_406_SCHEME_NOT_EXIST)) {
 
-                        spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
-//                        sendMessageToQueue(spotlightSubmission); TODO ask why we are not sending to queue
+                            errorCount++;
+
+                            spotlightSubmission.setStatus(SpotlightSubmissionStatus.GGIS_ERROR.toString());
+
+                            sendMessageToQueue(spotlightSubmission);
+
+                        }
+
+                        if (draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_409_FIELD_MISSING)
+                                || draftAssessmentResponse.getMessage().contains(RESPONSE_MESSAGE_409_LENGTH)) {
+
+                            errorCount++;
+
+                            spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
+
+                        }
                     }
 
                     spotlightSubmission.setLastUpdated(Instant.now());
                     spotlightSubmission.setLastSendAttempt(Instant.now());
                     spotlightSubmissionRepository.save(spotlightSubmission);
                 }
-                //TODO needs to update batch status
-                //TODO if there is a failure in one submission, but the other 199 are fine, which status should the batch have?
+
             }
+
+            // if there were no errors, update the batch status to success, otherwise to
+            // failure
+            final SpotlightBatchStatus spotlightBatchStatus = errorCount == 0 ? SpotlightBatchStatus.SUCCESS
+                    : SpotlightBatchStatus.FAILURE;
+
+            updateSpotlightBatchStatus(spotlightBatch, spotlightBatchStatus);
         }
     }
 
@@ -262,37 +282,36 @@ public class SpotlightBatchService {
                 + "/services/apexrest/DraftAssessments";
 
         SpotlightResponseResultsDto list = SpotlightResponseResultsDto.builder().build();
+
         try {
             final ResponseEntity<String> response = restTemplate.postForEntity(draftAssessmentsEndpoint, requestEntity,
                     String.class);
-            //try to map the response for a 200 status code
+
             list = mapToDto(response.getBody());
         }
-        catch (HttpClientErrorException e) { //4xx codes
 
-            //if 406 or 409, map the response
+        catch (HttpClientErrorException e) { // 4xx codes
+
+            // if 406 or 409, map the response as we would need to handle every
+            // spotlightSubmission status
             if (e.getStatusCode().equals(HttpStatus.NOT_ACCEPTABLE) || e.getStatusCode().equals(HttpStatus.CONFLICT)) {
-                return mapToDto(e.getResponseBodyAsString());
+                list = mapToDto(e.getResponseBodyAsString());
             }
-            //otherwise leave the list empty but log error
+
             log.error("Hitting {} returned status code {} with body {}", draftAssessmentsEndpoint, e.getStatusCode(),
                     e.getResponseBodyAsString());
         }
+
         catch (HttpServerErrorException e) {
 
-            if (e.getStatusCode().is5xxServerError()) { //5xx codes
-                // leave the list empty but log error
+            if (e.getStatusCode().is5xxServerError()) { // 5xx codes
+
                 log.error("Hitting {} returned status code {} with body {}", draftAssessmentsEndpoint,
                         e.getStatusCode(), e.getResponseBodyAsString());
             }
         }
 
         return list;
-    }
-
-    private void updateSpotlightBatchAndSubmissionStatus(SendToSpotlightDto spotlightBatch) {
-        updateSpotlightBatchStatus(spotlightBatch, SpotlightBatchStatus.FAILURE);
-        updateSpotlightSubmissionStatus(spotlightBatch, SpotlightSubmissionStatus.SEND_ERROR);
     }
 
     private void updateSpotlightBatchStatus(SendToSpotlightDto spotlightBatchDto, SpotlightBatchStatus status) {
@@ -337,9 +356,10 @@ public class SpotlightBatchService {
         final UUID messageId = UUID.randomUUID();
 
         final SendMessageRequest messageRequest = new SendMessageRequest()
-                .withQueueUrl(spotlightQueueProperties.getQueueUrl()).withMessageGroupId(messageId.toString())
-                .withMessageBody(spotlightSubmission.getId().toString())
-                .withMessageDeduplicationId(messageId.toString());
+            .withQueueUrl(spotlightQueueProperties.getQueueUrl())
+            .withMessageGroupId(messageId.toString())
+            .withMessageBody(spotlightSubmission.getId().toString())
+            .withMessageDeduplicationId(messageId.toString());
 
         amazonSqs.sendMessage(messageRequest);
     }
@@ -368,7 +388,8 @@ public class SpotlightBatchService {
         log.info("Getting secret {}...", spotlightConfig.getSecretName());
 
         final GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
-                .secretId(spotlightConfig.getSecretName()).build();
+            .secretId(spotlightConfig.getSecretName())
+            .build();
         final GetSecretValueResponse valueResponse = secretsManagerClient.getSecretValue(valueRequest);
 
         return getSecretValue(ACCESS_TOKEN, valueResponse.secretString());

@@ -1,10 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
-import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
@@ -26,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.UUID;
 
 @Log4j2
@@ -151,7 +148,7 @@ public class SpotlightBatchController {
     public ResponseEntity<String> sendQueuedBatchesAndProcessSpotlightResponse() {
         log.info("Sending queued batches to Spotlight");
 
-        spotlightBatchService.sendQueuedBatchesToSpotlight();
+        spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem();
 
         log.info("Successfully generated data for Spotlight");
 
