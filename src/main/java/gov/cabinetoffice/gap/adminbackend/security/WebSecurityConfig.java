@@ -44,9 +44,12 @@ public class WebSecurityConfig {
                         .permitAll()
                         .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/swagger-ui.html",
                                 "/webjars/**")
-                        .permitAll().antMatchers("/spotlight-submissions/" + UUID_REGEX_STRING).permitAll()
+                        .permitAll()
+                        .antMatchers("/spotlight-submissions/{spotlightSubmissionId:" + UUID_REGEX_STRING + "}")
+                        .permitAll()
                         .antMatchers("/spotlight-batch/status/**", "/spotlight-batch",
-                                "/spotlight-batch/" + UUID_REGEX_STRING, "/spotlight-batch/send-to-spotlight")
+                                "/spotlight-batch/{spotlightBatchId" + UUID_REGEX_STRING + "}",
+                                "/spotlight-batch/send-to-spotlight")
                         .permitAll().anyRequest().authenticated())
 
                 .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable().exceptionHandling()
