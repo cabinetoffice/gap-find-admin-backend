@@ -33,6 +33,8 @@ public class SpotlightSubmissionController {
 
     private final SpotlightSubmissionMapper spotlightSubmissionMapper;
 
+    // check spring security whitelist before adding endpoints
+
     @GetMapping("/{spotlightSubmissionId}")
     @Operation(summary = "Get spotlight submission by id")
     @ApiResponses(value = {
