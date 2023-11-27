@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.repositories;
 
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,9 @@ import java.util.UUID;
 
 @Repository
 public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, UUID> {
+
+    @Query("SELECT s FROM SpotlightBatch s ORDER BY s.lastSendAttempt DESC")
+    List<SpotlightBatch> findMostRecentSpotlightBatch(Pageable pageable);
 
     @Query("SELECT (COUNT(s) > 0 ) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
     boolean existsByStatusAndSpotlightSubmissionsSizeLessThan(@Param("status") SpotlightBatchStatus status,

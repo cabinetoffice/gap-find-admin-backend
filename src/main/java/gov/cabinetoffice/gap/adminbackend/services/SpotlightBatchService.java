@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,12 +11,15 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
+import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpEntity;
@@ -215,6 +219,62 @@ public class SpotlightBatchService {
             log.error("could not read json value ", e);
             throw new SecretValueException();
         }
+    }
+
+    private GetSpotlightBatchErrorCountDTO orderSpotlightErrorStatusesByPriority(
+            List<SpotlightSubmission> filteredSubmissions) {
+        int apiErrorCount = 0;
+        int ggisErrorCount = 0;
+        int validationErrorCount = 0;
+
+        for (SpotlightSubmission submission : filteredSubmissions) {
+            switch (SpotlightSubmissionStatus.valueOf(submission.getStatus())) {
+                case SEND_ERROR:
+                    apiErrorCount++;
+                    break;
+                case GGIS_ERROR:
+                    ggisErrorCount++;
+                    break;
+                case VALIDATION_ERROR:
+                    validationErrorCount++;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (apiErrorCount == 0 && ggisErrorCount == 0 && validationErrorCount == 0) {
+            return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
+        }
+
+        // Priority order: API > GGIS > VALIDATION. Validation is the lowest/default
+        // priority
+        // and will be overwritten if any higher-priority statuses exist.
+        int errorCount = validationErrorCount;
+        String errorStatus = "VALIDATION";
+
+        if (apiErrorCount > 0) {
+            errorCount = apiErrorCount;
+            errorStatus = "API";
+        }
+        else if (ggisErrorCount > 0) {
+            errorCount = ggisErrorCount;
+            errorStatus = "GGIS";
+        }
+        return GetSpotlightBatchErrorCountDTO.builder().errorCount(errorCount).errorStatus(errorStatus).errorFound(true)
+                .build();
+    }
+
+    public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
+        Pageable pageable = PageRequest.of(0, 1);
+        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
+        final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
+        final List<SpotlightSubmission> filteredSubmissions = spotlightBatch.getSpotlightSubmissions().stream()
+                .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+
+        if (filteredSubmissions.isEmpty()) {
+            return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
+        }
+        return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
     }
 
 }
