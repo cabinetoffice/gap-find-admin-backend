@@ -275,7 +275,7 @@ public class SubmissionsService {
                 exportBatchId, GrantExportStatus.COMPLETE, adminSession.getGrantAdminId());
 
         return exports.stream().map(entity -> SubmissionExportsDTO.builder().s3key(entity.getLocation())
-                .label(getFilenameFromExportsSignedUrl(entity)).build()).toList();
+                .label(getFilenameFromExportsS3Key(entity)).build()).toList();
     }
 
     /**
@@ -290,11 +290,10 @@ public class SubmissionsService {
      * @param exportEntity
      * @return filename
      */
-    private String getFilenameFromExportsSignedUrl(GrantExportEntity exportEntity) {
+    private String getFilenameFromExportsS3Key(GrantExportEntity exportEntity) {
 
         try {
-            URL url = new URL(exportEntity.getLocation());
-            return URLDecoder.decode(url.getPath().split("/", 3)[2], StandardCharsets.UTF_8.name());
+            return exportEntity.getLocation().split("/", 2)[1];
         }
         catch (Exception e) {
             return exportEntity.getId().getSubmissionId().toString();
