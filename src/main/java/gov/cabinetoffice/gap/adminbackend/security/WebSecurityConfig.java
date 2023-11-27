@@ -47,7 +47,11 @@ public class WebSecurityConfig {
                                 "/webjars/**")
                         .permitAll()
                         // TODO list all the endpoint for the spotlightPublisherLambda
-                        .antMatchers("/spotlight-batch/**", "/spotlight-submissions/**").permitAll().anyRequest()
+                        .antMatchers( "/spotlight-submissions/" + UUID_REGEX_STRING).permitAll()
+                        .antMatchers("/spotlight-batch/status/**","/spotlight-batch",
+                                "/spotlight-batch/"+ UUID_REGEX_STRING,
+                                "/spotlight-batch/send-to-spotlight").permitAll()
+                        .anyRequest()
                         .authenticated())
 
                 .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable().exceptionHandling()

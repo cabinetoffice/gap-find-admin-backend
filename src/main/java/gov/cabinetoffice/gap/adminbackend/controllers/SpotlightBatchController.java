@@ -41,6 +41,8 @@ public class SpotlightBatchController {
 
     private final SpotlightBatchMapper spotlightBatchMapper;
 
+    // check spring security whitelist before adding endpoints
+
     @GetMapping("/status/{status}/exists")
     @Operation(summary = "Check if a spotlight batch with the given status exists")
     @ApiResponses(value = {
