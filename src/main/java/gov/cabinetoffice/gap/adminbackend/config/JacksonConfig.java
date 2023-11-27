@@ -24,4 +24,5 @@ public class JacksonConfig {
         objectMapper.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
         return objectMapper;
     }
+
 }
