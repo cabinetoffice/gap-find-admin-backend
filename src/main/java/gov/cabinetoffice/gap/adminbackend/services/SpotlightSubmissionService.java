@@ -20,9 +20,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class SpotlightSubmissionService {
-    //make sure to don't use SpotlighBatchService here, otherwise you will get a circular dependency
-    private final SpotlightSubmissionRepository spotlightSubmissionRepository;
 
+    // make sure to don't use SpotlighBatchService here, otherwise you will get a circular
+    // dependency
+    private final SpotlightSubmissionRepository spotlightSubmissionRepository;
 
     public SpotlightSubmission getSpotlightSubmission(UUID spotlightSubmissionId) {
         return spotlightSubmissionRepository.findById(spotlightSubmissionId).orElseThrow(() -> new NotFoundException(
@@ -69,8 +70,9 @@ public class SpotlightSubmissionService {
     }
 
     public SpotlightSubmission getSpotligtSubmissionByMandatoryQuestionGapId(String gapId) {
-        return spotlightSubmissionRepository.findByMandatoryQuestions_GapId(gapId).orElseThrow(
-                () -> new NotFoundException("A spotlight submission with mandatory question gapId " + gapId + " could not be found"));
+        return spotlightSubmissionRepository.findByMandatoryQuestions_GapId(gapId)
+                .orElseThrow(() -> new NotFoundException(
+                        "A spotlight submission with mandatory question gapId " + gapId + " could not be found"));
     }
 
 }

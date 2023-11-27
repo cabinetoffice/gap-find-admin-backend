@@ -7,11 +7,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class SpotlightResponseResultsDto {
+
     @JsonProperty("Results")
     private List<SpotlightResponseDto> results;
+
 }

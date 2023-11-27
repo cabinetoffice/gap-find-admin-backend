@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.enums;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum DraftAssessmentResponseDtoStatus {
+
     SUCCESS("Success"), FAILURE("Failure");
 
     private String name;
@@ -10,7 +11,6 @@ public enum DraftAssessmentResponseDtoStatus {
     private DraftAssessmentResponseDtoStatus(String name) {
         this.name = name;
     }
-
 
     @Override
     public String toString() {
@@ -32,4 +32,5 @@ public enum DraftAssessmentResponseDtoStatus {
         return valueOfName(name);
 
     }
+
 }

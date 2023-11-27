@@ -76,7 +76,8 @@ class SpotlightSubmissionServiceTest {
     }
 
     @Nested
-    class getSpotlightSubmissionByMandatoryQuestionGapId{
+    class getSpotlightSubmissionByMandatoryQuestionGapId {
+
         @Test
         void getSpotlightSubmissionByMandatoryQuestionGapId_success() {
             when(spotlightSubmissionRepository.findByMandatoryQuestions_GapId("gapId"))
@@ -92,8 +93,7 @@ class SpotlightSubmissionServiceTest {
 
         @Test
         void getSpotlightSubmissionByMandatoryQuestionGapId_notFound() {
-            when(spotlightSubmissionRepository.findByMandatoryQuestions_GapId("gapId"))
-                    .thenReturn(Optional.empty());
+            when(spotlightSubmissionRepository.findByMandatoryQuestions_GapId("gapId")).thenReturn(Optional.empty());
 
             final NotFoundException exception = assertThrows(NotFoundException.class,
                     () -> spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("gapId"));
@@ -101,8 +101,8 @@ class SpotlightSubmissionServiceTest {
             assertEquals("A spotlight submission with mandatory question gapId gapId could not be found",
                     exception.getMessage());
         }
-    }
 
+    }
 
     @Nested
     class getLastSubmissionDate {
