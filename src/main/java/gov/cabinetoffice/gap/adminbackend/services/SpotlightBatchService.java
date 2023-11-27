@@ -276,5 +276,4 @@ public class SpotlightBatchService {
         }
         return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
     }
-
 }
