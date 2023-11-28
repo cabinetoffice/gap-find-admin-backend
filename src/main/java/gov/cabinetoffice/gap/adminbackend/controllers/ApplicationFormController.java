@@ -41,7 +41,6 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/application-forms")
-@SuppressWarnings({ "unchecked", "rawtypes" })
 public class ApplicationFormController {
 
     private final ApplicationFormService applicationFormService;
@@ -61,7 +60,7 @@ public class ApplicationFormController {
                             schema = @Schema(implementation = GenericPostResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity postApplicationForm(HttpServletRequest request,
+    public ResponseEntity<Void>  postApplicationForm(HttpServletRequest request,
             @RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(applicationFormPostDTO.getGrantSchemeId());
         final GenericPostResponseDTO idResponse = this.applicationFormService
@@ -82,7 +81,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No Application form found",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity checkApplicationFormsExists(@Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
+    public ResponseEntity<List<ApplicationFormsFoundDTO>>  checkApplicationFormsExists(@Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
         List<ApplicationFormsFoundDTO> foundApplicationForms = this.applicationFormService
                 .getMatchingApplicationFormsIds(applicationFormExistsDTO);
 
@@ -104,7 +103,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getApplicationFormSummary(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<Void>  getApplicationFormSummary(@PathVariable @NotNull Integer applicationId,
             @RequestParam(defaultValue = "true") Boolean withSections,
             @RequestParam(defaultValue = "true") Boolean withQuestions) {
         try {
@@ -131,7 +130,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity deleteApplicationForm(@PathVariable @NotNull Integer applicationId) {
+    public ResponseEntity<Void>  deleteApplicationForm(@PathVariable @NotNull Integer applicationId) {
         try {
             this.applicationFormService.deleteApplicationForm(applicationId);
             return new ResponseEntity(HttpStatus.OK);
@@ -200,7 +199,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity updateApplicationForm(HttpServletRequest request,
+    public ResponseEntity<GenericErrorDTO>  updateApplicationForm(HttpServletRequest request,
             @PathVariable @NotNull Integer applicationId,
             @Valid @RequestBody ApplicationFormPatchDTO applicationFormPatchDTO) {
 

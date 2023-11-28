@@ -26,7 +26,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
-@SuppressWarnings("rawtypes")
+
 @Slf4j
 @Tag(name = "Application Forms")
 @RequestMapping("/application-forms/{applicationId}/sections/{sectionId}/questions")
@@ -48,7 +48,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No question found with id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<Void> patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
             @RequestBody @NotNull ApplicationFormQuestionDTO question) {
         try {
@@ -78,7 +78,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity postNewQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<GenericPostResponseDTO> postNewQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @RequestBody @NotNull ApplicationFormQuestionDTO question,
             HttpSession session) {
         try {
@@ -108,7 +108,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity deleteQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<Void> deleteQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             // don't allow admins to delete questions from mandatory sections
@@ -140,8 +140,8 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "404",
                     description = "No application, section, or question found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getQuestion(@PathVariable @NotNull Integer applicationId,
-            @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
+    public ResponseEntity<ApplicationFormQuestionDTO>  getQuestion(@PathVariable @NotNull Integer applicationId,
+                                                                  @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             ApplicationFormQuestionDTO question = this.applicationFormService.retrieveQuestion(applicationId, sectionId,
                     questionId);
