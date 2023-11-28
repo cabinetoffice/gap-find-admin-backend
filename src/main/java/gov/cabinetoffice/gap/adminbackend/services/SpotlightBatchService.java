@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.constants.DueDiligenceHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
@@ -14,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.DraftAssessmen
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
@@ -24,6 +26,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
+import gov.cabinetoffice.gap.adminbackend.utils.XlsxGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +44,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -474,16 +478,30 @@ public class SpotlightBatchService {
     }
 
     public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
-        Pageable pageable = PageRequest.of(0, 1);
-        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
-        final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
-        final List<SpotlightSubmission> filteredSubmissions = spotlightBatch.getSpotlightSubmissions().stream()
-                .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+        final List<SpotlightSubmission> filteredSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId);
 
         if (filteredSubmissions.isEmpty()) {
             return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
         }
         return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
     }
+    @NotNull
+    private List<SpotlightSubmission> getSpotlightBatchSubmissionsBySchemeId(Integer schemeId) {
+        Pageable pageable = PageRequest.of(0, 1);
+        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
+        final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
+        return spotlightBatch.getSpotlightSubmissions().stream()
+                .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+    }
 
+    public ByteArrayOutputStream getFilteredSpotlightSubmissionsWithValidationErrors(Integer schemeId) {
+        final List<SpotlightSubmission> spotlightSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId).stream()
+                .filter(s -> s.getStatus().equals(SpotlightSubmissionStatus.VALIDATION_ERROR.toString())).toList();
+        List<GrantMandatoryQuestions> mandatoryQuestions = new ArrayList<>();
+        for(SpotlightSubmission submission: spotlightSubmissions) {
+            mandatoryQuestions.add(submission.getMandatoryQuestions());
+        }
+        final List<List<String>> exportData = exportSpotlightChecks(schemeId, mandatoryQuestions, true);
+        return XlsxGenerator.createResource(DueDiligenceHeaders.DUE_DILIGENCE_HEADERS, exportData);
+    }
 }

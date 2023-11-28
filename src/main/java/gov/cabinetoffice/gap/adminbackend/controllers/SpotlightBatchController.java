@@ -181,4 +181,26 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body(spotlightBatchErrorCount);
     }
 
+//    @GetMapping("/get-validation-error-files/{schemeId}")
+//    @Operation(summary = "Fetches the submission files with Spotlight validation errors")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Retrieved error type and count",
+//                    content = @Content(mediaType = "application/json",
+//                            schema = @Schema(implementation = Boolean.class))),
+//            @ApiResponse(responseCode = "404", description = "No Spotlight errors exist",
+//                    content = @Content(mediaType = "application/json")),
+//            @ApiResponse(responseCode = "403", description = "Insufficient permissions to check Spotlight errors",
+//                    content = @Content(mediaType = "application/json")),
+//            @ApiResponse(responseCode = "400", description = "Bad request",
+//                    content = @Content(mediaType = "application/json")) })
+//    public ResponseEntity<GetSpotlightBatchErrorCountDTO> retrieveSpotlightBatchErrorCount(
+//            @PathVariable final String schemeId) {
+//        log.info("Retrieving Spotlight errors for scheme {}", schemeId);
+//
+//        final GetSpotlightBatchErrorCountDTO spotlightBatchErrorCount = spotlightBatchService
+//                .getSpotlightBatchErrorCount(Integer.parseInt(schemeId));
+//
+//        return ResponseEntity.ok().body(spotlightBatchErrorCount);
+//    }
+
 }
