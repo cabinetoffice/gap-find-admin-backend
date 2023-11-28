@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.PublishRequest;
+import gov.cabinetoffice.gap.adminbackend.config.SnsConfigProperties;
 import lombok.RequiredArgsConstructor;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.amazonaws.services.sns.model.AmazonSNSException;
@@ -14,12 +15,11 @@ public class SnsService {
 
     private final AmazonSNSClient snsClient;
 
-    @Value("${sns.topicArn}")
-    private String TOPIC_ARN;
+    private final SnsConfigProperties snsConfigProperties;
 
     private String publishMessageToTopic(String subject, String body) {
         try {
-            final PublishRequest request = new PublishRequest(TOPIC_ARN, body, subject);
+            final PublishRequest request = new PublishRequest(snsConfigProperties.getTopicArn(), body, subject);
             final PublishResult result = snsClient.publish(request);
             return "Message with message id:" + result.getMessageId() + " sent.";
 

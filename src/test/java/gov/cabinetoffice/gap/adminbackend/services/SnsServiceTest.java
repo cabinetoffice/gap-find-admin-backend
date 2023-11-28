@@ -4,6 +4,7 @@ import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.AmazonSNSException;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
+import gov.cabinetoffice.gap.adminbackend.config.SnsConfigProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -20,10 +21,13 @@ public class SnsServiceTest {
 
     private static SnsService snsService;
 
+    private static SnsConfigProperties snsConfigProperties;
+
     @BeforeAll
     static void beforeAll() {
+        snsConfigProperties = SnsConfigProperties.builder().topicArn("topicArn").build();
         snsClient = mock(AmazonSNSClient.class);
-        snsService = new SnsService(snsClient);
+        snsService = new SnsService(snsClient, snsConfigProperties);
         ReflectionTestUtils.setField(snsService, "snsClient", snsClient);
     }
 
