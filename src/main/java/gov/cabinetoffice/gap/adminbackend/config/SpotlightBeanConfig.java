@@ -11,8 +11,7 @@ public class SpotlightBeanConfig {
 
     @Bean
     public SecretsManagerClient getSecretsManagerClient() {
-        return SecretsManagerClient.builder().region(Region.EU_WEST_2)
-                .credentialsProvider(ProfileCredentialsProvider.create()).build();
+        return SecretsManagerClient.builder().region(Region.EU_WEST_2).build();
     }
 
 }
