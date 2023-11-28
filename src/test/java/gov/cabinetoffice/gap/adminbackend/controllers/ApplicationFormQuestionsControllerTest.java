@@ -1,7 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import javax.servlet.http.HttpSession;
-
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -9,9 +7,9 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -22,26 +20,19 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECTION_ID;
+import javax.servlet.http.HttpSession;
+
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ApplicationFormQuestionsController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = { ApplicationFormQuestionsController.class, ControllerExceptionHandler.class })
+@ContextConfiguration(classes = {ApplicationFormQuestionsController.class, ControllerExceptionHandler.class})
 class ApplicationFormQuestionsControllerTest {
 
     @Autowired
@@ -49,6 +40,9 @@ class ApplicationFormQuestionsControllerTest {
 
     @MockBean
     private ApplicationFormService applicationFormService;
+
+    @MockBean
+    private EventLogService eventLogService;
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
