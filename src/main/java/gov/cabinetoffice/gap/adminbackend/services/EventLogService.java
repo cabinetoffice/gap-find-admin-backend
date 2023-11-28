@@ -36,18 +36,11 @@ public class EventLogService {
         this.clock = clock;
     }
 
-
     public void logAdvertCreatedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
 
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.ADVERT)
-                .eventType(EventType.ADVERT_CREATED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.ADVERT).eventType(EventType.ADVERT_CREATED)
+                .sessionId(sessionId).userSub(userSub).fundingOrganisationId(fundingOrganisationId).objectId(objectId)
+                .timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 
@@ -55,30 +48,18 @@ public class EventLogService {
 
     public void logAdvertUpdatedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
 
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.ADVERT)
-                .eventType(EventType.ADVERT_UPDATED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.ADVERT).eventType(EventType.ADVERT_UPDATED)
+                .sessionId(sessionId).userSub(userSub).fundingOrganisationId(fundingOrganisationId).objectId(objectId)
+                .timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 
     }
 
     public void logAdvertPublishedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.ADVERT)
-                .eventType(EventType.ADVERT_PUBLISHED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.ADVERT).eventType(EventType.ADVERT_PUBLISHED)
+                .sessionId(sessionId).userSub(userSub).fundingOrganisationId(fundingOrganisationId).objectId(objectId)
+                .timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 

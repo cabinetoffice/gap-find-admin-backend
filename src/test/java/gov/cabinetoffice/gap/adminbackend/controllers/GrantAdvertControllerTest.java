@@ -78,18 +78,14 @@ class GrantAdvertControllerTest {
     class createAdvert {
 
         Integer grantSchemeId = 1;
+
         String advertName = "AdvertName";
 
-        CreateGrantAdvertDto dto = CreateGrantAdvertDto.builder()
-                .grantSchemeId(grantSchemeId)
-                .name(advertName)
-                .build();
+        CreateGrantAdvertDto dto = CreateGrantAdvertDto.builder().grantSchemeId(grantSchemeId).name(advertName).build();
 
         UUID advertId = UUID.randomUUID();
 
-        GrantAdvert expectedAdvert = GrantAdvert.builder()
-                .id(advertId)
-                .grantAdvertName(advertName)
+        GrantAdvert expectedAdvert = GrantAdvert.builder().id(advertId).grantAdvertName(advertName)
 
                 .build();
 
@@ -99,15 +95,14 @@ class GrantAdvertControllerTest {
 
             when(grantAdvertService.create(eq(grantSchemeId), any(), eq(advertName))).thenReturn(expectedAdvert);
 
-            mockMvc.perform(
-                            post("/grant-advert/create")
-                                    .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(dto)))
-                    .andExpect(status().isOk());
+            mockMvc.perform(post("/grant-advert/create").contentType(MediaType.APPLICATION_JSON)
+                    .content(HelperUtils.asJsonString(dto))).andExpect(status().isOk());
 
             verify(grantAdvertService).create(eq(grantSchemeId), anyInt(), eq(advertName));
             verify(eventLogService).logAdvertCreatedEvent(any(), anyString(), anyLong(), eq(advertId.toString()));
 
-            // Could probably do with verifying the response entity here too if someone has some time.
+            // Could probably do with verifying the response entity here too if someone
+            // has some time.
             // I'm just writing this to test the event log service stuff
 
         }
@@ -229,7 +224,8 @@ class GrantAdvertControllerTest {
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish").contentType(MediaType.APPLICATION_JSON)
                     .content(HelperUtils.asJsonStringWithNulls(grantAdvert))).andExpect(status().isOk());
 
-            verify(eventLogService).logAdvertPublishedEvent(any(), anyString(), anyLong(), eq(grantAdvertId.toString()));
+            verify(eventLogService).logAdvertPublishedEvent(any(), anyString(), anyLong(),
+                    eq(grantAdvertId.toString()));
 
         }
 
@@ -544,8 +540,8 @@ class GrantAdvertControllerTest {
 
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/schedule")).andExpect(status().isOk());
 
-
-            verify(eventLogService).logAdvertPublishedEvent(any(), anyString(), anyLong(), eq(grantAdvertId.toString()));
+            verify(eventLogService).logAdvertPublishedEvent(any(), anyString(), anyLong(),
+                    eq(grantAdvertId.toString()));
         }
 
         @Test
