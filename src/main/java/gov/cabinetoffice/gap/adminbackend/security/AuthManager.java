@@ -21,8 +21,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
@@ -78,7 +80,8 @@ public class AuthManager implements AuthenticationManager {
                 JWTPayload);
 
         return new UsernamePasswordAuthenticationToken(adminSession, null,
-                roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList());
+                roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .collect(Collectors.toCollection(ArrayList::new)));
     }
 
     private GrantAdmin createNewAdmin(JwtPayload jwtPayload) {
