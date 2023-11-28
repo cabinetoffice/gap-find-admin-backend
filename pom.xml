@@ -208,6 +208,11 @@
             <artifactId>java-sdk</artifactId>
             <version>10.5.9</version>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sns</artifactId>
+            <version>1.12.593</version>
+        </dependency>
     </dependencies>
 
     <build>

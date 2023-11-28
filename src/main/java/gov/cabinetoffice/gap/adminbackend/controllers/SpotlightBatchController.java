@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
+import gov.cabinetoffice.gap.adminbackend.services.SnsService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +40,8 @@ public class SpotlightBatchController {
     private final SpotlightSubmissionService spotlightSubmissionService;
 
     private final SpotlightBatchMapper spotlightBatchMapper;
+
+    private final SnsService snsService;
 
     @GetMapping("/status/{status}/exists")
     @Operation(summary = "Check if a spotlight batch with the given status exists")
@@ -133,6 +136,14 @@ public class SpotlightBatchController {
                 spotlightSubmissionId, spotlightBatchId);
 
         return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
+    }
+
+    // TODO delete this
+    @GetMapping("/sns-test")
+    public ResponseEntity<String> snsTest() {
+        final String response = snsService.spotlightOAuthDisconnected();
+
+        return ResponseEntity.ok().body(response);
     }
 
 }
