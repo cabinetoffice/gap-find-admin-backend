@@ -26,7 +26,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
-
 @Slf4j
 @Tag(name = "Application Forms")
 @RequestMapping("/application-forms/{applicationId}/sections/{sectionId}/questions")
@@ -78,9 +77,9 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<GenericPostResponseDTO> postNewQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
-            @PathVariable @NotBlank String sectionId, @RequestBody @NotNull ApplicationFormQuestionDTO question,
-            HttpSession session) {
+    public ResponseEntity<GenericPostResponseDTO> postNewQuestion(HttpServletRequest request,
+            @PathVariable @NotNull Integer applicationId, @PathVariable @NotBlank String sectionId,
+            @RequestBody @NotNull ApplicationFormQuestionDTO question, HttpSession session) {
         try {
             String questionId = this.applicationFormService.addQuestionToApplicationForm(applicationId, sectionId,
                     question, session);
@@ -140,8 +139,8 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "404",
                     description = "No application, section, or question found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<ApplicationFormQuestionDTO>  getQuestion(@PathVariable @NotNull Integer applicationId,
-                                                                  @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
+    public ResponseEntity<ApplicationFormQuestionDTO> getQuestion(@PathVariable @NotNull Integer applicationId,
+            @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             ApplicationFormQuestionDTO question = this.applicationFormService.retrieveQuestion(applicationId, sectionId,
                     questionId);

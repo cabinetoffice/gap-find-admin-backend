@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
-
 @Slf4j
 @Tag(name = "Application Forms")
 @RequestMapping("/application-forms/{applicationId}/sections")
