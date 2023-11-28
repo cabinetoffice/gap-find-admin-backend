@@ -1,9 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
@@ -213,7 +210,7 @@ public class SpotlightBatchControllerTest {
                     post("/spotlight-batch/send-to-spotlight").header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk()).andExpect(content().string("Success"));
 
-            verify(mockSpotlightBatchService, times(1)).sendQueuedBatchesToSpotlight();
+            verify(mockSpotlightBatchService, times(1)).sendQueuedBatchesToSpotlightAndProcessThem();
         }
 
     }

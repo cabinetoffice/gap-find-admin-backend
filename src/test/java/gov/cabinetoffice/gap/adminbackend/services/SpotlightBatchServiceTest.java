@@ -1,72 +1,71 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.DraftAssessmentResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.MasterSchemeStatusDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
-import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
-import gov.cabinetoffice.gap.adminbackend.entities.Submission;
-import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionFundingLocation;
-import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType;
-import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus;
-import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
-import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
+import gov.cabinetoffice.gap.adminbackend.entities.*;
+import gov.cabinetoffice.gap.adminbackend.enums.*;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
-import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.mockito.Mockito;
-import org.springframework.http.RequestEntity;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
 @WithAdminSession
 class SpotlightBatchServiceTest {
 
     private static final UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+    public static final String APPLICATION_NUMBER = "GAP-an-environment-name-20231115-1-5550";
 
     Pageable pageable = PageRequest.of(0, 1);
 
@@ -88,14 +87,30 @@ class SpotlightBatchServiceTest {
 
     private ObjectMapper objectMapper;
 
+    private SpotlightQueueConfigProperties spotlightQueueProperties;
+
+    @Mock
+    private AmazonSQS amazonSqs;
+
+    @Mock
+    private SpotlightSubmissionService spotlightSubmissionService;
+
+    @Mock
+    private SpotlightSubmissionRepository spotlightSubmissionRepository;
+
+    @Captor
+    private ArgumentCaptor<SpotlightSubmission> argumentCaptor;
+
     @BeforeEach
     void setup() {
         spotlightConfigProperties = SpotlightConfigProperties.builder().spotlightUrl("spotlightUrl")
                 .secretName("secretName").build();
         objectMapper = Mockito.spy(new ObjectMapper());
-
-        spotlightBatchService = Mockito.spy(new SpotlightBatchService(spotlightBatchRepository,
-                mandatoryQuestionsMapper, secretsManagerClient, spotlightConfigProperties, objectMapper, restTemplate));
+        spotlightQueueProperties = SpotlightQueueConfigProperties.builder().queueUrl("queueUrl").build();
+        spotlightBatchService = Mockito
+                .spy(new SpotlightBatchService(spotlightBatchRepository, mandatoryQuestionsMapper, secretsManagerClient,
+                        restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper,
+                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService));
     }
 
     @Nested
@@ -456,6 +471,32 @@ class SpotlightBatchServiceTest {
     }
 
     @Nested
+    class getSpotlightBatchByMandatoryQuestionGapId {
+
+        @Test
+        void getSpotlightBatchByMandatoryQuestionGapId_success() {
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
+
+            when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any()))
+                    .thenReturn(Optional.of(spotlightBatch));
+
+            final SpotlightBatch result = spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123");
+
+            assertThat(result).isEqualTo(spotlightBatch);
+        }
+
+        @Test
+        void getSpotlightBatchByMandatoryQuestionGapId_notFound() {
+            when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any()))
+                    .thenReturn(Optional.empty());
+
+            assertThrows(NotFoundException.class,
+                    () -> spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123"));
+        }
+
+    }
+
+    @Nested
     class sendQueuedBatchesToSpotlight {
 
         @Test
@@ -464,18 +505,21 @@ class SpotlightBatchServiceTest {
             final List<SendToSpotlightDto> sendToSpotlightDtos = List.of(sendToSpotlightDto);
             final GetSecretValueResponse getSecretValueResponse = GetSecretValueResponse.builder()
                     .secretString("{\"access_token\":\"token\"}").build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder().build();
 
             doReturn(sendToSpotlightDtos).when(spotlightBatchService)
                     .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
-            when(restTemplate.postForObject(any(), eq(RequestEntity.class), eq(String.class))).thenReturn("success");
+            doReturn(spotlightResponseResults).when(spotlightBatchService).sendBatchToSpotlight(sendToSpotlightDto,
+                    "token");
+            doNothing().when(spotlightBatchService).processSpotlightResponse(sendToSpotlightDto,
+                    spotlightResponseResults);
 
-            spotlightBatchService.sendQueuedBatchesToSpotlight();
+            spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem();
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
-
-            verify(restTemplate, times(1)).postForObject(eq("spotlightUrl/services/apexrest/DraftAssessments"), any(),
-                    eq(String.class));
+            verify(spotlightBatchService, times(1)).processSpotlightResponse(sendToSpotlightDto,
+                    spotlightResponseResults);
 
         }
 
@@ -491,7 +535,8 @@ class SpotlightBatchServiceTest {
                     .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
 
-            assertThrows(JsonParseException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlight());
+            assertThrows(JsonParseException.class,
+                    () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
@@ -508,10 +553,543 @@ class SpotlightBatchServiceTest {
                     .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
 
-            assertThrows(SecretValueException.class, () -> spotlightBatchService.sendQueuedBatchesToSpotlight());
+            assertThrows(SecretValueException.class,
+                    () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
+        }
+
+    }
+
+    @Nested
+    class processSpotlightResponse {
+
+        @Test
+        void spotlightResponsesResultIsNull() {
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder().build();
+
+            doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            doNothing().when(spotlightBatchService).updateSpotlightSubmissionStatus(sendToSpotlightDto,
+                    SpotlightSubmissionStatus.SEND_ERROR);
+            doNothing().when(spotlightBatchService).addMessageToQueue(sendToSpotlightDto);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            verify(spotlightBatchService, times(1)).updateSpotlightSubmissionStatus(sendToSpotlightDto,
+                    SpotlightSubmissionStatus.SEND_ERROR);
+            verify(spotlightBatchService, times(1)).addMessageToQueue(sendToSpotlightDto);
+
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsSuccess() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                    .status(SUCCESS.toString()).applicationNumber("applicationNumber").build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessmentsResults(List.of(draftAssessmentResponseDto)).build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                    .results(List.of(response)).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(uuid)
+                    .status(SpotlightSubmissionStatus.QUEUED.toString()).build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().ggisSchemeId("ggisId1")
+                    .applicationNumber("applicationNumber").build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessments(List.of(draftAssessmentDto)).build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                    .schemes(List.of(spotlightSchemeDto)).build();
+
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                    .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.SUCCESS);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.SENT.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.SUCCESS);
+
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsNull() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                    .status("anyNonSuccessStatus").applicationNumber("applicationNumber").build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessmentsResults(List.of(draftAssessmentResponseDto)).build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                    .results(List.of(response)).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(uuid)
+                    .status(SpotlightSubmissionStatus.QUEUED.toString()).build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().ggisSchemeId("ggisId1")
+                    .applicationNumber("applicationNumber").build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessments(List.of(draftAssessmentDto)).build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                    .schemes(List.of(spotlightSchemeDto)).build();
+
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                    .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            doNothing().when(spotlightBatchService).sendMessageToQueue(spotlightSubmission);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.SEND_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            verify(spotlightBatchService, times(1)).sendMessageToQueue(spotlightSubmission);
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsFor406error() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                    .status(FAILURE.toString()).applicationNumber("applicationNumber")
+                    .message("Scheme Does Not Exist here").build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessmentsResults(List.of(draftAssessmentResponseDto)).build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                    .results(List.of(response)).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(uuid)
+                    .status(SpotlightSubmissionStatus.QUEUED.toString()).build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().ggisSchemeId("ggisId1")
+                    .applicationNumber("applicationNumber").build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessments(List.of(draftAssessmentDto)).build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                    .schemes(List.of(spotlightSchemeDto)).build();
+
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                    .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            doNothing().when(spotlightBatchService).sendMessageToQueue(spotlightSubmission);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.GGIS_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+            verify(spotlightBatchService, times(1)).sendMessageToQueue(spotlightSubmission);
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsFor409error__FieldMissing() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                    .status(FAILURE.toString()).applicationNumber("applicationNumber")
+                    .message("Required fields are missing").build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessmentsResults(List.of(draftAssessmentResponseDto)).build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                    .results(List.of(response)).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(uuid)
+                    .status(SpotlightSubmissionStatus.QUEUED.toString()).build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().ggisSchemeId("ggisId1")
+                    .applicationNumber("applicationNumber").build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessments(List.of(draftAssessmentDto)).build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                    .schemes(List.of(spotlightSchemeDto)).build();
+
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                    .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+        }
+
+        @Test
+        void spotlightResponsesResultIsNotNullAndDraftAssessmentStatusIsFailureAndMessageIsFor409error__ValueTooLong() {
+            final DraftAssessmentResponseDto draftAssessmentResponseDto = DraftAssessmentResponseDto.builder()
+                    .status(FAILURE.toString()).applicationNumber("applicationNumber").message("data value too large")
+                    .build();
+            final SpotlightResponseDto response = SpotlightResponseDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessmentsResults(List.of(draftAssessmentResponseDto)).build();
+            final SpotlightResponseResultsDto spotlightResponseResults = SpotlightResponseResultsDto.builder()
+                    .results(List.of(response)).build();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(uuid)
+                    .status(SpotlightSubmissionStatus.QUEUED.toString()).build();
+            final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().ggisSchemeId("ggisId1")
+                    .applicationNumber("applicationNumber").build();
+            final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder().ggisSchemeId("ggisId1")
+                    .draftAssessments(List.of(draftAssessmentDto)).build();
+            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
+                    .schemes(List.of(spotlightSchemeDto)).build();
+
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
+                    .thenReturn(spotlightSubmission);
+
+            doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+
+            spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
+
+            verify(spotlightSubmissionRepository).save(argumentCaptor.capture());
+            final SpotlightSubmission result = argumentCaptor.getValue();
+
+            assertThat(result.getStatus()).isEqualTo(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
+
+            verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
+                    SpotlightBatchStatus.FAILURE);
+        }
+
+    }
+
+    @Nested
+    class sendBatchToSpotlight {
+
+        final String accessToken = "an-access-token";
+
+        final SendToSpotlightDto batch = SendToSpotlightDto.builder().build();
+
+        final String batchAsJson = "{}";
+
+        @Mock
+        HttpClientErrorException clientErrorException;
+
+        @Mock
+        HttpServerErrorException serverErrorException;
+
+        @Test
+        void success() throws JsonProcessingException {
+
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", "Bearer " + accessToken);
+            requestHeaders.add("Content-Type", "application/json");
+
+            final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
+
+            final ResponseEntity<String> httpResponse = ResponseEntity.ok().body(
+                    "[  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": true, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Success\", \"Message\": null, \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ]");
+
+            final DraftAssessmentResponseDto draftAssessmentResponse = DraftAssessmentResponseDto.builder()
+                    .status("Success").applicationNumber("GAP-an-environment-name-20231115-1-5550")
+                    .id("SFS-GAP-an-environment-name-20231115-1-5550").build();
+
+            final MasterSchemeStatusDto masterSchemeStatus = MasterSchemeStatusDto.builder().message(null).exists(true)
+                    .build();
+
+            final SpotlightResponseDto responseDto = SpotlightResponseDto.builder().ggisSchemeId("GG-55555-0987")
+                    .masterSchemeStatus(masterSchemeStatus).draftAssessmentsResults(List.of(draftAssessmentResponse))
+                    .build();
+
+            final SpotlightResponseResultsDto expectedResponse = SpotlightResponseResultsDto.builder()
+                    .results(List.of(responseDto)).build();
+
+            when(objectMapper.writeValueAsString(batch)).thenReturn(batchAsJson);
+
+            when(restTemplate.postForEntity(
+                    spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
+                    String.class)).thenReturn(httpResponse);
+
+            final SpotlightResponseResultsDto methodResponse = spotlightBatchService.sendBatchToSpotlight(batch,
+                    accessToken);
+
+            assertThat(methodResponse).isEqualTo(expectedResponse);
+        }
+
+        @Test
+        void clientError_ThatCanBeHandled() throws JsonProcessingException {
+
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", "Bearer " + accessToken);
+            requestHeaders.add("Content-Type", "application/json");
+
+            final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
+
+            final DraftAssessmentResponseDto draftAssessmentResponse = DraftAssessmentResponseDto.builder()
+                    .status("Failure").applicationNumber("GAP-an-environment-name-20231115-1-5550")
+                    .id("SFS-GAP-an-environment-name-20231115-1-5550").message("Scheme Does Not Exist").build();
+
+            final MasterSchemeStatusDto masterSchemeStatus = MasterSchemeStatusDto.builder().message(null).exists(false)
+                    .build();
+
+            final SpotlightResponseDto responseDto = SpotlightResponseDto.builder().ggisSchemeId("GG-55555-0987")
+                    .masterSchemeStatus(masterSchemeStatus).draftAssessmentsResults(List.of(draftAssessmentResponse))
+                    .build();
+
+            final SpotlightResponseResultsDto expectedResponse = SpotlightResponseResultsDto.builder()
+                    .results(List.of(responseDto)).build();
+
+            when(objectMapper.writeValueAsString(batch)).thenReturn(batchAsJson);
+
+            when(restTemplate.postForEntity(
+                    spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
+                    String.class)).thenThrow(clientErrorException);
+
+            when(clientErrorException.getStatusCode()).thenReturn(HttpStatus.NOT_ACCEPTABLE);
+
+            when(clientErrorException.getResponseBodyAsString()).thenReturn(
+                    "[  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": false, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Failure\", \"Message\": \"Scheme Does Not Exist\", \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ]");
+
+            final SpotlightResponseResultsDto methodResponse = spotlightBatchService.sendBatchToSpotlight(batch,
+                    accessToken);
+
+            assertThat(methodResponse).isEqualTo(expectedResponse);
+        }
+
+        @Test
+        void clientError_ThatCannotBeHandled() throws JsonProcessingException {
+
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", "Bearer " + accessToken);
+            requestHeaders.add("Content-Type", "application/json");
+
+            final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
+
+            final SpotlightResponseResultsDto expectedResponse = SpotlightResponseResultsDto.builder().build();
+
+            when(objectMapper.writeValueAsString(batch)).thenReturn(batchAsJson);
+
+            when(restTemplate.postForEntity(
+                    spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
+                    String.class)).thenThrow(clientErrorException);
+
+            when(clientErrorException.getStatusCode()).thenReturn(HttpStatus.I_AM_A_TEAPOT); // we
+                                                                                             // like
+                                                                                             // to
+                                                                                             // do
+                                                                                             // a
+                                                                                             // little
+                                                                                             // trolling
+                                                                                             // ;)
+
+            final SpotlightResponseResultsDto methodResponse = spotlightBatchService.sendBatchToSpotlight(batch,
+                    accessToken);
+
+            assertThat(methodResponse).isEqualTo(expectedResponse);
+        }
+
+        @Test
+        void serverError() throws JsonProcessingException {
+
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", "Bearer " + accessToken);
+            requestHeaders.add("Content-Type", "application/json");
+
+            final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
+
+            final SpotlightResponseResultsDto expectedResponse = SpotlightResponseResultsDto.builder().build();
+
+            when(objectMapper.writeValueAsString(batch)).thenReturn(batchAsJson);
+
+            when(restTemplate.postForEntity(
+                    spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
+                    String.class)).thenThrow(serverErrorException);
+
+            when(serverErrorException.getStatusCode()).thenReturn(HttpStatus.INTERNAL_SERVER_ERROR);
+
+            final SpotlightResponseResultsDto methodResponse = spotlightBatchService.sendBatchToSpotlight(batch,
+                    accessToken);
+
+            assertThat(methodResponse).isEqualTo(expectedResponse);
+        }
+
+        @Test
+        void throwsJsonParseException() throws JsonProcessingException {
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", "Bearer " + accessToken);
+            requestHeaders.add("Content-Type", "application/json");
+
+            final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
+
+            final String responseAsString = "[  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": true, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Success\", \"Message\": null, \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ]";
+            final ResponseEntity<String> httpResponse = ResponseEntity.ok().body(responseAsString);
+
+            final DraftAssessmentResponseDto draftAssessmentResponse = DraftAssessmentResponseDto.builder()
+                    .status("Success").applicationNumber("GAP-an-environment-name-20231115-1-5550")
+                    .id("SFS-GAP-an-environment-name-20231115-1-5550").build();
+
+            final MasterSchemeStatusDto masterSchemeStatus = MasterSchemeStatusDto.builder().message(null).exists(true)
+                    .build();
+
+            final SpotlightResponseDto responseDto = SpotlightResponseDto.builder().ggisSchemeId("GG-55555-0987")
+                    .masterSchemeStatus(masterSchemeStatus).draftAssessmentsResults(List.of(draftAssessmentResponse))
+                    .build();
+
+            final SpotlightResponseResultsDto expectedResponse = SpotlightResponseResultsDto.builder()
+                    .results(List.of(responseDto)).build();
+
+            when(objectMapper.writeValueAsString(batch)).thenReturn(batchAsJson);
+
+            when(restTemplate.postForEntity(
+                    spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
+                    String.class)).thenReturn(httpResponse);
+
+            when(objectMapper.readValue(responseAsString, SpotlightResponseDto[].class))
+                    .thenThrow(JsonProcessingException.class);
+
+            assertThrows(JsonParseException.class,
+                    () -> spotlightBatchService.sendBatchToSpotlight(batch, accessToken));
+        }
+
+    }
+
+    @Nested
+    class updateSpotlightBatchStatus {
+
+        final SpotlightBatch spotlightBatch = SpotlightBatch.builder().build();
+
+        final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().applicationNumber(APPLICATION_NUMBER)
+                .build();
+
+        final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .draftAssessments(List.of(draftAssessmentDto)).build();
+
+        final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(List.of(spotlightSchemeDto))
+                .build();
+
+        final SpotlightBatchStatus status = SpotlightBatchStatus.SUCCESS;
+
+        @Captor
+        ArgumentCaptor<SpotlightBatch> batchCaptor;
+
+        @Test
+        void success() {
+
+            doReturn(spotlightBatch).when(spotlightBatchService)
+                    .getSpotlightBatchByMandatoryQuestionGapId(APPLICATION_NUMBER);
+
+            spotlightBatchService.updateSpotlightBatchStatus(sendToSpotlightDto, status);
+
+            verify(spotlightBatchRepository).save(batchCaptor.capture());
+
+            final SpotlightBatch capturedBatch = batchCaptor.getValue();
+
+            assertThat(capturedBatch.getStatus()).isEqualTo(status);
+            assertThat(capturedBatch.getLastUpdated()).isNotNull();
+            assertThat(capturedBatch.getLastSendAttempt()).isNotNull();
+        }
+
+    }
+
+    @Nested
+    class updateSpotlightSubmissionStatus {
+
+        final SpotlightSubmission submission = SpotlightSubmission.builder().build();
+
+        final SpotlightBatch spotlightBatch = SpotlightBatch.builder().spotlightSubmissions(List.of(submission))
+                .build();
+
+        final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().applicationNumber(APPLICATION_NUMBER)
+                .build();
+
+        final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .draftAssessments(List.of(draftAssessmentDto)).build();
+
+        final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(List.of(spotlightSchemeDto))
+                .build();
+
+        final SpotlightSubmissionStatus status = SpotlightSubmissionStatus.SENT;
+
+        @Captor
+        ArgumentCaptor<SpotlightBatch> batchCaptor;
+
+        @Test
+        void success() {
+
+            doReturn(spotlightBatch).when(spotlightBatchService)
+                    .getSpotlightBatchByMandatoryQuestionGapId(APPLICATION_NUMBER);
+
+            spotlightBatchService.updateSpotlightSubmissionStatus(sendToSpotlightDto, status);
+
+            verify(spotlightBatchRepository).save(batchCaptor.capture());
+
+            final SpotlightBatch capturedBatch = batchCaptor.getValue();
+
+            capturedBatch.getSpotlightSubmissions().forEach(s -> {
+                assertThat(s.getStatus()).isEqualTo(status.toString());
+                assertThat(s.getLastUpdated()).isNotNull();
+                assertThat(s.getLastSendAttempt()).isNotNull();
+            });
+        }
+
+    }
+
+    @Nested
+    class addMessageToQueue {
+
+        final SpotlightSubmission submission = SpotlightSubmission.builder().build();
+
+        final SpotlightBatch spotlightBatch = SpotlightBatch.builder().spotlightSubmissions(List.of(submission))
+                .build();
+
+        final DraftAssessmentDto draftAssessmentDto = DraftAssessmentDto.builder().applicationNumber(APPLICATION_NUMBER)
+                .build();
+
+        final SpotlightSchemeDto spotlightSchemeDto = SpotlightSchemeDto.builder()
+                .draftAssessments(List.of(draftAssessmentDto)).build();
+
+        final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(List.of(spotlightSchemeDto))
+                .build();
+
+        @Test
+        void success() {
+            doReturn(spotlightBatch).when(spotlightBatchService)
+                    .getSpotlightBatchByMandatoryQuestionGapId(APPLICATION_NUMBER);
+            doNothing().when(spotlightBatchService).sendMessageToQueue(submission);
+
+            spotlightBatchService.addMessageToQueue(sendToSpotlightDto);
+
+            verify(spotlightBatchService, times(1)).sendMessageToQueue(submission);
+        }
+
+    }
+
+    @Nested
+    class sendMessageToQueue {
+
+        final UUID spotlightSubmissionId = UUID.randomUUID();
+
+        final SpotlightSubmission submission = SpotlightSubmission.builder().id(spotlightSubmissionId).build();
+
+        @Captor
+        ArgumentCaptor<SendMessageRequest> sqsRequestCaptor;
+
+        @Test
+        void success() {
+
+            spotlightBatchService.sendMessageToQueue(submission);
+
+            // Test that the spotlight submission has been sent to SQS
+            verify(amazonSqs).sendMessage(sqsRequestCaptor.capture());
+
+            final SendMessageRequest sqsRequest = sqsRequestCaptor.getValue();
+
+            assertThat(sqsRequest.getMessageBody()).isNotNull();
+            assertThat(sqsRequest.getQueueUrl()).isEqualTo(spotlightQueueProperties.getQueueUrl());
+            assertThat(sqsRequest.getMessageBody()).isEqualTo(submission.getId().toString());
         }
 
     }

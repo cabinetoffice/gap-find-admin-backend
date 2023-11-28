@@ -21,6 +21,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SpotlightSubmissionService {
 
+    // make sure to don't use SpotlighBatchService here, otherwise you will get a circular
+    // dependency
     private final SpotlightSubmissionRepository spotlightSubmissionRepository;
 
     public SpotlightSubmission getSpotlightSubmission(UUID spotlightSubmissionId) {
@@ -65,6 +67,12 @@ public class SpotlightSubmissionService {
         return spotlightSubmissions.stream().map(SpotlightSubmission::getLastSendAttempt).max(Instant::compareTo)
                 .map(date -> date.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
                 .orElse("");
+    }
+
+    public SpotlightSubmission getSpotlightSubmissionByMandatoryQuestionGapId(String gapId) {
+        return spotlightSubmissionRepository.findByMandatoryQuestions_GapId(gapId)
+                .orElseThrow(() -> new NotFoundException(
+                        "A spotlight submission with mandatory question gapId " + gapId + " could not be found"));
     }
 
 }

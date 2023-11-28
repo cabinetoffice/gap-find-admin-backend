@@ -22,7 +22,7 @@ class ApplicationFormUtilsTest {
                 .lastUpdateBy(007).lastUpdated(fiveSecondsAgo).version(version).build();
 
         AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", "test.user@and.digital",
-                "[FIND, APPLY, ADMIN]");
+                "[FIND, APPLY, ADMIN]", "UserSub");
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
