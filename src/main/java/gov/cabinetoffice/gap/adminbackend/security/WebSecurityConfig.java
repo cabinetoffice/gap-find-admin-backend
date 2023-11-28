@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.security;
 
 import gov.cabinetoffice.gap.adminbackend.config.JwtTokenFilterConfig;
-import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,9 +45,12 @@ public class WebSecurityConfig {
                         .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/swagger-ui.html",
                                 "/webjars/**")
                         .permitAll()
-                        // TODO list all the endpoint for the spotlightPublisherLambda
-                        .antMatchers("/spotlight-batch/**", "/spotlight-submissions/**").permitAll().anyRequest()
-                        .authenticated())
+                        .antMatchers("/spotlight-submissions/{spotlightSubmissionId:" + UUID_REGEX_STRING + "}")
+                        .permitAll()
+                        .antMatchers("/spotlight-batch/status/**", "/spotlight-batch",
+                                "/spotlight-batch/{spotlightBatchId" + UUID_REGEX_STRING + "}",
+                                "/spotlight-batch/send-to-spotlight")
+                        .permitAll().anyRequest().authenticated())
 
                 .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable().exceptionHandling()
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
