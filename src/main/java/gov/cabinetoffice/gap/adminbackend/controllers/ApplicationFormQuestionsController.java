@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -47,11 +48,13 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No question found with id.",
                     content = @Content(mediaType = "application/json"))})
-    public ResponseEntity patchQuestion(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity patchQuestion(HttpServletRequest request,  @PathVariable @NotNull Integer applicationId,
                                         @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
                                         @RequestBody @NotNull ApplicationFormQuestionDTO question) {
         try {
             this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question);
+
+            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
         } catch (NotFoundException e) {
@@ -73,12 +76,14 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json"))})
-    public ResponseEntity postNewQuestion(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity postNewQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
                                           @PathVariable @NotBlank String sectionId, @RequestBody @NotNull ApplicationFormQuestionDTO question,
                                           HttpSession session) {
         try {
             String questionId = this.applicationFormService.addQuestionToApplicationForm(applicationId, sectionId,
                     question, session);
+
+            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().body(new GenericPostResponseDTO(questionId));
         } catch (NotFoundException e) {
@@ -99,7 +104,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json"))})
-    public ResponseEntity deleteQuestion(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity deleteQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
                                          @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             // don't allow admins to delete questions from mandatory sections
@@ -108,6 +113,8 @@ public class ApplicationFormQuestionsController {
                         HttpStatus.BAD_REQUEST);
             }
             this.applicationFormService.deleteQuestionFromSection(applicationId, sectionId, questionId);
+
+            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
         } catch (NotFoundException e) {
@@ -144,10 +151,10 @@ public class ApplicationFormQuestionsController {
     private void logApplicationUpdatedEvent(String sessionId, Integer applicationId) {
         try {
             AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-            eventLogService.logAdvertCreatedEvent(sessionId, session.getUserSub(), session.getFunderId(), applicationId.toString());
+            eventLogService.logApplicationUpdatedEvent(sessionId, session.getUserSub(), session.getFunderId(), applicationId.toString());
         } catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
-            log.error("Could not send to event service. Exception: ", e);
+            log.error("Could not send application update event to event service. Exception: ", e);
         }
     }
 

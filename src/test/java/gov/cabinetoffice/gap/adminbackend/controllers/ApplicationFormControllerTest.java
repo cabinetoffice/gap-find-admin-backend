@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -72,6 +73,7 @@ class ApplicationFormControllerTest {
     private SchemeService schemeService;
 
     @Test
+    @WithAdminSession
     void saveApplicationFormHappyPathTest() throws Exception {
         final SchemeDTO schemeDTO = SchemeDTO.builder().build();
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_APPLICATION_POST_FORM_DTO.getGrantSchemeId()))
@@ -83,6 +85,8 @@ class ApplicationFormControllerTest {
                 .perform(post("/application-forms/").contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_APPLICATION_POST_FORM_DTO)))
                 .andExpect(status().isCreated());
+
+        verify(eventLogService).logApplicationCreatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
 
     }
 
@@ -100,6 +104,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_APPLICATION_POST_FORM_DTO)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
 
     }
 
@@ -326,6 +332,7 @@ class ApplicationFormControllerTest {
     }
 
     @Test
+    @WithAdminSession
     void updateApplicationForm_SuccessfullyUpdatingApplication() throws Exception {
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO, false);
@@ -333,6 +340,8 @@ class ApplicationFormControllerTest {
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isNoContent());
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -345,6 +354,8 @@ class ApplicationFormControllerTest {
 
         verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
                 eq(false));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -355,6 +366,8 @@ class ApplicationFormControllerTest {
 
         verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
                 eq(false));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -366,6 +379,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Not Found Message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -376,6 +391,8 @@ class ApplicationFormControllerTest {
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -387,6 +404,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isInternalServerError()).andExpect(content()
                         .json(HelperUtils.asJsonString(new GenericErrorDTO("Application Form Error Message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
 }
