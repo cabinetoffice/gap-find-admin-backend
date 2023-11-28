@@ -335,13 +335,26 @@ class ApplicationFormControllerTest {
     @WithAdminSession
     void updateApplicationForm_SuccessfullyUpdatingApplication() throws Exception {
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
+                SAMPLE_PATCH_UPDATED_APPLICATION_DTO, false);
+        this.mockMvc
+                .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
+                        .content(HelperUtils.asJsonString(SAMPLE_PATCH_UPDATED_APPLICATION_DTO)))
+                .andExpect(status().isNoContent());
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+    }
+
+    @Test
+    @WithAdminSession
+    void updateApplicationForm_SuccessfullyPublishingApplication() throws Exception {
+        doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO, false);
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isNoContent());
 
-        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationPublishedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test

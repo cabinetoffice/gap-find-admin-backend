@@ -194,9 +194,13 @@ public class ApplicationFormController {
                                                 @Valid @RequestBody ApplicationFormPatchDTO applicationFormPatchDTO) {
 
         try {
+
             this.applicationFormService.patchApplicationForm(applicationId, applicationFormPatchDTO, false);
 
-            logApplicationEvent(EventType.APPLICATION_UPDATED, request.getRequestedSessionId(), applicationId.toString());
+            EventType eventType = applicationFormPatchDTO.getApplicationStatus().equals(ApplicationStatusEnum.PUBLISHED)
+                    ? EventType.APPLICATION_PUBLISHED : EventType.APPLICATION_UPDATED;
+
+            logApplicationEvent(eventType, request.getRequestedSessionId(), applicationId.toString());
 
             return ResponseEntity.noContent().build();
         } catch (NotFoundException nfe) {

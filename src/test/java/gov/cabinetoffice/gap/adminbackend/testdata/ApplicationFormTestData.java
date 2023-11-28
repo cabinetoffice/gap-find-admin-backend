@@ -251,4 +251,7 @@ public class ApplicationFormTestData {
     public final static ApplicationFormPatchDTO SAMPLE_PATCH_APPLICATION_DTO = new ApplicationFormPatchDTO(
             ApplicationStatusEnum.PUBLISHED);
 
+    public final static ApplicationFormPatchDTO SAMPLE_PATCH_UPDATED_APPLICATION_DTO = new ApplicationFormPatchDTO(
+            ApplicationStatusEnum.DRAFT);
+
 }
