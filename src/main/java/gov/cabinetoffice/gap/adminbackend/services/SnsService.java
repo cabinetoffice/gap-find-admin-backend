@@ -17,7 +17,7 @@ public class SnsService {
     @Value("${sns.topicArn}")
     private String TOPIC_ARN;
 
-    private String publicMessageToTopic(String subject, String body) {
+    private String publishMessageToTopic(String subject, String body) {
         try {
             final PublishRequest request = new PublishRequest(TOPIC_ARN, body, subject);
             final PublishResult result = snsClient.publish(request);
@@ -41,7 +41,7 @@ public class SnsService {
 
                 Once fixed, the data will be sent to Spotlight again automatically.\s""";
 
-        return publicMessageToTopic(subject, body);
+        return publishMessageToTopic(subject, body);
     }
 
 }
