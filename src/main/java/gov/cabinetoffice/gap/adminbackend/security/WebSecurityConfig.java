@@ -48,7 +48,8 @@ public class WebSecurityConfig {
                         .antMatchers("/spotlight-submissions/{spotlightSubmissionId:" + UUID_REGEX_STRING + "}")
                         .permitAll()
                         .antMatchers("/spotlight-batch/status/**", "/spotlight-batch",
-                                "/spotlight-batch/{spotlightBatchId" + UUID_REGEX_STRING + "}/add-spotlight-submission/**",
+                                "/spotlight-batch/{spotlightBatchId" + UUID_REGEX_STRING
+                                        + "}/add-spotlight-submission/**",
                                 "/spotlight-batch/send-to-spotlight")
                         .permitAll().anyRequest().authenticated())
 
