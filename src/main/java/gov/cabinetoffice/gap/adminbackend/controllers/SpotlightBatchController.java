@@ -43,6 +43,7 @@ public class SpotlightBatchController {
     private final SpotlightBatchMapper spotlightBatchMapper;
 
     private final SnsService snsService;
+
     // check spring security whitelist before adding endpoints
 
     @GetMapping("/status/{status}/exists")
@@ -181,27 +182,6 @@ public class SpotlightBatchController {
                 .getSpotlightBatchErrorCount(Integer.parseInt(schemeId));
 
         return ResponseEntity.ok().body(spotlightBatchErrorCount);
-    }
-
-    @PostMapping("/send-to-spotlight")
-    @Operation(summary = "send queued batches to spotlight")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully created the list of dtos",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Boolean.class))),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions to created Dto",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "400", description = "Bad request",
-                    content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
-    public ResponseEntity<String> sendQueuedBatchesAndProcessSpotlightResponse() {
-        log.info("Sending queued batches to Spotlight");
-
-        spotlightBatchService.sendQueuedBatchesToSpotlight();
-
-        log.info("Successfully generated data for Spotlight");
-
-        return ResponseEntity.ok().body("Success");
     }
 
     // TODO delete this

@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.config.SnsConfigProperties;
 import lombok.RequiredArgsConstructor;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.amazonaws.services.sns.model.AmazonSNSException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
