@@ -1,6 +1,9 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
@@ -21,8 +24,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -158,8 +164,8 @@ public class SpotlightBatchControllerTest {
             final SpotlightSubmission spotlightSubmission = new SpotlightSubmission();
             final SpotlightBatch spotlightBatch = new SpotlightBatch();
 
-            when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                    .thenReturn(spotlightSubmission);
+            when(mockSpotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId))
+                    .thenReturn(Optional.of(spotlightSubmission));
             when(mockSpotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission,
                     spotlightBatchId)).thenReturn(spotlightBatch);
 
@@ -176,20 +182,34 @@ public class SpotlightBatchControllerTest {
             final UUID spotlightBatchId = UUID.randomUUID();
             final UUID spotlightSubmissionId = UUID.randomUUID();
 
-            when(mockSpotlightSubmissionService.getSpotlightSubmission(spotlightSubmissionId))
-                    .thenThrow(NotFoundException.class);
+            when(mockSpotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId))
+                    .thenReturn(Optional.empty());
 
             mockMvc.perform(
                     patch("/spotlight-batch/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}",
                             spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
                                     LAMBDA_AUTH_HEADER))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isOk());
         }
 
         @Test
         void badRequestAddSpotlightSubmissionToSpotlightBatch() throws Exception {
             mockMvc.perform(patch("/spotlight-batch/INVALID_PATH/add-spotlight-submission/INVALID_PATH"))
                     .andExpect(status().isBadRequest());
+        }
+
+    }
+
+    @Nested
+    class sendQueuedBatchesAndProcessSpotlightResponse {
+
+        @Test
+        void sendQueuedBatchesAndProcessSpotlightResponse_success() throws Exception {
+            mockMvc.perform(
+                    post("/spotlight-batch/send-to-spotlight").header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isOk()).andExpect(content().string("Success"));
+
+            verify(mockSpotlightBatchService, times(1)).sendQueuedBatchesToSpotlight();
         }
 
     }
