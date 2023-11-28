@@ -25,6 +25,8 @@ public class AdminSession implements Serializable {
 
     private String roles;
 
+    private String userSub;
+
     public AdminSession(Integer grantAdminId, Integer funderId, JwtPayload jwtPayload) {
         this.grantAdminId = grantAdminId;
         this.funderId = funderId;
@@ -33,6 +35,7 @@ public class AdminSession implements Serializable {
         this.organisationName = jwtPayload.getDepartmentName();
         this.emailAddress = jwtPayload.getEmailAddress();
         this.roles = jwtPayload.getRoles();
+        this.userSub = jwtPayload.getSub();
     }
 
 }
