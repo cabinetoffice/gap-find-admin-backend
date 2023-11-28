@@ -50,20 +50,23 @@ public class ApplicationFormSectionsController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to access this section.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No section found with provided ids.",
-                    content = @Content(mediaType = "application/json"))})
+                    content = @Content(mediaType = "application/json")) })
     public ResponseEntity<ApplicationFormSectionDTO> getApplicationFormSectionById(@PathVariable Integer applicationId,
-                                                                                   @PathVariable String sectionId, @RequestParam(defaultValue = "true") Boolean withQuestions) {
+            @PathVariable String sectionId, @RequestParam(defaultValue = "true") Boolean withQuestions) {
 
         try {
             ApplicationFormSectionDTO sectionDTO = this.applicationFormSectionService.getSectionById(applicationId,
                     sectionId, withQuestions);
 
             return ResponseEntity.ok(sectionDTO);
-        } catch (NotFoundException nfe) {
+        }
+        catch (NotFoundException nfe) {
             return ResponseEntity.notFound().build();
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
-        } catch (ApplicationFormException afe) {
+        }
+        catch (ApplicationFormException afe) {
             return ResponseEntity.badRequest().build();
         }
     }
@@ -78,9 +81,9 @@ public class ApplicationFormSectionsController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to create new section.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application found with given id.",
-                    content = @Content(mediaType = "application/json"))})
+                    content = @Content(mediaType = "application/json")) })
     public ResponseEntity postNewSection(final HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
-                                         @RequestBody @Validated PostSectionDTO sectionDTO) {
+            @RequestBody @Validated PostSectionDTO sectionDTO) {
         try {
             String sectionId = this.applicationFormSectionService.addSectionToApplicationForm(applicationId,
                     sectionDTO);
@@ -88,9 +91,11 @@ public class ApplicationFormSectionsController {
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().body(new GenericPostResponseDTO(sectionId));
-        } catch (NotFoundException e) {
+        }
+        catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
     }
@@ -104,8 +109,9 @@ public class ApplicationFormSectionsController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to delete section.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
-                    content = @Content(mediaType = "application/json"))})
-    public ResponseEntity deleteSection(final HttpServletRequest request, @PathVariable Integer applicationId, @PathVariable String sectionId) {
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity deleteSection(final HttpServletRequest request, @PathVariable Integer applicationId,
+            @PathVariable String sectionId) {
         try {
             // don't allow admins to delete mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
@@ -118,9 +124,11 @@ public class ApplicationFormSectionsController {
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
-        } catch (NotFoundException e) {
+        }
+        catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
     }
@@ -134,9 +142,10 @@ public class ApplicationFormSectionsController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to update section.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
-                    content = @Content(mediaType = "application/json"))})
-    public ResponseEntity updateSectionStatus(final HttpServletRequest request, final @PathVariable Integer applicationId,
-                                              final @PathVariable String sectionId, final @RequestBody SectionStatusEnum newStatus) {
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity updateSectionStatus(final HttpServletRequest request,
+            final @PathVariable Integer applicationId, final @PathVariable String sectionId,
+            final @RequestBody SectionStatusEnum newStatus) {
         try {
             // don't allow admins to update the status of custom sections
             if (!Objects.equals(sectionId, "ELIGIBILITY") && !Objects.equals(sectionId, "ESSENTIAL")) {
@@ -149,9 +158,11 @@ public class ApplicationFormSectionsController {
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
-        } catch (NotFoundException e) {
+        }
+        catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
     }
@@ -159,8 +170,10 @@ public class ApplicationFormSectionsController {
     private void logApplicationUpdatedEvent(String sessionId, Integer applicationId) {
         try {
             AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-            eventLogService.logApplicationUpdatedEvent(sessionId, session.getUserSub(), session.getFunderId(), applicationId.toString());
-        } catch (Exception e) {
+            eventLogService.logApplicationUpdatedEvent(sessionId, session.getUserSub(), session.getFunderId(),
+                    applicationId.toString());
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }

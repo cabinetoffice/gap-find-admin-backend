@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ApplicationFormQuestionsController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = {ApplicationFormQuestionsController.class, ControllerExceptionHandler.class})
+@ContextConfiguration(classes = { ApplicationFormQuestionsController.class, ControllerExceptionHandler.class })
 class ApplicationFormQuestionsControllerTest {
 
     @Autowired
@@ -62,7 +62,8 @@ class ApplicationFormQuestionsControllerTest {
                                 .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk());
 
-        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -121,7 +122,8 @@ class ApplicationFormQuestionsControllerTest {
                         .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk()).andExpect(content().json("{id: " + SAMPLE_QUESTION_ID + "}"));
 
-        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -201,7 +203,8 @@ class ApplicationFormQuestionsControllerTest {
                         .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk()).andExpect(content().json("{id: " + SAMPLE_QUESTION_ID + "}"));
 
-        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -214,7 +217,8 @@ class ApplicationFormQuestionsControllerTest {
         this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
                 + "/questions/" + SAMPLE_QUESTION_ID)).andExpect(status().isOk());
 
-        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test

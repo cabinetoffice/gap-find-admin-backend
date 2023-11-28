@@ -65,48 +65,33 @@ public class EventLogService {
 
     }
 
-    public void logApplicationCreatedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
+    public void logApplicationCreatedEvent(String sessionId, String userSub, long fundingOrganisationId,
+            String objectId) {
 
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.APPLICATION)
-                .eventType(EventType.APPLICATION_CREATED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.APPLICATION)
+                .eventType(EventType.APPLICATION_CREATED).sessionId(sessionId).userSub(userSub)
+                .fundingOrganisationId(fundingOrganisationId).objectId(objectId).timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 
     }
 
-    public void logApplicationUpdatedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
+    public void logApplicationUpdatedEvent(String sessionId, String userSub, long fundingOrganisationId,
+            String objectId) {
 
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.APPLICATION)
-                .eventType(EventType.APPLICATION_UPDATED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.APPLICATION)
+                .eventType(EventType.APPLICATION_UPDATED).sessionId(sessionId).userSub(userSub)
+                .fundingOrganisationId(fundingOrganisationId).objectId(objectId).timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 
     }
 
-    public void logApplicationPublishedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.APPLICATION)
-                .eventType(EventType.APPLICATION_PUBLISHED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+    public void logApplicationPublishedEvent(String sessionId, String userSub, long fundingOrganisationId,
+            String objectId) {
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.APPLICATION)
+                .eventType(EventType.APPLICATION_PUBLISHED).sessionId(sessionId).userSub(userSub)
+                .fundingOrganisationId(fundingOrganisationId).objectId(objectId).timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 

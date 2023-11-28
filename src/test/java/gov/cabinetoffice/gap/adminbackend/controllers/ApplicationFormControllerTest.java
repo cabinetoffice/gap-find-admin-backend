@@ -86,7 +86,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_APPLICATION_POST_FORM_DTO)))
                 .andExpect(status().isCreated());
 
-        verify(eventLogService).logApplicationCreatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationCreatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
 
     }
 
@@ -341,7 +342,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_UPDATED_APPLICATION_DTO)))
                 .andExpect(status().isNoContent());
 
-        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -354,7 +356,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isNoContent());
 
-        verify(eventLogService).logApplicationPublishedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationPublishedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test

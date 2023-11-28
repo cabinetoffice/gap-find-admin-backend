@@ -47,19 +47,21 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to update this question.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No question found with id.",
-                    content = @Content(mediaType = "application/json"))})
-    public ResponseEntity patchQuestion(HttpServletRequest request,  @PathVariable @NotNull Integer applicationId,
-                                        @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
-                                        @RequestBody @NotNull ApplicationFormQuestionDTO question) {
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
+            @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
+            @RequestBody @NotNull ApplicationFormQuestionDTO question) {
         try {
             this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question);
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
-        } catch (NotFoundException e) {
+        }
+        catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
 
@@ -75,10 +77,10 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to add question.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
-                    content = @Content(mediaType = "application/json"))})
+                    content = @Content(mediaType = "application/json")) })
     public ResponseEntity postNewQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
-                                          @PathVariable @NotBlank String sectionId, @RequestBody @NotNull ApplicationFormQuestionDTO question,
-                                          HttpSession session) {
+            @PathVariable @NotBlank String sectionId, @RequestBody @NotNull ApplicationFormQuestionDTO question,
+            HttpSession session) {
         try {
             String questionId = this.applicationFormService.addQuestionToApplicationForm(applicationId, sectionId,
                     question, session);
@@ -86,9 +88,11 @@ public class ApplicationFormQuestionsController {
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().body(new GenericPostResponseDTO(questionId));
-        } catch (NotFoundException e) {
+        }
+        catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
     }
@@ -103,9 +107,9 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to delete question.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
-                    content = @Content(mediaType = "application/json"))})
+                    content = @Content(mediaType = "application/json")) })
     public ResponseEntity deleteQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
-                                         @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
+            @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             // don't allow admins to delete questions from mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
@@ -117,9 +121,11 @@ public class ApplicationFormQuestionsController {
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
-        } catch (NotFoundException e) {
+        }
+        catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
     }
@@ -133,17 +139,19 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404",
                     description = "No application, section, or question found with given id.",
-                    content = @Content(mediaType = "application/json"))})
+                    content = @Content(mediaType = "application/json")) })
     public ResponseEntity getQuestion(@PathVariable @NotNull Integer applicationId,
-                                      @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
+            @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             ApplicationFormQuestionDTO question = this.applicationFormService.retrieveQuestion(applicationId, sectionId,
                     questionId);
 
             return ResponseEntity.ok().body(question);
-        } catch (NotFoundException e) {
+        }
+        catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);
-        } catch (AccessDeniedException ade) {
+        }
+        catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
     }
@@ -151,8 +159,10 @@ public class ApplicationFormQuestionsController {
     private void logApplicationUpdatedEvent(String sessionId, Integer applicationId) {
         try {
             AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-            eventLogService.logApplicationUpdatedEvent(sessionId, session.getUserSub(), session.getFunderId(), applicationId.toString());
-        } catch (Exception e) {
+            eventLogService.logApplicationUpdatedEvent(sessionId, session.getUserSub(), session.getFunderId(),
+                    applicationId.toString());
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send application update event to event service. Exception: ", e);
         }

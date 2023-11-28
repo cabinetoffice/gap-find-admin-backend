@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ApplicationFormSectionsController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = {ApplicationFormSectionsController.class, ControllerExceptionHandler.class})
+@ContextConfiguration(classes = { ApplicationFormSectionsController.class, ControllerExceptionHandler.class })
 class ApplicationFormSectionsControllerTest {
 
     @Autowired
@@ -126,8 +126,8 @@ class ApplicationFormSectionsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(newSection)))
                 .andExpect(status().isOk()).andExpect(content().json("{id: " + SAMPLE_SECTION_ID + "}"));
 
-
-        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(), eq(SAMPLE_APPLICATION_ID.toString()));
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test

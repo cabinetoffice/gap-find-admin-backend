@@ -78,7 +78,8 @@ class EventLogServiceTest {
             assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.ADVERT);
             assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
 
-            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage()).isEqualTo(EventType.ADVERT_CREATED + " Message sent successfully");
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
+                    .isEqualTo(EventType.ADVERT_CREATED + " Message sent successfully");
         }
 
         @Test
@@ -141,7 +142,8 @@ class EventLogServiceTest {
             assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.ADVERT);
             assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
 
-            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage()).isEqualTo(EventType.ADVERT_UPDATED + " Message sent successfully");
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
+                    .isEqualTo(EventType.ADVERT_UPDATED + " Message sent successfully");
         }
 
         @Test
@@ -204,7 +206,8 @@ class EventLogServiceTest {
             assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.ADVERT);
             assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
 
-            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage()).isEqualTo(EventType.ADVERT_PUBLISHED + " Message sent successfully");
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
+                    .isEqualTo(EventType.ADVERT_PUBLISHED + " Message sent successfully");
 
         }
 
