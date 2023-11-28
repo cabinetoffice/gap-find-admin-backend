@@ -43,6 +43,7 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -387,7 +388,9 @@ public class SpotlightBatchService {
 
     private SpotlightResponseResultsDto mapToDto(String responseBodyAsString) {
         try {
-            return jacksonObjectMapper.readValue(responseBodyAsString, SpotlightResponseResultsDto.class);
+            final SpotlightResponseDto[] spotlightResponseDtos = jacksonObjectMapper.readValue(responseBodyAsString,
+                    SpotlightResponseDto[].class);
+            return SpotlightResponseResultsDto.builder().results(Arrays.asList(spotlightResponseDtos)).build();
         }
         catch (JsonProcessingException e) {
             log.error("Could not convert dto to json string ", e);

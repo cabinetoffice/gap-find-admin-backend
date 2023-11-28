@@ -791,7 +791,7 @@ class SpotlightBatchServiceTest {
             final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
 
             final ResponseEntity<String> httpResponse = ResponseEntity.ok().body(
-                    "{ \"Results\": [  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": true, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Success\", \"Message\": null, \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ] }");
+                    "[  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": true, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Success\", \"Message\": null, \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ]");
 
             final DraftAssessmentResponseDto draftAssessmentResponse = DraftAssessmentResponseDto.builder()
                     .status("Success").applicationNumber("GAP-an-environment-name-20231115-1-5550")
@@ -851,7 +851,7 @@ class SpotlightBatchServiceTest {
             when(clientErrorException.getStatusCode()).thenReturn(HttpStatus.NOT_ACCEPTABLE);
 
             when(clientErrorException.getResponseBodyAsString()).thenReturn(
-                    "{ \"Results\": [  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": false, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Failure\", \"Message\": \"Scheme Does Not Exist\", \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ] }");
+                    "[  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": false, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Failure\", \"Message\": \"Scheme Does Not Exist\", \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ]");
 
             final SpotlightResponseResultsDto methodResponse = spotlightBatchService.sendBatchToSpotlight(batch,
                     accessToken);
@@ -924,7 +924,7 @@ class SpotlightBatchServiceTest {
 
             final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
 
-            final String responseAsString = "{ \"Results\": [  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": true, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Success\", \"Message\": null, \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ] }";
+            final String responseAsString = "[  { \"GGISSchemeID\": \"GG-55555-0987\", \"MasterSchemeStatus\": { \"Exists\": true, \"Message\": null }, \"DraftAssessmentsResults\": [  { \"ApplicationNumber\": \"GAP-an-environment-name-20231115-1-5550\", \"Status\": \"Success\", \"Message\": null, \"Id\": \"SFS-GAP-an-environment-name-20231115-1-5550\" }  ] }  ]";
             final ResponseEntity<String> httpResponse = ResponseEntity.ok().body(responseAsString);
 
             final DraftAssessmentResponseDto draftAssessmentResponse = DraftAssessmentResponseDto.builder()
@@ -947,7 +947,7 @@ class SpotlightBatchServiceTest {
                     spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
                     String.class)).thenReturn(httpResponse);
 
-            when(objectMapper.readValue(responseAsString, SpotlightResponseResultsDto.class))
+            when(objectMapper.readValue(responseAsString, SpotlightResponseDto[].class))
                     .thenThrow(JsonProcessingException.class);
 
             assertThrows(JsonParseException.class,
