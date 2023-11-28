@@ -7,7 +7,6 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.security.AuthManager;
-import gov.cabinetoffice.gap.adminbackend.security.JwtTokenFilter;
 import gov.cabinetoffice.gap.adminbackend.security.WebSecurityConfig;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
@@ -15,14 +14,11 @@ import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -70,7 +66,7 @@ class LoginControllerTest {
     @Test
     void SuccessfulLoginTest() throws Exception {
         Mockito.when(this.authenticationManager.authenticate(any())).thenReturn(new UsernamePasswordAuthenticationToken(
-                new AdminSession(1, 1, "Test", "User", "AND Digital", "test@domain.com", null), null));
+                new AdminSession(1, 1, "Test", "User", "AND Digital", "test@domain.com", null, "UserSub"), null));
 
         this.mockMvc.perform(post("/login")).andExpect(status().isOk());
     }
