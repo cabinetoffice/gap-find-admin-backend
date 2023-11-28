@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+@SuppressWarnings("rawtypes")
 @Log4j2
 @RestController
 @RequestMapping("/grant-advert")
@@ -175,7 +176,7 @@ public class GrantAdvertController {
      * them into the same order as the initial DTO we receive
      */
     private List<ValidationError> reorderValidationErrors(GrantAdvertPagePatchResponseDto patchAdvertPageResponse,
-            Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet) {
+                                                          Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet) {
         List<ValidationError> validationErrorsList = new ArrayList<>();
 
         // map questions, if question errors exist
@@ -214,12 +215,11 @@ public class GrantAdvertController {
 
     @PostMapping("/lambda/{grantAdvertId}/publish")
     public ResponseEntity publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId,
-            final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+                                                   final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         try {
             grantAdvertService.publishAdvert(grantAdvertId, true);
-        }
-        catch (CMAHttpException cmae) {
+        } catch (CMAHttpException cmae) {
             log.error("Contentful Error Body - " + cmae.getErrorBody().toString());
 
             return ResponseEntity.badRequest().body(cmae.getErrorBody());
@@ -261,7 +261,7 @@ public class GrantAdvertController {
             @ApiResponse(responseCode = "401", description = "No credentials or invalid credentials provided",
                     content = @Content(mediaType = "application/json")), })
     public ResponseEntity unpublishGrantAdvert(final @PathVariable UUID grantAdvertId,
-            final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+                                               final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         grantAdvertService.unpublishAdvert(grantAdvertId, true);
         return ResponseEntity.ok().build();
