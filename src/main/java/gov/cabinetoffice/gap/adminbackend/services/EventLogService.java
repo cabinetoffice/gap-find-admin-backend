@@ -27,8 +27,8 @@ public class EventLogService {
     private final Clock clock;
 
     public EventLogService(@Value("${cloud.aws.sqs.event-service-queue}") String eventLogQueue,
-                           @Value("${cloud.aws.sqs.event-service-queue-enabled}") boolean eventServiceQueueEnabled,
-                           AmazonSQS amazonSQS, ObjectMapper objectMapper, Clock clock) {
+            @Value("${cloud.aws.sqs.event-service-queue-enabled}") boolean eventServiceQueueEnabled,
+            AmazonSQS amazonSQS, ObjectMapper objectMapper, Clock clock) {
         this.eventLogQueue = eventLogQueue;
         this.eventServiceQueueEnabled = eventServiceQueueEnabled;
         this.amazonSQS = amazonSQS;
@@ -36,18 +36,11 @@ public class EventLogService {
         this.clock = clock;
     }
 
-
     public void logAdvertCreatedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
 
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.ADVERT)
-                .eventType(EventType.ADVERT_CREATED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.ADVERT).eventType(EventType.ADVERT_CREATED)
+                .sessionId(sessionId).userSub(userSub).fundingOrganisationId(fundingOrganisationId).objectId(objectId)
+                .timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 
@@ -55,30 +48,18 @@ public class EventLogService {
 
     public void logAdvertUpdatedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
 
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.ADVERT)
-                .eventType(EventType.ADVERT_UPDATED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.ADVERT).eventType(EventType.ADVERT_UPDATED)
+                .sessionId(sessionId).userSub(userSub).fundingOrganisationId(fundingOrganisationId).objectId(objectId)
+                .timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 
     }
 
     public void logAdvertPublishedEvent(String sessionId, String userSub, long fundingOrganisationId, String objectId) {
-        EventLog eventLog = EventLog.builder()
-                .objectType(ObjectType.ADVERT)
-                .eventType(EventType.ADVERT_PUBLISHED)
-                .sessionId(sessionId)
-                .userSub(userSub)
-                .fundingOrganisationId(fundingOrganisationId)
-                .objectId(objectId)
-                .timestamp(Instant.now(clock))
-                .build();
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.ADVERT).eventType(EventType.ADVERT_PUBLISHED)
+                .sessionId(sessionId).userSub(userSub).fundingOrganisationId(fundingOrganisationId).objectId(objectId)
+                .timestamp(Instant.now(clock)).build();
 
         logEvent(eventLog);
 
@@ -142,7 +123,8 @@ public class EventLogService {
             log.info("Sending event to {} : {}", eventLogQueue, eventLog);
             amazonSQS.sendMessage(eventLogQueue, objectMapper.writeValueAsString(eventLog));
             log.info("Message sent successfully");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Message failed to send for event log " + eventLog, e);
         }
 

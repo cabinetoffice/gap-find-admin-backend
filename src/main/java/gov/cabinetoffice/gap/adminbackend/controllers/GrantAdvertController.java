@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+@SuppressWarnings("rawtypes")
 @Log4j2
 @RestController
 @RequestMapping("/grant-advert")
@@ -53,7 +54,7 @@ public class GrantAdvertController {
 
     @PostMapping("/create")
     public ResponseEntity<CreateGrantAdvertResponseDto> create(HttpServletRequest request,
-                                                               @Valid @RequestBody CreateGrantAdvertDto createGrantAdvertDto) {
+            @Valid @RequestBody CreateGrantAdvertDto createGrantAdvertDto) {
         log.info("Creating Grant Advert '{}' for Grant Scheme ID '{}'", createGrantAdvertDto.getName(),
                 createGrantAdvertDto.getGrantSchemeId());
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -64,8 +65,10 @@ public class GrantAdvertController {
                 grantAdvert.getId());
 
         try {
-            eventLogService.logAdvertCreatedEvent(request.getRequestedSessionId(), session.getUserSub(), session.getFunderId(), grantAdvert.getId().toString());
-        } catch (Exception e) {
+            eventLogService.logAdvertCreatedEvent(request.getRequestedSessionId(), session.getUserSub(),
+                    session.getFunderId(), grantAdvert.getId().toString());
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }
@@ -77,9 +80,9 @@ public class GrantAdvertController {
     }
 
     @PatchMapping("/{grantAdvertId}/sections/{sectionId}/pages/{pageId}")
-    public ResponseEntity updatePage(HttpServletRequest request, @PathVariable UUID grantAdvertId, @PathVariable String sectionId,
-                                     @PathVariable String pageId,
-                                     @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
+    public ResponseEntity updatePage(HttpServletRequest request, @PathVariable UUID grantAdvertId,
+            @PathVariable String sectionId, @PathVariable String pageId,
+            @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
         GrantAdvertPageResponse responseWithId = GrantAdvertPageResponse.builder().id(pageId)
                 .status(patchAdvertPageResponse.getStatus()).questions(patchAdvertPageResponse.getQuestions()).build();
         GrantAdvertPageResponseValidationDto patchPageDto = GrantAdvertPageResponseValidationDto.builder()
@@ -99,8 +102,10 @@ public class GrantAdvertController {
         grantAdvertService.updatePageResponse(patchPageDto);
 
         try {
-            eventLogService.logAdvertUpdatedEvent(request.getRequestedSessionId(), session.getUserSub(), session.getFunderId(), grantAdvertId.toString());
-        } catch (Exception e) {
+            eventLogService.logAdvertUpdatedEvent(request.getRequestedSessionId(), session.getUserSub(),
+                    session.getFunderId(), grantAdvertId.toString());
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }
@@ -193,18 +198,20 @@ public class GrantAdvertController {
     }
 
     @PostMapping("/{grantAdvertId}/publish")
-    public ResponseEntity<GrantAdvert> publishGrantAdvert(HttpServletRequest request, final @PathVariable UUID grantAdvertId) {
+    public ResponseEntity<GrantAdvert> publishGrantAdvert(HttpServletRequest request,
+            final @PathVariable UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         final GrantAdvert publishedAdvert = grantAdvertService.publishAdvert(grantAdvertId, false);
 
         try {
-            eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(), session.getFunderId(), grantAdvertId.toString());
-        } catch (Exception e) {
+            eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(),
+                    session.getFunderId(), grantAdvertId.toString());
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }
-
 
         return ResponseEntity.ok(publishedAdvert);
     }
@@ -231,8 +238,10 @@ public class GrantAdvertController {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
-            eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(), session.getFunderId(), grantAdvertId.toString());
-        } catch (Exception e) {
+            eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(),
+                    session.getFunderId(), grantAdvertId.toString());
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }

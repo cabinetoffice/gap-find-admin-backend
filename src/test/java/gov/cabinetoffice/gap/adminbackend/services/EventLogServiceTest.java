@@ -31,11 +31,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
-@ExtendWith({InfoLogCaptureExtension.class, ErrorLogCaptureExtension.class})
+@ExtendWith({ InfoLogCaptureExtension.class, ErrorLogCaptureExtension.class })
 class EventLogServiceTest {
 
     @Mock
     private AmazonSQS amazonSQS;
+
     @Mock
     private ObjectMapper objectMapper;
 
@@ -53,6 +54,7 @@ class EventLogServiceTest {
 
     @Nested
     class logAdvertCreatedEvent {
+
         @Test
         public void success(InfoLogCapture logCapture) throws JsonProcessingException {
 
@@ -76,9 +78,7 @@ class EventLogServiceTest {
             assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.ADVERT);
             assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
 
-
-            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
-                    .isEqualTo("Message sent successfully");
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage()).isEqualTo("Message sent successfully");
         }
 
         @Test
@@ -94,7 +94,8 @@ class EventLogServiceTest {
 
             eventLogService.logAdvertCreatedEvent(sessionId, userSub, fundingOrgId, objectId);
 
-            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage()).startsWith("Message failed to send for event log");
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .startsWith("Message failed to send for event log");
 
         }
 
@@ -117,6 +118,7 @@ class EventLogServiceTest {
 
     @Nested
     class logAdvertUpdatedEvent {
+
         @Test
         public void success(InfoLogCapture logCapture) throws JsonProcessingException {
             String sessionId = "SessionId";
@@ -129,7 +131,6 @@ class EventLogServiceTest {
 
             eventLogService.logAdvertUpdatedEvent(sessionId, userSub, fundingOrgId, objectId);
 
-
             EventLog actualEventLog = eventLogArgumentCaptor.getValue();
 
             assertThat(actualEventLog.getEventType()).isEqualTo(EventType.ADVERT_UPDATED);
@@ -140,8 +141,7 @@ class EventLogServiceTest {
             assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.ADVERT);
             assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
 
-            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
-                    .isEqualTo("Message sent successfully");
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage()).isEqualTo("Message sent successfully");
         }
 
         @Test
@@ -176,10 +176,12 @@ class EventLogServiceTest {
 
             verifyNoInteractions(amazonSQS, objectMapper);
         }
+
     }
 
     @Nested
     class logAdvertPublishedEvent {
+
         @Test
         public void success(InfoLogCapture logCapture) throws JsonProcessingException {
             String sessionId = "SessionId";
@@ -202,8 +204,7 @@ class EventLogServiceTest {
             assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.ADVERT);
             assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
 
-            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
-                    .isEqualTo("Message sent successfully");
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage()).isEqualTo("Message sent successfully");
 
         }
 
@@ -220,7 +221,8 @@ class EventLogServiceTest {
 
             eventLogService.logAdvertPublishedEvent(sessionId, userSub, fundingOrgId, objectId);
 
-            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage()).startsWith("Message failed to send for event log");
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .startsWith("Message failed to send for event log");
         }
 
         @Test
@@ -237,5 +239,7 @@ class EventLogServiceTest {
                     .isEqualTo("Event Service Queue is disabled. Returning without sending.");
             verifyNoInteractions(amazonSQS, objectMapper);
         }
+
     }
+
 }

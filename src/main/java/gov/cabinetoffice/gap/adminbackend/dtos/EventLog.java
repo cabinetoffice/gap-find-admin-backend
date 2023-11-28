@@ -16,10 +16,17 @@ import java.time.Instant;
 public class EventLog {
 
     String userSub;
+
     Long fundingOrganisationId;
+
     String sessionId;
+
     EventType eventType;
+
     String objectId;
+
     ObjectType objectType;
+
     Instant timestamp;
+
 }
