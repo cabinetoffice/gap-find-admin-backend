@@ -1,5 +1,5 @@
 -- !!!!!  ENSURE event_stream schema has been created  !!!!
- CREATE schema IF NOT EXISTS event_stream;
+-- CREATE schema IF NOT EXISTS event_stream;
 
 
 CREATE TABLE IF NOT EXISTS event_stream.event_log
