@@ -214,7 +214,7 @@ public class SpotlightBatchService {
     }
 
     public void processSpotlightResponse(SendToSpotlightDto spotlightBatchDto,
-                                         SpotlightResponseResultsDto spotlightResponses) {
+            SpotlightResponseResultsDto spotlightResponses) {
 
         AtomicInteger errorCount = new AtomicInteger();
 
@@ -224,7 +224,8 @@ public class SpotlightBatchService {
             updateSpotlightSubmissionStatus(spotlightBatchDto, SpotlightSubmissionStatus.SEND_ERROR);
             addMessageToQueue(spotlightBatchDto);
 
-        } else {
+        }
+        else {
 
             for (SpotlightResponseDto spotlightResponse : spotlightResponses.getResults()) {
                 processSpotlightResults(spotlightResponse, errorCount);
@@ -232,21 +233,22 @@ public class SpotlightBatchService {
 
             if (errorCount.get() == 0) {
                 updateSpotlightBatchStatus(spotlightBatchDto, SpotlightBatchStatus.SUCCESS);
-            } else {
+            }
+            else {
                 updateSpotlightBatchStatus(spotlightBatchDto, SpotlightBatchStatus.FAILURE);
             }
         }
     }
 
-
     private void processSpotlightResults(SpotlightResponseDto spotlightResponse, AtomicInteger errorCount) {
         for (DraftAssessmentResponseDto draftAssessmentResponse : spotlightResponse.getDraftAssessmentsResults()) {
-            SpotlightSubmission spotlightSubmission = getSpotlightSubmissionByApplicationNumber
-                    (draftAssessmentResponse.getApplicationNumber());
+            SpotlightSubmission spotlightSubmission = getSpotlightSubmissionByApplicationNumber(
+                    draftAssessmentResponse.getApplicationNumber());
 
             if (isSuccess(draftAssessmentResponse)) {
                 spotlightSubmission.setStatus(SpotlightSubmissionStatus.SENT.toString());
-            } else {
+            }
+            else {
                 handleError(spotlightSubmission, draftAssessmentResponse);
                 errorCount.incrementAndGet();
             }
@@ -259,10 +261,12 @@ public class SpotlightBatchService {
         return draftAssessmentResponseDto.getStatus().equals(SUCCESS.toString());
     }
 
-    private void handleError(SpotlightSubmission spotlightSubmission, DraftAssessmentResponseDto draftAssessmentResponse) {
+    private void handleError(SpotlightSubmission spotlightSubmission,
+            DraftAssessmentResponseDto draftAssessmentResponse) {
         if (draftAssessmentResponse.getMessage() != null) {
             handleErrorMessage(spotlightSubmission, draftAssessmentResponse.getMessage());
-        } else {
+        }
+        else {
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.SEND_ERROR.toString());
             sendMessageToQueue(spotlightSubmission);
         }
@@ -272,8 +276,9 @@ public class SpotlightBatchService {
         if (errorMessage.contains(RESPONSE_MESSAGE_406_SCHEME_NOT_EXIST)) {
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.GGIS_ERROR.toString());
             sendMessageToQueue(spotlightSubmission);
-        } else if (errorMessage.contains(RESPONSE_MESSAGE_409_FIELD_MISSING) ||
-                errorMessage.contains(RESPONSE_MESSAGE_409_LENGTH)) {
+        }
+        else if (errorMessage.contains(RESPONSE_MESSAGE_409_FIELD_MISSING)
+                || errorMessage.contains(RESPONSE_MESSAGE_409_LENGTH)) {
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
         }
     }
@@ -284,11 +289,8 @@ public class SpotlightBatchService {
         spotlightSubmissionRepository.save(spotlightSubmission);
     }
 
-
     private SpotlightSubmission getSpotlightSubmissionByApplicationNumber(String applicationNumber) {
-        return spotlightSubmissionService
-                .getSpotlightSubmissionByMandatoryQuestionGapId(
-                        applicationNumber);
+        return spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId(applicationNumber);
 
     }
 
