@@ -5,8 +5,6 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
@@ -16,32 +14,25 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.DraftAssessmen
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.MasterSchemeStatusDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
 import gov.cabinetoffice.gap.adminbackend.entities.*;
-import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
-import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 import gov.cabinetoffice.gap.adminbackend.enums.*;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
-import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.mockito.Mockito;
-import static org.mockito.Mockito.*;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -54,27 +45,19 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -620,7 +603,7 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
                     .schemes(List.of(spotlightSchemeDto)).build();
 
-            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
                     .thenReturn(spotlightSubmission);
 
             doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
@@ -655,7 +638,7 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
                     .schemes(List.of(spotlightSchemeDto)).build();
 
-            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
                     .thenReturn(spotlightSubmission);
 
             doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
@@ -692,7 +675,7 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
                     .schemes(List.of(spotlightSchemeDto)).build();
 
-            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
                     .thenReturn(spotlightSubmission);
 
             doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
@@ -729,7 +712,7 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
                     .schemes(List.of(spotlightSchemeDto)).build();
 
-            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
                     .thenReturn(spotlightSubmission);
 
             doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
@@ -764,7 +747,7 @@ class SpotlightBatchServiceTest {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder()
                     .schemes(List.of(spotlightSchemeDto)).build();
 
-            when(spotlightSubmissionService.getSpotligtSubmissionByMandatoryQuestionGapId("applicationNumber"))
+            when(spotlightSubmissionService.getSpotlightSubmissionByMandatoryQuestionGapId("applicationNumber"))
                     .thenReturn(spotlightSubmission);
 
             doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
