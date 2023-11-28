@@ -12,6 +12,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
+import gov.cabinetoffice.gap.adminbackend.services.SnsService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import org.junit.jupiter.api.Nested;
@@ -67,6 +68,9 @@ public class SpotlightBatchControllerTest {
 
     @MockBean
     private SpotlightBatchMapper mockSpotlightBatchMapper;
+
+    @MockBean
+    private SnsService snsService;
 
     @Nested
     class spotlightBatchWithStatusExist {
