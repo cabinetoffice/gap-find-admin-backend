@@ -27,8 +27,8 @@ public class EventLogService {
     private final Clock clock;
 
     public EventLogService(@Value("${cloud.aws.sqs.event-service-queue}") String eventLogQueue,
-                           @Value("${cloud.aws.sqs.event-service-queue-enabled}") boolean eventServiceQueueEnabled,
-                           AmazonSQS amazonSQS, ObjectMapper objectMapper, Clock clock) {
+            @Value("${cloud.aws.sqs.event-service-queue-enabled}") boolean eventServiceQueueEnabled,
+            AmazonSQS amazonSQS, ObjectMapper objectMapper, Clock clock) {
         this.eventLogQueue = eventLogQueue;
         this.eventServiceQueueEnabled = eventServiceQueueEnabled;
         this.amazonSQS = amazonSQS;
@@ -76,7 +76,8 @@ public class EventLogService {
             log.info("Sending event to {} : {}", eventLogQueue, eventLog);
             amazonSQS.sendMessage(eventLogQueue, objectMapper.writeValueAsString(eventLog));
             log.info("Message sent successfully");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Message failed to send for event log " + eventLog, e);
         }
 

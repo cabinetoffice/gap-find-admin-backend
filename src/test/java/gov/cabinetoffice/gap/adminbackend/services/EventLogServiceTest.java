@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
-@ExtendWith({InfoLogCaptureExtension.class, ErrorLogCaptureExtension.class})
+@ExtendWith({ InfoLogCaptureExtension.class, ErrorLogCaptureExtension.class })
 class EventLogServiceTest {
 
     @Mock

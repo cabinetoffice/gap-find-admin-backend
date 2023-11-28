@@ -54,7 +54,7 @@ public class GrantAdvertController {
 
     @PostMapping("/create")
     public ResponseEntity<CreateGrantAdvertResponseDto> create(HttpServletRequest request,
-                                                               @Valid @RequestBody CreateGrantAdvertDto createGrantAdvertDto) {
+            @Valid @RequestBody CreateGrantAdvertDto createGrantAdvertDto) {
         log.info("Creating Grant Advert '{}' for Grant Scheme ID '{}'", createGrantAdvertDto.getName(),
                 createGrantAdvertDto.getGrantSchemeId());
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -67,7 +67,8 @@ public class GrantAdvertController {
         try {
             eventLogService.logAdvertCreatedEvent(request.getRequestedSessionId(), session.getUserSub(),
                     session.getFunderId(), grantAdvert.getId().toString());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }
@@ -80,8 +81,8 @@ public class GrantAdvertController {
 
     @PatchMapping("/{grantAdvertId}/sections/{sectionId}/pages/{pageId}")
     public ResponseEntity updatePage(HttpServletRequest request, @PathVariable UUID grantAdvertId,
-                                     @PathVariable String sectionId, @PathVariable String pageId,
-                                     @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
+            @PathVariable String sectionId, @PathVariable String pageId,
+            @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
         GrantAdvertPageResponse responseWithId = GrantAdvertPageResponse.builder().id(pageId)
                 .status(patchAdvertPageResponse.getStatus()).questions(patchAdvertPageResponse.getQuestions()).build();
         GrantAdvertPageResponseValidationDto patchPageDto = GrantAdvertPageResponseValidationDto.builder()
@@ -103,7 +104,8 @@ public class GrantAdvertController {
         try {
             eventLogService.logAdvertUpdatedEvent(request.getRequestedSessionId(), session.getUserSub(),
                     session.getFunderId(), grantAdvertId.toString());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }
@@ -176,7 +178,7 @@ public class GrantAdvertController {
      * them into the same order as the initial DTO we receive
      */
     private List<ValidationError> reorderValidationErrors(GrantAdvertPagePatchResponseDto patchAdvertPageResponse,
-                                                          Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet) {
+            Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet) {
         List<ValidationError> validationErrorsList = new ArrayList<>();
 
         // map questions, if question errors exist
@@ -197,7 +199,7 @@ public class GrantAdvertController {
 
     @PostMapping("/{grantAdvertId}/publish")
     public ResponseEntity<GrantAdvert> publishGrantAdvert(HttpServletRequest request,
-                                                          final @PathVariable UUID grantAdvertId) {
+            final @PathVariable UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         final GrantAdvert publishedAdvert = grantAdvertService.publishAdvert(grantAdvertId, false);
@@ -205,7 +207,8 @@ public class GrantAdvertController {
         try {
             eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(),
                     session.getFunderId(), grantAdvertId.toString());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }
@@ -215,11 +218,12 @@ public class GrantAdvertController {
 
     @PostMapping("/lambda/{grantAdvertId}/publish")
     public ResponseEntity publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId,
-                                                   final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+            final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         try {
             grantAdvertService.publishAdvert(grantAdvertId, true);
-        } catch (CMAHttpException cmae) {
+        }
+        catch (CMAHttpException cmae) {
             log.error("Contentful Error Body - " + cmae.getErrorBody().toString());
 
             return ResponseEntity.badRequest().body(cmae.getErrorBody());
@@ -236,7 +240,8 @@ public class GrantAdvertController {
         try {
             eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(),
                     session.getFunderId(), grantAdvertId.toString());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             // If anything goes wrong logging to event service, log and continue
             log.error("Could not send to event service. Exception: ", e);
         }
@@ -261,7 +266,7 @@ public class GrantAdvertController {
             @ApiResponse(responseCode = "401", description = "No credentials or invalid credentials provided",
                     content = @Content(mediaType = "application/json")), })
     public ResponseEntity unpublishGrantAdvert(final @PathVariable UUID grantAdvertId,
-                                               final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+            final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         secretAuthService.authenticateSecret(authHeader);
         grantAdvertService.unpublishAdvert(grantAdvertId, true);
         return ResponseEntity.ok().build();

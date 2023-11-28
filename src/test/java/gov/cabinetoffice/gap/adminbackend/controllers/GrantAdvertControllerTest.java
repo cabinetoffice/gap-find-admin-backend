@@ -138,8 +138,8 @@ class GrantAdvertControllerTest {
             doNothing().when(grantAdvertService).updatePageResponse(pagePatchDto);
 
             mockMvc.perform(
-                            patch(String.format("/grant-advert/%s/sections/%s/pages/%s", grantAdvertId, sectionId, pageId))
-                                    .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(samplePage)))
+                    patch(String.format("/grant-advert/%s/sections/%s/pages/%s", grantAdvertId, sectionId, pageId))
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(samplePage)))
                     .andExpect(status().isOk());
 
             verify(eventLogService).logAdvertUpdatedEvent(any(), anyString(), anyLong(), eq(grantAdvertId.toString()));
