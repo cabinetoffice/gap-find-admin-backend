@@ -118,8 +118,9 @@ public class SpotlightBatchService {
                 () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
     }
 
-    public SpotlightBatch getSpotlightBatchByMandatoryQuestionGapId(String gapId) {
-        return spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(gapId)
+    public SpotlightBatch getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(String gapId) {
+        return spotlightBatchRepository
+                .findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(SpotlightBatchStatus.QUEUED, gapId)
                 .orElseThrow(() -> new NotFoundException(
                         "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
                                 + " could not be found"));
@@ -337,7 +338,7 @@ public class SpotlightBatchService {
     }
 
     public void updateSpotlightBatchStatus(SendToSpotlightDto spotlightBatchDto, SpotlightBatchStatus status) {
-        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
+        final SpotlightBatch spotlightBatch = getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
 
         spotlightBatch.setStatus(status);
@@ -349,7 +350,7 @@ public class SpotlightBatchService {
 
     public void updateSpotlightSubmissionStatus(SendToSpotlightDto spotlightBatchDto,
             SpotlightSubmissionStatus status) {
-        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
+        final SpotlightBatch spotlightBatch = getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
 
         List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
@@ -366,7 +367,7 @@ public class SpotlightBatchService {
     }
 
     public void addMessageToQueue(SendToSpotlightDto spotlightBatchDto) {
-        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
+        final SpotlightBatch spotlightBatch = getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
 
         final List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
