@@ -53,7 +53,7 @@ public class SnsServiceTest {
         void throwsException() {
             when(snsClient.publish(any())).thenThrow(new AmazonSNSException("error publishing message"));
             final String result = snsService.spotlightOAuthDisconnected();
-            assertThat(result).isEqualTo("error publishing message");
+            assertThat(result).isEqualTo("Error publishing message to SNS topic with error: error publishing message");
         }
 
     }
