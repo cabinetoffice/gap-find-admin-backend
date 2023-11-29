@@ -1,11 +1,11 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sns.model.AmazonSNSException;
 import com.amazonaws.services.sns.model.PublishRequest;
+import com.amazonaws.services.sns.model.PublishResult;
 import gov.cabinetoffice.gap.adminbackend.config.SnsConfigProperties;
 import lombok.RequiredArgsConstructor;
-import com.amazonaws.services.sns.model.PublishResult;
-import com.amazonaws.services.sns.model.AmazonSNSException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
