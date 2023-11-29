@@ -42,8 +42,6 @@ public class SpotlightBatchController {
 
     private final SpotlightBatchMapper spotlightBatchMapper;
 
-    private final SnsService snsService;
-
     // check spring security whitelist before adding endpoints
 
     @GetMapping("/status/{status}/exists")
@@ -182,14 +180,6 @@ public class SpotlightBatchController {
                 .getSpotlightBatchErrorCount(Integer.parseInt(schemeId));
 
         return ResponseEntity.ok().body(spotlightBatchErrorCount);
-    }
-
-    // TODO delete this
-    @GetMapping("/sns-test")
-    public ResponseEntity<String> snsTest() {
-        final String response = snsService.spotlightOAuthDisconnected();
-
-        return ResponseEntity.ok().body(response);
     }
 
 }

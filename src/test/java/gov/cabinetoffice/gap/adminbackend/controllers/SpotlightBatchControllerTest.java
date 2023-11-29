@@ -66,9 +66,6 @@ public class SpotlightBatchControllerTest {
     @MockBean
     private SpotlightBatchMapper mockSpotlightBatchMapper;
 
-    @MockBean
-    private SnsService snsService;
-
     @Nested
     class spotlightBatchWithStatusExist {
 

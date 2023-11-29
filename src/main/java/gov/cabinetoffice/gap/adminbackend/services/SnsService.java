@@ -6,10 +6,12 @@ import gov.cabinetoffice.gap.adminbackend.config.SnsConfigProperties;
 import lombok.RequiredArgsConstructor;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.amazonaws.services.sns.model.AmazonSNSException;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class SnsService {
 
     private final AmazonSNSClient snsClient;
@@ -20,11 +22,11 @@ public class SnsService {
         try {
             final PublishRequest request = new PublishRequest(snsConfigProperties.getTopicArn(), body, subject);
             final PublishResult result = snsClient.publish(request);
+            log.info("Message published to SNS topic");
             return "Message with message id:" + result.getMessageId() + " sent.";
-
         }
         catch (AmazonSNSException e) {
-            return e.getErrorMessage();
+            return "Error publishing message to SNS topic with error: " + e.getErrorMessage();
         }
 
     }
