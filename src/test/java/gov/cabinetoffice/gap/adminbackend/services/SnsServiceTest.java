@@ -63,6 +63,28 @@ public class SnsServiceTest {
     }
 
     @Nested
+    class spotlightApiError {
+
+        @Test
+        void successfullyPublishesMessage() {
+            final PublishResult mockResult = new PublishResult().withMessageId(MESSAGE_ID);
+            when(snsClient.publish(any(PublishRequest.class))).thenReturn(mockResult);
+
+            final String result = snsService.spotlightApiError();
+
+            assertThat(result).isEqualTo("Message with message id:" + MESSAGE_ID + " sent.");
+        }
+
+        @Test
+        void throwsException() {
+            when(snsClient.publish(any())).thenThrow(new AmazonSNSException(ERROR));
+            final String result = snsService.spotlightApiError();
+            assertThat(result).isEqualTo("Error publishing message to SNS topic with error: " + ERROR);
+        }
+
+    }
+
+    @Nested
     class spotlightValidationError {
 
         @Test
