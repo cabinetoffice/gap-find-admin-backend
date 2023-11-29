@@ -738,6 +738,7 @@ class SpotlightBatchServiceTest {
 
             verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
                     SpotlightBatchStatus.FAILURE);
+            verify(snsService, times(1)).spotlightValidationError();
         }
 
         @Test
@@ -773,6 +774,7 @@ class SpotlightBatchServiceTest {
 
             verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
                     SpotlightBatchStatus.FAILURE);
+            verify(snsService, times(1)).spotlightValidationError();
         }
 
     }

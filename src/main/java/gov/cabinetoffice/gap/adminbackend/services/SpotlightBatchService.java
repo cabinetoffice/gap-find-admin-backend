@@ -290,6 +290,10 @@ public class SpotlightBatchService {
                 || errorMessage.contains(RESPONSE_MESSAGE_409_LENGTH)) {
             // has a validation error
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
+
+            log.info("Sending Spotlight validation support email using SNS for status code: 409");
+            final String snsResponse = snsService.spotlightValidationError();
+            log.info(snsResponse);
         }
     }
 
@@ -330,7 +334,7 @@ public class SpotlightBatchService {
         catch (HttpClientErrorException e) { // 4xx codes
 
             if (e.getStatusCode().equals(HttpStatus.UNAUTHORIZED)) {
-                log.info("Sending spotlight OAuth disconnected support email using SNS for status code: "
+                log.info("Sending Spotlight OAuth disconnected support email using SNS for status code: "
                         + e.getStatusCode());
                 final String snsResponse = snsService.spotlightOAuthDisconnected();
                 log.info(snsResponse);
