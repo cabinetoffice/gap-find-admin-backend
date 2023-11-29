@@ -315,6 +315,9 @@ public class SpotlightBatchService {
         SpotlightResponseResultsDto list = SpotlightResponseResultsDto.builder().build();
 
         try {
+            log.info("Spotlight request endpoint: {}", draftAssessmentsEndpoint);
+            log.info("Spotlight request body: {}", requestEntity.toString());
+
             final ResponseEntity<String> response = restTemplate.postForEntity(draftAssessmentsEndpoint, requestEntity,
                     String.class);
 
@@ -425,7 +428,12 @@ public class SpotlightBatchService {
 
         final GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
                 .secretId(spotlightConfig.getSecretName()).build();
+
+        log.info("Request to AWS secrets manager: {}", valueRequest.toString());
+
         final GetSecretValueResponse valueResponse = secretsManagerClient.getSecretValue(valueRequest);
+
+        log.info("Response from AWS secrets manager: {}", valueResponse.toString());
 
         return getSecretValue(ACCESS_TOKEN, valueResponse.secretString());
     }
