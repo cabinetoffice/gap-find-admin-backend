@@ -339,8 +339,7 @@ public class SpotlightBatchService {
         }
         catch (HttpServerErrorException e) {
             if (e.getStatusCode().is5xxServerError()) { // 5xx codes
-                log.info("Sending spotlight API error support email using SNS for status code: "
-                        + e.getStatusCode());
+                log.info("Sending spotlight API error support email using SNS for status code: " + e.getStatusCode());
                 final String snsResponse = snsService.spotlightApiError();
                 log.info(snsResponse);
 
