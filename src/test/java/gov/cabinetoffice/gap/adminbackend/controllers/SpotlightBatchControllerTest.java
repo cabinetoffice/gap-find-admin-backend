@@ -9,6 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import org.junit.jupiter.api.Nested;
@@ -17,13 +18,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -58,6 +65,9 @@ public class SpotlightBatchControllerTest {
 
     @MockBean
     private SpotlightBatchMapper mockSpotlightBatchMapper;
+
+    @MockBean
+    private FileService fileService;
 
     @Nested
     class spotlightBatchWithStatusExist {
@@ -201,6 +211,37 @@ public class SpotlightBatchControllerTest {
                     .andExpect(status().isOk()).andExpect(content().string("Success"));
 
             verify(mockSpotlightBatchService, times(1)).sendQueuedBatchesToSpotlightAndProcessThem();
+        }
+
+    }
+
+    @Nested
+    class exportSpotlightValidationErrorFiles {
+
+        @Test
+        void exportSpotlightValidationErrorFiles_success() throws Exception {
+            final int schemeId = 1;
+            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
+                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
+                zipOut.putNextEntry(entry);
+                zipOut.write("Mock Excel File Content".getBytes());
+                zipOut.closeEntry();
+            }
+
+            when(mockSpotlightBatchService.getFilteredSpotlightSubmissionsWithValidationErrors(anyInt()))
+                    .thenReturn(zipStream);
+            when(fileService.createTemporaryFile(zipStream, "spotlight_validation_errors.zip"))
+                    .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
+
+            mockMvc.perform(get("/spotlight-batch/get-validation-error-files/" + schemeId)).andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"spotlight_validation_errors.zip\""))
+                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
+                    .andExpect(
+                            header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
+                    .andExpect(content().bytes(zipStream.toByteArray()));
+
         }
 
     }

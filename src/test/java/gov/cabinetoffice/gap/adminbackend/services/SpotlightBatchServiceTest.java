@@ -45,11 +45,15 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
 import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
@@ -68,6 +72,9 @@ class SpotlightBatchServiceTest {
     public static final String APPLICATION_NUMBER = "GAP-an-environment-name-20231115-1-5550";
 
     Pageable pageable = PageRequest.of(0, 1);
+
+    @Mock
+    private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
     @Mock
     private SpotlightBatchRepository spotlightBatchRepository;
@@ -110,10 +117,10 @@ class SpotlightBatchServiceTest {
                 .secretName("secretName").build();
         objectMapper = Mockito.spy(new ObjectMapper());
         spotlightQueueProperties = SpotlightQueueConfigProperties.builder().queueUrl("queueUrl").build();
-        spotlightBatchService = Mockito
-                .spy(new SpotlightBatchService(spotlightBatchRepository, mandatoryQuestionsMapper, secretsManagerClient,
-                        restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper,
-                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService, snsService));
+        spotlightBatchService = Mockito.spy(new SpotlightBatchService(spotlightBatchRepository,
+                mandatoryQuestionsMapper, secretsManagerClient, restTemplate, spotlightSubmissionRepository,
+                spotlightConfigProperties, objectMapper, spotlightQueueProperties, amazonSqs,
+                spotlightSubmissionService, grantMandatoryQuestionService, snsService));
     }
 
     @Nested
@@ -1300,6 +1307,52 @@ class SpotlightBatchServiceTest {
             assertEquals(0, result.getErrorCount());
             assertEquals("OK", result.getErrorStatus());
             assertFalse(result.isErrorFound());
+        }
+
+    }
+
+    @Nested
+    class getFilteredSpotlightSubmissionsWithValidationErrors {
+
+        final Integer schemeId = 1;
+
+        final SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).build();
+
+        final List<SpotlightBatch> spotlightBatches = Collections
+                .singletonList(SpotlightBatch.builder().spotlightSubmissions(new ArrayList<>()).build());
+
+        private final GrantMandatoryQuestions grantMandatoryQuestions = GrantMandatoryQuestions.builder()
+                .name("Some company name").addressLine1("9-10 St Andrew Square").city("Edinburgh").county("county")
+                .postcode("EH2 2AF").charityCommissionNumber("500").companiesHouseNumber("12738494")
+                .orgType(GrantMandatoryQuestionOrgType.CHARITY).fundingAmount(BigDecimal.valueOf(50000))
+                .schemeEntity(schemeEntity).gapId("GAP-ID").build();
+
+        final List<GrantMandatoryQuestions> mandatoryQuestionsList = List.of(grantMandatoryQuestions);
+
+        final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                .status(SpotlightSubmissionStatus.VALIDATION_ERROR.toString()).grantScheme(schemeEntity)
+                .mandatoryQuestions(grantMandatoryQuestions).build();
+
+        @Test
+        void getFilteredSpotlightSubmissionsWithValidationErrors() throws IOException {
+            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
+                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
+                zipOut.putNextEntry(entry);
+                zipOut.write("Mock Excel File Content".getBytes());
+                zipOut.closeEntry();
+            }
+
+            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
+            when(grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestionsList, schemeId))
+                    .thenReturn(zipStream);
+
+            final ByteArrayOutputStream result = spotlightBatchService
+                    .getFilteredSpotlightSubmissionsWithValidationErrors(schemeId);
+
+            verify(spotlightBatchRepository).findMostRecentSpotlightBatch(pageable);
+            assertThat(result).isEqualTo(zipStream);
         }
 
     }

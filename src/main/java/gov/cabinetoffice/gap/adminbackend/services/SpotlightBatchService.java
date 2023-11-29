@@ -14,6 +14,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.DraftAssessmen
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
@@ -41,12 +42,14 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 
@@ -82,6 +85,8 @@ public class SpotlightBatchService {
     private final AmazonSQS amazonSqs;
 
     private final SpotlightSubmissionService spotlightSubmissionService;
+
+    private final GrantMandatoryQuestionService grantMandatoryQuestionService;
 
     private final SnsService snsService;
 
@@ -500,16 +505,29 @@ public class SpotlightBatchService {
     }
 
     public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
-        Pageable pageable = PageRequest.of(0, 1);
-        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
-        final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
-        final List<SpotlightSubmission> filteredSubmissions = spotlightBatch.getSpotlightSubmissions().stream()
-                .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+        final List<SpotlightSubmission> filteredSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId);
 
         if (filteredSubmissions.isEmpty()) {
             return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
         }
         return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
+    }
+
+    @NotNull
+    private List<SpotlightSubmission> getSpotlightBatchSubmissionsBySchemeId(Integer schemeId) {
+        Pageable pageable = PageRequest.of(0, 1);
+        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
+        final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
+        return spotlightBatch.getSpotlightSubmissions().stream()
+                .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+    }
+
+    public ByteArrayOutputStream getFilteredSpotlightSubmissionsWithValidationErrors(Integer schemeId) {
+        final List<SpotlightSubmission> spotlightSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId).stream()
+                .filter(s -> s.getStatus().equals(SpotlightSubmissionStatus.VALIDATION_ERROR.toString())).toList();
+        List<GrantMandatoryQuestions> mandatoryQuestions = spotlightSubmissions.stream()
+                .map(SpotlightSubmission::getMandatoryQuestions).collect(Collectors.toList());
+        return grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestions, schemeId);
     }
 
 }
