@@ -70,6 +70,9 @@ class SpotlightBatchServiceTest {
     Pageable pageable = PageRequest.of(0, 1);
 
     @Mock
+    private GrantMandatoryQuestionService grantMandatoryQuestionService;
+
+    @Mock
     private SpotlightBatchRepository spotlightBatchRepository;
 
     @Mock
@@ -110,7 +113,7 @@ class SpotlightBatchServiceTest {
         spotlightBatchService = Mockito
                 .spy(new SpotlightBatchService(spotlightBatchRepository, mandatoryQuestionsMapper, secretsManagerClient,
                         restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper,
-                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService));
+                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService, grantMandatoryQuestionService));
     }
 
     @Nested

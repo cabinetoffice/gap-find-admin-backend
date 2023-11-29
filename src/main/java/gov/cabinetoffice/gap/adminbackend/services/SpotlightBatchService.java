@@ -87,6 +87,8 @@ public class SpotlightBatchService {
 
     private final SpotlightSubmissionService spotlightSubmissionService;
 
+    private final GrantMandatoryQuestionService grantMandatoryQuestionService;
+
     public boolean existsByStatusAndMaxBatchSize(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
     }
@@ -501,7 +503,6 @@ public class SpotlightBatchService {
         for(SpotlightSubmission submission: spotlightSubmissions) {
             mandatoryQuestions.add(submission.getMandatoryQuestions());
         }
-        final List<List<String>> exportData = exportSpotlightChecks(schemeId, mandatoryQuestions, true);
-        return XlsxGenerator.createResource(DueDiligenceHeaders.DUE_DILIGENCE_HEADERS, exportData);
+        return grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestions, schemeId);
     }
 }
