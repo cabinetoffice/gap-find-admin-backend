@@ -119,6 +119,19 @@ class CustomMandatoryQuestionMapperTest {
     }
 
     @Test
+    void mandatoryQuestionsToDraftAssessmentDto_NonLimitedCompany() {
+        mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY);
+        draftAssessmentDto.setOrganisationType("Company");
+
+        when(userService.getDepartmentGGISId(10)).thenReturn("funderId");
+
+        final DraftAssessmentDto actual = customMandatoryQuestionMapper
+                .mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
+
+        assertThat(actual).isEqualTo(draftAssessmentDto);
+    }
+
+    @Test
     void mandatoryQuestionsToDraftAssessmentDto_SoleTrader() {
         mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.SOLE_TRADER);
         draftAssessmentDto.setOrganisationType("Sole Trader");
