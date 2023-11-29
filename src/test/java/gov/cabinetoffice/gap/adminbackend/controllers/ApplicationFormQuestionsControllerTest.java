@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import javax.servlet.http.HttpSession;
-
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -9,9 +8,9 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -22,20 +21,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_QUESTION_OPTIONS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECTION_ID;
+import javax.servlet.http.HttpSession;
+
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,10 +42,14 @@ class ApplicationFormQuestionsControllerTest {
     @MockBean
     private ApplicationFormService applicationFormService;
 
+    @MockBean
+    private EventLogService eventLogService;
+
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
 
     @Test
+    @WithAdminSession
     void updateQuestionHappyPathTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         applicationFormQuestionDTO.setDisplayText("New display text");
@@ -65,6 +61,9 @@ class ApplicationFormQuestionsControllerTest {
                         + "/questions/" + SAMPLE_QUESTION_ID).contentType(MediaType.APPLICATION_JSON)
                                 .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk());
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -72,6 +71,8 @@ class ApplicationFormQuestionsControllerTest {
 
         this.mockMvc.perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
                 + "/questions/" + SAMPLE_QUESTION_ID)).andExpect(status().isBadRequest());
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -86,6 +87,8 @@ class ApplicationFormQuestionsControllerTest {
                                 .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -99,9 +102,12 @@ class ApplicationFormQuestionsControllerTest {
                         + "/questions/" + SAMPLE_QUESTION_ID).contentType(MediaType.APPLICATION_JSON)
                                 .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
+    @WithAdminSession
     void addQuestionHappyPathTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = ApplicationFormQuestionDTO.builder()
                 .fieldTitle("What is the question?").hintText("Enter a smart question")
@@ -115,6 +121,9 @@ class ApplicationFormQuestionsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk()).andExpect(content().json("{id: " + SAMPLE_QUESTION_ID + "}"));
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -123,6 +132,8 @@ class ApplicationFormQuestionsControllerTest {
         this.mockMvc.perform(
                 post("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/questions/"))
                 .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -138,6 +149,8 @@ class ApplicationFormQuestionsControllerTest {
                         .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -153,6 +166,8 @@ class ApplicationFormQuestionsControllerTest {
                         .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -168,9 +183,12 @@ class ApplicationFormQuestionsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
+    @WithAdminSession
     void addQuestionWithOptionsHappyPathTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = ApplicationFormQuestionDTO.builder()
                 .fieldTitle("What is the question?").hintText("Enter a smart question")
@@ -184,9 +202,13 @@ class ApplicationFormQuestionsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk()).andExpect(content().json("{id: " + SAMPLE_QUESTION_ID + "}"));
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
+    @WithAdminSession
     void deleteQuestionHappyPathTest() throws Exception {
 
         doNothing().when(this.applicationFormService).deleteQuestionFromSection(SAMPLE_APPLICATION_ID,
@@ -194,6 +216,9 @@ class ApplicationFormQuestionsControllerTest {
 
         this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
                 + "/questions/" + SAMPLE_QUESTION_ID)).andExpect(status().isOk());
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -202,6 +227,8 @@ class ApplicationFormQuestionsControllerTest {
         this.mockMvc.perform(delete(
                 "/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/ESSENTIAL/questions/" + SAMPLE_QUESTION_ID))
                 .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -215,6 +242,8 @@ class ApplicationFormQuestionsControllerTest {
                         + "/questions/incorrectId"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -225,6 +254,8 @@ class ApplicationFormQuestionsControllerTest {
 
         this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
                 + "/questions/incorrectId")).andExpect(status().isForbidden()).andExpect(content().string(""));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -237,6 +268,8 @@ class ApplicationFormQuestionsControllerTest {
                 .perform(get("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
                         + "/questions/" + SAMPLE_QUESTION_ID))
                 .andExpect(status().isOk()).andExpect(content().json(HelperUtils.asJsonString(SAMPLE_QUESTION)));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -250,6 +283,8 @@ class ApplicationFormQuestionsControllerTest {
                         + "/questions/" + SAMPLE_QUESTION_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -262,6 +297,8 @@ class ApplicationFormQuestionsControllerTest {
                 .perform(get("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
                         + "/questions/" + SAMPLE_QUESTION_ID))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -275,6 +312,8 @@ class ApplicationFormQuestionsControllerTest {
                         + "/questions/" + SAMPLE_QUESTION_ID))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
 }

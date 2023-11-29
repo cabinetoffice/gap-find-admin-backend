@@ -6,13 +6,14 @@ import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
+import gov.cabinetoffice.gap.adminbackend.enums.EventType;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.InvalidEventException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
-import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
-import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
-import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
-import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.services.*;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,17 +29,18 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Tag(name = "Application Forms", description = "API for handling organisations.")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/application-forms")
-@Slf4j
 public class ApplicationFormController {
 
     private final ApplicationFormService applicationFormService;
@@ -49,6 +51,8 @@ public class ApplicationFormController {
 
     private final SchemeService schemeService;
 
+    private final EventLogService eventLogService;
+
     @PostMapping
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Application form created successfully.",
@@ -56,10 +60,14 @@ public class ApplicationFormController {
                             schema = @Schema(implementation = GenericPostResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity postApplicationForm(@RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
+    public ResponseEntity<Void> postApplicationForm(HttpServletRequest request,
+            @RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(applicationFormPostDTO.getGrantSchemeId());
         final GenericPostResponseDTO idResponse = this.applicationFormService
                 .saveApplicationForm(applicationFormPostDTO, scheme);
+
+        logApplicationEvent(EventType.APPLICATION_CREATED, request.getRequestedSessionId(),
+                idResponse.getId().toString());
 
         return new ResponseEntity(idResponse, HttpStatus.CREATED);
     }
@@ -73,7 +81,8 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No Application form found",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity checkApplicationFormsExists(@Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
+    public ResponseEntity<List<ApplicationFormsFoundDTO>> checkApplicationFormsExists(
+            @Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
         List<ApplicationFormsFoundDTO> foundApplicationForms = this.applicationFormService
                 .getMatchingApplicationFormsIds(applicationFormExistsDTO);
 
@@ -95,7 +104,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getApplicationFormSummary(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<Void> getApplicationFormSummary(@PathVariable @NotNull Integer applicationId,
             @RequestParam(defaultValue = "true") Boolean withSections,
             @RequestParam(defaultValue = "true") Boolean withQuestions) {
         try {
@@ -122,7 +131,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity deleteApplicationForm(@PathVariable @NotNull Integer applicationId) {
+    public ResponseEntity<Void> deleteApplicationForm(@PathVariable @NotNull Integer applicationId) {
         try {
             this.applicationFormService.deleteApplicationForm(applicationId);
             return new ResponseEntity(HttpStatus.OK);
@@ -168,7 +177,6 @@ public class ApplicationFormController {
 
             return ResponseEntity.noContent().build();
         }
-
         catch (NotFoundException error) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -192,11 +200,19 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity updateApplicationForm(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<GenericErrorDTO> updateApplicationForm(HttpServletRequest request,
+            @PathVariable @NotNull Integer applicationId,
             @Valid @RequestBody ApplicationFormPatchDTO applicationFormPatchDTO) {
 
         try {
+
             this.applicationFormService.patchApplicationForm(applicationId, applicationFormPatchDTO, false);
+
+            EventType eventType = applicationFormPatchDTO.getApplicationStatus().equals(ApplicationStatusEnum.PUBLISHED)
+                    ? EventType.APPLICATION_PUBLISHED : EventType.APPLICATION_UPDATED;
+
+            logApplicationEvent(eventType, request.getRequestedSessionId(), applicationId.toString());
+
             return ResponseEntity.noContent().build();
         }
         catch (NotFoundException nfe) {
@@ -209,6 +225,31 @@ public class ApplicationFormController {
         catch (ApplicationFormException afe) {
             GenericErrorDTO genericErrorDTO = new GenericErrorDTO(afe.getMessage());
             return ResponseEntity.internalServerError().body(genericErrorDTO);
+        }
+
+    }
+
+    private void logApplicationEvent(EventType eventType, String sessionId, String applicationId) {
+
+        try {
+            AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+            switch (eventType) {
+                case APPLICATION_CREATED -> eventLogService.logApplicationCreatedEvent(sessionId, session.getUserSub(),
+                        session.getFunderId(), applicationId);
+
+                case APPLICATION_UPDATED -> eventLogService.logApplicationUpdatedEvent(sessionId, session.getUserSub(),
+                        session.getFunderId(), applicationId);
+
+                case APPLICATION_PUBLISHED -> eventLogService.logApplicationPublishedEvent(sessionId,
+                        session.getUserSub(), session.getFunderId(), applicationId);
+
+                default -> throw new InvalidEventException("Invalid event provided: " + eventType);
+            }
+
+        }
+        catch (Exception e) {
+            // If anything goes wrong logging to event service, log and continue
+            log.error("Could not send to event service. Exception: ", e);
         }
     }
 
