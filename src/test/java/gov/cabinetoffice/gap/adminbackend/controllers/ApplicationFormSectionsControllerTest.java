@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import java.util.Collections;
-
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -11,10 +10,10 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.ValidationError;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormSectionService;
+import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -25,20 +24,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECTION;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SECTION_ID;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import java.util.Collections;
+
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,6 +45,9 @@ class ApplicationFormSectionsControllerTest {
 
     @MockBean
     private ApplicationFormSectionService applicationFormSectionService;
+
+    @MockBean
+    private EventLogService eventLogService;
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
@@ -118,6 +114,7 @@ class ApplicationFormSectionsControllerTest {
     }
 
     @Test
+    @WithAdminSession
     void addSectionHappyPathTest() throws Exception {
         PostSectionDTO newSection = new PostSectionDTO("New section title");
 
@@ -128,9 +125,13 @@ class ApplicationFormSectionsControllerTest {
                 .perform(post("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections")
                         .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(newSection)))
                 .andExpect(status().isOk()).andExpect(content().json("{id: " + SAMPLE_SECTION_ID + "}"));
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
+    @WithAdminSession
     void addSectionApplicationNotFoundTest() throws Exception {
         PostSectionDTO newSection = new PostSectionDTO("New section title");
         String exceptionMessage = "Application with id " + SAMPLE_APPLICATION_ID + " does not exist";
@@ -185,6 +186,7 @@ class ApplicationFormSectionsControllerTest {
     }
 
     @Test
+    @WithAdminSession
     void deleteSectionHappyPathTest() throws Exception {
 
         doNothing().when(this.applicationFormSectionService).deleteSectionFromApplication(SAMPLE_APPLICATION_ID,
@@ -223,6 +225,7 @@ class ApplicationFormSectionsControllerTest {
     }
 
     @Nested
+    @WithAdminSession
     class updateSectionStatus {
 
         @Test

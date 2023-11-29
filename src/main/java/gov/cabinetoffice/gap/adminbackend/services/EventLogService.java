@@ -65,6 +65,38 @@ public class EventLogService {
 
     }
 
+    public void logApplicationCreatedEvent(String sessionId, String userSub, long fundingOrganisationId,
+            String objectId) {
+
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.APPLICATION)
+                .eventType(EventType.APPLICATION_CREATED).sessionId(sessionId).userSub(userSub)
+                .fundingOrganisationId(fundingOrganisationId).objectId(objectId).timestamp(Instant.now(clock)).build();
+
+        logEvent(eventLog);
+
+    }
+
+    public void logApplicationUpdatedEvent(String sessionId, String userSub, long fundingOrganisationId,
+            String objectId) {
+
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.APPLICATION)
+                .eventType(EventType.APPLICATION_UPDATED).sessionId(sessionId).userSub(userSub)
+                .fundingOrganisationId(fundingOrganisationId).objectId(objectId).timestamp(Instant.now(clock)).build();
+
+        logEvent(eventLog);
+
+    }
+
+    public void logApplicationPublishedEvent(String sessionId, String userSub, long fundingOrganisationId,
+            String objectId) {
+        EventLog eventLog = EventLog.builder().objectType(ObjectType.APPLICATION)
+                .eventType(EventType.APPLICATION_PUBLISHED).sessionId(sessionId).userSub(userSub)
+                .fundingOrganisationId(fundingOrganisationId).objectId(objectId).timestamp(Instant.now(clock)).build();
+
+        logEvent(eventLog);
+
+    }
+
     private void logEvent(EventLog eventLog) {
 
         if (!eventServiceQueueEnabled) {
@@ -75,7 +107,7 @@ public class EventLogService {
         try {
             log.info("Sending event to {} : {}", eventLogQueue, eventLog);
             amazonSQS.sendMessage(eventLogQueue, objectMapper.writeValueAsString(eventLog));
-            log.info("Message sent successfully");
+            log.info("{} Message sent successfully", eventLog.getEventType());
         }
         catch (Exception e) {
             log.error("Message failed to send for event log " + eventLog, e);

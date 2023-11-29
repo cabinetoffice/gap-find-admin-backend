@@ -96,6 +96,9 @@ class SpotlightBatchServiceTest {
     private AmazonSQS amazonSqs;
 
     @Mock
+    private SnsService snsService;
+
+    @Mock
     private SpotlightSubmissionService spotlightSubmissionService;
 
     @Mock
@@ -110,10 +113,10 @@ class SpotlightBatchServiceTest {
                 .secretName("secretName").build();
         objectMapper = Mockito.spy(new ObjectMapper());
         spotlightQueueProperties = SpotlightQueueConfigProperties.builder().queueUrl("queueUrl").build();
-        spotlightBatchService = Mockito.spy(new SpotlightBatchService(spotlightBatchRepository,
-                mandatoryQuestionsMapper, secretsManagerClient, restTemplate, spotlightSubmissionRepository,
-                spotlightConfigProperties, objectMapper, spotlightQueueProperties, amazonSqs,
-                spotlightSubmissionService, grantMandatoryQuestionService));
+        spotlightBatchService = Mockito
+                .spy(new SpotlightBatchService(spotlightBatchRepository, mandatoryQuestionsMapper, secretsManagerClient,
+                        restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper,
+                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService, snsService, grantMandatoryQuestionService));
     }
 
     @Nested
@@ -480,21 +483,22 @@ class SpotlightBatchServiceTest {
         void getSpotlightBatchByMandatoryQuestionGapId_success() {
             final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
 
-            when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any()))
+            when(spotlightBatchRepository.findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(any(), any()))
                     .thenReturn(Optional.of(spotlightBatch));
 
-            final SpotlightBatch result = spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123");
+            final SpotlightBatch result = spotlightBatchService
+                    .getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId("GAP123");
 
             assertThat(result).isEqualTo(spotlightBatch);
         }
 
         @Test
         void getSpotlightBatchByMandatoryQuestionGapId_notFound() {
-            when(spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(any()))
+            when(spotlightBatchRepository.findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(any(), any()))
                     .thenReturn(Optional.empty());
 
             assertThrows(NotFoundException.class,
-                    () -> spotlightBatchService.getSpotlightBatchByMandatoryQuestionGapId("GAP123"));
+                    () -> spotlightBatchService.getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId("GAP123"));
         }
 
     }
@@ -957,6 +961,27 @@ class SpotlightBatchServiceTest {
                     () -> spotlightBatchService.sendBatchToSpotlight(batch, accessToken));
         }
 
+        @Test
+        void unauthorizedError() throws JsonProcessingException {
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", "Bearer " + accessToken);
+            requestHeaders.add("Content-Type", "application/json");
+
+            final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
+
+            when(objectMapper.writeValueAsString(batch)).thenReturn(batchAsJson);
+
+            when(restTemplate.postForEntity(
+                    spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
+                    String.class)).thenThrow(clientErrorException);
+
+            when(clientErrorException.getStatusCode()).thenReturn(HttpStatus.UNAUTHORIZED);
+
+            spotlightBatchService.sendBatchToSpotlight(batch, accessToken);
+
+            verify(snsService).spotlightOAuthDisconnected();
+        }
+
     }
 
     @Nested
@@ -982,7 +1007,7 @@ class SpotlightBatchServiceTest {
         void success() {
 
             doReturn(spotlightBatch).when(spotlightBatchService)
-                    .getSpotlightBatchByMandatoryQuestionGapId(APPLICATION_NUMBER);
+                    .getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(APPLICATION_NUMBER);
 
             spotlightBatchService.updateSpotlightBatchStatus(sendToSpotlightDto, status);
 
@@ -1023,7 +1048,7 @@ class SpotlightBatchServiceTest {
         void success() {
 
             doReturn(spotlightBatch).when(spotlightBatchService)
-                    .getSpotlightBatchByMandatoryQuestionGapId(APPLICATION_NUMBER);
+                    .getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(APPLICATION_NUMBER);
 
             spotlightBatchService.updateSpotlightSubmissionStatus(sendToSpotlightDto, status);
 
@@ -1060,7 +1085,7 @@ class SpotlightBatchServiceTest {
         @Test
         void success() {
             doReturn(spotlightBatch).when(spotlightBatchService)
-                    .getSpotlightBatchByMandatoryQuestionGapId(APPLICATION_NUMBER);
+                    .getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(APPLICATION_NUMBER);
             doNothing().when(spotlightBatchService).sendMessageToQueue(submission);
 
             spotlightBatchService.addMessageToQueue(sendToSpotlightDto);

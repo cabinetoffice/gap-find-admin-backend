@@ -88,6 +88,8 @@ public class SpotlightBatchService {
 
     private final GrantMandatoryQuestionService grantMandatoryQuestionService;
 
+    private final SnsService snsService;
+
     public boolean existsByStatusAndMaxBatchSize(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
     }
@@ -123,8 +125,9 @@ public class SpotlightBatchService {
                 () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
     }
 
-    public SpotlightBatch getSpotlightBatchByMandatoryQuestionGapId(String gapId) {
-        return spotlightBatchRepository.findBySpotlightSubmissions_MandatoryQuestions_GapId(gapId)
+    public SpotlightBatch getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(String gapId) {
+        return spotlightBatchRepository
+                .findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(SpotlightBatchStatus.QUEUED, gapId)
                 .orElseThrow(() -> new NotFoundException(
                         "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
                                 + " could not be found"));
@@ -285,6 +288,7 @@ public class SpotlightBatchService {
         }
         else if (errorMessage.contains(RESPONSE_MESSAGE_409_FIELD_MISSING)
                 || errorMessage.contains(RESPONSE_MESSAGE_409_LENGTH)) {
+            // has a validation error
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
         }
     }
@@ -315,6 +319,9 @@ public class SpotlightBatchService {
         SpotlightResponseResultsDto list = SpotlightResponseResultsDto.builder().build();
 
         try {
+            log.info("Spotlight request endpoint: {}", draftAssessmentsEndpoint);
+            log.info("Spotlight request body: {}", requestEntity.toString());
+
             final ResponseEntity<String> response = restTemplate.postForEntity(draftAssessmentsEndpoint, requestEntity,
                     String.class);
 
@@ -322,6 +329,12 @@ public class SpotlightBatchService {
         }
         catch (HttpClientErrorException e) { // 4xx codes
 
+            if (e.getStatusCode().equals(HttpStatus.UNAUTHORIZED)) {
+                log.info("Sending spotlight OAuth disconnected support email using SNS for status code: "
+                        + e.getStatusCode());
+                final String snsResponse = snsService.spotlightOAuthDisconnected();
+                log.info(snsResponse);
+            }
             // if 406 or 409, map the response as we would need to handle every
             // spotlightSubmission status
             if (e.getStatusCode().equals(HttpStatus.NOT_ACCEPTABLE) || e.getStatusCode().equals(HttpStatus.CONFLICT)) {
@@ -342,7 +355,7 @@ public class SpotlightBatchService {
     }
 
     public void updateSpotlightBatchStatus(SendToSpotlightDto spotlightBatchDto, SpotlightBatchStatus status) {
-        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
+        final SpotlightBatch spotlightBatch = getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
 
         spotlightBatch.setStatus(status);
@@ -354,7 +367,7 @@ public class SpotlightBatchService {
 
     public void updateSpotlightSubmissionStatus(SendToSpotlightDto spotlightBatchDto,
             SpotlightSubmissionStatus status) {
-        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
+        final SpotlightBatch spotlightBatch = getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
 
         List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
@@ -371,7 +384,7 @@ public class SpotlightBatchService {
     }
 
     public void addMessageToQueue(SendToSpotlightDto spotlightBatchDto) {
-        final SpotlightBatch spotlightBatch = getSpotlightBatchByMandatoryQuestionGapId(
+        final SpotlightBatch spotlightBatch = getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(
                 spotlightBatchDto.getSchemes().get(0).getDraftAssessments().get(0).getApplicationNumber());
 
         final List<SpotlightSubmission> spotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
@@ -418,7 +431,12 @@ public class SpotlightBatchService {
 
         final GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
                 .secretId(spotlightConfig.getSecretName()).build();
+
+        log.info("Request to AWS secrets manager: {}", valueRequest.toString());
+
         final GetSecretValueResponse valueResponse = secretsManagerClient.getSecretValue(valueRequest);
+
+        log.info("Response from AWS secrets manager: {}", valueResponse.toString());
 
         return getSecretValue(ACCESS_TOKEN, valueResponse.secretString());
     }

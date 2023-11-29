@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -13,10 +14,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
-import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
-import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
-import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
-import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
+import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -36,30 +34,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_ADVERT_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_MULTIPLE_PROPS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_NAME;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_POST_FORM_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_RESPONSE_SUCCESS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_CLASS_ERROR_NO_PROPS_PROVIDED;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_APPLICATION_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SCHEME_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -87,9 +67,13 @@ class ApplicationFormControllerTest {
     private ApplicationFormRepository applicationFormRepository;
 
     @MockBean
+    private EventLogService eventLogService;
+
+    @MockBean
     private SchemeService schemeService;
 
     @Test
+    @WithAdminSession
     void saveApplicationFormHappyPathTest() throws Exception {
         final SchemeDTO schemeDTO = SchemeDTO.builder().build();
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_APPLICATION_POST_FORM_DTO.getGrantSchemeId()))
@@ -101,6 +85,9 @@ class ApplicationFormControllerTest {
                 .perform(post("/application-forms/").contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_APPLICATION_POST_FORM_DTO)))
                 .andExpect(status().isCreated());
+
+        verify(eventLogService).logApplicationCreatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
 
     }
 
@@ -118,6 +105,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_APPLICATION_POST_FORM_DTO)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+
+        verifyNoInteractions(eventLogService);
 
     }
 
@@ -344,13 +333,31 @@ class ApplicationFormControllerTest {
     }
 
     @Test
+    @WithAdminSession
     void updateApplicationForm_SuccessfullyUpdatingApplication() throws Exception {
+        doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
+                SAMPLE_PATCH_UPDATED_APPLICATION_DTO, false);
+        this.mockMvc
+                .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
+                        .content(HelperUtils.asJsonString(SAMPLE_PATCH_UPDATED_APPLICATION_DTO)))
+                .andExpect(status().isNoContent());
+
+        verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
+    }
+
+    @Test
+    @WithAdminSession
+    void updateApplicationForm_SuccessfullyPublishingApplication() throws Exception {
         doNothing().when(this.applicationFormService).patchApplicationForm(SAMPLE_APPLICATION_ID,
                 SAMPLE_PATCH_APPLICATION_DTO, false);
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isNoContent());
+
+        verify(eventLogService).logApplicationPublishedEvent(any(), anyString(), anyLong(),
+                eq(SAMPLE_APPLICATION_ID.toString()));
     }
 
     @Test
@@ -363,6 +370,8 @@ class ApplicationFormControllerTest {
 
         verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
                 eq(false));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -373,6 +382,8 @@ class ApplicationFormControllerTest {
 
         verify(this.applicationFormService, never()).patchApplicationForm(anyInt(), any(ApplicationFormPatchDTO.class),
                 eq(false));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -384,6 +395,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Not Found Message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -394,6 +407,8 @@ class ApplicationFormControllerTest {
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID).contentType(MediaType.APPLICATION_JSON)
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
+
+        verifyNoInteractions(eventLogService);
     }
 
     @Test
@@ -405,6 +420,8 @@ class ApplicationFormControllerTest {
                         .content(HelperUtils.asJsonString(SAMPLE_PATCH_APPLICATION_DTO)))
                 .andExpect(status().isInternalServerError()).andExpect(content()
                         .json(HelperUtils.asJsonString(new GenericErrorDTO("Application Form Error Message"))));
+
+        verifyNoInteractions(eventLogService);
     }
 
 }

@@ -1,6 +1,7 @@
 name: Push Image Workflow
 
 on:
+  workflow_dispatch:
   create:
   push:
     branches:
