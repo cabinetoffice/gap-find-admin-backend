@@ -23,9 +23,9 @@ public class SnsServiceTest {
 
     private static SnsConfigProperties snsConfigProperties;
 
-    private final String MESSAGE_ID = "mockMessageId";
+    private static final String MESSAGE_ID = "mockMessageId";
 
-    private final String ERROR = "error publishing message";
+    private static final String ERROR = "error publishing message";
 
     @BeforeAll
     static void beforeAll() {
@@ -79,6 +79,28 @@ public class SnsServiceTest {
         void throwsException() {
             when(snsClient.publish(any())).thenThrow(new AmazonSNSException(ERROR));
             final String result = snsService.spotlightApiError();
+            assertThat(result).isEqualTo("Error publishing message to SNS topic with error: " + ERROR);
+        }
+
+    }
+
+    @Nested
+    class spotlightValidationError {
+
+        @Test
+        void successfullyPublishesMessage() {
+            final PublishResult mockResult = new PublishResult().withMessageId(MESSAGE_ID);
+            when(snsClient.publish(any(PublishRequest.class))).thenReturn(mockResult);
+
+            final String result = snsService.spotlightValidationError();
+
+            assertThat(result).isEqualTo("Message with message id:" + MESSAGE_ID + " sent.");
+        }
+
+        @Test
+        void throwsException() {
+            when(snsClient.publish(any())).thenThrow(new AmazonSNSException(ERROR));
+            final String result = snsService.spotlightValidationError();
             assertThat(result).isEqualTo("Error publishing message to SNS topic with error: " + ERROR);
         }
 
