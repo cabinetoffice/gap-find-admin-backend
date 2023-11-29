@@ -93,6 +93,9 @@ class SpotlightBatchServiceTest {
     private AmazonSQS amazonSqs;
 
     @Mock
+    private SnsService snsService;
+
+    @Mock
     private SpotlightSubmissionService spotlightSubmissionService;
 
     @Mock
@@ -110,7 +113,7 @@ class SpotlightBatchServiceTest {
         spotlightBatchService = Mockito
                 .spy(new SpotlightBatchService(spotlightBatchRepository, mandatoryQuestionsMapper, secretsManagerClient,
                         restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper,
-                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService));
+                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService, snsService));
     }
 
     @Nested
@@ -953,6 +956,27 @@ class SpotlightBatchServiceTest {
 
             assertThrows(JsonParseException.class,
                     () -> spotlightBatchService.sendBatchToSpotlight(batch, accessToken));
+        }
+
+        @Test
+        void unauthorizedError() throws JsonProcessingException {
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.add("Authorization", "Bearer " + accessToken);
+            requestHeaders.add("Content-Type", "application/json");
+
+            final HttpEntity<String> requestEntity = new HttpEntity<>(batchAsJson, requestHeaders);
+
+            when(objectMapper.writeValueAsString(batch)).thenReturn(batchAsJson);
+
+            when(restTemplate.postForEntity(
+                    spotlightConfigProperties.getSpotlightUrl() + "/services/apexrest/DraftAssessments", requestEntity,
+                    String.class)).thenThrow(clientErrorException);
+
+            when(clientErrorException.getStatusCode()).thenReturn(HttpStatus.UNAUTHORIZED);
+
+            spotlightBatchService.sendBatchToSpotlight(batch, accessToken);
+
+            verify(snsService).spotlightOAuthDisconnected();
         }
 
     }

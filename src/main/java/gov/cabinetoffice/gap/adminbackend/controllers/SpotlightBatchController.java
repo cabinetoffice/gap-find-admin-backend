@@ -7,6 +7,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
+import gov.cabinetoffice.gap.adminbackend.services.SnsService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
