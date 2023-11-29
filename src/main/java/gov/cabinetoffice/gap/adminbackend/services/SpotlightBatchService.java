@@ -414,7 +414,12 @@ public class SpotlightBatchService {
 
         final GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
                 .secretId(spotlightConfig.getSecretName()).build();
+
+        log.info("Request to AWS secrets manager: {}", valueRequest.toString());
+
         final GetSecretValueResponse valueResponse = secretsManagerClient.getSecretValue(valueRequest);
+
+        log.info("Response from AWS secrets manager: {}", valueResponse.toString());
 
         return getSecretValue(ACCESS_TOKEN, valueResponse.secretString());
     }
