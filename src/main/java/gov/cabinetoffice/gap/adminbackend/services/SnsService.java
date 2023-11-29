@@ -45,4 +45,16 @@ public class SnsService {
         return publishMessageToTopic(subject, body);
     }
 
+    public String spotlightApiError() {
+        final String subject = "The API between Find and Spotlight is down";
+        final String body = """
+                What do you need to do?
+
+                Find out if it is a problem with Find or is a problem with Spotlight.
+
+                Once resolved, the service will start sending data to Spotlight again automatically.\s""";
+
+        return publishMessageToTopic(subject, body);
+    }
+
 }

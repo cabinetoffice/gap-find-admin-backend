@@ -229,9 +229,9 @@ public class SpotlightBatchService {
 
         if (spotlightResponses.getResults() == null) {
 
-            updateSpotlightBatchStatus(spotlightBatchDto, SpotlightBatchStatus.FAILURE);
             updateSpotlightSubmissionStatus(spotlightBatchDto, SpotlightSubmissionStatus.SEND_ERROR);
             addMessageToQueue(spotlightBatchDto);
+            updateSpotlightBatchStatus(spotlightBatchDto, SpotlightBatchStatus.FAILURE);
 
         }
         else {
@@ -346,6 +346,10 @@ public class SpotlightBatchService {
         }
         catch (HttpServerErrorException e) {
             if (e.getStatusCode().is5xxServerError()) { // 5xx codes
+                log.info("Sending spotlight API error support email using SNS for status code: " + e.getStatusCode());
+                final String snsResponse = snsService.spotlightApiError();
+                log.info(snsResponse);
+
                 log.error("Hitting {} returned status code {} with body {}", draftAssessmentsEndpoint,
                         e.getStatusCode(), e.getResponseBodyAsString());
             }

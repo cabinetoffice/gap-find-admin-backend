@@ -56,7 +56,7 @@ public class CustomMandatoryQuestionMapper implements MandatoryQuestionsMapper {
 
     private String convertEnumToString(GrantMandatoryQuestionOrgType orgType) {
         return switch (orgType) {
-            case LIMITED_COMPANY -> "Company";
+            case LIMITED_COMPANY, NON_LIMITED_COMPANY -> "Company";
             case CHARITY -> "Charity";
             case SOLE_TRADER -> "Sole Trader";
             default -> throw new IllegalArgumentException("Unexpected value: " + orgType);

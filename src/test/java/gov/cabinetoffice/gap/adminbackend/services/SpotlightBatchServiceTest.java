@@ -924,6 +924,7 @@ class SpotlightBatchServiceTest {
             final SpotlightResponseResultsDto methodResponse = spotlightBatchService.sendBatchToSpotlight(batch,
                     accessToken);
 
+            verify(snsService).spotlightApiError();
             assertThat(methodResponse).isEqualTo(expectedResponse);
         }
 
