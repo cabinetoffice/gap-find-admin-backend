@@ -82,6 +82,9 @@ class GrantMandatoryQuestionServiceTest {
             .orgType(GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY).fundingAmount(BigDecimal.valueOf(50000))
             .schemeEntity(schemeEntity).gapId("GAP-ID").build();
 
+    final List<GrantMandatoryQuestions> mandatoryQuestionsList = List.of(grantMandatoryQuestions,
+            grantMandatoryQuestionsNonLimitedCompany);
+
     @Nested
     class GetGrantMandatoryQuestionBySchemeAndStatusTests {
 
@@ -120,6 +123,39 @@ class GrantMandatoryQuestionServiceTest {
                 .getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(SCHEME_ID);
 
         assertThat(result).isEqualTo(List.of(grantMandatoryQuestionsNonLimitedCompany));
+
+    }
+
+    @Nested
+    class getValidationErrorChecks {
+
+        @Test
+        void getValidationErrorChecks() {
+            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);
+            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
+            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
+                    .buildSingleSpotlightRow(grantMandatoryQuestions, false);
+            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
+                    .buildSingleSpotlightRow(grantMandatoryQuestionsNonLimitedCompany, false);
+
+            ByteArrayOutputStream dataStream = grantMandatoryQuestionService
+                    .getValidationErrorChecks(mandatoryQuestionsList, SCHEME_ID);
+
+            assertNotNull(dataStream);
+        }
+
+        @Test
+        void getValidationErrorChecks_throwAccessDeniedException() {
+
+            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
+
+            Exception exception = assertThrows(AccessDeniedException.class,
+                    () -> grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestionsList, SCHEME_ID));
+
+            String actualMessage = exception.getMessage();
+            assertThat(actualMessage)
+                    .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
+        }
 
     }
 
