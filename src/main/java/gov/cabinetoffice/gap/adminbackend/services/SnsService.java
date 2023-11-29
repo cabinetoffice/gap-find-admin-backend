@@ -45,4 +45,22 @@ public class SnsService {
         return publishMessageToTopic(subject, body);
     }
 
+    public String spotlightValidationError() {
+        final String subject = "Can’t send data to Spotlight";
+        final String body = """
+                There is a validation issue between Find an Spotlight.\s
+
+                What do you need to do?
+
+                Speak to the Spotlight team to understand if they have made any changes to validation. It is likely that they have, and they will need to fix the problem.
+
+                No data can be sent to Spotlight until this issue is fixed. It is important to fix it quickly.
+
+                Be mindful of any applications that are live and consider contacting the administrator.\s
+
+                Once fixed, data received while the link was broken will not be sent to Spotlight automatically.\s""";
+
+        return publishMessageToTopic(subject, body);
+    }
+
 }
