@@ -224,9 +224,9 @@ public class SpotlightBatchService {
 
         if (spotlightResponses.getResults() == null) {
 
-            updateSpotlightBatchStatus(spotlightBatchDto, SpotlightBatchStatus.FAILURE);
             updateSpotlightSubmissionStatus(spotlightBatchDto, SpotlightSubmissionStatus.SEND_ERROR);
             addMessageToQueue(spotlightBatchDto);
+            updateSpotlightBatchStatus(spotlightBatchDto, SpotlightBatchStatus.FAILURE);
 
         }
         else {
