@@ -48,7 +48,7 @@ public class SnsService {
     public String spotlightValidationError() {
         final String subject = "Can’t send data to Spotlight";
         final String body = """
-                There is a validation issue between Find an Spotlight.\s
+                There is a validation issue between Find and Spotlight.\s
 
                 What do you need to do?
 
