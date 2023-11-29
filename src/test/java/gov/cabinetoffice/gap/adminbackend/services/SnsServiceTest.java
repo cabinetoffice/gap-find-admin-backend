@@ -23,9 +23,9 @@ public class SnsServiceTest {
 
     private static SnsConfigProperties snsConfigProperties;
 
-    private final String MESSAGE_ID = "mockMessageId";
+    private static final String MESSAGE_ID = "mockMessageId";
 
-    private final String ERROR = "error publishing message";
+    private static final String ERROR = "error publishing message";
 
     @BeforeAll
     static void beforeAll() {
