@@ -49,7 +49,7 @@ public class SpotlightBatchController {
 
     private final SpotlightBatchMapper spotlightBatchMapper;
 
-    private FileService fileService;
+    private final FileService fileService;
 
     // check spring security whitelist before adding endpoints
 
@@ -204,15 +204,16 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")) })
     @GetMapping("/get-validation-error-files/{schemeId}")
     public ResponseEntity<InputStreamResource> exportSpotlightValidationErrorFiles(@PathVariable Integer schemeId) {
-        final ByteArrayOutputStream stream = spotlightBatchService.getFilteredSpotlightSubmissionsWithValidationErrors(schemeId);
-        final String exportFileName = "spotlight_checks.zip";
+        final ByteArrayOutputStream stream = spotlightBatchService
+                .getFilteredSpotlightSubmissionsWithValidationErrors(schemeId);
+        final String exportFileName = "spotlight_validation_errors.zip";
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
     }
 
     @NotNull
     private ResponseEntity<InputStreamResource> getInputStreamResourceResponseEntity(@PathVariable Integer schemeId,
-                                                                                     ByteArrayOutputStream stream, String exportFileName) {
-        log.info("Started due diligence data export for scheme " + schemeId);
+            ByteArrayOutputStream stream, String exportFileName) {
+        log.info("Started Spotlight validation error file export for scheme " + schemeId);
         long start = System.currentTimeMillis();
 
         final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
@@ -223,7 +224,7 @@ public class SpotlightBatchController {
         headers.setContentDisposition(ContentDisposition.parse("attachment; filename=" + exportFileName));
 
         long end = System.currentTimeMillis();
-        log.info("Finished due diligence data export for scheme " + schemeId + ". Export time in millis: "
+        log.info("Finished Spotlight validation error file export for scheme " + schemeId + ". Export time in millis: "
                 + (end - start));
 
         return ResponseEntity.ok().headers(headers).contentLength(length)

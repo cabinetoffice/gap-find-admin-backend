@@ -54,7 +54,8 @@ public class GrantMandatoryQuestionService {
 
     }
 
-    public ByteArrayOutputStream getValidationErrorChecks(List<GrantMandatoryQuestions> mandatoryQuestions, Integer schemeId) {
+    public ByteArrayOutputStream getValidationErrorChecks(List<GrantMandatoryQuestions> mandatoryQuestions,
+            Integer schemeId) {
         final List<GrantMandatoryQuestions> companiesAndCharitiesQuestions = mandatoryQuestions.stream()
                 .filter(s -> s.getOrgType().equals(GrantMandatoryQuestionOrgType.CHARITY)
                         || s.getOrgType().equals(GrantMandatoryQuestionOrgType.UNREGISTERED_CHARITY)
@@ -77,11 +78,11 @@ public class GrantMandatoryQuestionService {
 
     }
 
-    private ByteArrayOutputStream generateZipFile(List<GrantMandatoryQuestions> companiesAndCharitiesQuestions, List<GrantMandatoryQuestions> nonLimitedCompanyQuestions, Integer schemeId) {
+    private ByteArrayOutputStream generateZipFile(List<GrantMandatoryQuestions> companiesAndCharitiesQuestions,
+            List<GrantMandatoryQuestions> nonLimitedCompanyQuestions, Integer schemeId) {
         final List<List<String>> charitiesAndCompanies = exportSpotlightChecks(schemeId, companiesAndCharitiesQuestions,
                 false);
         final String charitiesAndCompaniesFilename = generateExportFileName(schemeId, " charities_and_companies");
-
 
         final List<List<String>> nonLimitedCompanies = exportSpotlightChecks(schemeId, nonLimitedCompanyQuestions,
                 false);
@@ -90,7 +91,6 @@ public class GrantMandatoryQuestionService {
         final List<List<List<String>>> dataList = List.of(charitiesAndCompanies, nonLimitedCompanies);
         final List<String> filenames = List.of(charitiesAndCompaniesFilename, nonLimitedCompaniesFilename);
         return zipService.createZip(SpotlightHeaders.SPOTLIGHT_HEADERS, dataList, filenames);
-
     }
 
     public ByteArrayOutputStream getDueDiligenceData(Integer schemeId) {

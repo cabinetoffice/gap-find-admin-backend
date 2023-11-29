@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightQueueConfigProperties;
-import gov.cabinetoffice.gap.adminbackend.constants.DueDiligenceHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.DraftAssessmentDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SendToSpotlightDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.SpotlightSchemeDto;
@@ -26,7 +25,6 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
-import gov.cabinetoffice.gap.adminbackend.utils.XlsxGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +49,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 
@@ -487,6 +486,7 @@ public class SpotlightBatchService {
         }
         return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
     }
+
     @NotNull
     private List<SpotlightSubmission> getSpotlightBatchSubmissionsBySchemeId(Integer schemeId) {
         Pageable pageable = PageRequest.of(0, 1);
@@ -499,10 +499,9 @@ public class SpotlightBatchService {
     public ByteArrayOutputStream getFilteredSpotlightSubmissionsWithValidationErrors(Integer schemeId) {
         final List<SpotlightSubmission> spotlightSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId).stream()
                 .filter(s -> s.getStatus().equals(SpotlightSubmissionStatus.VALIDATION_ERROR.toString())).toList();
-        List<GrantMandatoryQuestions> mandatoryQuestions = new ArrayList<>();
-        for(SpotlightSubmission submission: spotlightSubmissions) {
-            mandatoryQuestions.add(submission.getMandatoryQuestions());
-        }
+        List<GrantMandatoryQuestions> mandatoryQuestions = spotlightSubmissions.stream()
+                .map(SpotlightSubmission::getMandatoryQuestions).collect(Collectors.toList());
         return grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestions, schemeId);
     }
+
 }

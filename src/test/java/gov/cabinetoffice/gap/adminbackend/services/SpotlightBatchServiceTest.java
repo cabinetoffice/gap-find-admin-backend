@@ -110,10 +110,10 @@ class SpotlightBatchServiceTest {
                 .secretName("secretName").build();
         objectMapper = Mockito.spy(new ObjectMapper());
         spotlightQueueProperties = SpotlightQueueConfigProperties.builder().queueUrl("queueUrl").build();
-        spotlightBatchService = Mockito
-                .spy(new SpotlightBatchService(spotlightBatchRepository, mandatoryQuestionsMapper, secretsManagerClient,
-                        restTemplate, spotlightSubmissionRepository, spotlightConfigProperties, objectMapper,
-                        spotlightQueueProperties, amazonSqs, spotlightSubmissionService, grantMandatoryQuestionService));
+        spotlightBatchService = Mockito.spy(new SpotlightBatchService(spotlightBatchRepository,
+                mandatoryQuestionsMapper, secretsManagerClient, restTemplate, spotlightSubmissionRepository,
+                spotlightConfigProperties, objectMapper, spotlightQueueProperties, amazonSqs,
+                spotlightSubmissionService, grantMandatoryQuestionService));
     }
 
     @Nested
