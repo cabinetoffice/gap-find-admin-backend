@@ -311,6 +311,9 @@ public class SpotlightBatchService {
         SpotlightResponseResultsDto list = SpotlightResponseResultsDto.builder().build();
 
         try {
+            log.info("Spotlight request endpoint: {}", draftAssessmentsEndpoint);
+            log.info("Spotlight request body: {}", requestEntity.toString());
+
             final ResponseEntity<String> response = restTemplate.postForEntity(draftAssessmentsEndpoint, requestEntity,
                     String.class);
 
