@@ -282,7 +282,8 @@ public class SpotlightBatchService {
         }
         else if (errorMessage.contains(RESPONSE_MESSAGE_409_FIELD_MISSING)
                 || errorMessage.contains(RESPONSE_MESSAGE_409_LENGTH)) {
-            // TODO send Validation Error email which will send for each submission that has a validation error
+            // TODO send Validation Error email which will send for each submission that
+            // has a validation error
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
         }
     }
@@ -320,8 +321,9 @@ public class SpotlightBatchService {
         }
         catch (HttpClientErrorException e) { // 4xx codes
 
-            if(e.getStatusCode().equals(HttpStatus.UNAUTHORIZED)) {
-                log.info("Sending spotlight OAuth disconnected support email using SNS for status code: " + e.getStatusCode());
+            if (e.getStatusCode().equals(HttpStatus.UNAUTHORIZED)) {
+                log.info("Sending spotlight OAuth disconnected support email using SNS for status code: "
+                        + e.getStatusCode());
                 final String snsResponse = snsService.spotlightOAuthDisconnected();
                 log.info(snsResponse);
             }

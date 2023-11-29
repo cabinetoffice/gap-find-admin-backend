@@ -104,7 +104,6 @@ class SpotlightBatchServiceTest {
     @Captor
     private ArgumentCaptor<SpotlightSubmission> argumentCaptor;
 
-
     @BeforeEach
     void setup() {
         spotlightConfigProperties = SpotlightConfigProperties.builder().spotlightUrl("spotlightUrl")
