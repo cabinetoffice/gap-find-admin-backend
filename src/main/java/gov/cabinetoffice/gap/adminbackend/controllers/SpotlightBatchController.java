@@ -63,7 +63,7 @@ public class SpotlightBatchController {
     public ResponseEntity<Boolean> spotlightBatchWithStatusExist(@PathVariable final SpotlightBatchStatus status,
             @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
-        log.info("Checking if a spotlight batch with status {} exists", status);
+        log.info("Checking if a spotlight batch with status {} and max size limit {} exists", status, batchSizeLimit);
         return ResponseEntity.ok()
                 .body(spotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)));
     }
