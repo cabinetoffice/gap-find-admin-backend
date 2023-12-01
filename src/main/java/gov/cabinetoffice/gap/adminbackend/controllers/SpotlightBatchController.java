@@ -126,8 +126,8 @@ public class SpotlightBatchController {
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
     @SpotlightPublisherHeaderValidator
-    public ResponseEntity<String> addSpotlightSubmissionToSpotlightBatch(@PathVariable final UUID spotlightBatchId,
-            @PathVariable final UUID spotlightSubmissionId) {
+    public ResponseEntity<SpotlightBatchDto> addSpotlightSubmissionToSpotlightBatch(
+            @PathVariable final UUID spotlightBatchId, @PathVariable final UUID spotlightSubmissionId) {
 
         log.info("Adding spotlight submission with id {} to spotlight batch with id {}", spotlightSubmissionId,
                 spotlightBatchId);
@@ -139,7 +139,9 @@ public class SpotlightBatchController {
                     spotlightSubmissionId, spotlightBatchId);
         });
 
-        return ResponseEntity.ok().body("Successfully added spotlight submission to spotlight batch");
+        final SpotlightBatch spotlightBatch = spotlightBatchService.getSpotlightBatchById(spotlightBatchId);
+
+        return ResponseEntity.ok().body(spotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatch));
     }
 
     @PostMapping("/send-to-spotlight")
