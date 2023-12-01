@@ -88,8 +88,8 @@ public class UserController {
         return ResponseEntity.ok("User migrated successfully");
     }
 
-    @DeleteMapping("/delete/{oneLoginSub}")
-    public ResponseEntity<String> deleteUser(@PathVariable Optional<String> oneLoginSub,
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteUser(@RequestParam Optional<String> oneLoginSub,
             @RequestParam(required = false) Optional<UUID> colaSub, @RequestHeader("Authorization") String token) {
         // Called from our user service only. Does not have an admin session so authing
         // via the jwt
