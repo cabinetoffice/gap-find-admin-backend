@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProper
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
@@ -32,6 +33,8 @@ public class SchemeService {
     private final SchemeMapper schemeMapper;
 
     private final SessionsService sessionsService;
+
+    private final UserService userService;
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
@@ -161,12 +164,13 @@ public class SchemeService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(Integer grantAdminId, Integer schemeId) {
+    public void patchCreatedBy(GrantAdmin grantAdmin, Integer schemeId) {
         SchemeEntity scheme = this.schemeRepo.findById(schemeId)
                 .orElseThrow(() -> new SchemeEntityException(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: "
                                 + schemeId));
-        scheme.setCreatedBy(grantAdminId);
+        scheme.setCreatedBy(grantAdmin.getId());
+        scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
     }
 

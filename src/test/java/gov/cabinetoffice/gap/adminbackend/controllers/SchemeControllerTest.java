@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
@@ -394,12 +395,14 @@ class SchemeControllerTest {
 
     @Test
     void updateGrantOwnership() throws Exception {
-        Mockito.doNothing().when(schemeService).patchCreatedBy(1, 1);
+        GrantAdmin grantAdmin = GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build();
+
+        Mockito.doNothing().when(schemeService).patchCreatedBy(grantAdmin, 1);
         Mockito.doNothing().when(grantAdvertService).patchCreatedBy(1, 1);
         Mockito.doNothing().when(applicationFormService).patchCreatedBy(1, 1);
         when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
 
-        when(userService.getGrantAdminIdFromUserServiceEmail("email", "jwt")).thenReturn(1);
+        when(userService.getGrantAdminIdFromUserServiceEmail(anyString(), anyString())).thenReturn(grantAdmin);
         mockMvc.perform(patch("/schemes/1/scheme-ownership")
                 .content(HelperUtils
                         .asJsonString(CheckNewAdminEmailDto.builder().emailAddress("test@gmail.com").build()))
