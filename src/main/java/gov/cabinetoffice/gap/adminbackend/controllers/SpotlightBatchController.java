@@ -86,7 +86,7 @@ public class SpotlightBatchController {
     public ResponseEntity<SpotlightBatchDto> retrieveSpotlightBatchWithStatus(
             @PathVariable final SpotlightBatchStatus status, @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
-        log.info("Retrieving spotlight batch with status {}", status);
+        log.info("Retrieving spotlight batch with status {}and max size limit {} exists", status, batchSizeLimit);
 
         final SpotlightBatch spotlightBatch = spotlightBatchService.getSpotlightBatchWithStatus(status,
                 Integer.parseInt(batchSizeLimit));
