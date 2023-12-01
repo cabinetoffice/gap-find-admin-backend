@@ -411,10 +411,8 @@ public class SpotlightBatchService {
 
     public void sendMessageToQueue(SpotlightSubmission spotlightSubmission) {
         final UUID messageId = UUID.randomUUID();
-        final MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
-                .withDataType("String")
-                .withStringValue(DateTimeFormatter.ofPattern("dd-MM-yyyy'T'HH:mmX").withZone(ZoneOffset.UTC)
-                        .format(Instant.now()));
+        final MessageAttributeValue messageAttributeValue = new MessageAttributeValue().withDataType("String")
+                .withStringValue(Instant.now().toString());
 
         final SendMessageRequest messageRequest = new SendMessageRequest()
                 .withQueueUrl(spotlightQueueProperties.getQueueUrl()).withMessageGroupId(messageId.toString())
