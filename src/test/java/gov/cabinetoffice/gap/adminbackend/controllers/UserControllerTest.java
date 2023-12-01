@@ -136,7 +136,7 @@ class UserControllerTest {
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
             when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
-            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
+            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete?oneLoginSub=oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isOk()).andReturn();
 
@@ -150,7 +150,7 @@ class UserControllerTest {
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
             when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
-            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub?colaSub=")
+            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete?oneLoginSub=oneLoginSub&colaSub=")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isOk()).andReturn();
 
@@ -165,11 +165,12 @@ class UserControllerTest {
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
             when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
-            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub?colaSub=" + colaSub)
+            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete?colaSub=072351bf-0789-42bb-8000-2c61b7e90d48")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isOk()).andReturn();
 
-            verify(userService, times(1)).deleteUser(Optional.of("oneLoginSub"), Optional.of(colaSub));
+            verify(userService, times(1)).deleteUser(Optional.empty(),
+                    Optional.of(UUID.fromString("072351bf-0789-42bb-8000-2c61b7e90d48")));
         }
 
         @Test
@@ -180,7 +181,7 @@ class UserControllerTest {
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
             when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
-            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub?colaSub=" + colaSub)
+            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/?colaSub=" + colaSub)
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isBadRequest()).andReturn();
 
@@ -192,7 +193,7 @@ class UserControllerTest {
             final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
 
-            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
+            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete?oneLoginSub=oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, ""))
                     .andExpect(status().isUnauthorized()).andReturn();
             verify(userService, times(0)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());
@@ -202,7 +203,7 @@ class UserControllerTest {
         void InvalidJwt() throws Exception {
             doThrow(new UnauthorizedException("Invalid JWT")).when(jwtService).verifyToken("jwt");
 
-            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
+            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete?oneLoginSub=oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isUnauthorized()).andReturn();
             verify(userService, times(0)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());
@@ -215,7 +216,7 @@ class UserControllerTest {
             when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
             when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
 
-            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete/oneLoginSub")
+            mockMvc.perform(MockMvcRequestBuilders.delete("/users/delete?oneLoginSub=oneLoginSub")
                     .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                     .andExpect(status().isForbidden()).andReturn();
             verify(userService, times(0)).deleteUser(Optional.of("oneLoginSub"), Optional.empty());

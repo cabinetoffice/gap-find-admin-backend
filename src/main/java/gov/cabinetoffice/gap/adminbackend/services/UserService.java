@@ -64,7 +64,12 @@ public class UserService {
     public void deleteUser(final Optional<String> oneLoginSubOptional, final Optional<UUID> colaSubOptional) {
         // Deleting COLA and OneLogin subs as either could be stored against the user
         oneLoginSubOptional.ifPresent(grantApplicantRepository::deleteByUserId);
-        colaSubOptional.ifPresent(sub -> grantApplicantRepository.deleteByUserId(sub.toString()));
+
+        if (colaSubOptional.isPresent()) {
+            grantApplicantRepository.deleteByUserId(colaSubOptional.get().toString());
+            grantAdminRepository.deleteByGapUserUserSub(colaSubOptional.get().toString());
+            gapUserRepository.deleteByUserSub(colaSubOptional.get().toString());
+        }
     }
 
     public Boolean verifyAdminRoles(final String emailAddress, final String roles) {
