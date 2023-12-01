@@ -106,19 +106,18 @@ public class UserController {
     }
 
     @PatchMapping("/funding-organisation")
-    public ResponseEntity<String> updateFundingOrganisation(
-            @RequestBody UpdateFundingOrgDto updateFundingOrgDto,
+    public ResponseEntity<String> updateFundingOrganisation(@RequestBody UpdateFundingOrgDto updateFundingOrgDto,
             @RequestHeader("Authorization") String token) {
 
         if (isEmpty(token) || !token.startsWith("Bearer "))
-            return ResponseEntity.status(401).body("Update user's funding organisation: " +
-                    "Expected Authorization header not provided");
+            return ResponseEntity.status(401)
+                    .body("Update user's funding organisation: " + "Expected Authorization header not provided");
         final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
         final JwtPayload jwtPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
 
         if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
-            return ResponseEntity.status(403).body("User not authorized to update user's funding organisation: " +
-                    jwtPayload.getSub());
+            return ResponseEntity.status(403)
+                    .body("User not authorized to update user's funding organisation: " + jwtPayload.getSub());
         }
 
         Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(updateFundingOrgDto.sub());
@@ -126,9 +125,9 @@ public class UserController {
         if (grantAdmin.isPresent()) {
             userService.updateFundingOrganisation(grantAdmin.get(), updateFundingOrgDto.departmentName());
             return ResponseEntity.ok("User deleted successfully");
-        } else {
-            return ResponseEntity.status(404).body("No grant Admin found with sub " +
-                    jwtPayload.getSub());
+        }
+        else {
+            return ResponseEntity.status(404).body("No grant Admin found with sub " + jwtPayload.getSub());
         }
 
     }

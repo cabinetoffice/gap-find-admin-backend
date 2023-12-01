@@ -91,9 +91,8 @@ public class UserService {
                     .uri(userServiceConfig.getDomain() + "/user/email/" + email + "?role=ADMIN")
                     .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
-            return grantAdminRepository.findByGapUserUserSub(response.sub())
-                    .orElseThrow(() -> new NotFoundException(
-                            "Update grant ownership failed: No grant admin found for email: " + email));
+            return grantAdminRepository.findByGapUserUserSub(response.sub()).orElseThrow(() -> new NotFoundException(
+                    "Update grant ownership failed: No grant admin found for email: " + email));
 
         }
         catch (Exception e) {
@@ -120,14 +119,16 @@ public class UserService {
         Optional<FundingOrganisation> fundingOrganisation = this.fundingOrganisationRepository
                 .findByName(departmentName);
         if (fundingOrganisation.isEmpty()) {
-            FundingOrganisation newFundingOrg = fundingOrganisationRepository.save(new FundingOrganisation(null, departmentName));
+            FundingOrganisation newFundingOrg = fundingOrganisationRepository
+                    .save(new FundingOrganisation(null, departmentName));
             grantAdmin.setFunder(newFundingOrg);
             grantAdminRepository.save(grantAdmin);
 
             log.info("Created new funding organisation: {}", newFundingOrg);
             log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());
 
-        } else {
+        }
+        else {
             grantAdmin.setFunder(fundingOrganisation.get());
             grantAdminRepository.save(grantAdmin);
             log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());

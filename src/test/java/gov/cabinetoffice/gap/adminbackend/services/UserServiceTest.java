@@ -203,8 +203,8 @@ class UserServiceTest {
         when(mockResponseSpec.bodyToMono(UserV2DTO.class)).thenReturn(Mono.just(response));
         when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
 
-        when(grantAdminRepository.findByGapUserUserSub(response.sub()))
-                .thenReturn(Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
+        when(grantAdminRepository.findByGapUserUserSub(response.sub())).thenReturn(
+                Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
 
         GrantAdmin grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
         assert (grantAdminId.getFunder().getId() == 1);

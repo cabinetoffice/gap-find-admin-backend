@@ -284,18 +284,16 @@ class UserControllerTest {
         final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
         when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
         when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
-        when(userService.getGrantAdminIdFromSub(anyString())).thenReturn(Optional.of(GrantAdmin.builder().id(1)
-                .funder(FundingOrganisation.builder().id(1).build()).build()));
+        when(userService.getGrantAdminIdFromSub(anyString())).thenReturn(
+                Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
         Mockito.doNothing().when(userService).updateFundingOrganisation(any(GrantAdmin.class), anyString());
 
         ObjectMapper objectMapper = new ObjectMapper();
-        String requestBody = objectMapper.writeValueAsString(
-                new UpdateFundingOrgDto("oneLoginSub", "test@email.gov", "newFundingOrg"));
+        String requestBody = objectMapper
+                .writeValueAsString(new UpdateFundingOrgDto("oneLoginSub", "test@email.gov", "newFundingOrg"));
 
-
-        mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation")
-                        .content(requestBody)
-                        .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation").content(requestBody)
+                .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                 .andExpect(status().isOk()).andReturn();
 
         verify(userService, times(1)).getGrantAdminIdFromSub(anyString());
@@ -313,13 +311,11 @@ class UserControllerTest {
         Mockito.doNothing().when(userService).updateFundingOrganisation(any(GrantAdmin.class), anyString());
 
         ObjectMapper objectMapper = new ObjectMapper();
-        String requestBody = objectMapper.writeValueAsString(
-                new UpdateFundingOrgDto("oneLoginSub", "test@email.gov", "newFundingOrg"));
+        String requestBody = objectMapper
+                .writeValueAsString(new UpdateFundingOrgDto("oneLoginSub", "test@email.gov", "newFundingOrg"));
 
-
-        mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation")
-                        .content(requestBody)
-                        .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation").content(requestBody)
+                .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                 .andExpect(status().isNotFound()).andReturn();
     }
 
