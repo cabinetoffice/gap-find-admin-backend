@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
@@ -341,7 +343,8 @@ class SchemeServiceTest {
         Mockito.when(SchemeServiceTest.this.schemeRepository.save(testScheme)).thenReturn(patchedScheme);
         Mockito.when(SchemeServiceTest.this.schemeRepository.findById(2)).thenReturn(Optional.of(patchedScheme));
 
-        SchemeServiceTest.this.schemeService.patchCreatedBy(2, 1);
+        SchemeServiceTest.this.schemeService.patchCreatedBy(
+                GrantAdmin.builder().id(2).funder(FundingOrganisation.builder().id(1).build()).build(), 1);
         AssertionsForClassTypes.assertThat(testScheme.getCreatedBy()).isEqualTo(patchedScheme.getCreatedBy());
     }
 
@@ -349,7 +352,8 @@ class SchemeServiceTest {
     void patchCreatedByThrowsAnErrorIfSchemeIsNotPresent() {
         Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.empty());
 
-        AssertionsForClassTypes.assertThatThrownBy(() -> SchemeServiceTest.this.schemeService.patchCreatedBy(2, 1))
+        AssertionsForClassTypes.assertThatThrownBy(
+                () -> SchemeServiceTest.this.schemeService.patchCreatedBy(GrantAdmin.builder().id(1).build(), 1))
                 .isInstanceOf(SchemeEntityException.class).hasMessage(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: 1");
     }

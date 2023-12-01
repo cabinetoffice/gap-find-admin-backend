@@ -1,8 +1,12 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.UpdateFundingOrgDto;
+import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
@@ -14,6 +18,7 @@ import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.TestDecodedJwt;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -271,6 +276,47 @@ class UserControllerTest {
                 "[FIND, APPLY, ADMIN]");
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/validateAdminSession")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldChangeFundingOrgWhenValidSubIsGiven() throws Exception {
+        final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
+        final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
+        when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
+        when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
+        when(userService.getGrantAdminIdFromSub(anyString())).thenReturn(
+                Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
+        Mockito.doNothing().when(userService).updateFundingOrganisation(any(GrantAdmin.class), anyString());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String requestBody = objectMapper
+                .writeValueAsString(new UpdateFundingOrgDto("oneLoginSub", "test@email.gov", "newFundingOrg"));
+
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation").content(requestBody)
+                .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(userService, times(1)).getGrantAdminIdFromSub(anyString());
+        verify(userService, times(1)).updateFundingOrganisation(any(GrantAdmin.class), anyString());
+
+    }
+
+    @Test
+    void shouldReturn404WhenInvalidSubIsGiven() throws Exception {
+        final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
+        final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
+        when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
+        when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
+        when(userService.getGrantAdminIdFromSub(anyString())).thenReturn(Optional.empty());
+        Mockito.doNothing().when(userService).updateFundingOrganisation(any(GrantAdmin.class), anyString());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String requestBody = objectMapper
+                .writeValueAsString(new UpdateFundingOrgDto("oneLoginSub", "test@email.gov", "newFundingOrg"));
+
+        mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation").content(requestBody)
+                .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+                .andExpect(status().isNotFound()).andReturn();
     }
 
 }
