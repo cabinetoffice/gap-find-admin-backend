@@ -121,7 +121,7 @@ class CustomMandatoryQuestionMapperTest {
     @Test
     void mandatoryQuestionsToDraftAssessmentDto_NonLimitedCompany() {
         mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY);
-        draftAssessmentDto.setOrganisationType("Company");
+        draftAssessmentDto.setOrganisationType("Sole Trader");
 
         when(userService.getDepartmentGGISId(10)).thenReturn("funderId");
 
