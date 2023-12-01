@@ -25,12 +25,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -162,20 +164,30 @@ public class SpotlightBatchControllerTest {
         void successfullyAddSpotlightSubmissionToSpotlightBatch() throws Exception {
             final UUID spotlightBatchId = UUID.randomUUID();
             final UUID spotlightSubmissionId = UUID.randomUUID();
-            final SpotlightSubmission spotlightSubmission = new SpotlightSubmission();
-            final SpotlightBatch spotlightBatch = new SpotlightBatch();
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
+                    .build();
+            final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(spotlightBatchId).build();
+            final SpotlightBatch spotlightBatchWithSpotlightSubmission = SpotlightBatch.builder().id(spotlightBatchId)
+                    .spotlightSubmissions(List.of(spotlightSubmission)).build();
+            final SpotlightBatchDto expectedResult = SpotlightBatchDto.builder().id(spotlightBatchId).build();
 
             when(mockSpotlightSubmissionService.getSpotlightSubmissionById(spotlightSubmissionId))
                     .thenReturn(Optional.of(spotlightSubmission));
             when(mockSpotlightBatchService.addSpotlightSubmissionToSpotlightBatch(spotlightSubmission,
                     spotlightBatchId)).thenReturn(spotlightBatch);
 
+            when(mockSpotlightBatchService.getSpotlightBatchById(spotlightBatchId))
+                    .thenReturn(spotlightBatchWithSpotlightSubmission);
+            when(mockSpotlightBatchMapper.spotlightBatchToGetSpotlightBatchDto(spotlightBatchWithSpotlightSubmission))
+                    .thenReturn(expectedResult);
+
             mockMvc.perform(
                     patch("/spotlight-batch/{spotlightBatchId}/add-spotlight-submission/{spotlightSubmissionId}",
                             spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
                                     LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk())
-                    .andExpect(content().string("Successfully added spotlight submission to spotlight batch"));
+                    .andExpect(content().string(containsString("id\":\"" + spotlightBatchId.toString())));
+
         }
 
         @Test

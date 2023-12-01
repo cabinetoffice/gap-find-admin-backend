@@ -101,6 +101,11 @@ public class SpotlightBatchService {
                 () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
     }
 
+    public SpotlightBatch getSpotlightBatchById(UUID spotlightBatchId) {
+        return spotlightBatchRepository.findById(spotlightBatchId).orElseThrow(
+                () -> new NotFoundException("A spotlight batch with id " + spotlightBatchId + " could not be found"));
+    }
+
     public SpotlightBatch createSpotlightBatch() {
         return spotlightBatchRepository.save(SpotlightBatch.builder().version(1).lastUpdated(Instant.now()).build());
     }
