@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,9 +45,12 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -407,11 +411,16 @@ public class SpotlightBatchService {
 
     public void sendMessageToQueue(SpotlightSubmission spotlightSubmission) {
         final UUID messageId = UUID.randomUUID();
+        final MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
+                .withDataType("String")
+                .withStringValue(DateTimeFormatter.ofPattern("dd-MM-yyyy'T'HH:mmX").withZone(ZoneOffset.UTC)
+                        .format(Instant.now()));
 
         final SendMessageRequest messageRequest = new SendMessageRequest()
                 .withQueueUrl(spotlightQueueProperties.getQueueUrl()).withMessageGroupId(messageId.toString())
                 .withMessageBody(spotlightSubmission.getId().toString())
-                .withMessageDeduplicationId(messageId.toString());
+                .withMessageDeduplicationId(messageId.toString())
+                .withMessageAttributes(Map.of("SentTimeStamp", messageAttributeValue));
 
         amazonSqs.sendMessage(messageRequest);
         log.info("Message sent to queue for spotlight_submission {}", spotlightSubmission.getId().toString());
