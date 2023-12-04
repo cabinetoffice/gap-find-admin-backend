@@ -126,7 +126,8 @@ public class UserController {
             userService.updateFundingOrganisation(grantAdmin.get(), updateFundingOrgDto.departmentName());
             return ResponseEntity.ok("User's funding organisation updated successfully");
         }
-        return ResponseEntity.ok("No grant Admin found with sub " + updateFundingOrgDto.sub() + ", did not update funding organisation");
+        return ResponseEntity.ok(
+                "No grant Admin found with sub " + updateFundingOrgDto.sub() + ", did not update funding organisation");
 
     }
 
