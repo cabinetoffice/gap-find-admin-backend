@@ -1141,7 +1141,8 @@ class SpotlightBatchServiceTest {
 
         @Test
         void noSubmissionsForSchemeId() {
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
 
@@ -1155,7 +1156,8 @@ class SpotlightBatchServiceTest {
             final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
                     .status(SpotlightSubmissionStatus.SEND_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
 
@@ -1169,7 +1171,8 @@ class SpotlightBatchServiceTest {
             final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
                     .status(SpotlightSubmissionStatus.GGIS_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
 
@@ -1183,7 +1186,8 @@ class SpotlightBatchServiceTest {
             final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
                     .status(SpotlightSubmissionStatus.VALIDATION_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
 
@@ -1221,7 +1225,8 @@ class SpotlightBatchServiceTest {
             final List<SpotlightBatch> spotlightBatches = new ArrayList<>();
             spotlightBatches.add(spotlightBatch);
 
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
 
@@ -1237,7 +1242,8 @@ class SpotlightBatchServiceTest {
             final List<SpotlightBatch> spotlightBatches = new ArrayList<>();
             spotlightBatches.add(spotlightBatch);
 
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
 
@@ -1253,7 +1259,8 @@ class SpotlightBatchServiceTest {
             final List<SpotlightBatch> spotlightBatches = new ArrayList<>();
             spotlightBatches.add(spotlightBatch);
 
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
 
@@ -1283,7 +1290,8 @@ class SpotlightBatchServiceTest {
             final List<SpotlightBatch> spotlightBatches = new ArrayList<>();
             spotlightBatches.add(spotlightBatch);
 
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
 
@@ -1300,7 +1308,8 @@ class SpotlightBatchServiceTest {
             final List<SpotlightBatch> spotlightBatches = new ArrayList<>();
             spotlightBatches.add(spotlightBatch);
 
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
 
             final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId1);
 
@@ -1343,7 +1352,8 @@ class SpotlightBatchServiceTest {
                 zipOut.closeEntry();
             }
 
-            when(spotlightBatchRepository.findMostRecentSpotlightBatch(pageable)).thenReturn(spotlightBatches);
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
             when(grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestionsList, schemeId))
                     .thenReturn(zipStream);
@@ -1351,7 +1361,7 @@ class SpotlightBatchServiceTest {
             final ByteArrayOutputStream result = spotlightBatchService
                     .getFilteredSpotlightSubmissionsWithValidationErrors(schemeId);
 
-            verify(spotlightBatchRepository).findMostRecentSpotlightBatch(pageable);
+            verify(spotlightBatchRepository).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
             assertThat(result).isEqualTo(zipStream);
         }
 

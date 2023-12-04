@@ -184,6 +184,8 @@ public class SpotlightBatchController {
         final GetSpotlightBatchErrorCountDTO spotlightBatchErrorCount = spotlightBatchService
                 .getSpotlightBatchErrorCount(Integer.parseInt(schemeId));
 
+        log.info("Response for retrieving Spotlight errors for scheme {} is {}", schemeId, spotlightBatchErrorCount);
+
         return ResponseEntity.ok().body(spotlightBatchErrorCount);
     }
 

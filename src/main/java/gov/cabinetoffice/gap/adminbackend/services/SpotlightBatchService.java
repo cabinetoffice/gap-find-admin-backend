@@ -491,6 +491,10 @@ public class SpotlightBatchService {
             return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
         }
 
+        log.info("There are {} api errors", apiErrorCount);
+        log.info("There are {} ggis errors", ggisErrorCount);
+        log.info("There are {} validation errors", validationErrorCount);
+
         // Priority order: API > GGIS > VALIDATION. Validation is the lowest/default
         // priority
         // and will be overwritten if any higher-priority statuses exist.
@@ -513,16 +517,27 @@ public class SpotlightBatchService {
         final List<SpotlightSubmission> filteredSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId);
 
         if (filteredSubmissions.isEmpty()) {
+
+            log.info("No spotlight_submission for scheme id {} found in the latest batch", schemeId);
+
             return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
         }
+
+        log.info("Found {} spotlight_submission for scheme id {},  in the latest batch", filteredSubmissions.size(),
+                schemeId);
+
         return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
     }
 
     @NotNull
     private List<SpotlightSubmission> getSpotlightBatchSubmissionsBySchemeId(Integer schemeId) {
-        Pageable pageable = PageRequest.of(0, 1);
-        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository.findMostRecentSpotlightBatch(pageable);
+        final Pageable pageable = PageRequest.of(0, 1);
+        final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository
+                .findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
         final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
+
+        log.info("Last sent spotlight batch has id {}", spotlightBatch.getId());
+
         return spotlightBatch.getSpotlightSubmissions().stream()
                 .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
     }
