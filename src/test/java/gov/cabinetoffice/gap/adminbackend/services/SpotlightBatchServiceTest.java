@@ -1139,10 +1139,24 @@ class SpotlightBatchServiceTest {
         final List<SpotlightBatch> spotlightBatches = Collections
                 .singletonList(SpotlightBatch.builder().spotlightSubmissions(new ArrayList<>()).build());
 
+        final List<SpotlightBatch> emptySpotlightBatch = List.of();
+
         @Test
         void noSubmissionsForSchemeId() {
             when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
                     .thenReturn(spotlightBatches);
+
+            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            assertEquals(0, result.getErrorCount());
+            assertEquals("OK", result.getErrorStatus());
+            assertFalse(result.isErrorFound());
+        }
+
+        @Test
+        void noSpotlightBatchFoundForRequiredCriteroa() {
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(emptySpotlightBatch);
 
             GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
 
