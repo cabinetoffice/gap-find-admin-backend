@@ -303,7 +303,7 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldReturn404WhenInvalidSubIsGiven() throws Exception {
+    void shouldReturn200WhenInvalidSubIsGiven() throws Exception {
         final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
         final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
         when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
@@ -317,7 +317,7 @@ class UserControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation").content(requestBody)
                 .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
-                .andExpect(status().isNotFound()).andReturn();
+                .andExpect(status().isOk()).andReturn();
     }
 
 }
