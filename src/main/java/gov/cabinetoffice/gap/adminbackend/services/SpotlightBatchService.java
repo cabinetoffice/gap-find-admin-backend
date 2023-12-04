@@ -534,12 +534,20 @@ public class SpotlightBatchService {
         final Pageable pageable = PageRequest.of(0, 1);
         final List<SpotlightBatch> spotlightBatches = spotlightBatchRepository
                 .findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
-        final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
 
-        log.info("Last sent spotlight batch has id {}", spotlightBatch.getId());
+        if (!spotlightBatches.isEmpty()) {
 
-        return spotlightBatch.getSpotlightSubmissions().stream()
-                .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+            final SpotlightBatch spotlightBatch = spotlightBatches.get(0);
+
+            log.info("Last sent spotlight batch has id {}", spotlightBatch.getId());
+
+            return spotlightBatch.getSpotlightSubmissions().stream()
+                    .filter(s -> s.getGrantScheme().getId().equals(schemeId)).toList();
+        }
+
+        log.info("No spotlight batch found in the db");
+        return List.of();
+
     }
 
     public ByteArrayOutputStream getFilteredSpotlightSubmissionsWithValidationErrors(Integer schemeId) {
