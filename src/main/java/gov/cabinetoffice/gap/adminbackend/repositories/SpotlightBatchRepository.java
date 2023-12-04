@@ -15,8 +15,8 @@ import java.util.UUID;
 @Repository
 public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, UUID> {
 
-    @Query("SELECT s FROM SpotlightBatch s ORDER BY s.lastSendAttempt DESC")
-    List<SpotlightBatch> findMostRecentSpotlightBatch(Pageable pageable);
+    @Query("SELECT s FROM SpotlightBatch s WHERE s.lastSendAttempt IS NOT NULL ORDER BY s.lastSendAttempt DESC")
+    List<SpotlightBatch> findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(Pageable pageable);
 
     @Query("SELECT (COUNT(s) > 0 ) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
     boolean existsByStatusAndSpotlightSubmissionsSizeLessThan(@Param("status") SpotlightBatchStatus status,
