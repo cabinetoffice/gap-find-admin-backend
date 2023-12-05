@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
+import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
@@ -138,6 +139,35 @@ public class UserService {
             grantAdminRepository.save(grantAdmin);
             log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());
 
+        }
+    }
+
+    public void createGapUser(String userSub) {
+        try {
+            GapUser user = GapUser.builder().userSub(userSub).build();
+            GapUser createdUser = gapUserRepository.save(user);
+
+            log.info("Created new gap_user: {}", createdUser.getId());
+        }
+        catch (Exception e) {
+            log.error("Failed to create new gap user: {}", e.getMessage());
+        }
+    }
+
+    public GapUser getGapUserBySub(String userSub) {
+        return gapUserRepository.findByUserSub(userSub)
+                .orElseThrow(() -> new NotFoundException("No user found for sub: " + userSub));
+    }
+
+    public void createAdminUser(GapUser gapUser) {
+        try {
+        GrantAdmin grantAdmin = GrantAdmin.builder().gapUser(gapUser).build();
+        grantAdminRepository.save(grantAdmin);
+
+        log.info("Created new grant_admin: {}", grantAdmin.getId());
+
+        } catch (Exception e) {
+            log.error("Failed to create new grant admin: {}", e.getMessage());
         }
     }
 

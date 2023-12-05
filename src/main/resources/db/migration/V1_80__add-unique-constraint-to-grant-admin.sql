@@ -1,0 +1,1 @@
+ALTER TABLE grant_admin ADD CONSTRAINT grant_admin_unique_user_id UNIQUE (user_id);

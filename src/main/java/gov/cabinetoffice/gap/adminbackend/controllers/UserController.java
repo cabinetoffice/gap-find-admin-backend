@@ -2,10 +2,8 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
-import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.UpdateFundingOrgDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.*;
+import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
@@ -148,6 +146,29 @@ public class UserController {
         catch (Exception e) {
             throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
         }
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/admin/create")
+    public ResponseEntity<String> createAdminUser(
+            @RequestBody CreateAdminUserDto createAdminUserDto, final HttpServletRequest request,
+            @RequestHeader("Authorization") String token) {
+
+        if (isEmpty(token) || !token.startsWith("Bearer "))
+            return ResponseEntity.status(401)
+                    .body("Create Admin account: " + "Expected Authorization header not provided");
+        final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
+        final JwtPayload jwtPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+
+        if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
+            return ResponseEntity.status(403)
+                    .body("User not authorized to create admin account: " + jwtPayload.getSub());
+        }
+
+        userService.createGapUser(createAdminUserDto.userSub());
+        GapUser gapUser = userService.getGapUserBySub(createAdminUserDto.userSub());
+        userService.createAdminUser(gapUser);
+
         return ResponseEntity.ok().build();
     }
 
