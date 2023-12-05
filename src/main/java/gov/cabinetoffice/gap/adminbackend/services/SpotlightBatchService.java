@@ -152,8 +152,10 @@ public class SpotlightBatchService {
 
                 final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(schemes).build();
                 sendToSpotlightDtos.add(sendToSpotlightDto);
-            } catch (Exception e) {
-                log.error("An exception occurred when generating spotlight data for batch {}", spotlightBatch.getId(), e);
+            }
+            catch (Exception e) {
+                log.error("An exception occurred when generating spotlight data for batch {}", spotlightBatch.getId(),
+                        e);
             }
         }
 
@@ -216,7 +218,8 @@ public class SpotlightBatchService {
                 final SpotlightResponseResultsDto spotlightResponses = sendBatchToSpotlight(spotlightBatch,
                         accessToken);
                 processSpotlightResponse(spotlightBatch, spotlightResponses);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error("An exception occurred while sending batches to spotlight", e);
             }
         }

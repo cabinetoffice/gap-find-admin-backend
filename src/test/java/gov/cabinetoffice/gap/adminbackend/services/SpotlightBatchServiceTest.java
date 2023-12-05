@@ -477,16 +477,17 @@ class SpotlightBatchServiceTest {
         @Test
         void generateSendToSpotlightDto_HandlesException() {
 
-            final SpotlightBatch batch = SpotlightBatch.builder()
-                    .id(UUID.randomUUID())
-                    .build();
+            final SpotlightBatch batch = SpotlightBatch.builder().id(UUID.randomUUID()).build();
 
             final List<SpotlightSchemeDto> schemes = new ArrayList<>();
 
-            doReturn(List.of(batch)).when(spotlightBatchService).getSpotlightBatchesByStatus(SpotlightBatchStatus.QUEUED);
-            doThrow(new IllegalArgumentException()).when(spotlightBatchService).addSpotlightSchemeDtoToList(batch, schemes);
+            doReturn(List.of(batch)).when(spotlightBatchService)
+                    .getSpotlightBatchesByStatus(SpotlightBatchStatus.QUEUED);
+            doThrow(new IllegalArgumentException()).when(spotlightBatchService).addSpotlightSchemeDtoToList(batch,
+                    schemes);
 
-            final List<SendToSpotlightDto> methodResponse = spotlightBatchService.generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+            final List<SendToSpotlightDto> methodResponse = spotlightBatchService
+                    .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
             assertThat(methodResponse).isEmpty();
         }
