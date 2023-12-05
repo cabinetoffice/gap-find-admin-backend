@@ -33,7 +33,8 @@ public class GrantMandatoryQuestionsController {
 
     @GetMapping("/scheme/{schemeId}/complete")
     public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId) {
-        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId));
+        return ResponseEntity.ok(
+                grantMandatoryQuestionService.hasCompletedMandatoryQuestionsWithSubmittedSubmissionStatus(schemeId));
     }
 
     @GetMapping("/scheme/{schemeId}/spotlight-complete")
