@@ -55,14 +55,16 @@ class MandatoryQuestionsControllerTest {
 
         @Test
         void hasCompletedMandatoryQuestionsReturnsTrue() throws Exception {
-            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(true);
+            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestionsWithSubmittedSubmissionStatus(SCHEME_ID))
+                    .thenReturn(true);
             mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/complete")).andExpect(status().isOk())
                     .andExpect(content().string("true"));
         }
 
         @Test
         void hasCompletedMandatoryQuestionsReturnsFalse() throws Exception {
-            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(false);
+            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestionsWithSubmittedSubmissionStatus(SCHEME_ID))
+                    .thenReturn(false);
             mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/complete")).andExpect(status().isOk())
                     .andExpect(content().string("false"));
         }

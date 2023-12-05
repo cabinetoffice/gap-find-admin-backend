@@ -10,25 +10,31 @@ import java.util.UUID;
 public interface GrantMandatoryQuestionRepository extends JpaRepository<GrantMandatoryQuestions, UUID> {
 
     @Query("select g " + "from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
-            + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED")
-    List<GrantMandatoryQuestions> findBySchemeEntity_IdAndCompletedStatus(Integer id);
+            + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
+            + "and g.submission.status = 'SUBMITTED'")
+    List<GrantMandatoryQuestions> findBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmissionStatus(Integer id);
 
     @Query("select g from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
             + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
             + "and g.orgType in (gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.CHARITY, "
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.REGISTERED_CHARITY, "
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.UNREGISTERED_CHARITY, "
-            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.LIMITED_COMPANY)")
-    List<GrantMandatoryQuestions> findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(Integer id);
+            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.LIMITED_COMPANY) "
+            + "and g.submission.status = 'SUBMITTED'")
+    List<GrantMandatoryQuestions> findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(
+            Integer id);
 
     @Query("select g from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
             + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
-            + "and g.orgType = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY")
-    List<GrantMandatoryQuestions> findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(Integer id);
+            + "and g.orgType = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY "
+            + "and g.submission.status = 'SUBMITTED'")
+    List<GrantMandatoryQuestions> findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(
+            Integer id);
 
-    @Query("select (count(g) > 0) from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
-            + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED")
-    boolean existsBySchemeEntity_IdAndCompletedStatus(Integer id);
+    @Query("select (count(g) > 0) from GrantMandatoryQuestions g where g.schemeEntity.id = ?1 "
+            + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
+            + "and g.submission.status = 'SUBMITTED'")
+    boolean existsBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmission_Status(Integer id);
 
     @Query("select (count(g) > 0) from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
             + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
@@ -36,7 +42,8 @@ public interface GrantMandatoryQuestionRepository extends JpaRepository<GrantMan
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.REGISTERED_CHARITY, "
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.UNREGISTERED_CHARITY, "
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.LIMITED_COMPANY, "
-            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY)")
-    boolean existsBySchemeEntityIdAndCompleteStatusAndOrgType(Integer id);
+            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY) "
+            + "and g.submission.status = 'SUBMITTED'")
+    boolean existsBySchemeEntityIdAndCompletedStatusAndRequiredOrgTypeAndSubmittedSubmissionStatus(Integer id);
 
 }
