@@ -17,6 +17,8 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightRespo
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
 import gov.cabinetoffice.gap.adminbackend.entities.*;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 import gov.cabinetoffice.gap.adminbackend.enums.*;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
@@ -24,13 +26,15 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.SecretValueException;
 import gov.cabinetoffice.gap.adminbackend.mappers.MandatoryQuestionsMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SpotlightSubmissionRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
@@ -54,14 +58,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.FAILURE;
-import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -478,6 +474,24 @@ class SpotlightBatchServiceTest {
             assertThat(result).isEqualTo(List.of());
         }
 
+        @Test
+        void generateSendToSpotlightDto_HandlesException() {
+
+            final SpotlightBatch batch = SpotlightBatch.builder().id(UUID.randomUUID()).build();
+
+            final List<SpotlightSchemeDto> schemes = new ArrayList<>();
+
+            doReturn(List.of(batch)).when(spotlightBatchService)
+                    .getSpotlightBatchesByStatus(SpotlightBatchStatus.QUEUED);
+            doThrow(new IllegalArgumentException()).when(spotlightBatchService).addSpotlightSchemeDtoToList(batch,
+                    schemes);
+
+            final List<SendToSpotlightDto> methodResponse = spotlightBatchService
+                    .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
+
+            assertThat(methodResponse).isEmpty();
+        }
+
     }
 
     @Nested
@@ -535,7 +549,7 @@ class SpotlightBatchServiceTest {
         }
 
         @Test
-        void sendQueuedBatchesToSpotlight_throwsJsonParseException() throws JsonProcessingException {
+        void sendQueuedBatchesToSpotlight_handlesJsonParseException() throws JsonProcessingException {
             final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().build();
             final List<SendToSpotlightDto> sendToSpotlightDtos = List.of(sendToSpotlightDto);
             final GetSecretValueResponse getSecretValueResponse = GetSecretValueResponse.builder()
@@ -546,8 +560,7 @@ class SpotlightBatchServiceTest {
                     .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
             when(secretsManagerClient.getSecretValue((GetSecretValueRequest) any())).thenReturn(getSecretValueResponse);
 
-            assertThrows(JsonParseException.class,
-                    () -> spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem());
+            spotlightBatchService.sendQueuedBatchesToSpotlightAndProcessThem();
 
             verify(spotlightBatchService, times(1)).generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 

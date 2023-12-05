@@ -17,6 +17,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchE
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
@@ -49,9 +50,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 
 @Service
 @RequiredArgsConstructor
@@ -147,18 +145,18 @@ public class SpotlightBatchService {
         final List<SendToSpotlightDto> sendToSpotlightDtos = new ArrayList<>();
         final List<SpotlightBatch> spotlightBatches = getSpotlightBatchesByStatus(status);
 
-        // gav comment - think we could turn this loop into a stream to make the method
-        // smaller
         for (SpotlightBatch spotlightBatch : spotlightBatches) {
+            try {
+                final List<SpotlightSchemeDto> schemes = new ArrayList<>();
+                addSpotlightSchemeDtoToList(spotlightBatch, schemes);
 
-            // gav comment - we could make this method return a list then we don't need to
-            // initialise and pass in an empty one
-            // since all we do is add to it anyway
-            final List<SpotlightSchemeDto> schemes = new ArrayList<>();
-            addSpotlightSchemeDtoToList(spotlightBatch, schemes);
-
-            final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(schemes).build();
-            sendToSpotlightDtos.add(sendToSpotlightDto);
+                final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(schemes).build();
+                sendToSpotlightDtos.add(sendToSpotlightDto);
+            }
+            catch (Exception e) {
+                log.error("An exception occurred when generating spotlight data for batch {}", spotlightBatch.getId(),
+                        e);
+            }
         }
 
         return sendToSpotlightDtos;
@@ -207,23 +205,23 @@ public class SpotlightBatchService {
 
         return filteredSubmissions.stream().map(submission -> mandatoryQuestionsMapper
                 .mandatoryQuestionsToDraftAssessmentDto(submission.getMandatoryQuestions())).toList();
-
     }
 
     public void sendQueuedBatchesToSpotlightAndProcessThem() {
-
         final List<SendToSpotlightDto> spotlightData = this
                 .generateSendToSpotlightDtosList(SpotlightBatchStatus.QUEUED);
 
-        // grab authorization header from AWS secrets manager
         final String accessToken = getAccessTokenFromSecretsManager();
 
         for (SendToSpotlightDto spotlightBatch : spotlightData) {
-
-            final SpotlightResponseResultsDto spotlightResponses = sendBatchToSpotlight(spotlightBatch, accessToken);
-
-            processSpotlightResponse(spotlightBatch, spotlightResponses);
-
+            try {
+                final SpotlightResponseResultsDto spotlightResponses = sendBatchToSpotlight(spotlightBatch,
+                        accessToken);
+                processSpotlightResponse(spotlightBatch, spotlightResponses);
+            }
+            catch (Exception e) {
+                log.error("An exception occurred while sending batches to spotlight", e);
+            }
         }
     }
 
@@ -553,8 +551,9 @@ public class SpotlightBatchService {
     public ByteArrayOutputStream getFilteredSpotlightSubmissionsWithValidationErrors(Integer schemeId) {
         final List<SpotlightSubmission> spotlightSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId).stream()
                 .filter(s -> s.getStatus().equals(SpotlightSubmissionStatus.VALIDATION_ERROR.toString())).toList();
-        List<GrantMandatoryQuestions> mandatoryQuestions = spotlightSubmissions.stream()
-                .map(SpotlightSubmission::getMandatoryQuestions).collect(Collectors.toList());
+        final List<GrantMandatoryQuestions> mandatoryQuestions = spotlightSubmissions.stream()
+                .map(SpotlightSubmission::getMandatoryQuestions).toList();
+
         return grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestions, schemeId);
     }
 
