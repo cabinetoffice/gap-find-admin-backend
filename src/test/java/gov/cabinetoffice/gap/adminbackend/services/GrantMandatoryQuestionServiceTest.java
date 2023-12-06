@@ -90,12 +90,11 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void validSchemeId() {
-            when(grantMandatoryQuestionRepository
-                    .findBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmissionStatus(SCHEME_ID))
-                            .thenReturn(List.of(grantMandatoryQuestions));
+            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(List.of(grantMandatoryQuestions));
 
             List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
-                    .getGrantMandatoryQuestionBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(SCHEME_ID);
+                    .getGrantMandatoryQuestionBySchemeAndCompletedStatus(SCHEME_ID);
 
             assertThat(result).isEqualTo(List.of(grantMandatoryQuestions));
 
@@ -105,13 +104,11 @@ class GrantMandatoryQuestionServiceTest {
 
     @Test
     void getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus() {
-        when(grantMandatoryQuestionRepository
-                .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(SCHEME_ID))
-                        .thenReturn(List.of(grantMandatoryQuestions));
+        when(grantMandatoryQuestionRepository.findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
+                .thenReturn(List.of(grantMandatoryQuestions));
 
         List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
-                .getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
-                        SCHEME_ID);
+                .getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(SCHEME_ID);
 
         assertThat(result).isEqualTo(List.of(grantMandatoryQuestions));
 
@@ -119,13 +116,11 @@ class GrantMandatoryQuestionServiceTest {
 
     @Test
     void getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus() {
-        when(grantMandatoryQuestionRepository
-                .findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(SCHEME_ID))
-                        .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
+        when(grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
+                .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
 
         List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
-                .getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
-                        SCHEME_ID);
+                .getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(SCHEME_ID);
 
         assertThat(result).isEqualTo(List.of(grantMandatoryQuestionsNonLimitedCompany));
 
@@ -170,11 +165,10 @@ class GrantMandatoryQuestionServiceTest {
         @Test
         void getSpotlightChecks() {
             when(grantMandatoryQuestionRepository
-                    .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(SCHEME_ID))
+                    .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
                             .thenReturn(List.of(grantMandatoryQuestions));
-            when(grantMandatoryQuestionRepository
-                    .findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(SCHEME_ID))
-                            .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
+            when(grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
             when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);
             when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
             doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
@@ -213,9 +207,8 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void forSingleRowWithGoodData() throws IOException {
-            when(grantMandatoryQuestionRepository
-                    .findBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmissionStatus(SCHEME_ID))
-                            .thenReturn(List.of(grantMandatoryQuestions));
+            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(List.of(grantMandatoryQuestions));
             doReturn(EXPECTED_DUE_DILIGENCE_ROW).when(grantMandatoryQuestionService)
                     .buildSingleSpotlightRow(grantMandatoryQuestions, true);
 
@@ -419,21 +412,17 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void returnsTrue() {
-            when(grantMandatoryQuestionRepository
-                    .existsBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmission_Status(SCHEME_ID))
-                            .thenReturn(true);
-            boolean result = grantMandatoryQuestionService
-                    .hasCompletedMandatoryQuestionsWithSubmittedSubmissionStatus(SCHEME_ID);
+            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(true);
+            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
             assertThat(result).isEqualTo(true);
         }
 
         @Test
         void returnFalse() {
-            when(grantMandatoryQuestionRepository
-                    .existsBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmission_Status(SCHEME_ID))
-                            .thenReturn(false);
-            boolean result = grantMandatoryQuestionService
-                    .hasCompletedMandatoryQuestionsWithSubmittedSubmissionStatus(SCHEME_ID);
+            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                    .thenReturn(false);
+            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
             assertThat(result).isEqualTo(false);
         }
 
@@ -444,18 +433,16 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void returnsTrue() {
-            when(grantMandatoryQuestionRepository
-                    .existsBySchemeEntityIdAndCompletedStatusAndRequiredOrgTypeAndSubmittedSubmissionStatus(SCHEME_ID))
-                            .thenReturn(true);
+            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
+                    .thenReturn(true);
             boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
             assertThat(result).isEqualTo(true);
         }
 
         @Test
         void returnFalse() {
-            when(grantMandatoryQuestionRepository
-                    .existsBySchemeEntityIdAndCompletedStatusAndRequiredOrgTypeAndSubmittedSubmissionStatus(SCHEME_ID))
-                            .thenReturn(false);
+            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
+                    .thenReturn(false);
             boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
             assertThat(result).isEqualTo(false);
         }
