@@ -79,8 +79,7 @@ public class GrantAdvertController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @PatchMapping(value = "/{grantAdvertId}/sections/{sectionId}/pages/{pageId}",
-            consumes = "application/json",
+    @PatchMapping(value = "/{grantAdvertId}/sections/{sectionId}/pages/{pageId}", consumes = "application/json",
             produces = "application/json")
     public ResponseEntity updatePage(HttpServletRequest request, @PathVariable UUID grantAdvertId,
             @PathVariable String sectionId, @PathVariable String pageId,
