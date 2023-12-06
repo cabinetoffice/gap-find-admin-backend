@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.security;
 
 import gov.cabinetoffice.gap.adminbackend.config.JwtTokenFilterConfig;
-import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,14 +36,22 @@ public class WebSecurityConfig {
                                         + "}/export-batch/{batchExportId:" + UUID_REGEX_STRING + "}/submission",
                                 "/submissions/*/export-batch/*/status",
                                 "/submissions/{submissionId:" + UUID_REGEX_STRING + "}/export-batch/{batchExportId:"
-                                        + UUID_REGEX_STRING + "}/signedUrl",
+                                        + UUID_REGEX_STRING + "}/s3-object-key",
                                 "/export-batch/{exportId:" + UUID_REGEX_STRING + "}/outstandingCount",
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/publish",
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/unpublish",
-                                "/users/migrate", "/users/delete/**", "/application-forms/lambda/**")
+                                "/users/migrate", "/users/delete", "/users/funding-organisation",
+                                "/application-forms/lambda/**")
                         .permitAll()
                         .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/swagger-ui.html",
                                 "/webjars/**")
+                        .permitAll()
+                        .antMatchers("/spotlight-submissions/{spotlightSubmissionId:" + UUID_REGEX_STRING + "}")
+                        .permitAll()
+                        .antMatchers("/spotlight-batch/status/**", "/spotlight-batch",
+                                "/spotlight-batch/{spotlightBatchId" + UUID_REGEX_STRING
+                                        + "}/add-spotlight-submission/**",
+                                "/spotlight-batch/send-to-spotlight")
                         .permitAll().anyRequest().authenticated())
 
                 .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable().exceptionHandling()

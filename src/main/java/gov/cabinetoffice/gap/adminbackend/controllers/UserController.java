@@ -4,7 +4,9 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.UpdateFundingOrgDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -86,8 +88,8 @@ public class UserController {
         return ResponseEntity.ok("User migrated successfully");
     }
 
-    @DeleteMapping("/delete/{oneLoginSub}")
-    public ResponseEntity<String> deleteUser(@PathVariable Optional<String> oneLoginSub,
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteUser(@RequestParam Optional<String> oneLoginSub,
             @RequestParam(required = false) Optional<UUID> colaSub, @RequestHeader("Authorization") String token) {
         // Called from our user service only. Does not have an admin session so authing
         // via the jwt
@@ -101,6 +103,33 @@ public class UserController {
 
         userService.deleteUser(oneLoginSub, colaSub);
         return ResponseEntity.ok("User deleted successfully");
+    }
+
+    @PatchMapping("/funding-organisation")
+    public ResponseEntity<String> updateFundingOrganisation(@RequestBody UpdateFundingOrgDto updateFundingOrgDto,
+            @RequestHeader("Authorization") String token) {
+
+        if (isEmpty(token) || !token.startsWith("Bearer "))
+            return ResponseEntity.status(401)
+                    .body("Update user's funding organisation: " + "Expected Authorization header not provided");
+        final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
+        final JwtPayload jwtPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+
+        if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
+            return ResponseEntity.status(403)
+                    .body("User not authorized to update user's funding organisation: " + jwtPayload.getSub());
+        }
+
+        Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(updateFundingOrgDto.sub());
+
+        if (grantAdmin.isPresent()) {
+            userService.updateFundingOrganisation(grantAdmin.get(), updateFundingOrgDto.departmentName());
+            return ResponseEntity.ok("User's funding organisation updated successfully");
+        }
+        else {
+            return ResponseEntity.status(404).body("No grant Admin found with sub " + jwtPayload.getSub());
+        }
+
     }
 
     @PostMapping(value = "/validate-admin-email")

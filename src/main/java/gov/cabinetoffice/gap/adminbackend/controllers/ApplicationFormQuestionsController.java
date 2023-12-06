@@ -1,35 +1,32 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import java.util.Objects;
-
-import javax.servlet.http.HttpSession;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import java.util.Objects;
+
+@Slf4j
 @Tag(name = "Application Forms")
 @RequestMapping("/application-forms/{applicationId}/sections/{sectionId}/questions")
 @RestController
@@ -37,6 +34,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApplicationFormQuestionsController {
 
     private final ApplicationFormService applicationFormService;
+
+    private final EventLogService eventLogService;
 
     @PatchMapping("/{questionId}")
     @ApiResponses(value = {
@@ -48,11 +47,13 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No question found with id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity patchQuestion(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<Void> patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
             @RequestBody @NotNull ApplicationFormQuestionDTO question) {
         try {
             this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question);
+
+            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
         }
@@ -76,12 +77,14 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity postNewQuestion(@PathVariable @NotNull Integer applicationId,
-            @PathVariable @NotBlank String sectionId, @RequestBody @NotNull ApplicationFormQuestionDTO question,
-            HttpSession session) {
+    public ResponseEntity<GenericPostResponseDTO> postNewQuestion(HttpServletRequest request,
+            @PathVariable @NotNull Integer applicationId, @PathVariable @NotBlank String sectionId,
+            @RequestBody @NotNull ApplicationFormQuestionDTO question, HttpSession session) {
         try {
             String questionId = this.applicationFormService.addQuestionToApplicationForm(applicationId, sectionId,
                     question, session);
+
+            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().body(new GenericPostResponseDTO(questionId));
         }
@@ -104,7 +107,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity deleteQuestion(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<Void> deleteQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             // don't allow admins to delete questions from mandatory sections
@@ -113,6 +116,8 @@ public class ApplicationFormQuestionsController {
                         HttpStatus.BAD_REQUEST);
             }
             this.applicationFormService.deleteQuestionFromSection(applicationId, sectionId, questionId);
+
+            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
             return ResponseEntity.ok().build();
         }
@@ -134,7 +139,7 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "404",
                     description = "No application, section, or question found with given id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getQuestion(@PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<ApplicationFormQuestionDTO> getQuestion(@PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
             ApplicationFormQuestionDTO question = this.applicationFormService.retrieveQuestion(applicationId, sectionId,
@@ -147,6 +152,18 @@ public class ApplicationFormQuestionsController {
         }
         catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    private void logApplicationUpdatedEvent(String sessionId, Integer applicationId) {
+        try {
+            AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+            eventLogService.logApplicationUpdatedEvent(sessionId, session.getUserSub(), session.getFunderId(),
+                    applicationId.toString());
+        }
+        catch (Exception e) {
+            // If anything goes wrong logging to event service, log and continue
+            log.error("Could not send application update event to event service. Exception: ", e);
         }
     }
 

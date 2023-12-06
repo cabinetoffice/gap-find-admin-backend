@@ -1,15 +1,20 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
+import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
+import gov.cabinetoffice.gap.adminbackend.repositories.FundingOrganisationRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +28,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class UserService {
 
     private final GapUserRepository gapUserRepository;
@@ -31,11 +37,15 @@ public class UserService {
 
     private final GrantApplicantRepository grantApplicantRepository;
 
+    private final FundingOrganisationRepository fundingOrganisationRepository;
+
     private final UserServiceConfig userServiceConfig;
 
     private final RestTemplate restTemplate;
 
     private final WebClient.Builder webClientBuilder;
+
+    private final UserServiceClient userServiceClient;
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -54,7 +64,12 @@ public class UserService {
     public void deleteUser(final Optional<String> oneLoginSubOptional, final Optional<UUID> colaSubOptional) {
         // Deleting COLA and OneLogin subs as either could be stored against the user
         oneLoginSubOptional.ifPresent(grantApplicantRepository::deleteByUserId);
-        colaSubOptional.ifPresent(sub -> grantApplicantRepository.deleteByUserId(sub.toString()));
+
+        if (colaSubOptional.isPresent()) {
+            grantApplicantRepository.deleteByUserId(colaSubOptional.get().toString());
+            grantAdminRepository.deleteByGapUserUserSub(colaSubOptional.get().toString());
+            gapUserRepository.deleteByUserSub(colaSubOptional.get().toString());
+        }
     }
 
     public Boolean verifyAdminRoles(final String emailAddress, final String roles) {
@@ -75,16 +90,14 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public int getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
+    public GrantAdmin getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
             UserV2DTO response = webClientBuilder.build().get()
                     .uri(userServiceConfig.getDomain() + "/user/email/" + email + "?role=ADMIN")
                     .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
-            GrantAdmin grantAdmin = grantAdminRepository.findByGapUserUserSub(response.sub())
-                    .orElseThrow(() -> new NotFoundException(
-                            "Update grant ownership failed: No grant admin found for email: " + email));
-            return grantAdmin.getId();
+            return grantAdminRepository.findByGapUserUserSub(response.sub()).orElseThrow(() -> new NotFoundException(
+                    "Update grant ownership failed: No grant admin found for email: " + email));
 
         }
         catch (Exception e) {
@@ -97,6 +110,35 @@ public class UserService {
 
     public Optional<GrantAdmin> getGrantAdminIdFromSub(final String sub) {
         return grantAdminRepository.findByGapUserUserSub(sub);
+    }
+
+    public String getDepartmentGGISId(Integer adminId) {
+        final GrantAdmin admin = grantAdminRepository.findById(adminId)
+                .orElseThrow(() -> new NotFoundException("No admin found for id: " + adminId));
+        final UserDto userDto = userServiceClient.getUserForSub(admin.getGapUser().getUserSub());
+
+        return userDto.getDepartment().getGgisID();
+    }
+
+    public void updateFundingOrganisation(GrantAdmin grantAdmin, String departmentName) {
+        Optional<FundingOrganisation> fundingOrganisation = this.fundingOrganisationRepository
+                .findByName(departmentName);
+        if (fundingOrganisation.isEmpty()) {
+            FundingOrganisation newFundingOrg = fundingOrganisationRepository
+                    .save(new FundingOrganisation(null, departmentName));
+            grantAdmin.setFunder(newFundingOrg);
+            grantAdminRepository.save(grantAdmin);
+
+            log.info("Created new funding organisation: {}", newFundingOrg);
+            log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());
+
+        }
+        else {
+            grantAdmin.setFunder(fundingOrganisation.get());
+            grantAdminRepository.save(grantAdmin);
+            log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());
+
+        }
     }
 
 }

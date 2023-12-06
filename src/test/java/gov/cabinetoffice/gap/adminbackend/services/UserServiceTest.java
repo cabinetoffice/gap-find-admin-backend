@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
+import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
@@ -202,11 +203,11 @@ class UserServiceTest {
         when(mockResponseSpec.bodyToMono(UserV2DTO.class)).thenReturn(Mono.just(response));
         when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
 
-        when(grantAdminRepository.findByGapUserUserSub(response.sub()))
-                .thenReturn(Optional.of(GrantAdmin.builder().id(1).build()));
+        when(grantAdminRepository.findByGapUserUserSub(response.sub())).thenReturn(
+                Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
 
-        int grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
-        assert (grantAdminId == 1);
+        GrantAdmin grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
+        assert (grantAdminId.getFunder().getId() == 1);
     }
 
 }
