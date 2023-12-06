@@ -35,27 +35,22 @@ public class GrantMandatoryQuestionService {
 
     private final ZipService zipService;
 
-    public List<GrantMandatoryQuestions> getGrantMandatoryQuestionBySchemeAndCompletedStatus(
-            Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .findBySchemeEntity_IdAndCompletedStatus(schemeId);
+    public List<GrantMandatoryQuestions> getGrantMandatoryQuestionBySchemeAndCompletedStatus(Integer schemeId) {
+        return grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 
     public List<GrantMandatoryQuestions> getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
             Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
+        return grantMandatoryQuestionRepository.findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
     }
 
     public List<GrantMandatoryQuestions> getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
             Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
+        return grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
     }
 
     public boolean hasCompletedDataForSpotlight(Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .existsBySchemeEntityIdAndCompleteStatusAndOrgType(schemeId);
+        return grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(schemeId);
 
     }
 
@@ -189,8 +184,7 @@ public class GrantMandatoryQuestionService {
     }
 
     public boolean hasCompletedMandatoryQuestions(Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .existsBySchemeEntity_IdAndCompletedStatus(schemeId);
+        return grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 
 }

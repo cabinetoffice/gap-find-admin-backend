@@ -19,14 +19,12 @@ public interface GrantMandatoryQuestionRepository extends JpaRepository<GrantMan
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.REGISTERED_CHARITY, "
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.UNREGISTERED_CHARITY, "
             + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.LIMITED_COMPANY)")
-    List<GrantMandatoryQuestions> findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(
-            Integer id);
+    List<GrantMandatoryQuestions> findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(Integer id);
 
     @Query("select g from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
             + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
             + "and g.orgType = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY")
-    List<GrantMandatoryQuestions> findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(
-            Integer id);
+    List<GrantMandatoryQuestions> findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(Integer id);
 
     @Query("select (count(g) > 0) from GrantMandatoryQuestions g where g.schemeEntity.id = ?1 "
             + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED")
