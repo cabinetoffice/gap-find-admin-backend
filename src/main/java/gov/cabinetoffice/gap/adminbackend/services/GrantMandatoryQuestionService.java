@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType;
+import gov.cabinetoffice.gap.adminbackend.enums.SubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantMandatoryQuestionRepository;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -93,9 +95,14 @@ public class GrantMandatoryQuestionService {
         return zipService.createZip(SpotlightHeaders.SPOTLIGHT_HEADERS, dataList, filenames);
     }
 
-    public ByteArrayOutputStream getDueDiligenceData(Integer schemeId) {
-        final List<GrantMandatoryQuestions> mandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatus(
+    public ByteArrayOutputStream getDueDiligenceData(Integer schemeId, boolean isInternal) {
+         List<GrantMandatoryQuestions> mandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatus(
                 schemeId);
+        if(isInternal){
+            mandatoryQuestions = mandatoryQuestions.stream()
+                    .filter(mq -> mq.getSubmission() != null &&  mq.getSubmission().getStatus().equals(SubmissionStatus.SUBMITTED))
+                    .toList();
+        }
         final List<List<String>> exportData = exportSpotlightChecks(schemeId, mandatoryQuestions, true);
         return XlsxGenerator.createResource(DueDiligenceHeaders.DUE_DILIGENCE_HEADERS, exportData);
     }

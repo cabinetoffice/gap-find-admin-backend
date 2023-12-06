@@ -82,9 +82,9 @@ class MandatoryQuestionsControllerTest {
                     new ByteArrayInputStream(outputStream.toByteArray()));
 
             when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
-            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID)).thenReturn(outputStream);
+            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, true)).thenReturn(outputStream);
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID)).andExpect(status().isOk())
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID +"?internal=true")).andExpect(status().isOk())
                     .andExpect(
                             header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_file_name\""))
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
@@ -94,7 +94,7 @@ class MandatoryQuestionsControllerTest {
 
         @Test
         void exportDueDiligenceDataWrongAdminTest() throws Exception {
-            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID)).thenThrow(
+            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false)).thenThrow(
                     new AccessDeniedException("Admin 1 is unable to access mandatory questions with scheme id 1"));
 
             mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID)).andExpect(status().isForbidden());
@@ -102,9 +102,9 @@ class MandatoryQuestionsControllerTest {
 
         @Test
         void exportDueDiligenceDataGenericErrorTest() throws Exception {
-            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID)).thenThrow(new RuntimeException());
+            when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false)).thenThrow(new RuntimeException());
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID))
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?internal=false"))
                     .andExpect(status().isInternalServerError());
         }
 

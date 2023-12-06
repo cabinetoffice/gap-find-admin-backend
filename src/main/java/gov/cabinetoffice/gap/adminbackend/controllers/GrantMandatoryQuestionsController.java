@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayOutputStream;
@@ -42,8 +43,8 @@ public class GrantMandatoryQuestionsController {
     }
 
     @GetMapping(value = "/due-diligence/{schemeId}", produces = EXPORT_CONTENT_TYPE)
-    public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId) {
-        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId);
+    public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId, @RequestParam(name="internal") boolean isInternal) {
+        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId,isInternal );
         final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId, null);
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
     }
