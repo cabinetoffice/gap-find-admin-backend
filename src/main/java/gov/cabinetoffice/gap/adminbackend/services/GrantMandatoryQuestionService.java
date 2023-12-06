@@ -35,27 +35,22 @@ public class GrantMandatoryQuestionService {
 
     private final ZipService zipService;
 
-    public List<GrantMandatoryQuestions> getGrantMandatoryQuestionBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
-            Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .findBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmissionStatus(schemeId);
+    public List<GrantMandatoryQuestions> getGrantMandatoryQuestionBySchemeAndCompletedStatus(Integer schemeId) {
+        return grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 
-    public List<GrantMandatoryQuestions> getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
+    public List<GrantMandatoryQuestions> getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
             Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(schemeId);
+        return grantMandatoryQuestionRepository.findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
     }
 
-    public List<GrantMandatoryQuestions> getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
+    public List<GrantMandatoryQuestions> getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
             Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatusAndSubmittedSubmissionStatus(schemeId);
+        return grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
     }
 
     public boolean hasCompletedDataForSpotlight(Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .existsBySchemeEntityIdAndCompletedStatusAndRequiredOrgTypeAndSubmittedSubmissionStatus(schemeId);
+        return grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(schemeId);
 
     }
 
@@ -75,9 +70,9 @@ public class GrantMandatoryQuestionService {
     }
 
     public ByteArrayOutputStream getSpotlightChecks(Integer schemeId) {
-        final List<GrantMandatoryQuestions> companiesAndCharitiesQuestions = getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
+        final List<GrantMandatoryQuestions> companiesAndCharitiesQuestions = getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
                 schemeId);
-        final List<GrantMandatoryQuestions> nonLimitedCompanyQuestions = getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
+        final List<GrantMandatoryQuestions> nonLimitedCompanyQuestions = getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
                 schemeId);
         return generateZipFile(companiesAndCharitiesQuestions, nonLimitedCompanyQuestions, schemeId);
 
@@ -99,7 +94,7 @@ public class GrantMandatoryQuestionService {
     }
 
     public ByteArrayOutputStream getDueDiligenceData(Integer schemeId) {
-        final List<GrantMandatoryQuestions> mandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatusAndSubmittedSubmissionStatus(
+        final List<GrantMandatoryQuestions> mandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatus(
                 schemeId);
         final List<List<String>> exportData = exportSpotlightChecks(schemeId, mandatoryQuestions, true);
         return XlsxGenerator.createResource(DueDiligenceHeaders.DUE_DILIGENCE_HEADERS, exportData);
@@ -188,9 +183,8 @@ public class GrantMandatoryQuestionService {
         return dateString + "_" + ggisReference + "_" + schemeName + (orgType == null ? "" : "_" + orgType) + ".xlsx";
     }
 
-    public boolean hasCompletedMandatoryQuestionsWithSubmittedSubmissionStatus(Integer schemeId) {
-        return grantMandatoryQuestionRepository
-                .existsBySchemeEntity_IdAndCompletedStatusAndSubmittedSubmission_Status(schemeId);
+    public boolean hasCompletedMandatoryQuestions(Integer schemeId) {
+        return grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 
 }
