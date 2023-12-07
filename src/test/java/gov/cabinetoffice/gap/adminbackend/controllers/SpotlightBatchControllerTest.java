@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
@@ -246,13 +247,33 @@ public class SpotlightBatchControllerTest {
             when(fileService.createTemporaryFile(zipStream, "spotlight_validation_errors.zip"))
                     .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
 
-            mockMvc.perform(get("/spotlight-batch/get-validation-error-files/" + schemeId)).andExpect(status().isOk())
+            mockMvc.perform(get("/spotlight-batch/{schemeId}/spotlight/download-validation-errors", schemeId))
+                    .andExpect(status().isOk())
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"spotlight_validation_errors.zip\""))
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
                     .andExpect(
                             header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
                     .andExpect(content().bytes(zipStream.toByteArray()));
+
+        }
+
+    }
+
+    @Nested
+    class retrieveSpotlightBatchErrors {
+
+        @Test
+        void retrieveSpotlightBatchErrors_success() throws Exception {
+            final int schemeId = 1;
+            final GetSpotlightBatchErrorCountDTO expectedResult = GetSpotlightBatchErrorCountDTO.builder()
+                    .errorStatus("ERROR").errorCount(1).errorFound(true).build();
+
+            when(mockSpotlightBatchService.getSpotlightBatchErrorCount(schemeId)).thenReturn(expectedResult);
+
+            mockMvc.perform(get("/spotlight-batch/{schemeId}/spotlight/get-errors", schemeId))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.errorStatus").value("ERROR"))
+                    .andExpect(jsonPath("$.errorCount").value(1)).andExpect(jsonPath("$.errorFound").value(true));
 
         }
 

@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionManageDueDiligenceDataDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
@@ -59,17 +60,17 @@ public class SpotlightSubmissionController {
                 .body(spotlightSubmissionMapper.spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission));
     }
 
-    @GetMapping(value = "/count/{schemeId}")
-    public ResponseEntity<Long> getSpotlightSubmissionCount(@PathVariable Integer schemeId) {
+    @GetMapping(value = "/{schemeId}/get-manage-due-diligence-data")
+    public ResponseEntity<GetSpotlightSubmissionManageDueDiligenceDataDto> getSpotlightSubmissionManageDueDiligenceDataDto(
+            @PathVariable Integer schemeId) {
         final Long count = spotlightSubmissionService.getCountBySchemeIdAndStatus(schemeId,
                 SpotlightSubmissionStatus.SENT);
-        return ResponseEntity.ok(count);
-    }
-
-    @GetMapping(value = "/last-updated/{schemeId}")
-    public ResponseEntity<String> getLastUpdatedDate(@PathVariable Integer schemeId) {
         final String date = spotlightSubmissionService.getLastSubmissionDate(schemeId, SpotlightSubmissionStatus.SENT);
-        return ResponseEntity.ok(date);
+
+        final GetSpotlightSubmissionManageDueDiligenceDataDto data = GetSpotlightSubmissionManageDueDiligenceDataDto
+                .builder().count(count).lastUpdatedDate(date).build();
+
+        return ResponseEntity.ok(data);
     }
 
 }

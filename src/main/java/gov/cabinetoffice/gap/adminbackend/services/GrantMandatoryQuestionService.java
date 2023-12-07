@@ -96,12 +96,11 @@ public class GrantMandatoryQuestionService {
     }
 
     public ByteArrayOutputStream getDueDiligenceData(Integer schemeId, boolean isInternal) {
-         List<GrantMandatoryQuestions> mandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatus(
+        List<GrantMandatoryQuestions> mandatoryQuestions = getGrantMandatoryQuestionBySchemeAndCompletedStatus(
                 schemeId);
-        if(isInternal){
-            mandatoryQuestions = mandatoryQuestions.stream()
-                    .filter(mq -> mq.getSubmission() != null &&  mq.getSubmission().getStatus().equals(SubmissionStatus.SUBMITTED))
-                    .toList();
+        if (isInternal) {
+            mandatoryQuestions = mandatoryQuestions.stream().filter(mq -> mq.getSubmission() != null
+                    && mq.getSubmission().getStatus().equals(SubmissionStatus.SUBMITTED)).toList();
         }
         final List<List<String>> exportData = exportSpotlightChecks(schemeId, mandatoryQuestions, true);
         return XlsxGenerator.createResource(DueDiligenceHeaders.DUE_DILIGENCE_HEADERS, exportData);

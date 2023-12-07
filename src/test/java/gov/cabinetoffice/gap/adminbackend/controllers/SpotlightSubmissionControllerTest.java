@@ -56,22 +56,6 @@ class SpotlightSubmissionControllerTest {
 
     private final String DATE = "25 September 2023";
 
-    @Test
-    void getSpotlightSubmissionCount() throws Exception {
-        when(mockSpotlightSubmissionService.getCountBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
-                .thenReturn(Long.valueOf(2));
-        mockMvc.perform(get("/spotlight-submissions/count/{schemeId}", SCHEME_ID)).andExpect(status().isOk())
-                .andExpect(content().string("2"));
-    }
-
-    @Test
-    void getLastUpdatedDate() throws Exception {
-        when(mockSpotlightSubmissionService.getLastSubmissionDate(SCHEME_ID, SpotlightSubmissionStatus.SENT))
-                .thenReturn(DATE);
-        mockMvc.perform(get("/spotlight-submissions/last-updated/{schemeId}", SCHEME_ID)).andExpect(status().isOk())
-                .andExpect(content().string(DATE));
-    }
-
     @Nested
     class getSpotlightSubmissionById {
 
@@ -104,6 +88,26 @@ class SpotlightSubmissionControllerTest {
 
             mockMvc.perform(get("/spotlight-submissions/{spotlightSubmissionId}", spotlightSubmissionId)
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isNotFound());
+        }
+
+    }
+
+    @Nested
+    class getSpotlightSubmissionManageDueDiligenceDataDto {
+
+        @Test
+        void successfullyRetrieveSpotlightSubmissionManageDueDiligenceDataDto() throws Exception {
+            final Long count = 2L;
+            final String date = "25 September 2023";
+
+            when(mockSpotlightSubmissionService.getCountBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
+                    .thenReturn(count);
+            when(mockSpotlightSubmissionService.getLastSubmissionDate(SCHEME_ID, SpotlightSubmissionStatus.SENT))
+                    .thenReturn(date);
+
+            mockMvc.perform(get("/spotlight-submissions/{schemeId}/get-manage-due-diligence-data", SCHEME_ID)
+                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.count").value(count)).andExpect(jsonPath("$.lastUpdatedDate").value(date));
         }
 
     }

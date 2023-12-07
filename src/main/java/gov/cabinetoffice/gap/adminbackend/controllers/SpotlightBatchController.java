@@ -165,7 +165,7 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body("Success");
     }
 
-    @GetMapping("/get-spotlight-scheme-errors/{schemeId}")
+    @GetMapping("/{schemeId}/spotlight/get-errors")
     @Operation(summary = "Fetches the highest-priority Spotlight error type and any associated counts")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Retrieved error type and count",
@@ -177,7 +177,7 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<GetSpotlightBatchErrorCountDTO> retrieveSpotlightBatchErrorCount(
+    public ResponseEntity<GetSpotlightBatchErrorCountDTO> retrieveSpotlightBatchErrors(
             @PathVariable final String schemeId) {
         log.info("Retrieving Spotlight errors for scheme {}", schemeId);
 
@@ -189,14 +189,18 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body(spotlightBatchErrorCount);
     }
 
-    @GetMapping(value = "/get-validation-error-files/{schemeId}", produces = EXPORT_CONTENT_TYPE)
+    @GetMapping(value = "/{schemeId}/spotlight/download-validation-errors", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportSpotlightValidationErrorFiles(@PathVariable Integer schemeId) {
+        log.info("Downloading validation errors for scheme  {}", schemeId);
         final ByteArrayOutputStream stream = spotlightBatchService
                 .getFilteredSpotlightSubmissionsWithValidationErrors(schemeId);
+
         final String exportFileName = "spotlight_validation_errors.zip";
+
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
     }
 
+    // TODO this is duplicated in mq and spotlightSubmissionController
     @NotNull
     private ResponseEntity<InputStreamResource> getInputStreamResourceResponseEntity(@PathVariable Integer schemeId,
             ByteArrayOutputStream stream, String exportFileName) {
