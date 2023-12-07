@@ -245,7 +245,6 @@ class EventLogServiceTest {
 
     }
 
-
     @Nested
     class logApplicationCreatedEvent {
 
@@ -438,5 +437,5 @@ class EventLogServiceTest {
         }
 
     }
-    
+
 }
