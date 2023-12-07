@@ -10,32 +10,23 @@ CREATE TABLE IF NOT EXISTS event_stream.completion_statistics
     object_completed timestamp(6) with time zone,
     created timestamp(6) with time zone NOT NULL,
     CONSTRAINT completion_statistics_pkey PRIMARY KEY (id)
-)
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS event_stream.completion_statistics
-    OWNER to postgres;
+);
 
 CREATE INDEX IF NOT EXISTS completion_statistics_funding_org_id_index
     ON event_stream.completion_statistics USING btree
-    (funding_organisation_id ASC NULLS LAST)
-    TABLESPACE pg_default;
+    (funding_organisation_id ASC NULLS LAST);
 
 CREATE INDEX IF NOT EXISTS completion_statistics_object_id_index
     ON event_stream.completion_statistics USING btree
-    (object_id COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
+    (object_id COLLATE pg_catalog."default" ASC NULLS LAST);
 
 CREATE INDEX IF NOT EXISTS completion_statistics_object_id_user_sub_index
     ON event_stream.completion_statistics USING btree
-    (object_id COLLATE pg_catalog."default" ASC NULLS LAST, user_sub COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
+    (object_id COLLATE pg_catalog."default" ASC NULLS LAST, user_sub COLLATE pg_catalog."default" ASC NULLS LAST);
 
 CREATE INDEX IF NOT EXISTS completion_statistics_user_sub_index
     ON event_stream.completion_statistics USING btree
-    (user_sub COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
+    (user_sub COLLATE pg_catalog."default" ASC NULLS LAST);
 
 
 
@@ -46,6 +37,3 @@ CREATE SEQUENCE IF NOT EXISTS event_stream.completion_statistics_id_seq
     MINVALUE 1
     MAXVALUE 9223372036854775807
     CACHE 1;
-
-ALTER SEQUENCE event_stream.completion_statistics_id_seq
-    OWNER TO postgres;
