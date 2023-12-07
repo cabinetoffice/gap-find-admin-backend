@@ -245,4 +245,197 @@ class EventLogServiceTest {
 
     }
 
+    @Nested
+    class logApplicationCreatedEvent {
+
+        @Test
+        public void success(InfoLogCapture logCapture) throws JsonProcessingException {
+
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            when(objectMapper.writeValueAsString(eventLogArgumentCaptor.capture())).thenReturn("");
+            when(amazonSQS.sendMessage(anyString(), any())).thenReturn(null);
+
+            eventLogService.logApplicationCreatedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            EventLog actualEventLog = eventLogArgumentCaptor.getValue();
+
+            assertThat(actualEventLog.getEventType()).isEqualTo(EventType.APPLICATION_CREATED);
+            assertThat(actualEventLog.getFundingOrganisationId()).isEqualTo(fundingOrgId);
+            assertThat(actualEventLog.getSessionId()).isEqualTo(sessionId);
+            assertThat(actualEventLog.getUserSub()).isEqualTo(userSub);
+            assertThat(actualEventLog.getObjectId()).isEqualTo(objectId);
+            assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.APPLICATION);
+            assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
+
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
+                    .isEqualTo(EventType.APPLICATION_CREATED + " Message sent successfully");
+        }
+
+        @Test
+        public void cantSendToSQS(ErrorLogCapture logCapture) throws JsonProcessingException {
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            String expectedMessageBody = "MessageBody";
+            when(objectMapper.writeValueAsString(any(EventLog.class))).thenReturn(expectedMessageBody);
+            when(amazonSQS.sendMessage(anyString(), anyString())).thenThrow(AmazonSQSException.class);
+
+            eventLogService.logApplicationCreatedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .startsWith("Message failed to send for event log");
+
+        }
+
+        @Test
+        public void queueDisabled(InfoLogCapture logCapture) {
+            eventLogService = new EventLogService("eventLogQueue", false, amazonSQS, objectMapper, clock);
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            eventLogService.logApplicationCreatedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .isEqualTo("Event Service Queue is disabled. Returning without sending.");
+            verifyNoInteractions(amazonSQS, objectMapper);
+        }
+
+    }
+
+    @Nested
+    class logApplicationUpdatedEvent {
+
+        @Test
+        public void success(InfoLogCapture logCapture) throws JsonProcessingException {
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            when(objectMapper.writeValueAsString(eventLogArgumentCaptor.capture())).thenReturn("");
+            when(amazonSQS.sendMessage(anyString(), any())).thenReturn(null);
+
+            eventLogService.logApplicationUpdatedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            EventLog actualEventLog = eventLogArgumentCaptor.getValue();
+
+            assertThat(actualEventLog.getEventType()).isEqualTo(EventType.APPLICATION_UPDATED);
+            assertThat(actualEventLog.getFundingOrganisationId()).isEqualTo(fundingOrgId);
+            assertThat(actualEventLog.getSessionId()).isEqualTo(sessionId);
+            assertThat(actualEventLog.getUserSub()).isEqualTo(userSub);
+            assertThat(actualEventLog.getObjectId()).isEqualTo(objectId);
+            assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.APPLICATION);
+            assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
+
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
+                    .isEqualTo(EventType.APPLICATION_UPDATED + " Message sent successfully");
+        }
+
+        @Test
+        public void cantSendToSQS(ErrorLogCapture logCapture) throws JsonProcessingException {
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            String expectedMessageBody = "MessageBody";
+            when(objectMapper.writeValueAsString(any(EventLog.class))).thenReturn(expectedMessageBody);
+            when(amazonSQS.sendMessage(anyString(), eq(expectedMessageBody))).thenThrow(AmazonSQSException.class);
+
+            eventLogService.logApplicationUpdatedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .startsWith("Message failed to send for event log");
+        }
+
+        @Test
+        public void queueDisabled(InfoLogCapture logCapture) {
+            ReflectionTestUtils.setField(eventLogService, "eventServiceQueueEnabled", false);
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            eventLogService.logApplicationUpdatedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .isEqualTo("Event Service Queue is disabled. Returning without sending.");
+
+            verifyNoInteractions(amazonSQS, objectMapper);
+        }
+
+    }
+
+    @Nested
+    class logApplicationPublishedEvent {
+
+        @Test
+        public void success(InfoLogCapture logCapture) throws JsonProcessingException {
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            when(objectMapper.writeValueAsString(eventLogArgumentCaptor.capture())).thenReturn("");
+            when(amazonSQS.sendMessage(anyString(), any())).thenReturn(null);
+
+            eventLogService.logApplicationPublishedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            EventLog actualEventLog = eventLogArgumentCaptor.getValue();
+
+            assertThat(actualEventLog.getEventType()).isEqualTo(EventType.APPLICATION_PUBLISHED);
+            assertThat(actualEventLog.getFundingOrganisationId()).isEqualTo(fundingOrgId);
+            assertThat(actualEventLog.getSessionId()).isEqualTo(sessionId);
+            assertThat(actualEventLog.getUserSub()).isEqualTo(userSub);
+            assertThat(actualEventLog.getObjectId()).isEqualTo(objectId);
+            assertThat(actualEventLog.getObjectType()).isEqualTo(ObjectType.APPLICATION);
+            assertThat(actualEventLog.getTimestamp()).isEqualTo(clock.instant());
+
+            assertThat(logCapture.getLoggingEventAt(1).getFormattedMessage())
+                    .isEqualTo(EventType.APPLICATION_PUBLISHED + " Message sent successfully");
+
+        }
+
+        @Test
+        public void cantSendToSQS(ErrorLogCapture logCapture) throws JsonProcessingException {
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            String expectedMessageBody = "MessageBody";
+            when(objectMapper.writeValueAsString(any(EventLog.class))).thenReturn(expectedMessageBody);
+            when(amazonSQS.sendMessage(anyString(), eq(expectedMessageBody))).thenThrow(AmazonSQSException.class);
+
+            eventLogService.logApplicationPublishedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .startsWith("Message failed to send for event log");
+        }
+
+        @Test
+        public void queueDisabled(InfoLogCapture logCapture) {
+            ReflectionTestUtils.setField(eventLogService, "eventServiceQueueEnabled", false);
+            String sessionId = "SessionId";
+            String userSub = "UserSub";
+            long fundingOrgId = 1L;
+            String objectId = "ObjectId";
+
+            eventLogService.logApplicationPublishedEvent(sessionId, userSub, fundingOrgId, objectId);
+
+            assertThat(logCapture.getLoggingEventAt(0).getFormattedMessage())
+                    .isEqualTo("Event Service Queue is disabled. Returning without sending.");
+            verifyNoInteractions(amazonSQS, objectMapper);
+        }
+
+    }
+
 }
