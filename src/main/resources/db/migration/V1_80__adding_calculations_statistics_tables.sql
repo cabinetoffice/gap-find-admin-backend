@@ -36,3 +36,16 @@ CREATE INDEX IF NOT EXISTS completion_statistics_user_sub_index
     ON event_stream.completion_statistics USING btree
     (user_sub COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
+
+
+
+-- Sequence creation
+CREATE SEQUENCE IF NOT EXISTS event_stream.completion_statistics_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE event_stream.completion_statistics_id_seq
+    OWNER TO postgres;
