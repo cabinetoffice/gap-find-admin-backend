@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class GetSpotlightSubmissionDataBySchemeId {
+public class GetSpotlightSubmissionDataBySchemeIdDto {
 
     @Builder.Default
     private Long sentCount = 0L;

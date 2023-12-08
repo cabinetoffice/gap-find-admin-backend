@@ -1,7 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionDataBySchemeId;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionDataBySchemeIdDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
@@ -61,13 +61,13 @@ public class SpotlightSubmissionController {
     }
 
     @GetMapping(value = "/scheme/{schemeId}/get-due-diligence-data")
-    public ResponseEntity<GetSpotlightSubmissionDataBySchemeId> getSpotlightSubmissionDataBySchemeId(
+    public ResponseEntity<GetSpotlightSubmissionDataBySchemeIdDto> getSpotlightSubmissionDataBySchemeId(
             @PathVariable Integer schemeId) {
         log.info("Getting spotlight submission data for scheme {}", schemeId);
 
         final boolean hasSpotlightSubmissions = spotlightSubmissionService.doesSchemeHaveSpotlightSubmission(schemeId);
 
-        final GetSpotlightSubmissionDataBySchemeId data = GetSpotlightSubmissionDataBySchemeId.builder()
+        final GetSpotlightSubmissionDataBySchemeIdDto data = GetSpotlightSubmissionDataBySchemeIdDto.builder()
                 .hasSpotlightSubmissions(hasSpotlightSubmissions).build();
 
         if (!hasSpotlightSubmissions) {

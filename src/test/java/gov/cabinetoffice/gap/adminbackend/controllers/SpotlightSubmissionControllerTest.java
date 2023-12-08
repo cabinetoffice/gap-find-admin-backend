@@ -131,7 +131,8 @@ class SpotlightSubmissionControllerTest {
             mockMvc.perform(get("/spotlight-submissions/scheme/{schemeId}/get-due-diligence-data", SCHEME_ID)
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
                     .andExpect(jsonPath("$.hasSpotlightSubmissions").value(hasSpotlightSubmissions))
-                    .andExpect(jsonPath("$.sentCount").value(count)).andExpect(jsonPath("$.sentLastUpdatedDate").value(date));
+                    .andExpect(jsonPath("$.sentCount").value(count))
+                    .andExpect(jsonPath("$.sentLastUpdatedDate").value(date));
 
             verify(mockSpotlightSubmissionService, times(1)).doesSchemeHaveSpotlightSubmission(SCHEME_ID);
             verify(mockSpotlightSubmissionService, times(1)).getCountBySchemeIdAndStatus(SCHEME_ID,

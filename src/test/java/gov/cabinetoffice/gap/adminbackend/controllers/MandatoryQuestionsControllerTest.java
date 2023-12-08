@@ -84,7 +84,7 @@ class MandatoryQuestionsControllerTest {
             when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
             when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, true)).thenReturn(outputStream);
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?internal=true"))
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?isInternal=true"))
                     .andExpect(status().isOk())
                     .andExpect(
                             header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_file_name\""))
@@ -98,7 +98,7 @@ class MandatoryQuestionsControllerTest {
             when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false)).thenThrow(
                     new AccessDeniedException("Admin 1 is unable to access mandatory questions with scheme id 1"));
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?internal=false"))
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?isInternal=false"))
                     .andExpect(status().isForbidden());
         }
 
@@ -106,7 +106,7 @@ class MandatoryQuestionsControllerTest {
         void exportDueDiligenceDataGenericErrorTest() throws Exception {
             when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false)).thenThrow(new RuntimeException());
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?internal=false"))
+            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?isInternal=false"))
                     .andExpect(status().isInternalServerError());
         }
 
