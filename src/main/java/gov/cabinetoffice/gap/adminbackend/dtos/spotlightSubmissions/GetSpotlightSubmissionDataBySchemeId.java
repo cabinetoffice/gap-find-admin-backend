@@ -9,10 +9,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class GetSpotlightSubmissionManageDueDiligenceDataDto {
+public class GetSpotlightSubmissionDataBySchemeId {
 
-    private Long count;
+    @Builder.Default
+    private Long sentCount = 0L;
 
-    private String lastUpdatedDate;
+    @Builder.Default
+    private String sentLastUpdatedDate = "";
+
+    private boolean hasSpotlightSubmissions;
 
 }

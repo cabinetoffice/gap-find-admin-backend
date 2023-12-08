@@ -55,16 +55,16 @@ class MandatoryQuestionsControllerTest {
 
         @Test
         void hasCompletedMandatoryQuestionsReturnsTrue() throws Exception {
-            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(true);
-            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/complete")).andExpect(status().isOk())
-                    .andExpect(content().string("true"));
+            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, true)).thenReturn(true);
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/isCompleted?isInternal=true"))
+                    .andExpect(status().isOk()).andExpect(content().string("true"));
         }
 
         @Test
         void hasCompletedMandatoryQuestionsReturnsFalse() throws Exception {
-            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID)).thenReturn(false);
-            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/complete")).andExpect(status().isOk())
-                    .andExpect(content().string("false"));
+            when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, false)).thenReturn(false);
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/isCompleted?isInternal=false"))
+                    .andExpect(status().isOk()).andExpect(content().string("false"));
         }
 
     }
@@ -153,25 +153,6 @@ class MandatoryQuestionsControllerTest {
 
             mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
                     .andExpect(status().isInternalServerError());
-        }
-
-    }
-
-    @Nested
-    class hasCompletedMandatoryQuestionsForSpotlightExport {
-
-        @Test
-        void hasCompletedMandatoryQuestionsForSpotlightExportReturnsTrue() throws Exception {
-            when(grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID)).thenReturn(true);
-            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/spotlight-complete"))
-                    .andExpect(status().isOk()).andExpect(content().string("true"));
-        }
-
-        @Test
-        void hasCompletedMandatoryQuestionsForSpotlightExportReturnsFalse() throws Exception {
-            when(grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID)).thenReturn(false);
-            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/spotlight-complete"))
-                    .andExpect(status().isOk()).andExpect(content().string("false"));
         }
 
     }

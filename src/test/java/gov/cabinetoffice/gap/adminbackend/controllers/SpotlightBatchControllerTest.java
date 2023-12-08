@@ -247,7 +247,7 @@ public class SpotlightBatchControllerTest {
             when(fileService.createTemporaryFile(zipStream, "spotlight_validation_errors.zip"))
                     .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
 
-            mockMvc.perform(get("/spotlight-batch/{schemeId}/spotlight/download-validation-errors", schemeId))
+            mockMvc.perform(get("/spotlight-batch/scheme/{schemeId}/spotlight/download-validation-errors", schemeId))
                     .andExpect(status().isOk())
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"spotlight_validation_errors.zip\""))
@@ -271,7 +271,7 @@ public class SpotlightBatchControllerTest {
 
             when(mockSpotlightBatchService.getSpotlightBatchErrorCount(schemeId)).thenReturn(expectedResult);
 
-            mockMvc.perform(get("/spotlight-batch/{schemeId}/spotlight/get-errors", schemeId))
+            mockMvc.perform(get("/spotlight-batch/scheme/{schemeId}/spotlight/get-errors", schemeId))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.errorStatus").value("ERROR"))
                     .andExpect(jsonPath("$.errorCount").value(1)).andExpect(jsonPath("$.errorFound").value(true));
 

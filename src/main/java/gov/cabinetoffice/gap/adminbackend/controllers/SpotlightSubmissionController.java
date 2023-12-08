@@ -1,7 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
-import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionManageDueDiligenceDataDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionDataBySchemeId;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
@@ -60,15 +60,31 @@ public class SpotlightSubmissionController {
                 .body(spotlightSubmissionMapper.spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission));
     }
 
-    @GetMapping(value = "/{schemeId}/get-manage-due-diligence-data")
-    public ResponseEntity<GetSpotlightSubmissionManageDueDiligenceDataDto> getSpotlightSubmissionManageDueDiligenceDataDto(
+    @GetMapping(value = "/scheme/{schemeId}/get-due-diligence-data")
+    public ResponseEntity<GetSpotlightSubmissionDataBySchemeId> getSpotlightSubmissionDataBySchemeId(
             @PathVariable Integer schemeId) {
+        log.info("Getting spotlight submission data for scheme {}", schemeId);
+
+        final boolean hasSpotlightSubmissions = spotlightSubmissionService.doesSchemeHaveSpotlightSubmission(schemeId);
+
+        final GetSpotlightSubmissionDataBySchemeId data = GetSpotlightSubmissionDataBySchemeId.builder()
+                .hasSpotlightSubmissions(hasSpotlightSubmissions).build();
+
+        if (!hasSpotlightSubmissions) {
+            log.info("No spotlight submissions found for scheme {}", schemeId);
+
+            return ResponseEntity.ok(data);
+        }
+
         final Long count = spotlightSubmissionService.getCountBySchemeIdAndStatus(schemeId,
                 SpotlightSubmissionStatus.SENT);
         final String date = spotlightSubmissionService.getLastSubmissionDate(schemeId, SpotlightSubmissionStatus.SENT);
 
-        final GetSpotlightSubmissionManageDueDiligenceDataDto data = GetSpotlightSubmissionManageDueDiligenceDataDto
-                .builder().count(count).lastUpdatedDate(date).build();
+        data.setSentCount(count);
+        data.setSentLastUpdatedDate(date);
+
+        log.info("Spotlight submission for scheme {} are {} last updated at {}", schemeId, data.getSentCount(),
+                data.getSentLastUpdatedDate());
 
         return ResponseEntity.ok(data);
     }

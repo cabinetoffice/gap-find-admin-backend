@@ -32,14 +32,10 @@ public class GrantMandatoryQuestionsController {
 
     final private FileService fileService;
 
-    @GetMapping("/scheme/{schemeId}/complete")
-    public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId) {
-        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId));
-    }
-
-    @GetMapping("/scheme/{schemeId}/spotlight-complete")
-    public ResponseEntity<Boolean> hasCompletedMandatoryQuestionsForSpotlightExport(@PathVariable Integer schemeId) {
-        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedDataForSpotlight(schemeId));
+    @GetMapping("/scheme/{schemeId}/isCompleted")
+    public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId,
+            @RequestParam boolean isInternal) {
+        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId, isInternal));
     }
 
     @GetMapping(value = "/due-diligence/{schemeId}", produces = EXPORT_CONTENT_TYPE)

@@ -461,41 +461,46 @@ class GrantMandatoryQuestionServiceTest {
     @Nested
     class doesSchemeHaveCompletedMandatoryQuestions {
 
-        @Test
-        void returnsTrue() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(true);
-            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
-            assertThat(result).isEqualTo(true);
+        @Nested
+        class internal {
+
+            @Test
+            void returnsTrue() {
+                when(grantMandatoryQuestionRepository
+                        .existBySchemeIdAndCompletedStatusAndSubmittedSubmission(SCHEME_ID)).thenReturn(true);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, true);
+                assertThat(result).isEqualTo(true);
+            }
+
+            @Test
+            void returnFalse() {
+                when(grantMandatoryQuestionRepository
+                        .existBySchemeIdAndCompletedStatusAndSubmittedSubmission(SCHEME_ID)).thenReturn(false);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, true);
+                assertThat(result).isEqualTo(false);
+            }
+
         }
 
-        @Test
-        void returnFalse() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(false);
-            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
-            assertThat(result).isEqualTo(false);
-        }
+        @Nested
+        class external {
 
-    }
+            @Test
+            void returnsTrue() {
+                when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                        .thenReturn(true);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, false);
+                assertThat(result).isEqualTo(true);
+            }
 
-    @Nested
-    class doesSchemeHaveCompletedDataForSpotlight {
+            @Test
+            void returnFalse() {
+                when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                        .thenReturn(false);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, false);
+                assertThat(result).isEqualTo(false);
+            }
 
-        @Test
-        void returnsTrue() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
-                    .thenReturn(true);
-            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
-            assertThat(result).isEqualTo(true);
-        }
-
-        @Test
-        void returnFalse() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
-                    .thenReturn(false);
-            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
-            assertThat(result).isEqualTo(false);
         }
 
     }

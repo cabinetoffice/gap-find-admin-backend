@@ -22,6 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.UUID;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -93,21 +95,49 @@ class SpotlightSubmissionControllerTest {
     }
 
     @Nested
-    class getSpotlightSubmissionManageDueDiligenceDataDto {
+    class getSpotlightSubmissionDataBySchemeId {
 
         @Test
-        void successfullyRetrieveSpotlightSubmissionManageDueDiligenceDataDto() throws Exception {
+        void noSpotlightSubmissionsFound() throws Exception {
+            final boolean hasSpotlightSubmissions = false;
+
+            when(mockSpotlightSubmissionService.doesSchemeHaveSpotlightSubmission(SCHEME_ID))
+                    .thenReturn(hasSpotlightSubmissions);
+
+            mockMvc.perform(get("/spotlight-submissions/scheme/{schemeId}/get-due-diligence-data", SCHEME_ID)
+                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.hasSpotlightSubmissions").value(hasSpotlightSubmissions));
+
+            verify(mockSpotlightSubmissionService, times(1)).doesSchemeHaveSpotlightSubmission(SCHEME_ID);
+            verify(mockSpotlightSubmissionService, times(0)).getCountBySchemeIdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
+            verify(mockSpotlightSubmissionService, times(0)).getLastSubmissionDate(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
+        }
+
+        @Test
+        void spotlightSubmissionsFound() throws Exception {
+            final boolean hasSpotlightSubmissions = true;
             final Long count = 2L;
             final String date = "25 September 2023";
 
+            when(mockSpotlightSubmissionService.doesSchemeHaveSpotlightSubmission(SCHEME_ID))
+                    .thenReturn(hasSpotlightSubmissions);
             when(mockSpotlightSubmissionService.getCountBySchemeIdAndStatus(SCHEME_ID, SpotlightSubmissionStatus.SENT))
                     .thenReturn(count);
             when(mockSpotlightSubmissionService.getLastSubmissionDate(SCHEME_ID, SpotlightSubmissionStatus.SENT))
                     .thenReturn(date);
 
-            mockMvc.perform(get("/spotlight-submissions/{schemeId}/get-manage-due-diligence-data", SCHEME_ID)
+            mockMvc.perform(get("/spotlight-submissions/scheme/{schemeId}/get-due-diligence-data", SCHEME_ID)
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
-                    .andExpect(jsonPath("$.count").value(count)).andExpect(jsonPath("$.lastUpdatedDate").value(date));
+                    .andExpect(jsonPath("$.hasSpotlightSubmissions").value(hasSpotlightSubmissions))
+                    .andExpect(jsonPath("$.sentCount").value(count)).andExpect(jsonPath("$.sentLastUpdatedDate").value(date));
+
+            verify(mockSpotlightSubmissionService, times(1)).doesSchemeHaveSpotlightSubmission(SCHEME_ID);
+            verify(mockSpotlightSubmissionService, times(1)).getCountBySchemeIdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
+            verify(mockSpotlightSubmissionService, times(1)).getLastSubmissionDate(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
         }
 
     }

@@ -51,11 +51,6 @@ public class GrantMandatoryQuestionService {
         return grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
     }
 
-    public boolean hasCompletedDataForSpotlight(Integer schemeId) {
-        return grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(schemeId);
-
-    }
-
     public ByteArrayOutputStream getValidationErrorChecks(List<GrantMandatoryQuestions> mandatoryQuestions,
             Integer schemeId) {
         final List<GrantMandatoryQuestions> companiesAndCharitiesQuestions = mandatoryQuestions.stream()
@@ -189,7 +184,10 @@ public class GrantMandatoryQuestionService {
         return dateString + "_" + ggisReference + "_" + schemeName + (orgType == null ? "" : "_" + orgType) + ".xlsx";
     }
 
-    public boolean hasCompletedMandatoryQuestions(Integer schemeId) {
+    public boolean hasCompletedMandatoryQuestions(Integer schemeId, boolean isInternal) {
+        if (isInternal) {
+            return grantMandatoryQuestionRepository.existBySchemeIdAndCompletedStatusAndSubmittedSubmission(schemeId);
+        }
         return grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 

@@ -165,7 +165,7 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body("Success");
     }
 
-    @GetMapping("/{schemeId}/spotlight/get-errors")
+    @GetMapping("/scheme/{schemeId}/spotlight/get-errors")
     @Operation(summary = "Fetches the highest-priority Spotlight error type and any associated counts")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Retrieved error type and count",
@@ -189,7 +189,7 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body(spotlightBatchErrorCount);
     }
 
-    @GetMapping(value = "/{schemeId}/spotlight/download-validation-errors", produces = EXPORT_CONTENT_TYPE)
+    @GetMapping(value = "/scheme/{schemeId}/spotlight/download-validation-errors", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportSpotlightValidationErrorFiles(@PathVariable Integer schemeId) {
         log.info("Downloading validation errors for scheme  {}", schemeId);
         final ByteArrayOutputStream stream = spotlightBatchService

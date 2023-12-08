@@ -75,4 +75,8 @@ public class SpotlightSubmissionService {
                         "A spotlight submission with mandatory question gapId " + gapId + " could not be found"));
     }
 
+    public boolean doesSchemeHaveSpotlightSubmission(Integer schemeId) {
+        return spotlightSubmissionRepository.existsByGrantScheme_Id(schemeId);
+    }
+
 }
