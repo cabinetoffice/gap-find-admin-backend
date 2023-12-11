@@ -41,16 +41,6 @@ public class GrantMandatoryQuestionService {
         return grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(schemeId);
     }
 
-    public List<GrantMandatoryQuestions> getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
-            Integer schemeId) {
-        return grantMandatoryQuestionRepository.findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
-    }
-
-    public List<GrantMandatoryQuestions> getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
-            Integer schemeId) {
-        return grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(schemeId);
-    }
-
     public ByteArrayOutputStream getValidationErrorChecks(List<GrantMandatoryQuestions> mandatoryQuestions,
             Integer schemeId) {
         final List<GrantMandatoryQuestions> companiesAndCharitiesQuestions = mandatoryQuestions.stream()
@@ -64,15 +54,6 @@ public class GrantMandatoryQuestionService {
                 .filter(s -> s.getOrgType().equals(GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY)).toList();
 
         return generateZipFile(companiesAndCharitiesQuestions, nonLimitedCompanyQuestions, schemeId);
-    }
-
-    public ByteArrayOutputStream getSpotlightChecks(Integer schemeId) {
-        final List<GrantMandatoryQuestions> companiesAndCharitiesQuestions = getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
-                schemeId);
-        final List<GrantMandatoryQuestions> nonLimitedCompanyQuestions = getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(
-                schemeId);
-        return generateZipFile(companiesAndCharitiesQuestions, nonLimitedCompanyQuestions, schemeId);
-
     }
 
     private ByteArrayOutputStream generateZipFile(List<GrantMandatoryQuestions> companiesAndCharitiesQuestions,

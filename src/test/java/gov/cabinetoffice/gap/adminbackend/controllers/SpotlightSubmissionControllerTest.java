@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
@@ -8,6 +9,8 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightSubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,13 +18,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,6 +64,12 @@ class SpotlightSubmissionControllerTest {
 
     @MockBean
     private SpotlightSubmissionMapper spotlightSubmissionMapper;
+
+    @MockBean
+    private SchemeService schemeService;
+
+    @MockBean
+    private FileService fileService;
 
     private final Integer SCHEME_ID = 1;
 
@@ -139,6 +156,42 @@ class SpotlightSubmissionControllerTest {
                     SpotlightSubmissionStatus.SENT);
             verify(mockSpotlightSubmissionService, times(1)).getLastSubmissionDate(SCHEME_ID,
                     SpotlightSubmissionStatus.SENT);
+        }
+
+    }
+
+    @Nested
+    class downloadDueDiligenceChecks {
+
+        @Test
+        void successfullyDownloadDueDiligenceChecks() throws Exception {
+            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
+                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
+                zipOut.putNextEntry(entry);
+                zipOut.write("Mock Excel File Content".getBytes());
+                zipOut.closeEntry();
+            }
+            final String exportFileName = "spotlight_checks.zip";
+            final SchemeDTO scheme = SchemeDTO.builder().schemeId(SCHEME_ID).build();
+
+            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(scheme);
+            when(mockSpotlightSubmissionService.generateCharitiesAndLimitedCompanyDownloadFile(scheme))
+                    .thenReturn(zipStream);
+
+            when(fileService.createTemporaryFile(zipStream, exportFileName))
+                    .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
+
+            mockMvc.perform(get("/spotlight-submissions/scheme/{schemeId}/download", SCHEME_ID)
+                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"spotlight_checks.zip\""))
+                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
+                    .andExpect(
+                            header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
+                    .andExpect(content().bytes(zipStream.toByteArray()));
+
+            verify(mockSpotlightSubmissionService, times(1)).generateCharitiesAndLimitedCompanyDownloadFile(scheme);
         }
 
     }

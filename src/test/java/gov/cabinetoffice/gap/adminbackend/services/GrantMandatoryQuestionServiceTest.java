@@ -98,30 +98,6 @@ class GrantMandatoryQuestionServiceTest {
     @Spy
     private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
-    @Test
-    void getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus() {
-        when(grantMandatoryQuestionRepository.findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                .thenReturn(List.of(grantMandatoryQuestionsExternal));
-
-        List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
-                .getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(SCHEME_ID);
-
-        assertThat(result).isEqualTo(List.of(grantMandatoryQuestionsExternal));
-
-    }
-
-    @Test
-    void getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus() {
-        when(grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
-
-        List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
-                .getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(SCHEME_ID);
-
-        assertThat(result).isEqualTo(List.of(grantMandatoryQuestionsNonLimitedCompany));
-
-    }
-
     @Nested
     class GetGrantMandatoryQuestionBySchemeAndStatusTests {
 
@@ -164,42 +140,6 @@ class GrantMandatoryQuestionServiceTest {
 
             Exception exception = assertThrows(AccessDeniedException.class,
                     () -> grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestionsList, SCHEME_ID));
-
-            String actualMessage = exception.getMessage();
-            assertThat(actualMessage)
-                    .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
-        }
-
-    }
-
-    @Nested
-    class getSpotlightChecks {
-
-        @Test
-        void getSpotlightChecks() {
-            when(grantMandatoryQuestionRepository
-                    .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                            .thenReturn(List.of(grantMandatoryQuestionsExternal));
-            when(grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);
-            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false);
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsNonLimitedCompany, false);
-
-            ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID);
-
-            assertNotNull(dataStream);
-        }
-
-        @Test
-        void getSpotlightChecks_throwAccessDeniedException() {
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
-
-            Exception exception = assertThrows(AccessDeniedException.class,
-                    () -> grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage)

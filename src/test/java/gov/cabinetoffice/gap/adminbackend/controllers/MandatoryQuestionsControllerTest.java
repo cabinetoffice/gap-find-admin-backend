@@ -84,7 +84,7 @@ class MandatoryQuestionsControllerTest {
             when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
             when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, true)).thenReturn(outputStream);
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?isInternal=true"))
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/due-diligence?isInternal=true"))
                     .andExpect(status().isOk())
                     .andExpect(
                             header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_file_name\""))
@@ -98,7 +98,7 @@ class MandatoryQuestionsControllerTest {
             when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false)).thenThrow(
                     new AccessDeniedException("Admin 1 is unable to access mandatory questions with scheme id 1"));
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?isInternal=false"))
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/due-diligence?isInternal=false"))
                     .andExpect(status().isForbidden());
         }
 
@@ -106,52 +106,7 @@ class MandatoryQuestionsControllerTest {
         void exportDueDiligenceDataGenericErrorTest() throws Exception {
             when(grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false)).thenThrow(new RuntimeException());
 
-            mockMvc.perform(get("/mandatory-questions/due-diligence/" + SCHEME_ID + "?isInternal=false"))
-                    .andExpect(status().isInternalServerError());
-        }
-
-    }
-
-    @Nested
-    class exportSpotlightChecks {
-
-        @Test
-        void exportSpotlightChecks() throws Exception {
-            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
-            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
-                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
-                zipOut.putNextEntry(entry);
-                zipOut.write("Mock Excel File Content".getBytes());
-                zipOut.closeEntry();
-            }
-
-            when(grantMandatoryQuestionService.getSpotlightChecks(anyInt())).thenReturn(zipStream);
-            when(fileService.createTemporaryFile(zipStream, "spotlight_checks.zip"))
-                    .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
-
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID)).andExpect(status().isOk())
-                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"spotlight_checks.zip\""))
-                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
-                    .andExpect(
-                            header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
-                    .andExpect(content().bytes(zipStream.toByteArray()));
-        }
-
-        @Test
-        void exportSpotlightChecksDataWrongAdminTest() throws Exception {
-            when(grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID)).thenThrow(
-                    new AccessDeniedException("Admin 1 is unable to access mandatory questions with scheme id 1"));
-
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        void exportSpotlightChecksGenericErrorTest() throws Exception {
-            when(grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID)).thenThrow(new RuntimeException());
-
-            mockMvc.perform(get("/mandatory-questions/spotlight-export/" + SCHEME_ID))
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/due-diligence?isInternal=false"))
                     .andExpect(status().isInternalServerError());
         }
 

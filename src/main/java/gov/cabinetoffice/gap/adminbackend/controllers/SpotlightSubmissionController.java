@@ -1,11 +1,14 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionDataBySchemeIdDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightSubmissionMapper;
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,13 +18,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.ByteArrayOutputStream;
 import java.util.UUID;
+
+import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
 
 @Log4j2
 @RestController
@@ -33,6 +44,10 @@ public class SpotlightSubmissionController {
     private final SpotlightSubmissionService spotlightSubmissionService;
 
     private final SpotlightSubmissionMapper spotlightSubmissionMapper;
+
+    private final SchemeService schemeService;
+
+    private final FileService fileService;
 
     // check spring security whitelist before adding endpoints
 
@@ -87,6 +102,39 @@ public class SpotlightSubmissionController {
                 data.getSentLastUpdatedDate());
 
         return ResponseEntity.ok(data);
+    }
+
+    @GetMapping(value = "/scheme/{schemeId}/download", produces = EXPORT_CONTENT_TYPE)
+    public ResponseEntity<InputStreamResource> downloadDueDiligenceChecks(@PathVariable Integer schemeId) {
+        log.info("Downloading due diligence data for scheme {}", schemeId);
+
+        final SchemeDTO scheme = schemeService.getSchemeBySchemeId(schemeId);
+        final ByteArrayOutputStream stream = spotlightSubmissionService
+                .generateCharitiesAndLimitedCompanyDownloadFile(scheme);
+        final String exportFileName = "spotlight_checks.zip";
+
+        return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
+    }
+
+    @NotNull
+    private ResponseEntity<InputStreamResource> getInputStreamResourceResponseEntity(@PathVariable Integer schemeId,
+            ByteArrayOutputStream stream, String exportFileName) {
+        log.info("Started due diligence data export for scheme " + schemeId);
+        long start = System.currentTimeMillis();
+
+        final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
+        final int length = stream.toByteArray().length;
+
+        // setting HTTP headers to tell caller we are returning a file
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.parse("attachment; filename=" + exportFileName));
+
+        long end = System.currentTimeMillis();
+        log.info("Finished due diligence data export for scheme " + schemeId + ". Export time in millis: "
+                + (end - start));
+
+        return ResponseEntity.ok().headers(headers).contentLength(length)
+                .contentType(MediaType.parseMediaType(EXPORT_CONTENT_TYPE)).body(resource);
     }
 
 }

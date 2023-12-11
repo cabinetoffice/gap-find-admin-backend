@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService;
+import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -38,18 +39,11 @@ public class GrantMandatoryQuestionsController {
         return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId, isInternal));
     }
 
-    @GetMapping(value = "/due-diligence/{schemeId}", produces = EXPORT_CONTENT_TYPE)
+    @GetMapping(value = "/scheme/{schemeId}/due-diligence", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId,
             @RequestParam boolean isInternal) {
         final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId, isInternal);
         final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId, null);
-        return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
-    }
-
-    @GetMapping(value = "/spotlight-export/{schemeId}", produces = EXPORT_CONTENT_TYPE)
-    public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer schemeId) {
-        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getSpotlightChecks(schemeId);
-        final String exportFileName = "spotlight_checks.zip";
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
     }
 

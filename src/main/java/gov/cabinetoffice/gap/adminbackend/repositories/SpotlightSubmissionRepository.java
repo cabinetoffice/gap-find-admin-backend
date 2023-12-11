@@ -21,4 +21,6 @@ public interface SpotlightSubmissionRepository extends JpaRepository<SpotlightSu
 
     boolean existsByGrantScheme_Id(Integer id);
 
+    List<SpotlightSubmission> findByGrantScheme_Id(Integer id);
+
 }
