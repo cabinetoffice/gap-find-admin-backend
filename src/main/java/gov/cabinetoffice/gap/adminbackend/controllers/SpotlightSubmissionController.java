@@ -104,7 +104,8 @@ public class SpotlightSubmissionController {
     @GetMapping(value = "/scheme/{schemeId}/download", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> downloadDueDiligenceChecks(@PathVariable Integer schemeId,
             @RequestParam boolean onlyValidationErrors) {
-        log.info("Downloading due diligence data for scheme {}", schemeId);
+        final String logMessage = onlyValidationErrors ? "validation errors" : "all";
+        log.info("Downloading {} due diligence data for scheme with id {}", logMessage, schemeId);
 
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(schemeId);
         final ByteArrayOutputStream stream = spotlightSubmissionService.generateDownloadFile(scheme,

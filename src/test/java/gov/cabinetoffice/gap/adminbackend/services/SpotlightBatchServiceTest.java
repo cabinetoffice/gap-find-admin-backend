@@ -1178,24 +1178,39 @@ class SpotlightBatchServiceTest {
         void noSubmissionsForSchemeId() {
             when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
                     .thenReturn(spotlightBatches);
+            when(spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR)).thenReturn(false);
 
-            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
 
-            assertEquals(0, result.getErrorCount());
-            assertEquals("OK", result.getErrorStatus());
-            assertFalse(result.isErrorFound());
+            verify(spotlightSubmissionService, times(1)).existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+            verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
+
+            assertThat(result.getErrorCount()).isZero();
+            assertThat(result.getErrorStatus()).isEqualTo("OK");
+            assertThat(result.isErrorFound()).isFalse();
+            assertThat(result.isValidationErrorPresent()).isFalse();
         }
 
         @Test
-        void noSpotlightBatchFoundForRequiredCriteroa() {
+        void noSpotlightBatchFoundForRequiredCriteria() {
             when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
                     .thenReturn(emptySpotlightBatch);
 
-            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+            when(spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR)).thenReturn(false);
 
-            assertEquals(0, result.getErrorCount());
-            assertEquals("OK", result.getErrorStatus());
-            assertFalse(result.isErrorFound());
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            verify(spotlightSubmissionService, times(1)).existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+            verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
+
+            assertThat(result.getErrorCount()).isZero();
+            assertThat(result.getErrorStatus()).isEqualTo("OK");
+            assertThat(result.isErrorFound()).isFalse();
+            assertThat(result.isValidationErrorPresent()).isFalse();
         }
 
         @Test
@@ -1203,14 +1218,24 @@ class SpotlightBatchServiceTest {
             final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
                     .status(SpotlightSubmissionStatus.SEND_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
+
             when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
                     .thenReturn(spotlightBatches);
 
-            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+            when(spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR)).thenReturn(false);
 
-            assertTrue(result.getErrorCount() > 0);
-            assertEquals("API", result.getErrorStatus());
-            assertTrue(result.isErrorFound());
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            verify(spotlightSubmissionService, times(1)).existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+            verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
+
+            assertThat(result.getErrorCount()).isGreaterThan(0);
+            assertThat(result.getErrorStatus()).isEqualTo("API");
+            assertThat(result.isErrorFound()).isTrue();
+            assertThat(result.isValidationErrorPresent()).isFalse();
+
         }
 
         @Test
@@ -1218,14 +1243,23 @@ class SpotlightBatchServiceTest {
             final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
                     .status(SpotlightSubmissionStatus.GGIS_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
+
             when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
                     .thenReturn(spotlightBatches);
 
-            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+            when(spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR)).thenReturn(false);
 
-            assertTrue(result.getErrorCount() > 0);
-            assertEquals("GGIS", result.getErrorStatus());
-            assertTrue(result.isErrorFound());
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            verify(spotlightSubmissionService, times(1)).existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+            verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
+
+            assertThat(result.getErrorCount()).isGreaterThan(0);
+            assertThat(result.getErrorStatus()).isEqualTo("GGIS");
+            assertThat(result.isErrorFound()).isTrue();
+            assertThat(result.isValidationErrorPresent()).isFalse();
         }
 
         @Test
@@ -1233,14 +1267,23 @@ class SpotlightBatchServiceTest {
             final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
                     .status(SpotlightSubmissionStatus.VALIDATION_ERROR.toString()).grantScheme(schemeEntity).build();
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
+
             when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
                     .thenReturn(spotlightBatches);
 
-            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+            when(spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR)).thenReturn(false);
 
-            assertTrue(result.getErrorCount() > 0);
-            assertEquals("VALIDATION", result.getErrorStatus());
-            assertTrue(result.isErrorFound());
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            verify(spotlightSubmissionService, times(1)).existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+            verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
+
+            assertThat(result.getErrorCount()).isGreaterThan(0);
+            assertThat(result.getErrorStatus()).isEqualTo("VALIDATION");
+            assertThat(result.isErrorFound()).isTrue();
+            assertThat(result.isValidationErrorPresent()).isFalse();
         }
 
         @Test
@@ -1248,14 +1291,45 @@ class SpotlightBatchServiceTest {
             final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
                     .status(SpotlightSubmissionStatus.SENT.toString()).grantScheme(schemeEntity).build();
             spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
+
             when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
                     .thenReturn(spotlightBatches);
+            when(spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR)).thenReturn(false);
 
-            GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
 
-            assertThat(result.getErrorCount()).isEqualTo(0);
+            verify(spotlightSubmissionService, times(1)).existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+            verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
+
+            assertThat(result.getErrorCount()).isZero();
             assertThat(result.getErrorStatus()).isEqualTo("OK");
             assertThat(result.isErrorFound()).isFalse();
+            assertThat(result.isValidationErrorPresent()).isFalse();
+        }
+
+        @Test
+        void validationErrorExistsForScheme() {
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                    .status(SpotlightSubmissionStatus.SENT.toString()).grantScheme(schemeEntity).build();
+            spotlightBatches.get(0).getSpotlightSubmissions().add(spotlightSubmission);
+
+            when(spotlightBatchRepository.findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable))
+                    .thenReturn(spotlightBatches);
+            when(spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR)).thenReturn(true);
+
+            final GetSpotlightBatchErrorCountDTO result = spotlightBatchService.getSpotlightBatchErrorCount(schemeId);
+
+            verify(spotlightSubmissionService, times(1)).existBySchemeIdAndStatus(schemeId,
+                    SpotlightSubmissionStatus.VALIDATION_ERROR);
+            verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
+
+            assertThat(result.getErrorCount()).isZero();
+            assertThat(result.getErrorStatus()).isEqualTo("OK");
+            assertThat(result.isErrorFound()).isFalse();
+            assertThat(result.isValidationErrorPresent()).isTrue();
         }
 
     }

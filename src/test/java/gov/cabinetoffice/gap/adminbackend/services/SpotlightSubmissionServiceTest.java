@@ -123,6 +123,37 @@ class SpotlightSubmissionServiceTest {
     }
 
     @Nested
+    class existBySchemeIdAndStatus {
+
+        @Test
+        void exist() {
+            when(spotlightSubmissionRepository.existsByGrantScheme_IdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT.toString())).thenReturn(true);
+
+            final boolean result = spotlightSubmissionService.existBySchemeIdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
+
+            verify(spotlightSubmissionRepository).existsByGrantScheme_IdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT.toString());
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        void notExist() {
+            when(spotlightSubmissionRepository.existsByGrantScheme_IdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT.toString())).thenReturn(false);
+
+            final boolean result = spotlightSubmissionService.existBySchemeIdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT);
+
+            verify(spotlightSubmissionRepository).existsByGrantScheme_IdAndStatus(SCHEME_ID,
+                    SpotlightSubmissionStatus.SENT.toString());
+            assertThat(result).isFalse();
+        }
+
+    }
+
+    @Nested
     class getSpotlightSubmissionByMandatoryQuestionGapId {
 
         @Test

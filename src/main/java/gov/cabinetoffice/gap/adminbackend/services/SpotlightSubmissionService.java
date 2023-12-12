@@ -180,4 +180,8 @@ public class SpotlightSubmissionService {
         return String.join(", ", StringUtils.defaultString(addressLine1), StringUtils.defaultString(addressLine2));
     }
 
+    public boolean existBySchemeIdAndStatus(Integer schemeId, SpotlightSubmissionStatus status) {
+        return spotlightSubmissionRepository.existsByGrantScheme_IdAndStatus(schemeId, status.toString());
+    }
+
 }

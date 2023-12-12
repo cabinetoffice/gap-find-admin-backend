@@ -29,19 +29,29 @@ import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsControll
 @RequiredArgsConstructor
 public class GrantMandatoryQuestionsController {
 
-    final private GrantMandatoryQuestionService grantMandatoryQuestionService;
+    private final GrantMandatoryQuestionService grantMandatoryQuestionService;
 
-    final private FileService fileService;
+    private final FileService fileService;
 
     @GetMapping("/scheme/{schemeId}/isCompleted")
     public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId,
             @RequestParam boolean isInternal) {
-        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId, isInternal));
+        log.info("Checking if mandatory questions are completed for scheme " + schemeId);
+
+        final Boolean hasCompletedMandatoryQuestions = grantMandatoryQuestionService
+                .hasCompletedMandatoryQuestions(schemeId, isInternal);
+
+        log.info("Mandatory questions are completed for scheme " + schemeId + "? : " + hasCompletedMandatoryQuestions);
+
+        return ResponseEntity.ok(hasCompletedMandatoryQuestions);
     }
 
     @GetMapping(value = "/scheme/{schemeId}/due-diligence", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId,
             @RequestParam boolean isInternal) {
+        final String logMessage = isInternal ? "internal" : "external";
+        log.info("Exporting all due diligence data for {} scheme with id {}", logMessage, schemeId);
+
         final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId, isInternal);
         final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId, null);
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);

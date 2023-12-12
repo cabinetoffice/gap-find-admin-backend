@@ -462,7 +462,7 @@ public class SpotlightBatchService {
     }
 
     private GetSpotlightBatchErrorCountDTO orderSpotlightErrorStatusesByPriority(
-            List<SpotlightSubmission> filteredSubmissions) {
+            List<SpotlightSubmission> filteredSubmissions, boolean hasValidationError) {
         int apiErrorCount = 0;
         int ggisErrorCount = 0;
         int validationErrorCount = 0;
@@ -477,7 +477,8 @@ public class SpotlightBatchService {
             }
         }
         if (apiErrorCount == 0 && ggisErrorCount == 0 && validationErrorCount == 0) {
-            return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
+            return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false)
+                    .isValidationErrorPresent(hasValidationError).build();
         }
 
         log.info("There are {} api errors", apiErrorCount);
@@ -499,23 +500,26 @@ public class SpotlightBatchService {
             errorStatus = "GGIS";
         }
         return GetSpotlightBatchErrorCountDTO.builder().errorCount(errorCount).errorStatus(errorStatus).errorFound(true)
-                .build();
+                .isValidationErrorPresent(hasValidationError).build();
     }
 
     public GetSpotlightBatchErrorCountDTO getSpotlightBatchErrorCount(Integer schemeId) {
         final List<SpotlightSubmission> filteredSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId);
+        final boolean hasValidationError = spotlightSubmissionService.existBySchemeIdAndStatus(schemeId,
+                SpotlightSubmissionStatus.VALIDATION_ERROR);
 
         if (filteredSubmissions.isEmpty()) {
 
             log.info("No spotlight_submission for scheme id {} found in the latest batch", schemeId);
 
-            return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false).build();
+            return GetSpotlightBatchErrorCountDTO.builder().errorCount(0).errorStatus("OK").errorFound(false)
+                    .isValidationErrorPresent(hasValidationError).build();
         }
 
         log.info("Found {} spotlight_submission for scheme id {},  in the latest batch", filteredSubmissions.size(),
                 schemeId);
 
-        return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions);
+        return this.orderSpotlightErrorStatusesByPriority(filteredSubmissions, hasValidationError);
     }
 
     @NotNull
