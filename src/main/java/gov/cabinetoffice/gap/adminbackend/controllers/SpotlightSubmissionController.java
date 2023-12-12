@@ -24,10 +24,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
@@ -105,12 +102,13 @@ public class SpotlightSubmissionController {
     }
 
     @GetMapping(value = "/scheme/{schemeId}/download", produces = EXPORT_CONTENT_TYPE)
-    public ResponseEntity<InputStreamResource> downloadDueDiligenceChecks(@PathVariable Integer schemeId) {
+    public ResponseEntity<InputStreamResource> downloadDueDiligenceChecks(@PathVariable Integer schemeId,
+            @RequestParam boolean onlyValidationErrors) {
         log.info("Downloading due diligence data for scheme {}", schemeId);
 
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(schemeId);
-        final ByteArrayOutputStream stream = spotlightSubmissionService
-                .generateCharitiesAndLimitedCompanyDownloadFile(scheme);
+        final ByteArrayOutputStream stream = spotlightSubmissionService.generateDownloadFile(scheme,
+                onlyValidationErrors);
         final String exportFileName = "spotlight_checks.zip";
 
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);

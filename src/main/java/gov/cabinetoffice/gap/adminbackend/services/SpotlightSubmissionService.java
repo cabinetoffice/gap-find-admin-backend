@@ -3,7 +3,6 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
-import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
@@ -19,12 +18,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.*;
 
@@ -83,9 +77,14 @@ public class SpotlightSubmissionService {
         return spotlightSubmissionRepository.existsByGrantScheme_Id(schemeId);
     }
 
-    public ByteArrayOutputStream generateCharitiesAndLimitedCompanyDownloadFile(SchemeDTO scheme) {
-        final List<SpotlightSubmission> spotlightSubmissions = spotlightSubmissionRepository
+    public ByteArrayOutputStream generateDownloadFile(SchemeDTO scheme, boolean onlyValidationErrors) {
+        List<SpotlightSubmission> spotlightSubmissions = spotlightSubmissionRepository
                 .findByGrantScheme_Id(scheme.getSchemeId());
+
+        if (onlyValidationErrors) {
+            spotlightSubmissions = spotlightSubmissions.stream()
+                    .filter(s -> s.getStatus().equals(SpotlightSubmissionStatus.VALIDATION_ERROR.toString())).toList();
+        }
 
         final List<SpotlightSubmission> companiesAndCharitiesSubmissions = spotlightSubmissions.stream()
                 .filter(s -> s.getMandatoryQuestions().getOrgType().equals(LIMITED_COMPANY)

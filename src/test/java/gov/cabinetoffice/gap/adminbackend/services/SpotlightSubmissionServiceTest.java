@@ -20,9 +20,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
 import org.mockito.Spy;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -36,8 +33,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -181,7 +178,7 @@ class SpotlightSubmissionServiceTest {
     class getSpotlightSubmission {
 
         @Test
-        void getSpotlightSubmission() {
+        void getSpotlightSubmissionSuccess() {
             final SpotlightSubmission mockSpotlightSubmission = SpotlightSubmission.builder().id(spotlightSubmissionId)
                     .build();
 
@@ -271,8 +268,7 @@ class SpotlightSubmissionServiceTest {
             doReturn(EXPECTED_SPOTLIGHT_ROW).when(spotlightSubmissionService)
                     .buildSingleSpotlightRow(grantMandatoryQuestionsCharity);
 
-            final ByteArrayOutputStream result = spotlightSubmissionService
-                    .generateCharitiesAndLimitedCompanyDownloadFile(schemeDto);
+            final ByteArrayOutputStream result = spotlightSubmissionService.generateDownloadFile(schemeDto, false);
 
             verify(spotlightSubmissionRepository).findByGrantScheme_Id(SCHEME_ID);
             assertThat(result).isNotNull();
@@ -294,8 +290,7 @@ class SpotlightSubmissionServiceTest {
             doReturn(EXPECTED_SPOTLIGHT_ROW).when(spotlightSubmissionService)
                     .buildSingleSpotlightRow(grantMandatoryQuestionsRegisteredCharity);
 
-            final ByteArrayOutputStream result = spotlightSubmissionService
-                    .generateCharitiesAndLimitedCompanyDownloadFile(schemeDto);
+            final ByteArrayOutputStream result = spotlightSubmissionService.generateDownloadFile(schemeDto, false);
 
             verify(spotlightSubmissionRepository).findByGrantScheme_Id(SCHEME_ID);
             assertThat(result).isNotNull();
@@ -317,8 +312,30 @@ class SpotlightSubmissionServiceTest {
             doReturn(EXPECTED_SPOTLIGHT_ROW).when(spotlightSubmissionService)
                     .buildSingleSpotlightRow(grantMandatoryQuestionsUnregisteredCharity);
 
-            final ByteArrayOutputStream result = spotlightSubmissionService
-                    .generateCharitiesAndLimitedCompanyDownloadFile(schemeDto);
+            final ByteArrayOutputStream result = spotlightSubmissionService.generateDownloadFile(schemeDto, false);
+
+            verify(spotlightSubmissionRepository).findByGrantScheme_Id(SCHEME_ID);
+            assertThat(result).isNotNull();
+
+        }
+
+        @Test
+        void success_ValidationErrors() {
+            final SpotlightSubmission spotlightSubmission = SpotlightSubmission.builder()
+                    .mandatoryQuestions(grantMandatoryQuestionsUnregisteredCharity).grantScheme(schemeEntity)
+                    .status(SpotlightSubmissionStatus.VALIDATION_ERROR.toString()).build();
+            final SchemeDTO schemeDto = SchemeDTO.builder().schemeId(schemeEntity.getId()).name(schemeEntity.getName())
+                    .build();
+
+            final List<SpotlightSubmission> spotlightSubmissions = List.of(spotlightSubmission);
+
+            when(spotlightSubmissionRepository.findByGrantScheme_Id(SCHEME_ID)).thenReturn(spotlightSubmissions);
+            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
+
+            doReturn(EXPECTED_SPOTLIGHT_ROW).when(spotlightSubmissionService)
+                    .buildSingleSpotlightRow(grantMandatoryQuestionsUnregisteredCharity);
+
+            final ByteArrayOutputStream result = spotlightSubmissionService.generateDownloadFile(schemeDto, true);
 
             verify(spotlightSubmissionRepository).findByGrantScheme_Id(SCHEME_ID);
             assertThat(result).isNotNull();

@@ -34,9 +34,7 @@ import java.util.UUID;
 import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.combineAddressLines;
 import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.mandatoryValue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -73,11 +71,6 @@ class GrantMandatoryQuestionServiceTest {
             .orgType(GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY).fundingAmount(BigDecimal.valueOf(50000))
             .schemeEntity(schemeEntity).gapId("GAP-ID").build();
 
-    final List<GrantMandatoryQuestions> mandatoryQuestionsList = List.of(grantMandatoryQuestionsExternal,
-            grantMandatoryQuestionsNonLimitedCompany);
-
-    private final SchemeDTO schemeDTO = SchemeDTO.builder().name("schemeName").ggisReference("123").build();
-
     private final List<String> EXPECTED_DUE_DILIGENCE_ROW = Arrays.asList("GAP-ID", "Some company name",
             "9-10 St Andrew Square", "county", "Edinburgh", "EH2 2AF", "500", "12738494", "50000",
             "Non-limited company", "");
@@ -90,9 +83,6 @@ class GrantMandatoryQuestionServiceTest {
 
     @Mock
     private SchemeService schemeService;
-
-    @Mock
-    private ZipService zipService;
 
     @InjectMocks
     @Spy
@@ -116,39 +106,6 @@ class GrantMandatoryQuestionServiceTest {
     }
 
     @Nested
-    class getValidationErrorChecks {
-
-        @Test
-        void getValidationErrorChecks() {
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);
-            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false);
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsNonLimitedCompany, false);
-
-            ByteArrayOutputStream dataStream = grantMandatoryQuestionService
-                    .getValidationErrorChecks(mandatoryQuestionsList, SCHEME_ID);
-
-            assertNotNull(dataStream);
-        }
-
-        @Test
-        void getValidationErrorChecks_throwAccessDeniedException() {
-
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
-
-            Exception exception = assertThrows(AccessDeniedException.class,
-                    () -> grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestionsList, SCHEME_ID));
-
-            String actualMessage = exception.getMessage();
-            assertThat(actualMessage)
-                    .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
-        }
-
-    }
-
-    @Nested
     class getDueDiligenceData {
 
         private static void assertRowIsAsExpected(Row actualRow, List<String> expectedRow) {
@@ -166,7 +123,7 @@ class GrantMandatoryQuestionServiceTest {
                 when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
                         .thenReturn(List.of(grantMandatoryQuestionsExternal, grantMandatoryQuestionsInternal));
                 doReturn(EXPECTED_DUE_DILIGENCE_ROW).when(grantMandatoryQuestionService)
-                        .buildSingleSpotlightRow(grantMandatoryQuestionsInternal, true);
+                        .buildSingleSpotlightRow(grantMandatoryQuestionsInternal);
 
                 ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, true);
 
@@ -199,7 +156,7 @@ class GrantMandatoryQuestionServiceTest {
                 when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
                         .thenReturn(List.of(grantMandatoryQuestionsExternal));
                 doReturn(EXPECTED_DUE_DILIGENCE_ROW).when(grantMandatoryQuestionService)
-                        .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, true);
+                        .buildSingleSpotlightRow(grantMandatoryQuestionsExternal);
 
                 ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false);
 
@@ -305,7 +262,7 @@ class GrantMandatoryQuestionServiceTest {
         @Test
         void givenGoodInput_returnsExpectedData() {
             List<String> spotlightRow = grantMandatoryQuestionService
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false);
+                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal);
 
             assertThat(spotlightRow).containsAll(EXPECTED_SPOTLIGHT_ROW);
         }
@@ -314,8 +271,8 @@ class GrantMandatoryQuestionServiceTest {
         void givenDataWithoutOrgName_throwsException() {
             grantMandatoryQuestionsExternal.setName(null);
 
-            Exception exception = assertThrows(SpotlightExportException.class, () -> grantMandatoryQuestionService
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false));
+            Exception exception = assertThrows(SpotlightExportException.class,
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("organisation name");
@@ -325,8 +282,8 @@ class GrantMandatoryQuestionServiceTest {
         void givenDataWithoutPostcode_throwsException() {
             grantMandatoryQuestionsExternal.setPostcode(null);
 
-            Exception exception = assertThrows(SpotlightExportException.class, () -> grantMandatoryQuestionService
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false));
+            Exception exception = assertThrows(SpotlightExportException.class,
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("postcode");
@@ -336,8 +293,8 @@ class GrantMandatoryQuestionServiceTest {
         void givenDataWithoutAmount_throwsException() {
             grantMandatoryQuestionsExternal.setFundingAmount(null);
 
-            Exception exception = assertThrows(SpotlightExportException.class, () -> grantMandatoryQuestionService
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false));
+            Exception exception = assertThrows(SpotlightExportException.class,
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("Unable to find mandatory question data:");
@@ -347,8 +304,8 @@ class GrantMandatoryQuestionServiceTest {
         void givenNullSchemeData_throwsException() {
             grantMandatoryQuestionsExternal.setSchemeEntity(null);
 
-            Exception exception = assertThrows(SpotlightExportException.class, () -> grantMandatoryQuestionService
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false));
+            Exception exception = assertThrows(SpotlightExportException.class,
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("Unable to find mandatory question data:");
@@ -359,7 +316,7 @@ class GrantMandatoryQuestionServiceTest {
             grantMandatoryQuestionsExternal.setCharityCommissionNumber(null);
             EXPECTED_SPOTLIGHT_ROW.set(6, "");
             List<String> spotlightRow = grantMandatoryQuestionService
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal, false);
+                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal);
             assertThat(spotlightRow).containsAll(EXPECTED_SPOTLIGHT_ROW);
         }
 

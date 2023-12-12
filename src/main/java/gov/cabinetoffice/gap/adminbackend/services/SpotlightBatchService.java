@@ -14,10 +14,8 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.DraftAssessmen
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlight.response.SpotlightResponseResultsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
-import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightBatchStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.JsonParseException;
@@ -43,13 +41,14 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
-import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 
 @Service
 @RequiredArgsConstructor
@@ -83,8 +82,6 @@ public class SpotlightBatchService {
     private final AmazonSQS amazonSqs;
 
     private final SpotlightSubmissionService spotlightSubmissionService;
-
-    private final GrantMandatoryQuestionService grantMandatoryQuestionService;
 
     private final SnsService snsService;
 
@@ -472,17 +469,11 @@ public class SpotlightBatchService {
 
         for (SpotlightSubmission submission : filteredSubmissions) {
             switch (SpotlightSubmissionStatus.valueOf(submission.getStatus())) {
-                case SEND_ERROR:
-                    apiErrorCount++;
-                    break;
-                case GGIS_ERROR:
-                    ggisErrorCount++;
-                    break;
-                case VALIDATION_ERROR:
-                    validationErrorCount++;
-                    break;
-                default:
-                    break;
+                case SEND_ERROR -> apiErrorCount++;
+                case GGIS_ERROR -> ggisErrorCount++;
+                case VALIDATION_ERROR -> validationErrorCount++;
+                default -> {
+                }
             }
         }
         if (apiErrorCount == 0 && ggisErrorCount == 0 && validationErrorCount == 0) {
@@ -546,15 +537,6 @@ public class SpotlightBatchService {
         log.info("No spotlight batch found in the db");
         return List.of();
 
-    }
-
-    public ByteArrayOutputStream getFilteredSpotlightSubmissionsWithValidationErrors(Integer schemeId) {
-        final List<SpotlightSubmission> spotlightSubmissions = getSpotlightBatchSubmissionsBySchemeId(schemeId).stream()
-                .filter(s -> s.getStatus().equals(SpotlightSubmissionStatus.VALIDATION_ERROR.toString())).toList();
-        final List<GrantMandatoryQuestions> mandatoryQuestions = spotlightSubmissions.stream()
-                .map(SpotlightSubmission::getMandatoryQuestions).toList();
-
-        return grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestions, schemeId);
     }
 
 }
