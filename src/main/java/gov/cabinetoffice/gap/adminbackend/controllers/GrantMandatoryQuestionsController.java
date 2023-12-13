@@ -33,7 +33,7 @@ public class GrantMandatoryQuestionsController {
 
     private final FileService fileService;
 
-    @GetMapping("/scheme/{schemeId}/completed")
+    @GetMapping("/scheme/{schemeId}/is-completed")
     public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId,
             @RequestParam boolean isInternal) {
         log.info("Checking if mandatory questions are completed for scheme " + schemeId);
