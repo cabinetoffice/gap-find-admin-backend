@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
@@ -9,7 +10,6 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightBatchMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapper;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
-import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import org.junit.jupiter.api.Nested;
@@ -18,20 +18,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
-import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -68,9 +62,6 @@ public class SpotlightBatchControllerTest {
     @MockBean
     private SpotlightBatchMapper mockSpotlightBatchMapper;
 
-    @MockBean
-    private FileService fileService;
-
     @Nested
     class spotlightBatchWithStatusExist {
 
@@ -90,6 +81,30 @@ public class SpotlightBatchControllerTest {
 
         @Test
         void badRequestSpotlightBatchWithStatusExist() throws Exception {
+            mockMvc.perform(get("/spotlight-batch/status/INVALID_STATUS/exists")).andExpect(status().isBadRequest());
+        }
+
+    }
+
+    @Nested
+    class getSpotlightBatchById {
+
+        @Test
+        void successfullyGetSpotlightBatchById() throws Exception {
+            final SpotlightBatchStatus status = SpotlightBatchStatus.QUEUED;
+            final String batchSizeLimit = "150";
+            final Boolean expectedResult = true;
+
+            when(mockSpotlightBatchService.existsByStatusAndMaxBatchSize(status, Integer.parseInt(batchSizeLimit)))
+                    .thenReturn(expectedResult);
+
+            mockMvc.perform(get("/spotlight-batch/status/{status}/exists", status)
+                    .param("batchSizeLimit", batchSizeLimit).header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isOk()).andExpect(content().string("true"));
+        }
+
+        @Test
+        void notFOundExceptionGetSpotlightBatchById() throws Exception {
             mockMvc.perform(get("/spotlight-batch/status/INVALID_STATUS/exists")).andExpect(status().isBadRequest());
         }
 
@@ -186,7 +201,7 @@ public class SpotlightBatchControllerTest {
                             spotlightBatchId, spotlightSubmissionId).header(HttpHeaders.AUTHORIZATION,
                                     LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk())
-                    .andExpect(content().string(containsString("id\":\"" + spotlightBatchId.toString())));
+                    .andExpect(content().string(containsString("id\":\"" + spotlightBatchId)));
 
         }
 
@@ -228,31 +243,19 @@ public class SpotlightBatchControllerTest {
     }
 
     @Nested
-    class exportSpotlightValidationErrorFiles {
+    class retrieveSpotlightBatchErrors {
 
         @Test
-        void exportSpotlightValidationErrorFiles_success() throws Exception {
+        void retrieveSpotlightBatchErrors_success() throws Exception {
             final int schemeId = 1;
-            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
-            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
-                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
-                zipOut.putNextEntry(entry);
-                zipOut.write("Mock Excel File Content".getBytes());
-                zipOut.closeEntry();
-            }
+            final GetSpotlightBatchErrorCountDTO expectedResult = GetSpotlightBatchErrorCountDTO.builder()
+                    .errorStatus("ERROR").errorCount(1).errorFound(true).build();
 
-            when(mockSpotlightBatchService.getFilteredSpotlightSubmissionsWithValidationErrors(anyInt()))
-                    .thenReturn(zipStream);
-            when(fileService.createTemporaryFile(zipStream, "spotlight_validation_errors.zip"))
-                    .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
+            when(mockSpotlightBatchService.getSpotlightBatchErrorCount(schemeId)).thenReturn(expectedResult);
 
-            mockMvc.perform(get("/spotlight-batch/get-validation-error-files/" + schemeId)).andExpect(status().isOk())
-                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"spotlight_validation_errors.zip\""))
-                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
-                    .andExpect(
-                            header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
-                    .andExpect(content().bytes(zipStream.toByteArray()));
+            mockMvc.perform(get("/spotlight-batch/scheme/{schemeId}/spotlight-errors", schemeId))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.errorStatus").value("ERROR"))
+                    .andExpect(jsonPath("$.errorCount").value(1)).andExpect(jsonPath("$.errorFound").value(true));
 
         }
 
