@@ -20,11 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -56,14 +55,14 @@ class MandatoryQuestionsControllerTest {
         @Test
         void hasCompletedMandatoryQuestionsReturnsTrue() throws Exception {
             when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, true)).thenReturn(true);
-            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/isCompleted?isInternal=true"))
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/completed?isInternal=true"))
                     .andExpect(status().isOk()).andExpect(content().string("true"));
         }
 
         @Test
         void hasCompletedMandatoryQuestionsReturnsFalse() throws Exception {
             when(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, false)).thenReturn(false);
-            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/isCompleted?isInternal=false"))
+            mockMvc.perform(get("/mandatory-questions/scheme/" + SCHEME_ID + "/completed?isInternal=false"))
                     .andExpect(status().isOk()).andExpect(content().string("false"));
         }
 

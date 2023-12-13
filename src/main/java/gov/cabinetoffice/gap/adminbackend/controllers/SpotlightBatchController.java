@@ -154,7 +154,7 @@ public class SpotlightBatchController {
         return ResponseEntity.ok().body("Success");
     }
 
-    @GetMapping("/scheme/{schemeId}/spotlight/get-errors")
+    @GetMapping("/scheme/{schemeId}/spotlight-errors")
     @Operation(summary = "Fetches the highest-priority Spotlight error type and any associated counts")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Retrieved error type and count",

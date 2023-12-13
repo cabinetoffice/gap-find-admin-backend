@@ -253,7 +253,7 @@ public class SpotlightBatchControllerTest {
 
             when(mockSpotlightBatchService.getSpotlightBatchErrorCount(schemeId)).thenReturn(expectedResult);
 
-            mockMvc.perform(get("/spotlight-batch/scheme/{schemeId}/spotlight/get-errors", schemeId))
+            mockMvc.perform(get("/spotlight-batch/scheme/{schemeId}/spotlight-errors", schemeId))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.errorStatus").value("ERROR"))
                     .andExpect(jsonPath("$.errorCount").value(1)).andExpect(jsonPath("$.errorFound").value(true));
 

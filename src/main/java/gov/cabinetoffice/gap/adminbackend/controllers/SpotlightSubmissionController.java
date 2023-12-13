@@ -72,7 +72,7 @@ public class SpotlightSubmissionController {
                 .body(spotlightSubmissionMapper.spotlightSubmissionToSpotlightSubmissionDto(spotlightSubmission));
     }
 
-    @GetMapping(value = "/scheme/{schemeId}/get-due-diligence-data")
+    @GetMapping(value = "/scheme/{schemeId}/due-diligence-data")
     public ResponseEntity<GetSpotlightSubmissionDataBySchemeIdDto> getSpotlightSubmissionDataBySchemeId(
             @PathVariable Integer schemeId) {
         log.info("Getting spotlight submission data for scheme {}", schemeId);
