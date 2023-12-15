@@ -1,6 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.repositories;
 
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
+import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus;
+import gov.cabinetoffice.gap.adminbackend.enums.SubmissionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -32,11 +34,7 @@ public interface GrantMandatoryQuestionRepository extends JpaRepository<GrantMan
 
     @Query("select (count(g) > 0) from GrantMandatoryQuestions g " + "where g.schemeEntity.id = ?1 "
             + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
-            + "and g.orgType in (gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.CHARITY, "
-            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.REGISTERED_CHARITY, "
-            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.UNREGISTERED_CHARITY, "
-            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.LIMITED_COMPANY, "
-            + "gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY)")
-    boolean existsBySchemeEntityIdAndCompleteStatusAndOrgType(Integer id);
+            + "and g.submission.status = 'SUBMITTED'")
+    boolean existBySchemeIdAndCompletedStatusAndSubmittedSubmission(Integer id);
 
 }

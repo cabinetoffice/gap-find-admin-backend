@@ -5,7 +5,9 @@ import gov.cabinetoffice.gap.adminbackend.constants.DueDiligenceHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.Submission;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionOrgType;
+import gov.cabinetoffice.gap.adminbackend.enums.SubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantMandatoryQuestionRepository;
 import org.apache.poi.ss.usermodel.Row;
@@ -27,32 +29,18 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 
 import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.combineAddressLines;
 import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.mandatoryValue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
 @WithAdminSession
 class GrantMandatoryQuestionServiceTest {
-
-    @Mock
-    private GrantMandatoryQuestionRepository grantMandatoryQuestionRepository;
-
-    @Mock
-    private SchemeService schemeService;
-
-    @Mock
-    private ZipService zipService;
-
-    @InjectMocks
-    @Spy
-    private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
     private static final Integer KNOWN_INTEGER = 1;
 
@@ -61,7 +49,27 @@ class GrantMandatoryQuestionServiceTest {
     private final SchemeEntity schemeEntity = SchemeEntity.builder().id(SCHEME_ID).funderId(1).name("name")
             .ggisIdentifier("123").build();
 
-    private final SchemeDTO schemeDTO = SchemeDTO.builder().name("schemeName").ggisReference("123").build();
+    private final Submission submission = Submission.builder()
+            .id(UUID.fromString("00000000-0000-0000-0000-000000000000")).scheme(schemeEntity)
+            .status(SubmissionStatus.SUBMITTED).build();
+
+    private final GrantMandatoryQuestions grantMandatoryQuestionsExternal = GrantMandatoryQuestions.builder()
+            .name("Some company name").addressLine1("9-10 St Andrew Square").city("Edinburgh").county("county")
+            .postcode("EH2 2AF").charityCommissionNumber("500").companiesHouseNumber("12738494")
+            .orgType(GrantMandatoryQuestionOrgType.CHARITY).fundingAmount(BigDecimal.valueOf(50000))
+            .schemeEntity(schemeEntity).gapId("GAP-ID").build();
+
+    private final GrantMandatoryQuestions grantMandatoryQuestionsInternal = GrantMandatoryQuestions.builder()
+            .name("Some company name").addressLine1("9-10 St Andrew Square").city("Edinburgh").county("county")
+            .postcode("EH2 2AF").charityCommissionNumber("500").companiesHouseNumber("12738494")
+            .orgType(GrantMandatoryQuestionOrgType.CHARITY).fundingAmount(BigDecimal.valueOf(50000))
+            .schemeEntity(schemeEntity).gapId("GAP-ID").submission(submission).build();
+
+    private final GrantMandatoryQuestions grantMandatoryQuestionsNonLimitedCompany = GrantMandatoryQuestions.builder()
+            .name("Another company name").addressLine1("9-10 St Andrew Square").city("Glasgow").county("county")
+            .postcode("G02 2AF").companiesHouseNumber("12738494")
+            .orgType(GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY).fundingAmount(BigDecimal.valueOf(50000))
+            .schemeEntity(schemeEntity).gapId("GAP-ID").build();
 
     private final List<String> EXPECTED_DUE_DILIGENCE_ROW = Arrays.asList("GAP-ID", "Some company name",
             "9-10 St Andrew Square", "county", "Edinburgh", "EH2 2AF", "500", "12738494", "50000",
@@ -70,20 +78,15 @@ class GrantMandatoryQuestionServiceTest {
     private final List<String> EXPECTED_SPOTLIGHT_ROW = Arrays.asList("GAP-ID", "Some company name",
             "9-10 St Andrew Square", "county", "Edinburgh", "EH2 2AF", "500", "12738494", "50000", "");
 
-    private final GrantMandatoryQuestions grantMandatoryQuestions = GrantMandatoryQuestions.builder()
-            .name("Some company name").addressLine1("9-10 St Andrew Square").city("Edinburgh").county("county")
-            .postcode("EH2 2AF").charityCommissionNumber("500").companiesHouseNumber("12738494")
-            .orgType(GrantMandatoryQuestionOrgType.CHARITY).fundingAmount(BigDecimal.valueOf(50000))
-            .schemeEntity(schemeEntity).gapId("GAP-ID").build();
+    @Mock
+    private GrantMandatoryQuestionRepository grantMandatoryQuestionRepository;
 
-    private final GrantMandatoryQuestions grantMandatoryQuestionsNonLimitedCompany = GrantMandatoryQuestions.builder()
-            .name("Another company name").addressLine1("9-10 St Andrew Square").city("Glasgow").county("county")
-            .postcode("G02 2AF").companiesHouseNumber("12738494")
-            .orgType(GrantMandatoryQuestionOrgType.NON_LIMITED_COMPANY).fundingAmount(BigDecimal.valueOf(50000))
-            .schemeEntity(schemeEntity).gapId("GAP-ID").build();
+    @Mock
+    private SchemeService schemeService;
 
-    final List<GrantMandatoryQuestions> mandatoryQuestionsList = List.of(grantMandatoryQuestions,
-            grantMandatoryQuestionsNonLimitedCompany);
+    @InjectMocks
+    @Spy
+    private GrantMandatoryQuestionService grantMandatoryQuestionService;
 
     @Nested
     class GetGrantMandatoryQuestionBySchemeAndStatusTests {
@@ -91,106 +94,13 @@ class GrantMandatoryQuestionServiceTest {
         @Test
         void validSchemeId() {
             when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(List.of(grantMandatoryQuestions));
+                    .thenReturn(List.of(grantMandatoryQuestionsExternal));
 
             List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
                     .getGrantMandatoryQuestionBySchemeAndCompletedStatus(SCHEME_ID);
 
-            assertThat(result).isEqualTo(List.of(grantMandatoryQuestions));
+            assertThat(result).isEqualTo(List.of(grantMandatoryQuestionsExternal));
 
-        }
-
-    }
-
-    @Test
-    void getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus() {
-        when(grantMandatoryQuestionRepository.findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                .thenReturn(List.of(grantMandatoryQuestions));
-
-        List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
-                .getCharitiesAndCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(SCHEME_ID);
-
-        assertThat(result).isEqualTo(List.of(grantMandatoryQuestions));
-
-    }
-
-    @Test
-    void getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus() {
-        when(grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
-
-        List<GrantMandatoryQuestions> result = grantMandatoryQuestionService
-                .getNonLimitedCompaniesMandatoryQuestionsBySchemeAndCompletedStatus(SCHEME_ID);
-
-        assertThat(result).isEqualTo(List.of(grantMandatoryQuestionsNonLimitedCompany));
-
-    }
-
-    @Nested
-    class getValidationErrorChecks {
-
-        @Test
-        void getValidationErrorChecks() {
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);
-            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestions, false);
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsNonLimitedCompany, false);
-
-            ByteArrayOutputStream dataStream = grantMandatoryQuestionService
-                    .getValidationErrorChecks(mandatoryQuestionsList, SCHEME_ID);
-
-            assertNotNull(dataStream);
-        }
-
-        @Test
-        void getValidationErrorChecks_throwAccessDeniedException() {
-
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
-
-            Exception exception = assertThrows(AccessDeniedException.class,
-                    () -> grantMandatoryQuestionService.getValidationErrorChecks(mandatoryQuestionsList, SCHEME_ID));
-
-            String actualMessage = exception.getMessage();
-            assertThat(actualMessage)
-                    .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
-        }
-
-    }
-
-    @Nested
-    class getSpotlightChecks {
-
-        @Test
-        void getSpotlightChecks() {
-            when(grantMandatoryQuestionRepository
-                    .findCharitiesAndCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                            .thenReturn(List.of(grantMandatoryQuestions));
-            when(grantMandatoryQuestionRepository.findNonLimitedCompaniesBySchemeEntityIdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(List.of(grantMandatoryQuestionsNonLimitedCompany));
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);
-            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestions, false);
-            doReturn(EXPECTED_SPOTLIGHT_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestionsNonLimitedCompany, false);
-
-            ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID);
-
-            assertNotNull(dataStream);
-        }
-
-        @Test
-        void getSpotlightChecks_throwAccessDeniedException() {
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
-
-            Exception exception = assertThrows(AccessDeniedException.class,
-                    () -> grantMandatoryQuestionService.getSpotlightChecks(SCHEME_ID));
-
-            String actualMessage = exception.getMessage();
-            assertThat(actualMessage)
-                    .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
         }
 
     }
@@ -205,32 +115,70 @@ class GrantMandatoryQuestionServiceTest {
             }
         }
 
-        @Test
-        void forSingleRowWithGoodData() throws IOException {
-            when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(List.of(grantMandatoryQuestions));
-            doReturn(EXPECTED_DUE_DILIGENCE_ROW).when(grantMandatoryQuestionService)
-                    .buildSingleSpotlightRow(grantMandatoryQuestions, true);
+        @Nested
+        class internalApplications {
 
-            ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID);
+            @Test
+            void forSingleRowWithGoodData() throws IOException {
+                when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                        .thenReturn(List.of(grantMandatoryQuestionsExternal, grantMandatoryQuestionsInternal));
+                doReturn(EXPECTED_DUE_DILIGENCE_ROW).when(grantMandatoryQuestionService)
+                        .buildSingleSpotlightRow(grantMandatoryQuestionsInternal);
 
-            Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
-            Row headerRow = workbook.getSheetAt(0).getRow(0);
-            assertRowIsAsExpected(headerRow, DueDiligenceHeaders.DUE_DILIGENCE_HEADERS);
-            Row dataRow = workbook.getSheetAt(0).getRow(1);
-            assertRowIsAsExpected(dataRow, EXPECTED_DUE_DILIGENCE_ROW);
+                ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, true);
+
+                Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
+                Row headerRow = workbook.getSheetAt(0).getRow(0);
+                assertRowIsAsExpected(headerRow, DueDiligenceHeaders.DUE_DILIGENCE_HEADERS);
+                Row dataRow = workbook.getSheetAt(0).getRow(1);
+                assertRowIsAsExpected(dataRow, EXPECTED_DUE_DILIGENCE_ROW);
+            }
+
+            @Test
+            void forSingleRowWithGoodData_throwAccessDeniedException() {
+                when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
+
+                Exception exception = assertThrows(AccessDeniedException.class,
+                        () -> grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, true));
+
+                String actualMessage = exception.getMessage();
+                assertThat(actualMessage)
+                        .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
+            }
+
         }
 
-        @Test
-        void forSingleRowWithGoodData_throwAccessDeniedException() {
-            when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
+        @Nested
+        class externalApplications {
 
-            Exception exception = assertThrows(AccessDeniedException.class,
-                    () -> grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID));
+            @Test
+            void forSingleRowWithGoodData() throws IOException {
+                when(grantMandatoryQuestionRepository.findBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                        .thenReturn(List.of(grantMandatoryQuestionsExternal));
+                doReturn(EXPECTED_DUE_DILIGENCE_ROW).when(grantMandatoryQuestionService)
+                        .buildSingleSpotlightRow(grantMandatoryQuestionsExternal);
 
-            String actualMessage = exception.getMessage();
-            assertThat(actualMessage)
-                    .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
+                ByteArrayOutputStream dataStream = grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false);
+
+                Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
+                Row headerRow = workbook.getSheetAt(0).getRow(0);
+                assertRowIsAsExpected(headerRow, DueDiligenceHeaders.DUE_DILIGENCE_HEADERS);
+                Row dataRow = workbook.getSheetAt(0).getRow(1);
+                assertRowIsAsExpected(dataRow, EXPECTED_DUE_DILIGENCE_ROW);
+            }
+
+            @Test
+            void forSingleRowWithGoodData_throwAccessDeniedException() {
+                when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenThrow(new AccessDeniedException("accessDenied"));
+
+                Exception exception = assertThrows(AccessDeniedException.class,
+                        () -> grantMandatoryQuestionService.getDueDiligenceData(SCHEME_ID, false));
+
+                String actualMessage = exception.getMessage();
+                assertThat(actualMessage)
+                        .isEqualTo("Admin 1 is unable to access mandatory questions with scheme id " + SCHEME_ID);
+            }
+
         }
 
     }
@@ -313,18 +261,18 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void givenGoodInput_returnsExpectedData() {
-            List<String> spotlightRow = grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions,
-                    false);
+            List<String> spotlightRow = grantMandatoryQuestionService
+                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal);
 
             assertThat(spotlightRow).containsAll(EXPECTED_SPOTLIGHT_ROW);
         }
 
         @Test
         void givenDataWithoutOrgName_throwsException() {
-            grantMandatoryQuestions.setName(null);
+            grantMandatoryQuestionsExternal.setName(null);
 
             Exception exception = assertThrows(SpotlightExportException.class,
-                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions, false));
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("organisation name");
@@ -332,10 +280,10 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void givenDataWithoutPostcode_throwsException() {
-            grantMandatoryQuestions.setPostcode(null);
+            grantMandatoryQuestionsExternal.setPostcode(null);
 
             Exception exception = assertThrows(SpotlightExportException.class,
-                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions, false));
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("postcode");
@@ -343,10 +291,10 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void givenDataWithoutAmount_throwsException() {
-            grantMandatoryQuestions.setFundingAmount(null);
+            grantMandatoryQuestionsExternal.setFundingAmount(null);
 
             Exception exception = assertThrows(SpotlightExportException.class,
-                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions, false));
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("Unable to find mandatory question data:");
@@ -354,10 +302,10 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void givenNullSchemeData_throwsException() {
-            grantMandatoryQuestions.setSchemeEntity(null);
+            grantMandatoryQuestionsExternal.setSchemeEntity(null);
 
             Exception exception = assertThrows(SpotlightExportException.class,
-                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions, false));
+                    () -> grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestionsExternal));
 
             String actualMessage = exception.getMessage();
             assertThat(actualMessage).contains("Unable to find mandatory question data:");
@@ -365,10 +313,10 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void givenDataWithoutCharityNumber_returnsExpectedData() {
-            grantMandatoryQuestions.setCharityCommissionNumber(null);
+            grantMandatoryQuestionsExternal.setCharityCommissionNumber(null);
             EXPECTED_SPOTLIGHT_ROW.set(6, "");
-            List<String> spotlightRow = grantMandatoryQuestionService.buildSingleSpotlightRow(grantMandatoryQuestions,
-                    false);
+            List<String> spotlightRow = grantMandatoryQuestionService
+                    .buildSingleSpotlightRow(grantMandatoryQuestionsExternal);
             assertThat(spotlightRow).containsAll(EXPECTED_SPOTLIGHT_ROW);
         }
 
@@ -410,41 +358,46 @@ class GrantMandatoryQuestionServiceTest {
     @Nested
     class doesSchemeHaveCompletedMandatoryQuestions {
 
-        @Test
-        void returnsTrue() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(true);
-            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
-            assertThat(result).isEqualTo(true);
+        @Nested
+        class internal {
+
+            @Test
+            void returnsTrue() {
+                when(grantMandatoryQuestionRepository
+                        .existBySchemeIdAndCompletedStatusAndSubmittedSubmission(SCHEME_ID)).thenReturn(true);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, true);
+                assertThat(result).isEqualTo(true);
+            }
+
+            @Test
+            void returnFalse() {
+                when(grantMandatoryQuestionRepository
+                        .existBySchemeIdAndCompletedStatusAndSubmittedSubmission(SCHEME_ID)).thenReturn(false);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, true);
+                assertThat(result).isEqualTo(false);
+            }
+
         }
 
-        @Test
-        void returnFalse() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
-                    .thenReturn(false);
-            boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID);
-            assertThat(result).isEqualTo(false);
-        }
+        @Nested
+        class external {
 
-    }
+            @Test
+            void returnsTrue() {
+                when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                        .thenReturn(true);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, false);
+                assertThat(result).isEqualTo(true);
+            }
 
-    @Nested
-    class doesSchemeHaveCompletedDataForSpotlight {
+            @Test
+            void returnFalse() {
+                when(grantMandatoryQuestionRepository.existsBySchemeEntity_IdAndCompletedStatus(SCHEME_ID))
+                        .thenReturn(false);
+                boolean result = grantMandatoryQuestionService.hasCompletedMandatoryQuestions(SCHEME_ID, false);
+                assertThat(result).isEqualTo(false);
+            }
 
-        @Test
-        void returnsTrue() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
-                    .thenReturn(true);
-            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
-            assertThat(result).isEqualTo(true);
-        }
-
-        @Test
-        void returnFalse() {
-            when(grantMandatoryQuestionRepository.existsBySchemeEntityIdAndCompleteStatusAndOrgType(SCHEME_ID))
-                    .thenReturn(false);
-            boolean result = grantMandatoryQuestionService.hasCompletedDataForSpotlight(SCHEME_ID);
-            assertThat(result).isEqualTo(false);
         }
 
     }
