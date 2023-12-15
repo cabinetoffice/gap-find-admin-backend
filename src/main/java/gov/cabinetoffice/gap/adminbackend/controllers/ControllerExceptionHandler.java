@@ -54,7 +54,7 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(value = { ConstraintViolationException.class })
     protected ResponseEntity<Object> handleConflict(ConstraintViolationException ex, WebRequest request) {
         log.error(ex.getMessage(), ex);
-        ConstraintViolation constraintViolation = ex.getConstraintViolations().stream().findFirst().get();
+        ConstraintViolation<?> constraintViolation = ex.getConstraintViolations().stream().findFirst().get();
 
         // if validation violation was raised by NotAllNullValidator, then map to
         // ClassErrorsDto. Else, map to FieldErrorsDto

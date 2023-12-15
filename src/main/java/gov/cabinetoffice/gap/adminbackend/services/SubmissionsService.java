@@ -181,7 +181,7 @@ public class SubmissionsService {
                 .getGgisReference();
         String applicationName = applicationFormDTO.getApplicationName().replace(" ", "_").replaceAll("[^A-Za-z0-9_]",
                 "");
-        String dateString = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
+        String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(System.currentTimeMillis());
 
         return dateString + "_" + ggisReference + "_" + applicationName + ".xlsx";
     }
@@ -323,7 +323,7 @@ public class SubmissionsService {
         requestHeaders.add("Authorization", authHeader);
         HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
         final ResponseEntity<UserV2DTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserV2DTO.class);
-        return user.getBody().emailAddress();
+        return Objects.requireNonNull(user.getBody()).emailAddress();
     }
 
     public void updateExportStatus(String submissionId, String batchExportId, GrantExportStatus status) {

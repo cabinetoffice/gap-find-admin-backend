@@ -10,7 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-public class XlsxGenerator {
+public final class XlsxGenerator {
 
     private static final String SHEET_NAME = "Sheet1";
 

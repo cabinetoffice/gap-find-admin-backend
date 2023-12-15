@@ -463,13 +463,13 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
      * @return formatted error message
      */
     private String getDateErrorMessage(ArrayList<String> errorList, String errorTemplate, String terminalConcatString) {
-        terminalConcatString = terminalConcatString != null ? terminalConcatString : " and %s";
+        String terminalConcat = terminalConcatString != null ? terminalConcatString : " and %s";
 
         String formattedError;
         int last = errorList.size() - 1;
         if (last != 0) {
             String joinedNulls = StringUtils.join(errorList.subList(0, last), ", ");
-            formattedError = String.format(String.format("%s%s", errorTemplate, terminalConcatString), joinedNulls,
+            formattedError = String.format(String.format("%s%s", errorTemplate, terminalConcat), joinedNulls,
                     errorList.get(last));
         }
         else {

@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 public class ErrorLogCaptureExtension implements ParameterResolver, AfterTestExecutionCallback {
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
     private ErrorLogCapture logCapture;
 

@@ -341,7 +341,7 @@ public class GrantAdvertService {
     private int findMaxInteger(Collection<CDAEntry> entries) {
         return entries.stream().mapToInt(entry -> {
             String fieldValue = entry.getField("label");
-            String substring = fieldValue.substring(fieldValue.lastIndexOf("-") + 1);
+            String substring = fieldValue.substring(fieldValue.lastIndexOf('-') + 1);
 
             try {
                 return Integer.parseInt(substring);

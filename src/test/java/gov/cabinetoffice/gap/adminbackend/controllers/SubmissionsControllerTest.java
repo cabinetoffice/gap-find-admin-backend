@@ -293,8 +293,6 @@ class SubmissionsControllerTest {
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(mockRequest))
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isNoContent()).andReturn();
-
-            System.out.println(res);
         }
 
     }

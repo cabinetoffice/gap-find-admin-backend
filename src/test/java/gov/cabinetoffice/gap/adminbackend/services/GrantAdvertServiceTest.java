@@ -949,7 +949,6 @@ class GrantAdvertServiceTest {
             // verify values before we save
             verify(contentfulEntries).create(eq("grantDetails"), entryCaptor.capture());
 
-            entryCaptor.getAllValues().forEach(v -> System.out.println(v.toString()));
             final CMAEntry capturedBeforeSave = entryCaptor.getValue();
 
             assertThat(capturedBeforeSave.getId()).isNull();
