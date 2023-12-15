@@ -36,14 +36,14 @@ public class CompletionStatisticsSchedulerTest {
             completionStatisticsScheduler.sendCompletionStatisticsQueueTrigger();
 
             ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-            verify(amazonSQS, times(1)).sendMessage(eq(completionStatisticsSchedulerConfigProperties.getQueue()), argument.capture());
+            verify(amazonSQS, times(1)).sendMessage(eq(completionStatisticsSchedulerConfigProperties.getQueue()),
+                    argument.capture());
             String sentMessage = argument.getValue();
 
             assertThat(sentMessage).isEqualTo("Run calculations from admin-backend");
 
             verifyNoMoreInteractions(amazonSQS);
         }
-
 
     }
 

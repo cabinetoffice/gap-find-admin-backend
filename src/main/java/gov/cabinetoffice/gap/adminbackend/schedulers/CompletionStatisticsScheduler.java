@@ -25,12 +25,11 @@ public class CompletionStatisticsScheduler {
 
         log.info("Completion Statistics Scheduler has started.");
 
-        this.amazonSQS
-                .sendMessage(completionStatisticsSchedulerConfigProperties.getQueue(), "Run calculations from admin-backend");
+        this.amazonSQS.sendMessage(completionStatisticsSchedulerConfigProperties.getQueue(),
+                "Run calculations from admin-backend");
 
         log.info("Completion Statistics Scheduler has completed successfully.");
 
     }
-
 
 }
