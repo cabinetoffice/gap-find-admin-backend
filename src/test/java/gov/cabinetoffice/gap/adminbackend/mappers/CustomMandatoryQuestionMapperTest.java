@@ -38,10 +38,6 @@ class CustomMandatoryQuestionMapperTest {
     @Mock
     UserService userService;
 
-    private SchemeEntity schemeEntity;
-
-    private Submission submission;
-
     private GrantMandatoryQuestions mandatoryQuestions;
 
     private DraftAssessmentDto draftAssessmentDto;
@@ -51,9 +47,9 @@ class CustomMandatoryQuestionMapperTest {
 
     @BeforeEach
     void setUp() {
-        schemeEntity = SchemeEntity.builder().id(1).name("Test Scheme").ggisIdentifier("ggisId1").createdBy(10).build();
+        SchemeEntity schemeEntity = SchemeEntity.builder().id(1).name("Test Scheme").ggisIdentifier("ggisId1").createdBy(10).build();
 
-        submission = Submission.builder().id(submissionId).scheme(schemeEntity).build();
+        Submission submission = Submission.builder().id(submissionId).scheme(schemeEntity).build();
 
         mandatoryQuestions = GrantMandatoryQuestions.builder().id(mandatoryQuestionId).schemeEntity(schemeEntity)
                 .submission(submission).name("Sample Question").addressLine1("123 Street").addressLine2("Apt 456")
@@ -100,9 +96,7 @@ class CustomMandatoryQuestionMapperTest {
         draftAssessmentDto.setGgisSchemeId(null);
         draftAssessmentDto.setFunderID(null);
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
-        });
+        assertThrows(IllegalArgumentException.class, () -> customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions));
     }
 
     @Test
@@ -148,9 +142,7 @@ class CustomMandatoryQuestionMapperTest {
     void mandatoryQuestionsToDraftAssessmentDto_AnyOtherOrgType() {
         mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.INDIVIDUAL);
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions);
-        });
+        assertThrows(IllegalArgumentException.class, () -> customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions));
 
     }
 

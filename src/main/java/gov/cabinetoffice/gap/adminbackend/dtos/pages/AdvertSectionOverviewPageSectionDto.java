@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.pages;
 
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus;
-import gov.cabinetoffice.gap.adminbackend.models.AdvertDefinitionPage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

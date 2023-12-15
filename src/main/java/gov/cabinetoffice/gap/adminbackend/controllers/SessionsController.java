@@ -78,7 +78,7 @@ public class SessionsController {
             @ApiResponse(responseCode = "415", description = "Value found but in an unsupported format.",
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity getFromSession(@PathVariable final String key, HttpSession session) {
-        String value = "";
+        String value;
         try {
             value = (String) session.getAttribute(key);
         }

@@ -182,12 +182,10 @@ public class GrantAdvertController {
         List<ValidationError> validationErrorsList = new ArrayList<>();
 
         // map questions, if question errors exist
-        patchAdvertPageResponse.getQuestions().forEach(questionResponse -> {
-            validationErrorsSet.stream()
-                    .filter(error -> error.getPropertyPath().toString().startsWith(questionResponse.getId()))
-                    .findFirst().ifPresent(violation -> validationErrorsList
-                            .add(new ValidationError(violation.getPropertyPath().toString(), violation.getMessage())));
-        });
+        patchAdvertPageResponse.getQuestions().forEach(questionResponse -> validationErrorsSet.stream()
+                .filter(error -> error.getPropertyPath().toString().startsWith(questionResponse.getId()))
+                .findFirst().ifPresent(violation -> validationErrorsList
+                        .add(new ValidationError(violation.getPropertyPath().toString(), violation.getMessage()))));
 
         // map page status, if it exists
         validationErrorsSet.stream().filter(error -> error.getPropertyPath().toString().equals("completed")).findFirst()

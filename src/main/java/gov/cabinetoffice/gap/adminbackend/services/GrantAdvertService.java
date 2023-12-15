@@ -122,11 +122,8 @@ public class GrantAdvertService {
 
         GetGrantAdvertPageResponseDTO viewResponse = new GetGrantAdvertPageResponseDTO();
 
-        // get advert definition from spring context
-        AdvertDefinition definition = advertDefinition;
-
         // get section information
-        AdvertDefinitionSection sectionDefiniton = definition.getSectionById(sectionId);
+        AdvertDefinitionSection sectionDefiniton = advertDefinition.getSectionById(sectionId);
 
         viewResponse.setSectionName(sectionDefiniton.getTitle());
 
@@ -299,7 +296,7 @@ public class GrantAdvertService {
 
         /*
          * hate this but because we create a new advert and then immediately update it the
-         * version number in contentful is bumped up so we need to refresh the data to
+         * version number in contentful is bumped up, so we need to refresh the data to
          * prevent errors when publishing the advert :(.
          *
          * Absolutely begging to be rate limited by getting this loose with the number of
@@ -365,21 +362,12 @@ public class GrantAdvertService {
                 .getResponseType();
 
         switch (questionResponse.getId()) {
-            case "grantTotalAwardAmount":
-                contentfulAdvert.setField("grantTotalAwardDisplay", CONTENTFUL_LOCALE,
-                        CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
-                break;
-
-            case "grantMinimumAward":
-                contentfulAdvert.setField("grantMinimumAwardDisplay", CONTENTFUL_LOCALE,
-                        CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
-                break;
-
-            case "grantMaximumAward":
-                contentfulAdvert.setField("grantMaximumAwardDisplay", CONTENTFUL_LOCALE,
-                        CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
-                break;
-
+            case "grantTotalAwardAmount" -> contentfulAdvert.setField("grantTotalAwardDisplay", CONTENTFUL_LOCALE,
+                    CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
+            case "grantMinimumAward" -> contentfulAdvert.setField("grantMinimumAwardDisplay", CONTENTFUL_LOCALE,
+                    CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
+            case "grantMaximumAward" -> contentfulAdvert.setField("grantMaximumAwardDisplay", CONTENTFUL_LOCALE,
+                    CurrencyFormatter.format(Integer.parseInt(questionResponse.getResponse())));
         }
 
         final Object contentfulValue = convertQuestionResponseToContentfulFormat(answerType, questionResponse);
@@ -459,8 +447,8 @@ public class GrantAdvertService {
         final String hour = questionResponse.getMultiResponse()[3];
         final String minute = questionResponse.getMultiResponse()[4];
 
-        final String dateStr = new StringBuilder(year).append("-").append(month).append("-").append(day).append("T")
-                .append(hour).append(":").append(minute).append(":").append("00").toString();
+        final String dateStr = year + "-" + month + "-" + day + "T" +
+                hour + ":" + minute + ":" + "00";
 
         log.debug(dateStr);
         // Date formatter to handle single digit Month and Day values

@@ -121,7 +121,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             }
         }
 
-        // will be use to convert Html to Markdown
+        // will be used to convert Html to Markdown
         CopyDown converter = new CopyDown();
         String convertedHtml = "";
         if (isRichText) {
@@ -191,7 +191,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         if (questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.INTEGER)
                 || questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.CURRENCY)) {
             try {
-                Integer response = Integer.parseInt(question.getResponse());
+                int response = Integer.parseInt(question.getResponse());
 
                 if (validation.getGreaterThan() != null && response <= validation.getGreaterThan()) {
                     String customGreaterThanErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.GREATER_THAN,
@@ -228,7 +228,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
                 // If the linked question has validation errors
                 if (validateQuestion != null) {
-                    // dont compare
+                    // don't compare
                     return null;
                 }
 
@@ -389,7 +389,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
         if (!nullList.isEmpty()) {
             String errorId = String.format("%s-%s", questionId, nullList.get(0));
-            String formattedError = "";
+            String formattedError;
             if (nullList.size() == 3) {
                 formattedError = getCustomErrorMessage(GrantAdvertValidationType.MANDATORY, validationMessages);
             }
@@ -431,7 +431,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             // throw an exception if day is over 31,
             // but if month or year on invalid, don't throw exception
             // lastly if day is less than 31 and month and year aren't invalid, check if
-            // the day is valid for that month (ie. can June have 31)
+            // the day is valid for that month (i.e. can June have 31)
             if (day > 31 || day < 1 || ((!invalidList.contains("month") && !invalidList.contains("year"))
                     && !dayIsValidForMonth(day, month, year))) {
                 throw new NumberFormatException();
@@ -480,7 +480,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
     /**
      * Checks if day is valid for that particular month and year (takes into account leap
-     * years) ie. does June have 31 days
+     * years) i.e. does June have 31 days
      * @return boolean
      */
     private boolean dayIsValidForMonth(final int day, final int month, final int year) {

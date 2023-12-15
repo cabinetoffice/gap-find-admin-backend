@@ -32,7 +32,7 @@ public class GrantExportServiceTest {
 
         @Test
         void successfullyGetOutstandingExportCount() {
-            Long mockCount = 10l;
+            Long mockCount = 10L;
             UUID mockUUID = UUID.randomUUID();
 
             when(exportRepository.countByIdExportBatchIdAndStatusNot(any(), any())).thenReturn(mockCount);
@@ -44,7 +44,7 @@ public class GrantExportServiceTest {
         }
 
         @Test
-        void unnexpectedErrorThrownFromRepository() throws Exception {
+        void unnexpectedErrorThrownFromRepository() {
             UUID mockUUID = UUID.randomUUID();
             when(exportRepository.countByIdExportBatchIdAndStatusNot(any(), any())).thenThrow(RuntimeException.class);
 

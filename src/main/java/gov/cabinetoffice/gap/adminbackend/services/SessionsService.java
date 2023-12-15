@@ -20,7 +20,7 @@ public class SessionsService {
 
     public HashMap<String, String> retrieveObjectFromSession(SessionObjectEnum objectKey, HttpSession session) {
         Iterator<String> sessionAttributesIterator = session.getAttributeNames().asIterator();
-        HashMap<String, String> returnObj = new HashMap<String, String>();
+        HashMap<String, String> returnObj = new HashMap<>();
 
         while (sessionAttributesIterator.hasNext()) {
             String attributeName = sessionAttributesIterator.next();

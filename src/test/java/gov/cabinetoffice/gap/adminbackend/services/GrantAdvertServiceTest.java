@@ -46,7 +46,6 @@ import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPag
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
@@ -261,7 +260,7 @@ class GrantAdvertServiceTest {
             final UUID advertId = UUID.randomUUID();
             final Integer adminId = 1;
 
-            when(grantAdvertRepository.deleteByIdAndCreatedById(advertId, adminId)).thenReturn(1l);
+            when(grantAdvertRepository.deleteByIdAndCreatedById(advertId, adminId)).thenReturn(1L);
 
             grantAdvertService.deleteGrantAdvert(advertId);
 

@@ -204,7 +204,7 @@ public class ApplicationFormTestData {
     public final static List<ApplicationFormEntity> SAMPLE_APPLICATION_FORM_ENTITY_LIST = Collections
             .singletonList(SAMPLE_APPLICATION_FORM_ENTITY);
 
-    public final static List<ApplicationFormEntity> SAMPLE_EMPTY_APPLICATION_ENBTITY_LIST = Collections.emptyList();
+    public final static List<ApplicationFormEntity> SAMPLE_EMPTY_APPLICATION_ENTITY_LIST = Collections.emptyList();
 
     public final static List<ApplicationFormEntity> SAMPLE_LIST_WITH_MULTIPLE_APPLICATION_FORMS = Arrays
             .asList(SAMPLE_APPLICATION_FORM_ENTITY, SAMPLE_SECOND_APPLICATION_FORM_ENTITY);

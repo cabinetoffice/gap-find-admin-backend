@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class SnsServiceTest {
@@ -21,15 +20,13 @@ public class SnsServiceTest {
 
     private static SnsService snsService;
 
-    private static SnsConfigProperties snsConfigProperties;
-
     private static final String MESSAGE_ID = "mockMessageId";
 
     private static final String ERROR = "error publishing message";
 
     @BeforeAll
     static void beforeAll() {
-        snsConfigProperties = SnsConfigProperties.builder().topicArn("topicArn").build();
+        SnsConfigProperties snsConfigProperties = SnsConfigProperties.builder().topicArn("topicArn").build();
         snsClient = mock(AmazonSNSClient.class);
         snsService = new SnsService(snsClient, snsConfigProperties);
         ReflectionTestUtils.setField(snsService, "snsClient", snsClient);
