@@ -28,7 +28,7 @@ public class CompletionStatisticsScheduler {
         this.amazonSQS
                 .sendMessage(completionStatisticsSchedulerConfigProperties.getQueue(), "Run calculations from admin-backend");
 
-        log.info("Grant Adverts Scheduler has completed successfully.");
+        log.info("Completion Statistics Scheduler has completed successfully.");
 
     }
 
