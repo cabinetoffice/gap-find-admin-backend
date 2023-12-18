@@ -18,14 +18,12 @@ public final class XlsxGenerator {
     }
 
     public static ByteArrayOutputStream createResource(List<String> headers, List<List<String>> data) {
-        final Workbook workbook = createWorkbook(headers, data);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
+        try (Workbook workbook = createWorkbook(headers, data)) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
             workbook.close();
             return out;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Failed to generate stream for XlsxGenerator:" + e.getMessage());
         }
     }

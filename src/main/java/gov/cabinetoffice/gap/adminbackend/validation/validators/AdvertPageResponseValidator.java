@@ -2,14 +2,8 @@ package gov.cabinetoffice.gap.adminbackend.validation.validators;
 
 import java.time.Month;
 import java.time.Year;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -181,7 +175,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             // check against list of known url shortening sites
             List<String> shortUrlProviders = Arrays.asList("Bit.ly", "TinyURL", "Ow.ly");
             boolean found = shortUrlProviders.stream()
-                    .anyMatch(provider -> question.getResponse().toLowerCase().contains(provider.toLowerCase()));
+                    .anyMatch(provider -> question.getResponse().toLowerCase(Locale.UK).contains(provider.toLowerCase(Locale.UK)));
             if (found)
                 return new SimpleEntry<>(question.getId(),
                         customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter the full link");
@@ -359,17 +353,16 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
     private AbstractMap.SimpleEntry<String, String> validateDate(final String[] dateComponents,
             final boolean isMandatory, String questionId, GrantAdvertPageResponseValidationDto submittedPage) {
-
-        // retrieve question and validation messages from static definition
-        AdvertDefinitionQuestion questionDefinition = advertDefinition.getSectionById(submittedPage.getSectionId())
-                .getPageById(submittedPage.getPage().getId()).getQuestionById(questionId);
-        AdvertDefinitionQuestionValidationMessages validationMessages = questionDefinition.getValidationMessages();
-
         // if it's not mandatory and date part is empty, skip rest of the validation
         if (!isMandatory && (dateComponents.length >= 3
                 && arrayAnswerIsEmpty(Arrays.copyOfRange(dateComponents, 0, 2), false))) {
             return null;
         }
+
+        // retrieve question and validation messages from static definition
+        AdvertDefinitionQuestion questionDefinition = advertDefinition.getSectionById(submittedPage.getSectionId())
+                .getPageById(submittedPage.getPage().getId()).getQuestionById(questionId);
+        AdvertDefinitionQuestionValidationMessages validationMessages = questionDefinition.getValidationMessages();
 
         ArrayList<String> nullList = new ArrayList<>();
         ArrayList<String> invalidList = new ArrayList<>();

@@ -187,14 +187,15 @@ public class SubmissionsService {
     }
 
     public void triggerSubmissionsExport(Integer applicationId) {
-        UUID exportBatchId = UUID.randomUUID();
-        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
         List<Submission> submissions = submissionRepository.findByApplicationGrantApplicationIdAndStatus(applicationId,
                 SubmissionStatus.SUBMITTED);
 
         if (submissions.isEmpty()) {
             throw new NotFoundException("No submissions in SUBMITTED state for application " + applicationId);
         }
+
+        UUID exportBatchId = UUID.randomUUID();
+        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         // split the submissions into groups of 10, process in batches
         List<List<Submission>> partitionedSubmissions = Lists.partition(submissions,

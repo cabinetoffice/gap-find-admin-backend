@@ -324,7 +324,7 @@ public class GrantAdvertService {
 
     private String generateUniqueSlug(final GrantAdvert grantAdvert) {
 
-        String currentSlug = grantAdvert.getScheme().getName().toLowerCase().replaceAll("[^a-z\\d\\- ]", "").trim()
+        String currentSlug = grantAdvert.getScheme().getName().toLowerCase(Locale.UK).replaceAll("[^a-z\\d\\- ]", "").trim()
                 .replace(" ", "-");
 
         final CDAArray allAdvertEntries = contentfulDeliveryClient.fetch(CDAEntry.class)
