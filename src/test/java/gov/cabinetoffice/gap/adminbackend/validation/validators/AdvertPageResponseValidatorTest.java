@@ -1053,7 +1053,8 @@ class AdvertPageResponseValidatorTest {
         GrantAdvertPageResponseValidationDto grantAdvertPageResponseValidationDto = GrantAdvertPageResponseValidationDto
                 .builder().sectionId("sectionId").page(grantAdvertPageResponse).build();
         when(advertDefinition.getSectionById("sectionId")).thenReturn(advertDefinitionSection);
-        try (MockedConstruction<CopyDown> mocked = mockConstruction(CopyDown.class, ((copyDown, context) -> when(copyDown.convert("firstString")).thenThrow(ConvertHtmlToMdException.class)))) {
+        try (MockedConstruction<CopyDown> mocked = mockConstruction(CopyDown.class, ((copyDown,
+                context) -> when(copyDown.convert("firstString")).thenThrow(ConvertHtmlToMdException.class)))) {
 
             assertThrows(ConvertHtmlToMdException.class,
                     () -> validator.validate(grantAdvertPageResponseValidationDto));

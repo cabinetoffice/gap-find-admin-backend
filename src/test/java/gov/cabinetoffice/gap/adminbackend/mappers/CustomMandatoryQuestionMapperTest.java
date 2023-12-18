@@ -47,7 +47,8 @@ class CustomMandatoryQuestionMapperTest {
 
     @BeforeEach
     void setUp() {
-        SchemeEntity schemeEntity = SchemeEntity.builder().id(1).name("Test Scheme").ggisIdentifier("ggisId1").createdBy(10).build();
+        SchemeEntity schemeEntity = SchemeEntity.builder().id(1).name("Test Scheme").ggisIdentifier("ggisId1")
+                .createdBy(10).build();
 
         Submission submission = Submission.builder().id(submissionId).scheme(schemeEntity).build();
 
@@ -96,7 +97,8 @@ class CustomMandatoryQuestionMapperTest {
         draftAssessmentDto.setGgisSchemeId(null);
         draftAssessmentDto.setFunderID(null);
 
-        assertThrows(IllegalArgumentException.class, () -> customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions));
+        assertThrows(IllegalArgumentException.class,
+                () -> customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions));
     }
 
     @Test
@@ -142,7 +144,8 @@ class CustomMandatoryQuestionMapperTest {
     void mandatoryQuestionsToDraftAssessmentDto_AnyOtherOrgType() {
         mandatoryQuestions.setOrgType(GrantMandatoryQuestionOrgType.INDIVIDUAL);
 
-        assertThrows(IllegalArgumentException.class, () -> customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions));
+        assertThrows(IllegalArgumentException.class,
+                () -> customMandatoryQuestionMapper.mandatoryQuestionsToDraftAssessmentDto(mandatoryQuestions));
 
     }
 

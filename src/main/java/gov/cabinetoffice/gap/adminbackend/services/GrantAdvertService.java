@@ -324,8 +324,8 @@ public class GrantAdvertService {
 
     private String generateUniqueSlug(final GrantAdvert grantAdvert) {
 
-        String currentSlug = grantAdvert.getScheme().getName().toLowerCase(Locale.UK).replaceAll("[^a-z\\d\\- ]", "").trim()
-                .replace(" ", "-");
+        String currentSlug = grantAdvert.getScheme().getName().toLowerCase(Locale.UK).replaceAll("[^a-z\\d\\- ]", "")
+                .trim().replace(" ", "-");
 
         final CDAArray allAdvertEntries = contentfulDeliveryClient.fetch(CDAEntry.class)
                 .withContentType(CONTENTFUL_GRANT_TYPE_ID).where("fields.label", QueryOperation.Matches, currentSlug)
@@ -447,8 +447,7 @@ public class GrantAdvertService {
         final String hour = questionResponse.getMultiResponse()[3];
         final String minute = questionResponse.getMultiResponse()[4];
 
-        final String dateStr = year + "-" + month + "-" + day + "T" +
-                hour + ":" + minute + ":" + "00";
+        final String dateStr = year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + "00";
 
         log.debug(dateStr);
         // Date formatter to handle single digit Month and Day values

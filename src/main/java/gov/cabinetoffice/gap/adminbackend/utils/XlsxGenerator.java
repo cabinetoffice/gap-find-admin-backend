@@ -23,7 +23,8 @@ public final class XlsxGenerator {
             workbook.write(out);
             workbook.close();
             return out;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new RuntimeException("Failed to generate stream for XlsxGenerator:" + e.getMessage());
         }
     }

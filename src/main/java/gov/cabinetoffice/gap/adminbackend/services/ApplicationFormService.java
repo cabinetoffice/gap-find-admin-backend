@@ -339,7 +339,8 @@ public class ApplicationFormService {
             this.applicationFormRepository.save(application);
         }
         catch (Exception e) {
-            throw new ApplicationFormException("Error occurred when patching application with id of " + applicationId, e);
+            throw new ApplicationFormException("Error occurred when patching application with id of " + applicationId,
+                    e);
         }
 
     }

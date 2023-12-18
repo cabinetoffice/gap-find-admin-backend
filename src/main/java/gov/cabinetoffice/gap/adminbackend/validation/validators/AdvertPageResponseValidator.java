@@ -174,8 +174,8 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
             // check against list of known url shortening sites
             List<String> shortUrlProviders = Arrays.asList("Bit.ly", "TinyURL", "Ow.ly");
-            boolean found = shortUrlProviders.stream()
-                    .anyMatch(provider -> question.getResponse().toLowerCase(Locale.UK).contains(provider.toLowerCase(Locale.UK)));
+            boolean found = shortUrlProviders.stream().anyMatch(provider -> question.getResponse()
+                    .toLowerCase(Locale.UK).contains(provider.toLowerCase(Locale.UK)));
             if (found)
                 return new SimpleEntry<>(question.getId(),
                         customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter the full link");
