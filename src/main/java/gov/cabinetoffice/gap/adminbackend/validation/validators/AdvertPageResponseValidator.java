@@ -24,6 +24,7 @@ import gov.cabinetoffice.gap.adminbackend.validation.ValidationResult;
 import gov.cabinetoffice.gap.adminbackend.validation.annotations.ValidPageResponse;
 import io.github.furstenheim.CopyDown;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
 public class AdvertPageResponseValidator implements ConstraintValidator<ValidPageResponse, Object> {
@@ -130,26 +131,10 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         }
 
         // min length validation
-        if (validation.getMinLength() != null
-                && ((!isRichText && question.getResponse().length() < validation.getMinLength())
-                        || (isRichText && convertedHtml.length() < validation.getMinLength()))) {
-            String customMinLengthErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.MIN_LENGTH,
-                    validationMessages);
-
-            return new SimpleEntry<>(question.getId(), customMinLengthErrorMessage != null ? customMinLengthErrorMessage
-                    : String.format("Answer must be %s characters or more", validation.getMinLength()));
-        }
-
-        // max length validation
-        if (validation.getMaxLength() != null
-                && ((!isRichText && question.getResponse().length() > validation.getMaxLength())
-                        || (isRichText && convertedHtml.length() > validation.getMaxLength()))) {
-            String customMaxLengthErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.MAX_LENGTH,
-                    validationMessages);
-
-            return new SimpleEntry<>(question.getId(), customMaxLengthErrorMessage != null ? customMaxLengthErrorMessage
-                    : String.format("Answer must be %s characters or less", validation.getMaxLength()));
-        }
+        SimpleEntry<String, String> question2 = validateMinLength(question, validation, validationMessages, isRichText,
+                convertedHtml);
+        if (question2 != null)
+            return question2;
 
         /*
          * URL validation - examples of valid url patterns: https://www.google.com |
@@ -158,57 +143,16 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
          * https://www.google.co.uk/nested?query=true
          */
         if (validation.isUrl()) {
-            // (mandatory) protocol | (optional) www | domain, can't be www | .subdomain
-            // (incl. .com) (repeating) |
-            // (optional) slash | (optional) additional path | (optional) slash |
-            // (optional) query params
-            String urlValidPattern = "^(http://|https://)(www.)?((?!www)[a-zA-Z0-9\\-]{2,}+)(\\.[a-zA-Z0-9\\-]{2,})+(/)?(/[a-z0-9\\-._~%!$&'()*+,;=:@]+)*?(/)?(\\?[a-z0-9\\-._~%!$&'()*+,;=:@/]*)?$";
-            Pattern pattern = Pattern.compile(urlValidPattern, Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(question.getResponse());
-
-            String customUrlErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.URL, validationMessages);
-
-            if (!matcher.find())
-                return new SimpleEntry<>(question.getId(),
-                        customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter a valid link");
-
-            // check against list of known url shortening sites
-            List<String> shortUrlProviders = Arrays.asList("Bit.ly", "TinyURL", "Ow.ly");
-            boolean found = shortUrlProviders.stream().anyMatch(provider -> question.getResponse()
-                    .toLowerCase(Locale.UK).contains(provider.toLowerCase(Locale.UK)));
-            if (found)
-                return new SimpleEntry<>(question.getId(),
-                        customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter the full link");
+            SimpleEntry<String, String> question1 = validateURL(question, validationMessages);
+            if (question1 != null)
+                return question1;
         }
 
         // Integer / currency field validation
-        if (questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.INTEGER)
-                || questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.CURRENCY)) {
-            try {
-                int response = Integer.parseInt(question.getResponse());
-
-                if (validation.getGreaterThan() != null && response <= validation.getGreaterThan()) {
-                    String customGreaterThanErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.GREATER_THAN,
-                            validationMessages);
-
-                    return new SimpleEntry<>(question.getId(),
-                            customGreaterThanErrorMessage != null ? customGreaterThanErrorMessage
-                                    : String.format("Answer must be higher than %s", validation.getGreaterThan()));
-                }
-
-                if (validation.getLessThan() != null && response >= validation.getLessThan()) {
-                    String customLessThanErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.LESS_THAN,
-                            validationMessages);
-
-                    return new SimpleEntry<>(question.getId(),
-                            customLessThanErrorMessage != null ? customLessThanErrorMessage
-                                    : String.format("Answer must be lower than %s", validation.getLessThan()));
-                }
-            }
-            catch (final NumberFormatException e) {
-                return new SimpleEntry<>(question.getId(), "You must only enter numbers");
-            }
-        }
+        SimpleEntry<String, String> question1 = validateNumericField(question, questionDefinition, validation,
+                validationMessages);
+        if (question1 != null)
+            return question1;
 
         // comparison validation
         if (validation.getComparedTo() != null) {
@@ -236,6 +180,94 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
         }
 
+        return null;
+    }
+
+    @Nullable
+    private SimpleEntry<String, String> validateMinLength(GrantAdvertQuestionResponse question,
+            AdvertDefinitionQuestionValidation validation,
+            AdvertDefinitionQuestionValidationMessages validationMessages, boolean isRichText, String convertedHtml) {
+        if (validation.getMinLength() != null
+                && ((!isRichText && question.getResponse().length() < validation.getMinLength())
+                        || (isRichText && convertedHtml.length() < validation.getMinLength()))) {
+            String customMinLengthErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.MIN_LENGTH,
+                    validationMessages);
+
+            return new SimpleEntry<>(question.getId(), customMinLengthErrorMessage != null ? customMinLengthErrorMessage
+                    : String.format("Answer must be %s characters or more", validation.getMinLength()));
+        }
+
+        // max length validation
+        if (validation.getMaxLength() != null
+                && ((!isRichText && question.getResponse().length() > validation.getMaxLength())
+                        || (isRichText && convertedHtml.length() > validation.getMaxLength()))) {
+            String customMaxLengthErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.MAX_LENGTH,
+                    validationMessages);
+
+            return new SimpleEntry<>(question.getId(), customMaxLengthErrorMessage != null ? customMaxLengthErrorMessage
+                    : String.format("Answer must be %s characters or less", validation.getMaxLength()));
+        }
+        return null;
+    }
+
+    @Nullable
+    private SimpleEntry<String, String> validateURL(GrantAdvertQuestionResponse question,
+            AdvertDefinitionQuestionValidationMessages validationMessages) {
+        // (mandatory) protocol | (optional) www | domain, can't be www | .subdomain
+        // (incl. .com) (repeating) |
+        // (optional) slash | (optional) additional path | (optional) slash |
+        // (optional) query params
+        String urlValidPattern = "^(http://|https://)(www.)?((?!www)[a-zA-Z0-9\\-]{2,}+)(\\.[a-zA-Z0-9\\-]{2,})+(/)?(/[a-z0-9\\-._~%!$&'()*+,;=:@]+)*?(/)?(\\?[a-z0-9\\-._~%!$&'()*+,;=:@/]*)?$";
+        Pattern pattern = Pattern.compile(urlValidPattern, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(question.getResponse());
+
+        String customUrlErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.URL, validationMessages);
+
+        if (!matcher.find())
+            return new SimpleEntry<>(question.getId(),
+                    customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter a valid link");
+
+        // check against list of known url shortening sites
+        List<String> shortUrlProviders = Arrays.asList("Bit.ly", "TinyURL", "Ow.ly");
+        boolean found = shortUrlProviders.stream().anyMatch(
+                provider -> question.getResponse().toLowerCase(Locale.UK).contains(provider.toLowerCase(Locale.UK)));
+        if (found)
+            return new SimpleEntry<>(question.getId(),
+                    customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter the full link");
+        return null;
+    }
+
+    @Nullable
+    private SimpleEntry<String, String> validateNumericField(GrantAdvertQuestionResponse question,
+            AdvertDefinitionQuestion questionDefinition, AdvertDefinitionQuestionValidation validation,
+            AdvertDefinitionQuestionValidationMessages validationMessages) {
+        if (questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.INTEGER)
+                || questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.CURRENCY)) {
+            try {
+                int response = Integer.parseInt(question.getResponse());
+
+                if (validation.getGreaterThan() != null && response <= validation.getGreaterThan()) {
+                    String customGreaterThanErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.GREATER_THAN,
+                            validationMessages);
+
+                    return new SimpleEntry<>(question.getId(),
+                            customGreaterThanErrorMessage != null ? customGreaterThanErrorMessage
+                                    : String.format("Answer must be higher than %s", validation.getGreaterThan()));
+                }
+
+                if (validation.getLessThan() != null && response >= validation.getLessThan()) {
+                    String customLessThanErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.LESS_THAN,
+                            validationMessages);
+
+                    return new SimpleEntry<>(question.getId(),
+                            customLessThanErrorMessage != null ? customLessThanErrorMessage
+                                    : String.format("Answer must be lower than %s", validation.getLessThan()));
+                }
+            }
+            catch (final NumberFormatException e) {
+                return new SimpleEntry<>(question.getId(), "You must only enter numbers");
+            }
+        }
         return null;
     }
 
@@ -271,9 +303,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             }
 
         }
-
         return null;
-
     }
 
     private ValidationResult validateAdvertDates(GrantAdvertPageResponseValidationDto submittedPage) {
