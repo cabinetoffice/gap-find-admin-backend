@@ -167,7 +167,7 @@ class GrantAdvertControllerTest {
         void updatePageResponse_NullBody() throws Exception {
             mockMvc.perform(
                     patch(String.format("/grant-advert/%s/sections/%s/pages/%s", grantAdvertId, sectionId, pageId)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnsupportedMediaType());
         }
 
         @Test
