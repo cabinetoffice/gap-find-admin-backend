@@ -51,7 +51,7 @@ public class SubmissionsController {
         long start = System.currentTimeMillis();
 
         final ByteArrayOutputStream stream = submissionsService.exportSpotlightChecks(applicationId);
-        final String exportFileName = submissionsService.generateExportFileName(applicationId);
+        final String exportFileName = "required_checks.zip";
         final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
 
         submissionsService.updateSubmissionLastRequiredChecksExport(applicationId);

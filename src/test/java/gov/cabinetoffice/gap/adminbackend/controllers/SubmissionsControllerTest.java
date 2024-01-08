@@ -35,6 +35,8 @@ import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,23 +84,29 @@ class SubmissionsControllerTest {
 
         @Test
         void exportSpotlightChecksHappyPathTest() throws Exception {
-            doReturn("test_file_name").when(submissionsService).generateExportFileName(1);
-            final byte[] data = exampleFile.getInputStream().readAllBytes();
-            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(data);
-            final InputStreamResource inputStream = new InputStreamResource(
-                    new ByteArrayInputStream(outputStream.toByteArray()));
+            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
+                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
+                zipOut.putNextEntry(entry);
+                zipOut.write("Mock Excel File Content".getBytes());
+                zipOut.closeEntry();
+            }
+            final String exportFileName = "required_checks.zip";
 
-            when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
-            when(submissionsService.exportSpotlightChecks(1)).thenReturn(outputStream);
+            when(fileService.createTemporaryFile(zipStream, exportFileName))
+                    .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray()))
+
+                    );
+            when(submissionsService.exportSpotlightChecks(1)).thenReturn(zipStream);
             doNothing().when(submissionsService).updateSubmissionLastRequiredChecksExport(1);
 
             mockMvc.perform(get("/submissions/spotlight-export/" + 1)).andExpect(status().isOk())
-                    .andExpect(
-                            header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_file_name\""))
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"required_checks.zip\""))
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
-                    .andExpect(header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(data.length)))
-                    .andExpect(content().bytes(data));
+                    .andExpect(
+                            header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
+                    .andExpect(content().bytes(zipStream.toByteArray()));
         }
 
         @Test
@@ -130,7 +138,7 @@ class SubmissionsControllerTest {
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(data);
             when(submissionsService.exportSpotlightChecks(1)).thenReturn(outputStream);
-            when(submissionsService.generateExportFileName(1)).thenReturn("test_file_name");
+            when(submissionsService.generateExportFileName(1, 1)).thenReturn("test_file_name");
             doThrow(new RuntimeException("forced service error")).when(submissionsService)
                     .updateSubmissionLastRequiredChecksExport(1);
 
