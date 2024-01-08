@@ -1,6 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
@@ -48,7 +48,7 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
+    @LambdasHeaderValidator
     public ResponseEntity<Boolean> spotlightBatchWithStatusExist(@PathVariable final SpotlightBatchStatus status,
             @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
@@ -71,7 +71,7 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
+    @LambdasHeaderValidator
     public ResponseEntity<SpotlightBatchDto> retrieveSpotlightBatchWithStatus(
             @PathVariable final SpotlightBatchStatus status, @RequestParam(name = "batchSizeLimit", required = false,
                     defaultValue = "200") final String batchSizeLimit) {
@@ -94,7 +94,7 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
+    @LambdasHeaderValidator
     public ResponseEntity<SpotlightBatchDto> createSpotlightBatch() {
         log.info("Creating spotlight batch");
 
@@ -114,7 +114,7 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
+    @LambdasHeaderValidator
     public ResponseEntity<SpotlightBatchDto> addSpotlightSubmissionToSpotlightBatch(
             @PathVariable final UUID spotlightBatchId, @PathVariable final UUID spotlightSubmissionId) {
 
@@ -143,7 +143,7 @@ public class SpotlightBatchController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
+    @LambdasHeaderValidator
     public ResponseEntity<String> sendQueuedBatchesAndProcessSpotlightResponse() {
         log.info("Sending queued batches to Spotlight");
 

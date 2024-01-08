@@ -11,9 +11,9 @@ import org.springframework.context.annotation.Configuration;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Configuration("spotlightPublisherConfigurationProperties")
-@ConfigurationProperties(prefix = "spotlight-publisher")
-public class SpotlightPublisherConfigProperties {
+@Configuration("lambdaProperties")
+@ConfigurationProperties(prefix = "lambda")
+public class LambdaSecretConfigProperties {
 
     private String secret;
 

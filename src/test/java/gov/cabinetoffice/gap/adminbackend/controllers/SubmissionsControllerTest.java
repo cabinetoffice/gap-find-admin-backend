@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
@@ -9,13 +10,18 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
-import gov.cabinetoffice.gap.adminbackend.services.*;
+import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
+import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
+import gov.cabinetoffice.gap.adminbackend.services.S3Service;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGenerator;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -39,13 +45,21 @@ import java.util.UUID;
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SubmissionsController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = { SubmissionsController.class, ControllerExceptionHandler.class })
+@ContextConfiguration(
+        classes = { SubmissionsController.class, ControllerExceptionHandler.class, LambdasInterceptor.class })
 class SubmissionsControllerTest {
 
     @Autowired
@@ -64,10 +78,14 @@ class SubmissionsControllerTest {
     private SchemeService schemeService;
 
     @MockBean
-    private SecretAuthService secretAuthService;
+    private FileService fileService;
 
     @MockBean
-    private FileService fileService;
+    @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
+    private AuthorizationHeaderInterceptor mockAuthorizationHeaderInterceptor;
+
+    @MockBean
+    private LambdasInterceptor mockLambdasInterceptor;
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
@@ -183,11 +201,6 @@ class SubmissionsControllerTest {
 
     @Nested
     class getSubmissionInfo {
-
-        @BeforeEach
-        void beforeEach() {
-            doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
-        }
 
         @Test
         void happyPath() throws Exception {
@@ -325,11 +338,6 @@ class SubmissionsControllerTest {
 
     @Nested
     class updateExportRecordLocation {
-
-        @BeforeEach
-        void beforeEach() {
-            doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
-        }
 
         @Test
         void updateExportRecordLocation_BadRequest_PathVariables() throws Exception {

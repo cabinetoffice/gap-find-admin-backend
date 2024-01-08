@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -11,14 +12,18 @@ import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
-import gov.cabinetoffice.gap.adminbackend.services.*;
+import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
+import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
+import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -34,18 +39,41 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_ADVERT_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_MULTIPLE_PROPS;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_NAME;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_POST_FORM_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_RESPONSE_SUCCESS;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_CLASS_ERROR_NO_PROPS_PROVIDED;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_APPLICATION_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_UPDATED_APPLICATION_DTO;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SCHEME_ID;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ApplicationFormController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = { ApplicationFormController.class, ControllerExceptionHandler.class })
+@ContextConfiguration(
+        classes = { ApplicationFormController.class, ControllerExceptionHandler.class, LambdasInterceptor.class })
 class ApplicationFormControllerTest {
 
     @Autowired
@@ -54,11 +82,15 @@ class ApplicationFormControllerTest {
     @MockBean
     private ApplicationFormService applicationFormService;
 
-    @SpyBean
-    private ValidationErrorMapperImpl validationErrorMapper;
+    @MockBean
+    @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
+    private AuthorizationHeaderInterceptor mockAuthorizationHeaderInterceptor;
 
     @MockBean
-    private SecretAuthService secretAuthService;
+    private LambdasInterceptor mockLambdasInterceptor;
+
+    @SpyBean
+    private ValidationErrorMapperImpl validationErrorMapper;
 
     @MockBean
     private GrantAdvertService grantAdvertService;
@@ -273,7 +305,6 @@ class ApplicationFormControllerTest {
     void removesApplicationAttachedToGrantAdvert_Successfully() throws Exception {
         SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
         GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
-        doNothing().when(this.secretAuthService).authenticateSecret("shh");
         when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
         when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
                 .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
@@ -292,7 +323,6 @@ class ApplicationFormControllerTest {
 
     @Test
     void removesApplicationAttachedToGrantAdvert_throwsNotFoundWhenNoAdvertFound() throws Exception {
-        doNothing().when(this.secretAuthService).authenticateSecret("shh");
         doThrow(NotFoundException.class).when(grantAdvertService).getAdvertById(SAMPLE_ADVERT_ID, true);
 
         this.mockMvc
@@ -302,22 +332,9 @@ class ApplicationFormControllerTest {
     }
 
     @Test
-    void removesApplicationAttachedToGrantAdvert_throwsUnAuthorizedWhenNoSecretProvided() throws Exception {
-        doThrow(UnauthorizedException.class).when(this.secretAuthService).authenticateSecret(any());
-
-        when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenThrow(NotFoundException.class);
-
-        this.mockMvc
-                .perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
-                        .contentType(MediaType.APPLICATION_JSON).header("Authorization", "not-correct"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     void removesApplicationAttachedToGrantAdvert_throwsApplicationFormExceptionWhenUnableToPatch() throws Exception {
         SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
         GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
-        doNothing().when(this.secretAuthService).authenticateSecret("shh");
         when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
         when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
                 .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
