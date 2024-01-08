@@ -18,11 +18,11 @@ public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, 
     @Query("SELECT s FROM SpotlightBatch s WHERE s.lastSendAttempt IS NOT NULL ORDER BY s.lastSendAttempt DESC")
     List<SpotlightBatch> findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(Pageable pageable);
 
-    @Query("SELECT (COUNT(s) > 0 ) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
+    @Query("SELECT (COUNT(s) > 0 ) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize AND s.lastSendAttempt = (SELECT MAX(s.lastSendAttempt) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize)")
     boolean existsByStatusAndSpotlightSubmissionsSizeLessThan(@Param("status") SpotlightBatchStatus status,
             @Param("maxSize") int maxSize);
 
-    @Query("SELECT s FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize")
+    @Query("SELECT s FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize AND s.lastSendAttempt = (SELECT MAX(s.lastSendAttempt) FROM SpotlightBatch s WHERE s.status = :status AND SIZE(s.spotlightSubmissions) < :maxSize)")
     Optional<SpotlightBatch> findByStatusAndSpotlightSubmissionsSizeLessThan(
             @Param("status") SpotlightBatchStatus status, @Param("maxSize") int maxSize);
 

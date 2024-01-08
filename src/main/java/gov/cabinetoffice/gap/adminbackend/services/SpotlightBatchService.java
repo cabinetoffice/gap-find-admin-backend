@@ -89,9 +89,7 @@ public class SpotlightBatchService {
         return spotlightBatchRepository.existsByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize);
     }
 
-    // TODO refactor this - it can potentially return more than one result and will cause
-    // errors
-    public SpotlightBatch getSpotlightBatchWithStatus(SpotlightBatchStatus status, int maxSize) {
+    public SpotlightBatch getMostRecentSpotlightBatchWithStatus(SpotlightBatchStatus status, int maxSize) {
         return spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(status, maxSize).orElseThrow(
                 () -> new NotFoundException("A spotlight batch with status " + status + " could not be found"));
     }
@@ -473,6 +471,7 @@ public class SpotlightBatchService {
                 case GGIS_ERROR -> ggisErrorCount++;
                 case VALIDATION_ERROR -> validationErrorCount++;
                 default -> {
+                    // do nothing as no errors found
                 }
             }
         }

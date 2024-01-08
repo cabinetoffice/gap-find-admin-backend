@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
@@ -170,13 +171,12 @@ class SpotlightSubmissionControllerTest {
                 zipOut.write("Mock Excel File Content".getBytes());
                 zipOut.closeEntry();
             }
-            final String exportFileName = "spotlight_checks.zip";
             final SchemeDTO scheme = SchemeDTO.builder().schemeId(SCHEME_ID).build();
 
             when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(scheme);
             when(mockSpotlightSubmissionService.generateDownloadFile(scheme, false)).thenReturn(zipStream);
 
-            when(fileService.createTemporaryFile(zipStream, exportFileName))
+            when(fileService.createTemporaryFile(zipStream, SpotlightExports.SPOTLIGHT_CHECKS_FILENAME))
                     .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
 
             mockMvc.perform(

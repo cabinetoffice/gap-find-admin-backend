@@ -24,7 +24,6 @@ import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import gov.cabinetoffice.gap.adminbackend.utils.XlsxGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +60,8 @@ public class SubmissionsService {
 
     private final RestTemplate restTemplate;
 
+    private final ZipService zipService;
+
     @Value("${cloud.aws.sqs.submissions-export-queue}")
     private String submissionsExportQueue;
 
@@ -88,17 +89,29 @@ public class SubmissionsService {
         log.info("Found {} submissions in SUBMITTED state for application ID {}", submissionsByAppId.size(),
                 applicationId);
 
-        List<List<String>> spotlightExportData = new ArrayList<>();
-        submissionsByAppId.forEach(submission -> {
-            try {
-                spotlightExportData.add(buildSingleSpotlightRow(submission));
-            }
-            catch (SpotlightExportException e) {
-                log.error("Problem extracting data: " + e.getMessage());
-            }
-        });
+        final List<List<List<String>>> dataList = new ArrayList<>();
+        final List<String> filenames = new ArrayList<>();
+        int index = 1;
 
-        return XlsxGenerator.createResource(SpotlightHeaders.SPOTLIGHT_HEADERS, spotlightExportData);
+        for (List<Submission> submissionList : Lists.partition(submissionsByAppId, 999)) {
+            final String filename = generateExportFileName(applicationId, index);
+            List<List<String>> spotlightExportData = new ArrayList<>();
+            submissionList.forEach(submission -> {
+                try {
+                    spotlightExportData.add(buildSingleSpotlightRow(submission));
+                }
+                catch (SpotlightExportException e) {
+                    log.error("Problem extracting data: " + e.getMessage());
+                }
+            });
+
+            dataList.add(spotlightExportData);
+            filenames.add(filename);
+
+            index++;
+        }
+
+        return zipService.createZip(SpotlightHeaders.SPOTLIGHT_HEADERS, dataList, filenames);
     }
 
     public void updateSubmissionLastRequiredChecksExport(Integer applicationId) {
@@ -174,7 +187,7 @@ public class SubmissionsService {
         }
     }
 
-    public String generateExportFileName(Integer applicationId) {
+    public String generateExportFileName(Integer applicationId, Integer count) {
         ApplicationFormDTO applicationFormDTO = applicationFormService.retrieveApplicationFormSummary(applicationId,
                 false, false);
         String ggisReference = schemeService.getSchemeBySchemeId(applicationFormDTO.getGrantSchemeId())
@@ -183,7 +196,7 @@ public class SubmissionsService {
                 "");
         String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(System.currentTimeMillis());
 
-        return dateString + "_" + ggisReference + "_" + applicationName + ".xlsx";
+        return dateString + "_" + ggisReference + "_" + applicationName + "_" + count + ".xlsx";
     }
 
     public void triggerSubmissionsExport(Integer applicationId) {

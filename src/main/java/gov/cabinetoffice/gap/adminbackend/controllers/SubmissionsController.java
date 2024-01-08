@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
@@ -60,18 +61,19 @@ public class SubmissionsController {
         long start = System.currentTimeMillis();
 
         final ByteArrayOutputStream stream = submissionsService.exportSpotlightChecks(applicationId);
-        final String exportFileName = submissionsService.generateExportFileName(applicationId);
-        final InputStreamResource resource = fileService.createTemporaryFile(stream, exportFileName);
+        final InputStreamResource resource = fileService.createTemporaryFile(stream,
+                SpotlightExports.REQUIRED_CHECKS_FILENAME);
 
         submissionsService.updateSubmissionLastRequiredChecksExport(applicationId);
 
         final int length = stream.toByteArray().length;
         log.info("Exporting spotlight checks for application ID {}, generated filename {} with length {}",
-                applicationId, exportFileName, length);
+                applicationId, SpotlightExports.REQUIRED_CHECKS_FILENAME, length);
 
         // setting HTTP headers to tell caller we are returning a file
         final HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(ContentDisposition.parse("attachment; filename=" + exportFileName));
+        headers.setContentDisposition(
+                ContentDisposition.parse("attachment; filename=" + SpotlightExports.REQUIRED_CHECKS_FILENAME));
 
         long end = System.currentTimeMillis();
         log.info("Finished submissions export for application " + applicationId + ". Export time in millis: "

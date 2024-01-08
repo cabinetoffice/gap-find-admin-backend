@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionDataBySchemeIdDto;
@@ -110,9 +111,8 @@ public class SpotlightSubmissionController {
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(schemeId);
         final ByteArrayOutputStream stream = spotlightSubmissionService.generateDownloadFile(scheme,
                 onlyValidationErrors);
-        final String exportFileName = "spotlight_checks.zip";
 
-        return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
+        return getInputStreamResourceResponseEntity(schemeId, stream, SpotlightExports.SPOTLIGHT_CHECKS_FILENAME);
     }
 
     @NotNull

@@ -150,8 +150,8 @@ class SpotlightBatchServiceTest {
             when(spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(any(), anyInt()))
                     .thenReturn(Optional.of(mockSpotlightBatch));
 
-            final SpotlightBatch result = spotlightBatchService.getSpotlightBatchWithStatus(SpotlightBatchStatus.QUEUED,
-                    200);
+            final SpotlightBatch result = spotlightBatchService
+                    .getMostRecentSpotlightBatchWithStatus(SpotlightBatchStatus.QUEUED, 200);
 
             assertEquals(mockSpotlightBatch, result);
         }
@@ -161,8 +161,8 @@ class SpotlightBatchServiceTest {
             when(spotlightBatchRepository.findByStatusAndSpotlightSubmissionsSizeLessThan(any(), anyInt()))
                     .thenReturn(Optional.empty());
 
-            final NotFoundException exception = assertThrows(NotFoundException.class,
-                    () -> spotlightBatchService.getSpotlightBatchWithStatus(SpotlightBatchStatus.QUEUED, 200));
+            final NotFoundException exception = assertThrows(NotFoundException.class, () -> spotlightBatchService
+                    .getMostRecentSpotlightBatchWithStatus(SpotlightBatchStatus.QUEUED, 200));
 
             assertEquals("A spotlight batch with status QUEUED could not be found", exception.getMessage());
         }
@@ -1229,7 +1229,7 @@ class SpotlightBatchServiceTest {
                     SpotlightSubmissionStatus.VALIDATION_ERROR);
             verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
 
-            assertThat(result.getErrorCount()).isGreaterThan(0);
+            assertThat(result.getErrorCount()).isPositive();
             assertThat(result.getErrorStatus()).isEqualTo("API");
             assertThat(result.isErrorFound()).isTrue();
             assertThat(result.isValidationErrorPresent()).isFalse();
@@ -1254,7 +1254,7 @@ class SpotlightBatchServiceTest {
                     SpotlightSubmissionStatus.VALIDATION_ERROR);
             verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
 
-            assertThat(result.getErrorCount()).isGreaterThan(0);
+            assertThat(result.getErrorCount()).isPositive();
             assertThat(result.getErrorStatus()).isEqualTo("GGIS");
             assertThat(result.isErrorFound()).isTrue();
             assertThat(result.isValidationErrorPresent()).isFalse();
@@ -1278,7 +1278,7 @@ class SpotlightBatchServiceTest {
                     SpotlightSubmissionStatus.VALIDATION_ERROR);
             verify(spotlightBatchRepository, times(1)).findByLastSendAttemptNotNullOrderByLastSendAttemptDesc(pageable);
 
-            assertThat(result.getErrorCount()).isGreaterThan(0);
+            assertThat(result.getErrorCount()).isPositive();
             assertThat(result.getErrorStatus()).isEqualTo("VALIDATION");
             assertThat(result.isErrorFound()).isTrue();
             assertThat(result.isValidationErrorPresent()).isFalse();
