@@ -23,8 +23,7 @@ public class AuthorizationHeaderInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         log.info("Intercepting request: " + request.getRequestURI());
-        if (handler instanceof HandlerMethod) {
-            final HandlerMethod handlerMethod = (HandlerMethod) handler;
+        if (handler instanceof final HandlerMethod handlerMethod) {
             final Method method = handlerMethod.getMethod();
 
             SpotlightPublisherHeaderValidator annotation = method

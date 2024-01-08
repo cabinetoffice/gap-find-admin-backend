@@ -4,6 +4,6 @@ package gov.cabinetoffice.gap.adminbackend.enums;
 public enum SubmissionQuestionResponseType {
 
     ShortAnswer, AddressInput, YesNoPlusValue, LongAnswer, YesNo, SingleSelection, Dropdown, MultipleSelection, Date,
-    SingleFileUpload, Numeric;
+    SingleFileUpload, Numeric
 
 }

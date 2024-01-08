@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSub
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
-import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

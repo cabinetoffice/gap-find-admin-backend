@@ -6,8 +6,8 @@ which communicates with a PostgreSQL database, a SQS queue, S3 buckets and Conte
 ## Starting the app (Dev)
 
 The Apply for a Grant admin backend is a maven project. This means to run the app locally you must have Maven installed
-and setup on your machine. For this apps other dependencies, please see the [dependencies section](#Dependencies). Once
-all dependencies and Maven is setup, you can start the app locally by running a simple maven command:
+and setup on your machine. For this app's other dependencies, please see the [dependencies section](#Dependencies). Once
+all dependencies and Maven is set up, you can start the app locally by running a simple maven command:
 
 ```
 mvn spring-boot:run
@@ -20,7 +20,7 @@ and `/login`).
 Before you can make your requests via Postman or the FE, you will to authenticate via login endpoint to create a
 session. Login requires a valid JWT signed by COLA that has not expired provided in an Authorization header as a Bearer
 token.
-For local development purposes, there are three properties in `application.properties` that you can set to login in as a
+For local development purposes, there are three properties in `application.properties` that you can set to log in as a
 given user without a valid JWT.
 
 By setting `debug.ignore-jwt` equal to `true`, the app will no longer look for a JWT and will instead log you in as an
@@ -221,8 +221,8 @@ mvn flyway:migrate
 ```
 
 This will run all scripts in the directory listed above. Migration history is automatically stored in a table called
-`flyway_schema_history`. This means that whenever a new script is added to the directory and you run the Maven migration
-command again, it will only run the new script. Therefore once the database is established and deployed
+`flyway_schema_history`. This means that whenever a new script is added to the directory, and you run the Maven migration
+command again, it will only run the new script. Therefore, once the database is established and deployed
 in long-term environments, when making changes to schemas, you do not modify existing scripts that have already
 been migrated - you must add new scripts. A more eloquent explanation and example is provided
 [here](https://flywaydb.org/documentation/getstarted/why).
@@ -270,7 +270,7 @@ a commit.**
    from [here](https://repo.spring.io/artifactory/release/io/spring/javaformat/io.spring.javaformat.eclipse.site/0.0.34/io.spring.javaformat.eclipse.site-0.0.34.zip)
    (it can't be installed through the Eclipse Marketplace).
 2. Navigate to Help > Install New Software.
-3. On this window, click the Add button along the right hand side.
+3. On this window, click the Add button along the right-hand side.
 4. In the next window, click Archive and select the zip file you downloaded in step 1.
 5. You may be asked to install an unauthorised plugin, due to it not coming directly from the Marketplace. Tick the
    plugin and click accept.

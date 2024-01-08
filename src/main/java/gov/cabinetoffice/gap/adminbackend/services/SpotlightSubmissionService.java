@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.google.common.collect.Lists;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
@@ -103,15 +104,27 @@ public class SpotlightSubmissionService {
     private ByteArrayOutputStream generateZipFile(List<SpotlightSubmission> companiesAndCharitiesSubmissions,
             List<SpotlightSubmission> nonLimitedSubmissions, SchemeDTO scheme) {
 
-        final List<List<String>> charitiesAndCompanies = exportSpotlightChecks(companiesAndCharitiesSubmissions);
-        final String charitiesAndCompaniesFilename = generateExportFileName(scheme, " charities_and_companies");
+        final List<List<List<String>>> dataList = new ArrayList<>();
+        final List<String> filenames = new ArrayList<>();
+        processSubmissions(companiesAndCharitiesSubmissions, dataList, filenames, "charities_and_companies", scheme);
+        processSubmissions(nonLimitedSubmissions, dataList, filenames, "non_limited_companies", scheme);
 
-        final List<List<String>> nonLimitedCompanies = exportSpotlightChecks(nonLimitedSubmissions);
-        final String nonLimitedCompaniesFilename = generateExportFileName(scheme, "non_limited_companies");
-
-        final List<List<List<String>>> dataList = List.of(charitiesAndCompanies, nonLimitedCompanies);
-        final List<String> filenames = List.of(charitiesAndCompaniesFilename, nonLimitedCompaniesFilename);
         return zipService.createZip(SpotlightHeaders.SPOTLIGHT_HEADERS, dataList, filenames);
+    }
+
+    private void processSubmissions(List<SpotlightSubmission> submissions, List<List<List<String>>> dataList,
+            List<String> filenames, String filenameSuffix, SchemeDTO scheme) {
+        int index = 1;
+
+        for (List<SpotlightSubmission> list : Lists.partition(submissions, 999)) {
+            final List<List<String>> exportedData = exportSpotlightChecks(list);
+            final String generatedFilename = generateExportFileName(scheme, filenameSuffix + "_" + index);
+
+            dataList.add(exportedData);
+            filenames.add(generatedFilename);
+
+            index++;
+        }
     }
 
     private List<List<String>> exportSpotlightChecks(List<SpotlightSubmission> spotlightSubmissions) {
@@ -150,7 +163,7 @@ public class SpotlightSubmissionService {
     public String generateExportFileName(SchemeDTO scheme, String orgType) {
         final String ggisReference = scheme.getGgisReference();
         final String schemeName = scheme.getName().replace(" ", "_").replaceAll("[^A-Za-z0-9_]", "");
-        final String dateString = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
+        final String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(System.currentTimeMillis());
 
         return dateString + "_" + ggisReference + "_" + schemeName + (orgType == null ? "" : "_" + orgType) + ".xlsx";
     }

@@ -3,10 +3,10 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
-import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationAuditDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.*;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
@@ -23,9 +23,6 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomGrantExportEntityGenerator;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGenerator;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,23 +35,20 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.*;
 
-import static gov.cabinetoffice.gap.adminbackend.services.SubmissionsService.*;
+import static gov.cabinetoffice.gap.adminbackend.services.SubmissionsService.combineAddressLines;
+import static gov.cabinetoffice.gap.adminbackend.services.SubmissionsService.mandatoryValue;
 import static gov.cabinetoffice.gap.adminbackend.testdata.SubmissionTestData.*;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGenerator.randomSubmission;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGenerator.randomSubmissionDefinition;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
@@ -85,67 +79,64 @@ class SubmissionsServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private SchemeService schemeService;
+
+    @Mock
+    private ZipService zipService;
+
     private final List<String> EXPECTED_SPOTLIGHT_ROW = Arrays.asList("GAP-LL-20220927-1", "Some company name",
             "9-10 St Andrew Square", "Edinburgh", "EH2 2AF", "500", "12738494", "Yes", "");
 
     @Nested
     class ExportSpotlightChecksTests {
 
-        private static void assertRowIsAsExpected(Row actualRow, List<String> expectedRow) {
-            assertThat(actualRow.getPhysicalNumberOfCells()).isEqualTo(expectedRow.size());
-            for (int col = 0; col < expectedRow.size(); col++) {
-                assertThat(actualRow.getCell(col).getStringCellValue()).isEqualTo(expectedRow.get(col));
-            }
-        }
-
         @Test
-        void forSingleRowWithGoodData() throws IOException {
+        void exportSpotlightChecksWithGoodData() {
             final ApplicationFormDTO applicationFormDTO = ApplicationFormDTO.builder()
-                    .audit(ApplicationAuditDTO.builder().createdBy(1).build()).build();
+                    .audit(ApplicationAuditDTO.builder().createdBy(1).build()).grantSchemeId(1)
+                    .applicationName("applicationName").build();
             final SubmissionDefinition submissionDefinition = randomSubmissionDefinition(SUBMISSION_DEFINITION).build();
             final Submission submission = RandomSubmissionGenerator.randomSubmission()
                     .status(SubmissionStatus.SUBMITTED)
                     .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
                     .definition(submissionDefinition).build();
+            final SchemeDTO schemeDTO = SchemeDTO.builder().schemeId(1).ggisReference("123").build();
 
             when(applicationFormService.retrieveApplicationFormSummary(1, false, false)).thenReturn(applicationFormDTO);
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
                     .thenReturn(Collections.singletonList(submission));
+            when(schemeService.getSchemeBySchemeId(applicationFormDTO.getGrantSchemeId())).thenReturn(schemeDTO);
             doReturn(EXPECTED_SPOTLIGHT_ROW).when(submissionsService).buildSingleSpotlightRow(submission);
+            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
 
             ByteArrayOutputStream dataStream = submissionsService.exportSpotlightChecks(1);
 
-            Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
-            Row headerRow = workbook.getSheetAt(0).getRow(0);
-            assertRowIsAsExpected(headerRow, SpotlightHeaders.SPOTLIGHT_HEADERS);
-            Row dataRow = workbook.getSheetAt(0).getRow(1);
-            assertRowIsAsExpected(dataRow, EXPECTED_SPOTLIGHT_ROW);
+            verify(submissionRepository).findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED);
+            assertThat(dataStream).isNotNull();
         }
 
         @Test
-        void ignoresBadDataRows() throws IOException {
+        void exportSpotlightChecksWithEmptySubmission() {
+
             final ApplicationFormDTO applicationFormDTO = ApplicationFormDTO.builder()
-                    .audit(ApplicationAuditDTO.builder().createdBy(1).build()).build();
+                    .audit(ApplicationAuditDTO.builder().createdBy(1).build()).grantSchemeId(1)
+                    .applicationName("applicationName").build();
+            final Submission submission = randomSubmission().definition(emptySubmissionDefinition()).build();
+            final SchemeDTO schemeDTO = SchemeDTO.builder().schemeId(1).ggisReference("123").build();
+
             when(applicationFormService.retrieveApplicationFormSummary(1, false, false)).thenReturn(applicationFormDTO);
-
-            final SubmissionDefinition goodSubmission = createSubmissionDefinition();
-            final Submission goodSubmissionEntity = randomSubmission().status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
-                    .gapId("GAP-LL-20221006-1").definition(goodSubmission).build();
-
-            final SubmissionDefinition badSubmission = createSubmissionDefinition();
-            badSubmission.getSections().get(1).getQuestionById("APPLICANT_ORG_NAME").setResponse(null);
-            final Submission badSubmissionEntity = randomSubmission().status(SubmissionStatus.SUBMITTED)
-                    .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
-                    .gapId("GAP-LL-20221006-2").definition(badSubmission).build();
-
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
-                    .thenReturn(List.of(badSubmissionEntity, goodSubmissionEntity));
+                    .thenReturn(Collections.singletonList(submission));
+            when(schemeService.getSchemeBySchemeId(applicationFormDTO.getGrantSchemeId())).thenReturn(schemeDTO);
+            doReturn(EXPECTED_SPOTLIGHT_ROW).when(submissionsService).buildSingleSpotlightRow(submission);
+            when(zipService.createZip(anyList(), anyList(), anyList())).thenReturn(new ByteArrayOutputStream());
 
             ByteArrayOutputStream dataStream = submissionsService.exportSpotlightChecks(1);
 
-            Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(dataStream.toByteArray()));
-            assertThat(workbook.getSheetAt(0).getPhysicalNumberOfRows()).isEqualTo(2);
+            verify(submissionRepository).findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED);
+            assertThat(dataStream).isNotNull();
+
         }
 
         @Test

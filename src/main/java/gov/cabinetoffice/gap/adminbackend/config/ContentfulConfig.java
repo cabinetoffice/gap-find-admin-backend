@@ -21,10 +21,8 @@ public class ContentfulConfig {
 
     @Bean
     public CDAClient getContentfulDeliveryClient() {
-        CDAClient client = CDAClient.builder().setToken(configProperties.getDeliveryAPIAccessToken())
+        return CDAClient.builder().setToken(configProperties.getDeliveryAPIAccessToken())
                 .setSpace(configProperties.getSpaceId()).setEnvironment(configProperties.getEnvironmentId()).build();
-
-        return client;
     }
 
 }

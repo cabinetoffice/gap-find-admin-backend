@@ -20,8 +20,8 @@ public class ZipServiceTest {
 
     final List<String> headersList = Arrays.asList("Header1", "Header2", "Header3");
 
-    final List<List<List<String>>> dataList = Arrays.asList(Arrays.asList(Arrays.asList("Data1", "Data2", "Data3")),
-            Arrays.asList(Arrays.asList("Data4", "Data5", "Data6")));
+    final List<List<List<String>>> dataList = Arrays.asList(List.of(Arrays.asList("Data1", "Data2", "Data3")),
+            List.of(Arrays.asList("Data4", "Data5", "Data6")));
 
     final List<String> filenames = Arrays.asList("File1.xlsx", "File2.xlsx");
 

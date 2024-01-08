@@ -50,7 +50,7 @@ public class GrantExportControllerTest {
         @Test
         void successfullyGetOutstandingExportsCount() throws Exception {
             UUID mockExportId = UUID.randomUUID();
-            Long mockCount = 10l;
+            Long mockCount = 10L;
             OutstandingExportCountDTO expectedResponse = new OutstandingExportCountDTO(mockCount);
             doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
             when(mockGrantExportService.getOutstandingExportCount(any())).thenReturn(mockCount);
@@ -69,7 +69,7 @@ public class GrantExportControllerTest {
         @Test
         void unexpectedErrorOccurred() throws Exception {
             UUID mockExportId = UUID.randomUUID();
-            Long mockCount = 10l;
+            Long mockCount = 10L;
             OutstandingExportCountDTO expectedResponse = new OutstandingExportCountDTO(mockCount);
             doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
             when(mockGrantExportService.getOutstandingExportCount(any())).thenThrow(RuntimeException.class);

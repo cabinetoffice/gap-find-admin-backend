@@ -1,8 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers.pages;
 
-import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.controllers.ControllerExceptionHandler;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertPreviewPageDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertPreviewTab;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
@@ -28,7 +26,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,7 +55,7 @@ class PagesAdvertControllerTest {
 
     @Test
     void testGetSectionOverviewContent__Success() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("schemeId", SCHEME_ID);
         params.add("advertId", ADVERT_ID.toString());
 
@@ -71,7 +68,7 @@ class PagesAdvertControllerTest {
 
     @Test
     void testGetSectionOverviewContent__badRequest_MissingRequestParams() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("advertId", ADVERT_ID.toString());
 
         mockMvc.perform(get(SECTION_OVERVIEW_ENDPOINT).params(params)).andExpect(status().isBadRequest());
@@ -79,7 +76,7 @@ class PagesAdvertControllerTest {
 
     @Test
     void testGetSectionOverviewContent__accessDenied_AttemptingToAccessAdvertCreatedByAnotherAdmin() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("schemeId", SCHEME_ID);
         params.add("advertId", ADVERT_ID.toString());
 
@@ -91,7 +88,7 @@ class PagesAdvertControllerTest {
 
     @Test
     void testGetSectionOverviewContent__notFound_AttemptingToAccessAdvertWhichDoesntExist() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("schemeId", SCHEME_ID);
         params.add("advertId", ADVERT_ID.toString());
 
@@ -198,7 +195,7 @@ class PagesAdvertControllerTest {
 
         @Test
         void success() throws Exception {
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("schemeId", schemeId);
             params.add("advertId", grantAdvertId.toString());
 
@@ -216,14 +213,14 @@ class PagesAdvertControllerTest {
             AdvertSummaryPageDTO.AdvertSummaryPageSectionPageDTO pageDTO = expectedDto.new AdvertSummaryPageSectionPageDTO();
             pageDTO.setId(pageId);
             pageDTO.setTitle(pageTitle);
-            pageDTO.setQuestions(Arrays.asList(questionDTO));
+            pageDTO.setQuestions(List.of(questionDTO));
 
             AdvertSummaryPageDTO.AdvertSummaryPageSectionDTO sectionDTO = expectedDto.new AdvertSummaryPageSectionDTO();
             sectionDTO.setId(sectionId);
             sectionDTO.setTitle(sectionTitle);
-            sectionDTO.setPages(Arrays.asList(pageDTO));
+            sectionDTO.setPages(List.of(pageDTO));
 
-            expectedDto.setSections(Arrays.asList(sectionDTO));
+            expectedDto.setSections(List.of(sectionDTO));
             expectedDto.setStatus(GrantAdvertStatus.DRAFT);
 
             when(pagesAdvertService.buildSummaryPageContent(schemeId, grantAdvertId)).thenReturn(expectedDto);
@@ -234,7 +231,7 @@ class PagesAdvertControllerTest {
 
         @Test
         void badRequest_MissingRequestParams() throws Exception {
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("advertId", grantAdvertId.toString());
 
             mockMvc.perform(get(endpoint).params(params)).andExpect(status().isBadRequest());
@@ -242,7 +239,7 @@ class PagesAdvertControllerTest {
 
         @Test
         void accessDenied_AttemptingToAccessAdvertCreatedByAnotherAdmin() throws Exception {
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("schemeId", schemeId);
             params.add("advertId", grantAdvertId.toString());
 
@@ -254,7 +251,7 @@ class PagesAdvertControllerTest {
 
         @Test
         void testGetSectionOverviewContent__notFound_AttemptingToAccessAdvertWhichDoesntExist() throws Exception {
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("schemeId", schemeId);
             params.add("advertId", grantAdvertId.toString());
 

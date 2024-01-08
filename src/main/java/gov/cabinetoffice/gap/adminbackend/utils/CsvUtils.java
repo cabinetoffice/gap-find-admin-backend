@@ -14,14 +14,14 @@ public class CsvUtils {
 
     @SneakyThrows
     public static ByteArrayResource createCSVData(List<String> headers, List<List<String>> data) {
-        ByteArrayResource byteArrayResource;
-
         if (headers == null || headers.isEmpty()) {
             throw new RuntimeException("Headers cannot be null or empty");
         }
         if (data == null || data.isEmpty()) {
             throw new RuntimeException("Data cannot be null or empty");
         }
+
+        ByteArrayResource byteArrayResource;
 
         // CSVFormat needs an array of Strings as opposed to a list
         String[] convertedHeaders = headers.toArray(new String[0]);
