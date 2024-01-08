@@ -26,10 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.combineAddressLines;
 import static gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService.mandatoryValue;
@@ -327,7 +324,7 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void generatesFileName() {
-            String dateString = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
+            String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(System.currentTimeMillis());
             SchemeDTO schemeDTO = SchemeDTO.builder().name("schemeName").ggisReference("123").build();
 
             when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);
@@ -341,7 +338,7 @@ class GrantMandatoryQuestionServiceTest {
 
         @Test
         void generatesFileNameWithOrgType() {
-            String dateString = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
+            String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(System.currentTimeMillis());
             SchemeDTO schemeDTO = SchemeDTO.builder().name("schemeName").ggisReference("123").build();
 
             when(schemeService.getSchemeBySchemeId(SCHEME_ID)).thenReturn(schemeDTO);

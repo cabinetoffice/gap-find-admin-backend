@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.models.ValidationError;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpSession;
@@ -20,7 +21,7 @@ public class SessionsService {
 
     public HashMap<String, String> retrieveObjectFromSession(SessionObjectEnum objectKey, HttpSession session) {
         Iterator<String> sessionAttributesIterator = session.getAttributeNames().asIterator();
-        HashMap<String, String> returnObj = new HashMap<String, String>();
+        HashMap<String, String> returnObj = new HashMap<>();
 
         while (sessionAttributesIterator.hasNext()) {
             String attributeName = sessionAttributesIterator.next();
@@ -71,42 +72,47 @@ public class SessionsService {
             if (key.startsWith(val + ".")) {
                 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
                 String strippedKey = HelperUtils.getSessionObjectFieldName(key);
-                // if the field is an enum, we need to manually validate it's one of the
-                // options,
-                // by calling valueOf on the enum and catching any exceptions. yes, I know
-                // it's kinda gross
-                if (val.getClassType().getDeclaredField(strippedKey).getType().isEnum()) {
-                    try {
-                        val.getClassType().getDeclaredField(strippedKey).getType().getMethod("valueOf", String.class)
-                                .invoke(null, value); // method is static, so can be
-                                                      // called without a class
-                        session.setAttribute(key, value);
-                        return null;
-                    }
-                    catch (Exception e) {
-                        return new FieldErrorsDTO(Collections.singletonList(new ValidationError(strippedKey,
-                                value + " is not a possible value of " + val.getClassType().getSimpleName())));
-                    }
-                }
-                else {
-                    Set<ConstraintViolation<?>> constraintViolationsSet = validator.validateValue(val.getClassType(),
-                            strippedKey, value);
-                    if (constraintViolationsSet.isEmpty()) {
-                        session.setAttribute(key, value);
-                        return null;
-                    }
-                    else {
-                        return new FieldErrorsDTO(constraintViolationsSet.stream()
-                                .map((err) -> new ValidationError(err.getPropertyPath().toString(), err.getMessage()))
-                                .toList());
-                    }
-                }
+                return validateEnum(key, value, session, val, validator, strippedKey);
             }
         }
 
         // if it never matched an enum value, no validation required
         session.setAttribute(key, value);
         return null;
+    }
+
+    @Nullable
+    private FieldErrorsDTO validateEnum(String key, String value, HttpSession session, SessionObjectEnum val,
+            Validator validator, String strippedKey) throws NoSuchFieldException {
+        // if the field is an enum, we need to manually validate it's one of the options
+        // by calling valueOf on the enum
+        // and catching any exceptions. yes, I know it's kinda gross
+        if (val.getClassType().getDeclaredField(strippedKey).getType().isEnum()) {
+            try {
+                val.getClassType().getDeclaredField(strippedKey).getType().getMethod("valueOf", String.class)
+                        .invoke(null, value); // method is static, so can be called
+                                              // without a class
+                session.setAttribute(key, value);
+                return null;
+            }
+            catch (Exception e) {
+                return new FieldErrorsDTO(Collections.singletonList(new ValidationError(strippedKey,
+                        value + " is not a possible value of " + val.getClassType().getSimpleName())));
+            }
+        }
+        else {
+            Set<ConstraintViolation<?>> constraintViolationsSet = validator.validateValue(val.getClassType(),
+                    strippedKey, value);
+            if (constraintViolationsSet.isEmpty()) {
+                session.setAttribute(key, value);
+                return null;
+            }
+            else {
+                return new FieldErrorsDTO(constraintViolationsSet.stream()
+                        .map((err) -> new ValidationError(err.getPropertyPath().toString(), err.getMessage()))
+                        .toList());
+            }
+        }
     }
 
     public FieldErrorsDTO validateSessionObject(final SessionObjectEnum objectKey, final Map<String, String> object,

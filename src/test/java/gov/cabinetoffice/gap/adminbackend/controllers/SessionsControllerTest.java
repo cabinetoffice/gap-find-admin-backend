@@ -36,7 +36,7 @@ class SessionsControllerTest {
 
     @Test
     void testSuccessfullyAddingToSession() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("key", "testKey");
         params.add("value", "testValue");
 
@@ -46,7 +46,7 @@ class SessionsControllerTest {
 
     @Test
     void testFailAddingToInvalidValueToSession() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("key", "newScheme.name");
         params.add("value", "");
         FieldErrorsDTO fieldErrorsDTO = new FieldErrorsDTO(
@@ -69,7 +69,7 @@ class SessionsControllerTest {
     }
 
     @Test
-    void testGettingNonExistantDataFromSession() throws Exception {
+    void testGettingNonExistentDataFromSession() throws Exception {
         this.mockMvc.perform(get("/sessions/testNonExistingKey")).andExpect(status().isNoContent())
                 .andExpect(content().string(""));
     }
@@ -118,7 +118,7 @@ class SessionsControllerTest {
 
     @Test
     void testSuccessfullyBatchAddingToSession() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("objectKey", "newScheme");
 
         this.mockMvc
@@ -130,7 +130,7 @@ class SessionsControllerTest {
 
     @Test
     void testFailBatchAddingToInvalidValueToSession() throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("objectKey", "newScheme");
 
         this.mockMvc

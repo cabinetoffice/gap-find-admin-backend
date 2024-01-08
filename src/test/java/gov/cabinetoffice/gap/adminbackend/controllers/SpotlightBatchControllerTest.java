@@ -112,7 +112,7 @@ public class SpotlightBatchControllerTest {
         }
 
         @Test
-        void notFOundExceptionGetSpotlightBatchById() throws Exception {
+        void notFoundExceptionGetSpotlightBatchById() throws Exception {
             mockMvc.perform(get("/spotlight-batch/status/INVALID_STATUS/exists")).andExpect(status().isBadRequest());
         }
 

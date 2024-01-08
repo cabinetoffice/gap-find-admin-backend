@@ -99,7 +99,7 @@ public class GrantAdvert extends BaseEntity {
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
             return false;
         GrantAdvert that = (GrantAdvert) o;
-        return id != null && Objects.equals(id, that.id);
+        return id != null && id.equals(that.id);
     }
 
     @Override

@@ -11,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.utils.CurrencyFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -103,36 +104,10 @@ public class PagesAdvertService {
                                 : null;
 
                         List<AdvertSummaryPageDTO.AdvertSummaryPageQuestionDTO> pageQuestionDTOs = advertDefinitionPage
-                                .getQuestions().stream().map(advertDefinitionQuestion -> {
-                                    AdvertSummaryPageDTO.AdvertSummaryPageQuestionDTO questionDTO = advertSummaryPageDTO.new AdvertSummaryPageQuestionDTO();
-                                    GrantAdvertQuestionResponse grantAdvertQuestionResponse = grantAdvertPageResponse != null
-                                            ? grantAdvertPageResponse.getQuestionById(advertDefinitionQuestion.getId())
-                                                    .orElse(null)
-                                            : null;
-
-                                    String response = null;
-                                    if (advertDefinitionQuestion
-                                            .getResponseType() == AdvertDefinitionQuestionResponseType.CURRENCY) {
-                                        if (grantAdvertQuestionResponse != null
-                                                && grantAdvertQuestionResponse.getResponse() != null) {
-                                            response = CurrencyFormatter.format(
-                                                    Integer.parseInt(grantAdvertQuestionResponse.getResponse()));
-                                        }
-                                    }
-                                    else {
-                                        response = grantAdvertQuestionResponse != null
-                                                ? grantAdvertQuestionResponse.getResponse() : null;
-                                    }
-                                    questionDTO.setId(advertDefinitionQuestion.getId());
-                                    questionDTO.setResponse(response);
-                                    questionDTO.setSummarySuffixText(advertDefinitionQuestion.getSummarySuffixText());
-                                    questionDTO.setTitle(advertDefinitionQuestion.getSummaryTitle());
-                                    questionDTO.setMultiResponse(grantAdvertQuestionResponse != null
-                                            ? grantAdvertQuestionResponse.getMultiResponse() : null);
-                                    questionDTO.setResponseType(advertDefinitionQuestion.getResponseType());
-
-                                    return questionDTO;
-                                }).collect(Collectors.toList());
+                                .getQuestions().stream()
+                                .map(advertDefinitionQuestion -> getAdvertSummaryPageQuestionDTO(advertSummaryPageDTO,
+                                        grantAdvertPageResponse, advertDefinitionQuestion))
+                                .collect(Collectors.toList());
 
                         pageDTO.setQuestions(pageQuestionDTOs);
                         return pageDTO;
@@ -142,6 +117,34 @@ public class PagesAdvertService {
 
             return sectionDTO;
         }).collect(Collectors.toList());
+    }
+
+    @NotNull
+    private AdvertSummaryPageDTO.AdvertSummaryPageQuestionDTO getAdvertSummaryPageQuestionDTO(
+            AdvertSummaryPageDTO advertSummaryPageDTO, GrantAdvertPageResponse grantAdvertPageResponse,
+            AdvertDefinitionQuestion advertDefinitionQuestion) {
+        AdvertSummaryPageDTO.AdvertSummaryPageQuestionDTO questionDTO = advertSummaryPageDTO.new AdvertSummaryPageQuestionDTO();
+        GrantAdvertQuestionResponse grantAdvertQuestionResponse = grantAdvertPageResponse != null
+                ? grantAdvertPageResponse.getQuestionById(advertDefinitionQuestion.getId()).orElse(null) : null;
+
+        String response = null;
+        if (advertDefinitionQuestion.getResponseType() == AdvertDefinitionQuestionResponseType.CURRENCY) {
+            if (grantAdvertQuestionResponse != null && grantAdvertQuestionResponse.getResponse() != null) {
+                response = CurrencyFormatter.format(Integer.parseInt(grantAdvertQuestionResponse.getResponse()));
+            }
+        }
+        else {
+            response = grantAdvertQuestionResponse != null ? grantAdvertQuestionResponse.getResponse() : null;
+        }
+        questionDTO.setId(advertDefinitionQuestion.getId());
+        questionDTO.setResponse(response);
+        questionDTO.setSummarySuffixText(advertDefinitionQuestion.getSummarySuffixText());
+        questionDTO.setTitle(advertDefinitionQuestion.getSummaryTitle());
+        questionDTO.setMultiResponse(
+                grantAdvertQuestionResponse != null ? grantAdvertQuestionResponse.getMultiResponse() : null);
+        questionDTO.setResponseType(advertDefinitionQuestion.getResponseType());
+
+        return questionDTO;
     }
 
     public void populateSectionsListForDto(List<AdvertSectionOverviewPageSectionDto> dtoSectionsList,

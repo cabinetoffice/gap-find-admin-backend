@@ -90,7 +90,7 @@ public class SchemeTestData {
     public final static String SCHEME_PATCH_DTO_NULL_JSON = "    {\n" + "        \"grantName\": \"" + SAMPLE_SCHEME_NAME
             + "\",\n" + "        \"ggisReferenceNumber\": \"" + SAMPLE_GGIS_REFERENCE + "\"\n" + "    }\n";
 
-    public final static String SCHEME_PATCH_DTO_CLASS_ERRORS_ALL_NULL = "" + "{\"classErrors\": " + "	[" + "		{"
+    public final static String SCHEME_PATCH_DTO_CLASS_ERRORS_ALL_NULL = "{\"classErrors\": " + "	[" + "		{"
             + "			\"className\":\"schemePatchDTO\","
             + "			\"errorMessage\":\"All checked fields were null\"" + "		}" + "	]" + "}";
 

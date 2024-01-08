@@ -11,7 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
-import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomeSchemeGenerator;
+import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class SchemeServiceTest {
 
     @Test
     void getSchemeBySchemeIdHappyPath_SchemeReturned() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().build();
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntity.getId();
 
         when(this.schemeRepository.findById(testSchemeId)).thenReturn(Optional.of(testEntity));
@@ -73,7 +73,7 @@ class SchemeServiceTest {
         when(this.schemeRepository.findById(SAMPLE_SCHEME_ID)).thenThrow(new EntityNotFoundException());
 
         assertThatThrownBy(() -> this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID))
-                .as("Return SchemeEntityException when entitiy not found in postgres.")
+                .as("Return SchemeEntityException when entity not found in postgres.")
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
@@ -82,13 +82,13 @@ class SchemeServiceTest {
         when(this.schemeRepository.findById(SAMPLE_SCHEME_ID)).thenThrow(new RuntimeException());
 
         assertThatThrownBy(() -> this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID))
-                .as("Return SchemeEntityException when entitiy not found in postgres.")
+                .as("Return SchemeEntityException when entity not found in postgres.")
                 .isInstanceOf(SchemeEntityException.class);
     }
 
     @Test
     void sendSchemePatchRequest_SuccessfullyPatchScheme() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().build();
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntity.getId();
 
         when(this.schemeRepository.findById(testSchemeId)).thenReturn(Optional.of(testEntity));
@@ -131,7 +131,7 @@ class SchemeServiceTest {
 
     @Test
     void sendSchemePatchRequest_AttemptingToPatchSchemeNotCreatedByLoggedInUser() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().createdBy(2).build();
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().createdBy(2).build();
         when(this.schemeRepository.findById(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(testEntity));
 
         assertThatThrownBy(() -> this.schemeService.patchExistingScheme(SAMPLE_SCHEME_ID, SCHEME_PATCH_DTO_EXAMPLE))
@@ -142,7 +142,7 @@ class SchemeServiceTest {
     @Test
     void postNewSchemeHappyPathTest() {
         SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
-        SchemeEntity testEntityAfterSave = RandomeSchemeGenerator.randomSchemeEntity().build();
+        SchemeEntity testEntityAfterSave = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntityAfterSave.getId();
 
         MockHttpSession mockSession = new MockHttpSession();
@@ -163,7 +163,7 @@ class SchemeServiceTest {
     @Test
     void postNewSchemeHappyPathTest_featureFlagForNewMandatoryQuestionIsOn() {
         SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
-        SchemeEntity testEntityAfterSave = RandomeSchemeGenerator.randomSchemeEntity().build();
+        SchemeEntity testEntityAfterSave = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntityAfterSave.getId();
 
         MockHttpSession mockSession = new MockHttpSession();
@@ -184,7 +184,7 @@ class SchemeServiceTest {
 
     @Test
     void postNewScheme_UnexpectedError() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().build();
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
         when(this.schemeRepository.save(testEntity)).thenThrow(new RuntimeException());
 
@@ -196,7 +196,7 @@ class SchemeServiceTest {
 
     @Test
     void postNewScheme_IllegalArgumentException() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().build();
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
         when(this.schemeRepository.save(testEntity)).thenThrow(new IllegalArgumentException());
 
@@ -207,7 +207,7 @@ class SchemeServiceTest {
 
     @Test
     void deleteASchemeHappyPath_Successful() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().build();
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntity.getId();
 
         when(this.schemeRepository.findById(testSchemeId)).thenReturn(Optional.of(testEntity));
@@ -243,7 +243,7 @@ class SchemeServiceTest {
 
     @Test
     void deleteASchemeById_EntityFoundButNotCreatedByLoggedInUser() {
-        SchemeEntity testEntity = RandomeSchemeGenerator.randomSchemeEntity().createdBy(2).build();
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().createdBy(2).build();
         Integer testSchemeId = testEntity.getId();
 
         when(this.schemeRepository.findById(testSchemeId)).thenReturn(Optional.of(testEntity));

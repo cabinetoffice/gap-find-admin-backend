@@ -150,7 +150,7 @@ public class SpotlightSubmissionService {
     public String generateExportFileName(SchemeDTO scheme, String orgType) {
         final String ggisReference = scheme.getGgisReference();
         final String schemeName = scheme.getName().replace(" ", "_").replaceAll("[^A-Za-z0-9_]", "");
-        final String dateString = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
+        final String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(System.currentTimeMillis());
 
         return dateString + "_" + ggisReference + "_" + schemeName + (orgType == null ? "" : "_" + orgType) + ".xlsx";
     }
