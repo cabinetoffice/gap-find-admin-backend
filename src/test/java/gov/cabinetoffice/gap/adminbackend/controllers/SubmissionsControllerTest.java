@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
@@ -91,9 +92,8 @@ class SubmissionsControllerTest {
                 zipOut.write("Mock Excel File Content".getBytes());
                 zipOut.closeEntry();
             }
-            final String exportFileName = "required_checks.zip";
 
-            when(fileService.createTemporaryFile(zipStream, exportFileName))
+            when(fileService.createTemporaryFile(zipStream, SpotlightExports.REQUIRED_CHECKS_FILENAME))
                     .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray()))
 
                     );
