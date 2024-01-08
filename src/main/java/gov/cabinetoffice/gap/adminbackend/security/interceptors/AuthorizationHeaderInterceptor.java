@@ -60,7 +60,7 @@ public class AuthorizationHeaderInterceptor implements HandlerInterceptor {
     }
 
     private boolean compareAuthorizationSecret(String authorizationHeader, String expectedAuthorizationValue,
-                                               String privateKey) {
+            String privateKey) {
         return decrypt(authorizationHeader, privateKey).equals(expectedAuthorizationValue);
 
     }
