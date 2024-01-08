@@ -17,7 +17,6 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class S3ServiceTest {
@@ -68,7 +67,7 @@ public class S3ServiceTest {
     }
 
     @Test
-    void unableToGenerateSignedURL() throws Exception {
+    void unableToGenerateSignedURL() {
         when(mockS3Client.generatePresignedUrl(any())).thenThrow(SdkClientException.class);
 
         assertThrows(SdkClientException.class, () -> s3Service.generateExportDocSignedUrl("object_path"));

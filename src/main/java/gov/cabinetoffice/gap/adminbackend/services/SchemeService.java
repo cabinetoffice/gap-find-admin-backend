@@ -92,7 +92,7 @@ public class SchemeService {
             }
 
             scheme.setLastUpdated(Instant.now());
-            scheme.setLastUpdatedBy(Integer.valueOf(session.getGrantAdminId()));
+            scheme.setLastUpdatedBy(session.getGrantAdminId());
 
             this.schemeMapper.updateSchemeEntityFromPatchDto(schemePatchDTO, scheme);
             this.schemeRepo.save(scheme);

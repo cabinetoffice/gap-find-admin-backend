@@ -4,8 +4,6 @@ import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 
-import java.util.UUID;
-
 public class LoginTestData {
 
     public final static Integer GAP_USER_ID = 1;

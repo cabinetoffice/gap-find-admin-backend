@@ -6,9 +6,9 @@ public enum DraftAssessmentResponseDtoStatus {
 
     SUCCESS("Success"), FAILURE("Failure");
 
-    private String name;
+    private final String name;
 
-    private DraftAssessmentResponseDtoStatus(String name) {
+    DraftAssessmentResponseDtoStatus(String name) {
         this.name = name;
     }
 

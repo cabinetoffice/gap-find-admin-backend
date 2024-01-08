@@ -1,18 +1,14 @@
 package gov.cabinetoffice.gap.adminbackend.security;
 
 import gov.cabinetoffice.gap.adminbackend.config.JwtTokenFilterConfig;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
-import gov.cabinetoffice.gap.adminbackend.services.JwtService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,11 +17,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.springframework.util.ObjectUtils.isEmpty;
 
 /**
  * This class cannot be a Spring bean, otherwise Spring will automatically apply it to all

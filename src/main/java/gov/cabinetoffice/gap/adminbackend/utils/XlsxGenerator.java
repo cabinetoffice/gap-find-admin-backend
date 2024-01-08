@@ -10,7 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-public class XlsxGenerator {
+public final class XlsxGenerator {
 
     private static final String SHEET_NAME = "Sheet1";
 
@@ -18,9 +18,8 @@ public class XlsxGenerator {
     }
 
     public static ByteArrayOutputStream createResource(List<String> headers, List<List<String>> data) {
-        final Workbook workbook = createWorkbook(headers, data);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
+        try (Workbook workbook = createWorkbook(headers, data)) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
             workbook.close();
             return out;

@@ -155,11 +155,11 @@ public class PagesGrantAdvertSummaryTestData {
 
     public static final AdvertDefinitionPage ADVERT_DEFINITION_SECTION_1_PAGE_2 = AdvertDefinitionPage.builder()
             .id(ADVERT_DEFINITION_SECTION_1_PAGE_2_ID).title(ADVERT_DEFINITION_SECTION_1_PAGE_2_TITLE)
-            .questions(Arrays.asList(ADVERT_DEFINITION_QUESTION_3)).build();
+            .questions(List.of(ADVERT_DEFINITION_QUESTION_3)).build();
 
     public static final AdvertDefinitionPage ADVERT_DEFINITION_SECTION_1_PAGE_3 = AdvertDefinitionPage.builder()
             .id(ADVERT_DEFINITION_SECTION_1_PAGE_3_ID).title(ADVERT_DEFINITION_SECTION_1_PAGE_3_TITLE)
-            .questions(Arrays.asList(ADVERT_DEFINITION_QUESTION_4)).build();
+            .questions(List.of(ADVERT_DEFINITION_QUESTION_4)).build();
 
     public static final AdvertDefinitionPage ADVERT_DEFINITION_SECTION_2_PAGE_1 = AdvertDefinitionPage.builder()
             .id(ADVERT_DEFINITION_SECTION_2_PAGE_1_ID).title(ADVERT_DEFINITION_SECTION_2_PAGE_1_TITLE).questions(Arrays
@@ -198,9 +198,9 @@ public class PagesGrantAdvertSummaryTestData {
         GrantAdvertPageResponse page1 = GrantAdvertPageResponse.builder().id(ADVERT_DEFINITION_SECTION_1_PAGE_1_ID)
                 .questions(Arrays.asList(question1, question2)).build();
         GrantAdvertPageResponse page2 = GrantAdvertPageResponse.builder().id(ADVERT_DEFINITION_SECTION_1_PAGE_2_ID)
-                .questions(Arrays.asList(question3)).build();
+                .questions(List.of(question3)).build();
         GrantAdvertPageResponse page3 = GrantAdvertPageResponse.builder().id(ADVERT_DEFINITION_SECTION_1_PAGE_3_ID)
-                .questions(Arrays.asList(question4)).build();
+                .questions(List.of(question4)).build();
         GrantAdvertPageResponse page4 = GrantAdvertPageResponse.builder().id(ADVERT_DEFINITION_SECTION_2_PAGE_1_ID)
                 .questions(Arrays.asList(question5, question6, question7)).build();
 
@@ -208,15 +208,13 @@ public class PagesGrantAdvertSummaryTestData {
                 .pages(Arrays.asList(page1, page2, page3)).build();
 
         GrantAdvertSectionResponse section2 = GrantAdvertSectionResponse.builder().id(ADVERT_DEFINITION_SECTION_2_ID)
-                .pages(Arrays.asList(page4)).build();
+                .pages(List.of(page4)).build();
 
         GrantAdvertResponse grantAdvertResponse = GrantAdvertResponse.builder()
                 .sections(Arrays.asList(section1, section2)).build();
 
-        GrantAdvert grantAdvert = GrantAdvert.builder().id(GRANT_ADVERT_ID).grantAdvertName(GRANT_ADVERT_NAME)
+        return GrantAdvert.builder().id(GRANT_ADVERT_ID).grantAdvertName(GRANT_ADVERT_NAME)
                 .response(grantAdvertResponse).status(GrantAdvertStatus.DRAFT).build();
-
-        return grantAdvert;
     }
 
     public static AdvertSummaryPageDTO buildGrantAdvertSummaryPageDtoWithoutMergedData() {
@@ -273,12 +271,12 @@ public class PagesGrantAdvertSummaryTestData {
         AdvertSummaryPageDTO.AdvertSummaryPageSectionPageDTO page2DTO = advertSummaryPageDTO.new AdvertSummaryPageSectionPageDTO();
         page2DTO.setId(ADVERT_DEFINITION_SECTION_1_PAGE_2_ID);
         page2DTO.setTitle(ADVERT_DEFINITION_SECTION_1_PAGE_2_TITLE);
-        page2DTO.setQuestions(Arrays.asList(questionDTO3));
+        page2DTO.setQuestions(List.of(questionDTO3));
 
         AdvertSummaryPageDTO.AdvertSummaryPageSectionPageDTO page3DTO = advertSummaryPageDTO.new AdvertSummaryPageSectionPageDTO();
         page3DTO.setId(ADVERT_DEFINITION_SECTION_1_PAGE_3_ID);
         page3DTO.setTitle(ADVERT_DEFINITION_SECTION_1_PAGE_3_TITLE);
-        page3DTO.setQuestions(Arrays.asList(questionDTO4));
+        page3DTO.setQuestions(List.of(questionDTO4));
 
         AdvertSummaryPageDTO.AdvertSummaryPageSectionPageDTO page4DTO = advertSummaryPageDTO.new AdvertSummaryPageSectionPageDTO();
         page4DTO.setId(ADVERT_DEFINITION_SECTION_2_PAGE_1_ID);
@@ -293,7 +291,7 @@ public class PagesGrantAdvertSummaryTestData {
         AdvertSummaryPageDTO.AdvertSummaryPageSectionDTO sectionDTO2 = advertSummaryPageDTO.new AdvertSummaryPageSectionDTO();
         sectionDTO2.setId(ADVERT_DEFINITION_SECTION_2_ID);
         sectionDTO2.setTitle(ADVERT_DEFINITION_SECTION_2_TITLE);
-        sectionDTO2.setPages(Arrays.asList(page4DTO));
+        sectionDTO2.setPages(List.of(page4DTO));
 
         advertSummaryPageDTO.setSections(Arrays.asList(sectionDTO1, sectionDTO2));
 
@@ -361,12 +359,12 @@ public class PagesGrantAdvertSummaryTestData {
         AdvertSummaryPageDTO.AdvertSummaryPageSectionPageDTO page2DTO = advertSummaryPageDTO.new AdvertSummaryPageSectionPageDTO();
         page2DTO.setId(ADVERT_DEFINITION_SECTION_1_PAGE_2_ID);
         page2DTO.setTitle(ADVERT_DEFINITION_SECTION_1_PAGE_2_TITLE);
-        page2DTO.setQuestions(Arrays.asList(questionDTO3));
+        page2DTO.setQuestions(List.of(questionDTO3));
 
         AdvertSummaryPageDTO.AdvertSummaryPageSectionPageDTO page3DTO = advertSummaryPageDTO.new AdvertSummaryPageSectionPageDTO();
         page3DTO.setId(ADVERT_DEFINITION_SECTION_1_PAGE_3_ID);
         page3DTO.setTitle(ADVERT_DEFINITION_SECTION_1_PAGE_3_TITLE);
-        page3DTO.setQuestions(Arrays.asList(questionDTO4));
+        page3DTO.setQuestions(List.of(questionDTO4));
 
         AdvertSummaryPageDTO.AdvertSummaryPageSectionPageDTO page4DTO = advertSummaryPageDTO.new AdvertSummaryPageSectionPageDTO();
         page4DTO.setId(ADVERT_DEFINITION_SECTION_2_PAGE_1_ID);
@@ -381,7 +379,7 @@ public class PagesGrantAdvertSummaryTestData {
         AdvertSummaryPageDTO.AdvertSummaryPageSectionDTO sectionDTO2 = advertSummaryPageDTO.new AdvertSummaryPageSectionDTO();
         sectionDTO2.setId(ADVERT_DEFINITION_SECTION_2_ID);
         sectionDTO2.setTitle(ADVERT_DEFINITION_SECTION_2_TITLE);
-        sectionDTO2.setPages(Arrays.asList(page4DTO));
+        sectionDTO2.setPages(List.of(page4DTO));
 
         advertSummaryPageDTO.setSections(Arrays.asList(sectionDTO1, sectionDTO2));
 

@@ -39,7 +39,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")

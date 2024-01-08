@@ -13,9 +13,9 @@ public class GrantExportService {
 
     private final GrantExportRepository exportRepository;
 
-    public Long getOutstandingExportCount(UUID ExportId) {
+    public Long getOutstandingExportCount(UUID exportId) {
 
-        return exportRepository.countByIdExportBatchIdAndStatusNot(ExportId, GrantExportStatus.COMPLETE);
+        return exportRepository.countByIdExportBatchIdAndStatusNot(exportId, GrantExportStatus.COMPLETE);
     }
 
 }

@@ -88,7 +88,6 @@ public class GrantAdvertController {
                 .status(patchAdvertPageResponse.getStatus()).questions(patchAdvertPageResponse.getQuestions()).build();
         GrantAdvertPageResponseValidationDto patchPageDto = GrantAdvertPageResponseValidationDto.builder()
                 .grantAdvertId(grantAdvertId).sectionId(sectionId).page(responseWithId).build();
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         // given we need sectionId to validate the Dto, we can't validate in the
         // controller method
         Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet = validator
@@ -103,6 +102,7 @@ public class GrantAdvertController {
         grantAdvertService.updatePageResponse(patchPageDto);
 
         try {
+            AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
             eventLogService.logAdvertUpdatedEvent(request.getRequestedSessionId(), session.getUserSub(),
                     session.getFunderId(), grantAdvertId.toString());
         }
@@ -183,12 +183,10 @@ public class GrantAdvertController {
         List<ValidationError> validationErrorsList = new ArrayList<>();
 
         // map questions, if question errors exist
-        patchAdvertPageResponse.getQuestions().forEach(questionResponse -> {
-            validationErrorsSet.stream()
-                    .filter(error -> error.getPropertyPath().toString().startsWith(questionResponse.getId()))
-                    .findFirst().ifPresent(violation -> validationErrorsList
-                            .add(new ValidationError(violation.getPropertyPath().toString(), violation.getMessage())));
-        });
+        patchAdvertPageResponse.getQuestions().forEach(questionResponse -> validationErrorsSet.stream()
+                .filter(error -> error.getPropertyPath().toString().startsWith(questionResponse.getId())).findFirst()
+                .ifPresent(violation -> validationErrorsList
+                        .add(new ValidationError(violation.getPropertyPath().toString(), violation.getMessage()))));
 
         // map page status, if it exists
         validationErrorsSet.stream().filter(error -> error.getPropertyPath().toString().equals("completed")).findFirst()

@@ -9,9 +9,9 @@ public enum GrantApplicantOrganisationType {
     UNREGISTERED_CHARITY("Unregistered charity"), OTHER("Other"), CHARITY("Charity"),
     INDIVIDUAL("I am applying as an Individual");
 
-    private String name;
+    private final String name;
 
-    private GrantApplicantOrganisationType(String name) {
+    GrantApplicantOrganisationType(String name) {
         this.name = name;
     }
 

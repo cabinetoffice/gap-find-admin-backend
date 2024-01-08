@@ -241,15 +241,15 @@ public class ApplicationFormService {
     }
 
     private QuestionAbstractPostDTO validatePostQuestion(ApplicationFormQuestionDTO questionPostDto) {
-        Set violationsSet;
-        QuestionAbstractPostDTO mappedQuestion;
-
         if (questionPostDto.getResponseType() == null) {
             throw new FieldViolationException("responseType", "Select a question type");
         }
 
         // check response type, map to the correct model, and validate
         // left as switch statement in the event of new question types
+        Set violationsSet;
+        QuestionAbstractPostDTO mappedQuestion;
+
         switch (questionPostDto.getResponseType()) {
             case MultipleSelection, Dropdown, SingleSelection -> {
                 mappedQuestion = this.applicationFormMapper.questionDtoToQuestionOptionsPost(questionPostDto);
@@ -339,7 +339,8 @@ public class ApplicationFormService {
             this.applicationFormRepository.save(application);
         }
         catch (Exception e) {
-            throw new ApplicationFormException("Error occured when patching appliction with id of " + applicationId, e);
+            throw new ApplicationFormException("Error occurred when patching application with id of " + applicationId,
+                    e);
         }
 
     }

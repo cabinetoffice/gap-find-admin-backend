@@ -38,9 +38,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
@@ -184,20 +181,21 @@ public class SubmissionsService {
                 .getGgisReference();
         String applicationName = applicationFormDTO.getApplicationName().replace(" ", "_").replaceAll("[^A-Za-z0-9_]",
                 "");
-        String dateString = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
+        String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(System.currentTimeMillis());
 
         return dateString + "_" + ggisReference + "_" + applicationName + ".xlsx";
     }
 
     public void triggerSubmissionsExport(Integer applicationId) {
-        UUID exportBatchId = UUID.randomUUID();
-        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
         List<Submission> submissions = submissionRepository.findByApplicationGrantApplicationIdAndStatus(applicationId,
                 SubmissionStatus.SUBMITTED);
 
         if (submissions.isEmpty()) {
             throw new NotFoundException("No submissions in SUBMITTED state for application " + applicationId);
         }
+
+        UUID exportBatchId = UUID.randomUUID();
+        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         // split the submissions into groups of 10, process in batches
         List<List<Submission>> partitionedSubmissions = Lists.partition(submissions,
@@ -326,7 +324,7 @@ public class SubmissionsService {
         requestHeaders.add("Authorization", authHeader);
         HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
         final ResponseEntity<UserV2DTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserV2DTO.class);
-        return user.getBody().emailAddress();
+        return Objects.requireNonNull(user.getBody()).emailAddress();
     }
 
     public void updateExportStatus(String submissionId, String batchExportId, GrantExportStatus status) {

@@ -27,9 +27,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Collections;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;

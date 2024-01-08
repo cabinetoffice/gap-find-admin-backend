@@ -6,6 +6,8 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @RequiredArgsConstructor
 @Service
@@ -14,8 +16,7 @@ public class FileService {
 
     public InputStreamResource createTemporaryFile(ByteArrayOutputStream stream, String filename) {
         try {
-            File tempFile = File.createTempFile(filename, ".xlsx");
-            try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile))) {
+            try (OutputStream out = Files.newOutputStream(Paths.get(filename + ".xlsx"))) {
                 stream.writeTo(out);
             }
             return new InputStreamResource(new ByteArrayInputStream(stream.toByteArray()));

@@ -74,7 +74,7 @@ class PagesAdvertServiceTest {
     }
 
     @Test
-    void buildSectionOverviewPageContent__IsPublishDisableFalse() throws Exception {
+    void buildSectionOverviewPageContent__IsPublishDisableFalse() {
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
         when(this.advertDefinition.getSections()).thenReturn(ADVERT_DEFINITION.getSections());
         when(this.grantAdvertService.getAdvertById(ADVERT_ID, false)).thenReturn(GRANT_ADVERT_SECTION_COMPLETED);
@@ -86,7 +86,7 @@ class PagesAdvertServiceTest {
     }
 
     @Test
-    void buildSectionOverviewPageContent__GrantAdvertGetByIdReturnEmpty() throws Exception {
+    void buildSectionOverviewPageContent__GrantAdvertGetByIdReturnEmpty() {
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
         when(this.advertDefinition.getSections()).thenReturn(ADVERT_DEFINITION.getSections());
         when(this.grantAdvertService.getAdvertById(ADVERT_ID, false))
@@ -99,7 +99,7 @@ class PagesAdvertServiceTest {
     }
 
     @Test
-    void buildSectionOverviewPageContent__BeanException() throws Exception {
+    void buildSectionOverviewPageContent__BeanException() {
         when(this.advertDefinition.getSections()).thenThrow(new BeanCreationException("error"));
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
         when(this.grantAdvertService.getAdvertById(ADVERT_ID, false)).thenReturn(GRANT_ADVERT);

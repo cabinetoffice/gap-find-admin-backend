@@ -21,7 +21,7 @@ Please describe the tests that you ran to verify your changes:
 
 - [ ] Integration Test (if applicable)
 
-- [ ] End to End Test (if applicable)
+- [ ] End-to-End Test (if applicable)
 
 ## Screenshots (if appropriate):
 
@@ -33,4 +33,4 @@ Please attach screenshots of the change if it is a UI change:
 - [ ] I have performed a self-review of my code.
 - [ ] I have commented my code in hard-to-understand areas.
 - [ ] I have made corresponding changes to the documentation where applicable.
-- [ ] I have ran cypress tests and they all pass locally.
+- [ ] I have run cypress tests, and they all pass locally.

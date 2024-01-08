@@ -98,7 +98,7 @@ public class Submission extends BaseEntity {
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
             return false;
         Submission that = (Submission) o;
-        return id != null && Objects.equals(id, that.id);
+        return id != null && id.equals(that.id);
     }
 
     @Override
