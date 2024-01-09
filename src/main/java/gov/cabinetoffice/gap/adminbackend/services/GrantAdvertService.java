@@ -41,16 +41,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.transaction.Transactional;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.ADVERT_DATES_SECTION_ID;
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.CLOSING_DATE_ID;
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.OPENING_DATE_ID;
+import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -89,10 +86,22 @@ public class GrantAdvertService {
                     "User " + grantAdminId + " is unable to access scheme with id " + scheme.getId());
         }
         final Integer version = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
-        final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme).createdBy(grantAdmin)
-                .created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
-                .status(GrantAdvertStatus.DRAFT).version(version).build();
-        return this.grantAdvertRepository.save(grantAdvert);
+        final boolean doesAdvertExist = grantAdvertRepository.findBySchemeId(grantSchemeId).isPresent();
+
+        if (!doesAdvertExist) {
+            final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme)
+                    .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
+                    .status(GrantAdvertStatus.DRAFT).version(version).build();
+            return this.grantAdvertRepository.save(grantAdvert);
+        }
+        else {
+            final GrantAdvert existingAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).get();
+            existingAdvert.setGrantAdvertName(name);
+            existingAdvert.setLastUpdatedBy(grantAdmin);
+            existingAdvert.setLastUpdated(Instant.now());
+            return this.grantAdvertRepository.save(existingAdvert);
+        }
+
     }
 
     /**

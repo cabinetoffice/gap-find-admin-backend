@@ -13,7 +13,10 @@ import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageRes
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
-import gov.cabinetoffice.gap.adminbackend.entities.*;
+import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus;
@@ -130,6 +133,46 @@ class GrantAdvertServiceTest {
 
                 GrantAdvert outputAdvert = grantAdvertService.create(grantSchemeId, grantAdminId, name);
 
+                assertThat(outputAdvert).isEqualTo(expectedAdvert);
+            }
+
+        }
+
+        @Test
+        void create_success_existing_advert() {
+            final String instantExpected = "2014-12-22T10:15:30Z";
+            final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
+            final Instant instant = Instant.now(clock);
+            final UUID id = UUID.randomUUID();
+            final int grantAdminId = 1;
+            final int grantSchemeId = 1;
+            final String name = "Test Grant Advert";
+            final String updatedName = "Test Grant Advert updated";
+            final GrantAdmin grantAdmin = GrantAdmin.builder().id(grantAdminId)
+                    .funder(FundingOrganisation.builder().id(1).build()).build();
+            final SchemeEntity grantScheme = SchemeEntity.builder().id(grantSchemeId).funderId(1).build();
+
+            try (MockedStatic<Instant> mockedStatic = mockStatic(Instant.class)) {
+                mockedStatic.when(Instant::now).thenReturn(instant);
+                final GrantAdvert expectedAdvert = GrantAdvert.builder().id(id).grantAdvertName(name)
+                        .scheme(grantScheme).createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin)
+                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).version(1).build();
+
+                when(grantAdminRepository.findById(grantAdminId)).thenReturn(Optional.of(grantAdmin));
+                when(schemeRepository.findById(grantSchemeId)).thenReturn(Optional.of(grantScheme));
+                when(featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(false);
+                when(grantAdvertRepository.save(any())).thenAnswer(i -> {
+                    GrantAdvert output = (GrantAdvert) i.getArguments()[0];
+                    output.setId(id);
+                    return output;
+
+                });
+                when(grantAdvertRepository.findBySchemeId(grantSchemeId))
+                        .thenReturn(Optional.ofNullable(expectedAdvert));
+
+                GrantAdvert outputAdvert = grantAdvertService.create(grantSchemeId, grantAdminId, name);
+
+                expectedAdvert.setGrantAdvertName(updatedName);
                 assertThat(outputAdvert).isEqualTo(expectedAdvert);
             }
 
