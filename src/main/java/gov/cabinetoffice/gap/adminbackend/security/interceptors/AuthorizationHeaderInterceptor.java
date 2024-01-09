@@ -6,13 +6,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 
@@ -82,7 +88,8 @@ public class AuthorizationHeaderInterceptor implements HandlerInterceptor {
 
             return new String(decryptedMessageBytes, StandardCharsets.UTF_8);
         }
-        catch (Exception e) {
+        catch (IllegalArgumentException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException
+                | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e) {
             log.info("Error decrypting authorization header from lambdas: " + e.getMessage());
             return "";
         }
