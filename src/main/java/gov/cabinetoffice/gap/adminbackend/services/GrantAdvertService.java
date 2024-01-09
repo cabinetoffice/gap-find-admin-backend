@@ -94,13 +94,11 @@ public class GrantAdvertService {
                     .status(GrantAdvertStatus.DRAFT).version(version).build();
             return this.grantAdvertRepository.save(grantAdvert);
         }
-        else {
-            final GrantAdvert existingAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).get();
-            existingAdvert.setGrantAdvertName(name);
-            existingAdvert.setLastUpdatedBy(grantAdmin);
-            existingAdvert.setLastUpdated(Instant.now());
-            return this.grantAdvertRepository.save(existingAdvert);
-        }
+        final GrantAdvert existingAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).get();
+        existingAdvert.setGrantAdvertName(name);
+        existingAdvert.setLastUpdatedBy(grantAdmin);
+        existingAdvert.setLastUpdated(Instant.now());
+        return this.grantAdvertRepository.save(existingAdvert);
 
     }
 
