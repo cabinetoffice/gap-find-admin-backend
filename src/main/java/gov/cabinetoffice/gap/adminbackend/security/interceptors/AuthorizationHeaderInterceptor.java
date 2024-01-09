@@ -67,11 +67,17 @@ public class AuthorizationHeaderInterceptor implements HandlerInterceptor {
 
     private boolean compareAuthorizationSecret(String authorizationHeader, String expectedAuthorizationValue,
             String privateKey) {
+
+        if (authorizationHeader == null || privateKey == null) {
+            return false;
+        }
+
         return decrypt(authorizationHeader, privateKey).equals(expectedAuthorizationValue);
 
     }
 
     private String decrypt(String encryptedText, String privateKeyString) {
+
         try {
 
             final byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyString);
