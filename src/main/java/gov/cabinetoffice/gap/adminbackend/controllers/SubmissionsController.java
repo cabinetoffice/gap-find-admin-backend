@@ -1,7 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
@@ -31,7 +32,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -54,6 +54,8 @@ public class SubmissionsController {
     private final S3Service s3Service;
 
     private final FileService fileService;
+
+    private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
 
     @GetMapping(value = "/spotlight-export/{applicationId}", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer applicationId) {
@@ -108,12 +110,10 @@ public class SubmissionsController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity getSubmissionInfo(final @PathVariable @NotNull UUID submissionId,
-            final @PathVariable @NotNull UUID batchExportId,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-
+            final @PathVariable @NotNull UUID batchExportId) {
         try {
             final LambdaSubmissionDefinition submission = submissionsService.getSubmissionInfo(submissionId,
-                    batchExportId, authHeader);
+                    batchExportId, lambdaSecretConfigProperties.getSecret());
             return ResponseEntity.ok(submission);
         }
         catch (NotFoundException e) {
