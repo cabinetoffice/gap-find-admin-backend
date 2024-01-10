@@ -1,7 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.annotations.SpotlightPublisherHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
+import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionDataBySchemeIdDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
@@ -62,7 +62,7 @@ public class SpotlightSubmissionController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(mediaType = "application/json")) })
-    @SpotlightPublisherHeaderValidator
+    @LambdasHeaderValidator
     public ResponseEntity<SpotlightSubmissionDto> getSpotlightSubmissionById(
             @PathVariable final UUID spotlightSubmissionId) {
 

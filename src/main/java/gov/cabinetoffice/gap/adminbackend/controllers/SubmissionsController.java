@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
+import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
@@ -8,9 +9,8 @@ import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
-import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
-import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import gov.cabinetoffice.gap.adminbackend.services.S3Service;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,11 +21,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.*;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.NotNull;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,8 +52,6 @@ public class SubmissionsController {
     private final SubmissionsService submissionsService;
 
     private final S3Service s3Service;
-
-    private final SecretAuthService secretAuthService;
 
     private final FileService fileService;
 
@@ -97,11 +106,10 @@ public class SubmissionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Unable to find batch or submission for this request",
                     content = @Content(mediaType = "application/json")) })
+    @LambdasHeaderValidator
     public ResponseEntity getSubmissionInfo(final @PathVariable @NotNull UUID submissionId,
             final @PathVariable @NotNull UUID batchExportId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-
-        secretAuthService.authenticateSecret(authHeader);
 
         try {
             final LambdaSubmissionDefinition submission = submissionsService.getSubmissionInfo(submissionId,
@@ -127,10 +135,9 @@ public class SubmissionsController {
     }
 
     @PostMapping("/{submissionId}/export-batch/{batchExportId}/status")
+    @LambdasHeaderValidator
     public ResponseEntity updateExportRecordStatus(@PathVariable String batchExportId,
-            @PathVariable String submissionId, @RequestBody GrantExportStatus newStatus,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-        secretAuthService.authenticateSecret(authHeader);
+            @PathVariable String submissionId, @RequestBody GrantExportStatus newStatus) {
         submissionsService.updateExportStatus(submissionId, batchExportId, newStatus);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -153,9 +160,9 @@ public class SubmissionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "500", description = "Something went wrong while updating S3 key",
                     content = @Content(mediaType = "application/json")) })
+    @LambdasHeaderValidator
     public ResponseEntity updateExportRecordLocation(@PathVariable UUID batchExportId, @PathVariable UUID submissionId,
-            @RequestBody S3ObjectKeyDTO s3ObjectKeyDTO, @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-        secretAuthService.authenticateSecret(authHeader);
+            @RequestBody S3ObjectKeyDTO s3ObjectKeyDTO) {
         submissionsService.addS3ObjectKeyToSubmissionExport(submissionId, batchExportId,
                 s3ObjectKeyDTO.getS3ObjectKey());
         return ResponseEntity.noContent().build();

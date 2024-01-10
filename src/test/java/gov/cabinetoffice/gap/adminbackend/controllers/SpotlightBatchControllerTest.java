@@ -1,6 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.config.SpotlightPublisherInterceptor;
+import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.GetSpotlightBatchErrorCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch.SpotlightBatchDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightBatch;
@@ -15,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,14 +28,20 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SpotlightBatchController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = { SpotlightBatchController.class, ControllerExceptionHandler.class,
-        SpotlightPublisherInterceptor.class })
+@ContextConfiguration(
+        classes = { SpotlightBatchController.class, ControllerExceptionHandler.class, LambdasInterceptor.class })
 public class SpotlightBatchControllerTest {
 
     private final String LAMBDA_AUTH_HEADER = "topSecretKey";
@@ -51,13 +58,14 @@ public class SpotlightBatchControllerTest {
     private SpotlightSubmissionService mockSpotlightSubmissionService;
 
     @MockBean
+    @Qualifier("spotlightPublisherLambdaInterceptor")
     private AuthorizationHeaderInterceptor mockAuthorizationHeaderInterceptor;
 
     @MockBean
     private ValidationErrorMapper mockValidationErrorMapper;
 
     @MockBean
-    private SpotlightPublisherInterceptor mockSpotlightPublisherInterceptor;
+    private LambdasInterceptor mockLambdasInterceptor;
 
     @MockBean
     private SpotlightBatchMapper mockSpotlightBatchMapper;

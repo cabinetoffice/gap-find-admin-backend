@@ -1,17 +1,19 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
-import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
@@ -23,8 +25,6 @@ public class GrantExportController {
 
     private final GrantExportService exportService;
 
-    private final SecretAuthService secretAuthService;
-
     @GetMapping("/{exportId}/outstandingCount")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Returned outstanding submission exports for batch",
@@ -32,9 +32,8 @@ public class GrantExportController {
                             schema = @Schema(implementation = OutstandingExportCountDTO.class))),
             @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getOutstandingExportsCount(@PathVariable UUID exportId,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-        secretAuthService.authenticateSecret(authHeader);
+    @LambdasHeaderValidator
+    public ResponseEntity getOutstandingExportsCount(@PathVariable UUID exportId) {
 
         Long count = exportService.getOutstandingExportCount(exportId);
 
