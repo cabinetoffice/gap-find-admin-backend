@@ -1,7 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
+import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
@@ -70,6 +71,9 @@ class SubmissionsControllerTest {
 
     @MockBean
     private SubmissionsService submissionsService;
+
+    @MockBean
+    private LambdaSecretConfigProperties mockLambdaSecretConfigProperties;
 
     @MockBean
     private S3Service s3Service;
@@ -213,6 +217,7 @@ class SubmissionsControllerTest {
         @Test
         void happyPath() throws Exception {
             final LambdaSubmissionDefinition lambdaSubmissionDefinition = LambdaSubmissionDefinition.builder().build();
+            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
             when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenReturn(lambdaSubmissionDefinition);
 
@@ -225,6 +230,7 @@ class SubmissionsControllerTest {
 
         @Test
         void unauthorisedPath() throws Exception {
+            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
             when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenThrow(new UnauthorizedException());
 
@@ -236,6 +242,7 @@ class SubmissionsControllerTest {
 
         @Test
         void resourceNotFoundPath() throws Exception {
+            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
             when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenThrow(new NotFoundException());
 
