@@ -1,0 +1,7 @@
+--CREATE TABLE IF NOT EXISTS feedback
+--(
+--    id uuid NOT NULL,
+--    satisfaction integer,
+--    feedback character varying(2048)
+--    CONSTRAINT feedback_key PRIMARY KEY (id)
+--);
