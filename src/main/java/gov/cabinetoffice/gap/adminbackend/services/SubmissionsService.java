@@ -4,6 +4,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.common.collect.Lists;
 import gov.cabinetoffice.gap.adminbackend.constants.AWSConstants;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
@@ -221,6 +222,19 @@ public class SubmissionsService {
                 });
     }
 
+    public void triggerSingleSubmissionExport(UUID submissionId) {
+       Optional<Submission> submission = submissionRepository.findByIdWithApplicant(submissionId);
+
+        if (submission.isEmpty()) throw new NotFoundException("No submission found with id " + submissionId);
+        Integer applicationId = submission.get().getApplication().getGrantApplicationId();
+        UUID exportBatchId = UUID.randomUUID();
+        GrantExportEntity exportEntity = mapExportToMessageRequest(applicationId, exportBatchId, submission.get());
+        grantExportRepository.save(exportEntity);
+        amazonSQS.sendMessage(singleExportMessageRequest(exportEntity));
+
+    }
+
+
     private List<GrantExportEntity> mapExportRecordListToBatchMessageRequest(Integer applicationId, UUID exportId,
             AdminSession adminSession, List<Submission> list) {
         return list.stream()
@@ -228,6 +242,38 @@ public class SubmissionsService {
                         .status(GrantExportStatus.REQUESTED).applicationId(applicationId)
                         .emailAddress(adminSession.getEmailAddress()).createdBy(adminSession.getGrantAdminId()).build())
                 .toList();
+    }
+
+    private GrantExportEntity mapExportToMessageRequest(Integer applicationid, UUID exportId, Submission submission) {
+        return GrantExportEntity.builder().id(new GrantExportId(exportId, UUID.fromString("497ec609-843d-474e-9758-520a7fc8a7f4")))
+                        .status(GrantExportStatus.REQUESTED).applicationId(24)
+                        .createdBy(1).emailAddress("testemailaddress")
+                        .build();
+    }
+
+    private SendMessageRequest singleExportMessageRequest(GrantExportEntity grantExportEntity) {
+        String randomUuid = UUID.randomUUID().toString();
+        return new SendMessageRequest(submissionsExportQueue, randomUuid)
+                .withMessageBody(randomUuid)
+                .withMessageDeduplicationId(randomUuid)
+                .withMessageGroupId(grantExportEntity.getId().getExportBatchId().toString())
+                .addMessageAttributesEntry("submissionId",
+                        new MessageAttributeValue().withDataType("String")
+                                .withStringValue(grantExportEntity.getId().getSubmissionId().toString()))
+                .addMessageAttributesEntry("exportBatchId",
+                        new MessageAttributeValue().withDataType("String")
+                                .withStringValue(grantExportEntity.getId().getExportBatchId().toString()))
+                .addMessageAttributesEntry("applicationId",
+                        new MessageAttributeValue().withDataType("Number")
+                                .withStringValue(grantExportEntity.getApplicationId().toString()))
+                .addMessageAttributesEntry("emailAddress",
+                        new MessageAttributeValue().withDataType("String")
+                                .withStringValue(grantExportEntity.getEmailAddress()))
+                .addMessageAttributesEntry("created",
+                        new MessageAttributeValue().withDataType("String")
+                                .withStringValue(grantExportEntity.getCreated().toString()))
+                .addMessageAttributesEntry("createdBy", new MessageAttributeValue().withDataType("String")
+                        .withStringValue(grantExportEntity.getCreatedBy().toString()));
     }
 
     private SendMessageBatchRequest mapExportRecordListToBatchMessageRequest(

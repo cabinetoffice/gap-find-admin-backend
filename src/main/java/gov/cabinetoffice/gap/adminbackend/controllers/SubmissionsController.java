@@ -92,6 +92,13 @@ public class SubmissionsController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/export/{submissionId}")
+    public ResponseEntity exportSubmissions(@PathVariable UUID submissionId) {
+        System.out.println("Exporting submission " + submissionId);
+        submissionsService.triggerSingleSubmissionExport(submissionId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/status/{applicationId}")
     public ResponseEntity getExportStatus(@PathVariable Integer applicationId) {
         final GrantExportStatus status = submissionsService.getExportStatus(applicationId);
