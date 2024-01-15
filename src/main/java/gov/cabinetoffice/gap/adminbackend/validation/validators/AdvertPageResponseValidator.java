@@ -318,16 +318,14 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
         // convert the string[] to int[], to easily build Calendars
         int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse())
-                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt)
-                .toArray();
+                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt).toArray();
         int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse())
-                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt)
-                .toArray();
+                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt).toArray();
 
         // build Calendar objs to compare
         Calendar openingDate = new Calendar.Builder()
-                .setDate(openingResponse[2], openingResponse[1],
-                        openingResponse[0]).setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
+                .setDate(openingResponse[2], openingResponse[1], openingResponse[0])
+                .setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
         Calendar closingDate = new Calendar.Builder()
                 .setDate(closingResponse[2], closingResponse[1], closingResponse[0])
                 .setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
@@ -349,10 +347,12 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             int hours = Integer.parseInt(parts[0]);
             int minutes = Integer.parseInt(parts[1]);
             return IntStream.of(hours, minutes);
-        } else {
+        }
+        else {
             return IntStream.of(Integer.parseInt(timeString));
         }
     }
+
     private SimpleEntry<String, String> getMandatoryFieldViolationMessage(
             AdvertDefinitionQuestionResponseType responseType, String questionId,
             AdvertDefinitionQuestionValidationMessages validationMessages) {

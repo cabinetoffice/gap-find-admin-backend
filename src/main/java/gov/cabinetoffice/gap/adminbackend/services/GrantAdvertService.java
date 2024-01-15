@@ -206,8 +206,8 @@ public class GrantAdvertService {
                 String[] multiResponse = question.getMultiResponse();
                 if (question.getId().equals(OPENING_DATE_ID)) {
                     String[] openingTime = multiResponse[3].split(":");
-                    String[] opening = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], openingTime[0],
-                            openingTime[1] };
+                    String[] opening = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
+                            openingTime[0], openingTime[1] };
                     pagePatchDto.getPage().getQuestions().get(0).setMultiResponse(opening);
                 }
                 else if (question.getId().equals(CLOSING_DATE_ID)) {
@@ -222,14 +222,10 @@ public class GrantAdvertService {
                         int incrementedMonth = incrementedDateTime.getMonthValue();
                         int incrementedYear = incrementedDateTime.getYear();
 
-                        closing = new String[] {
-                                String.format("%02d", incrementedDay),
-                                String.valueOf(incrementedMonth),
-                                String.valueOf(incrementedYear),
-                                "00",
-                                "00"
-                        };
-                    } else {
+                        closing = new String[] { String.format("%02d", incrementedDay),
+                                String.valueOf(incrementedMonth), String.valueOf(incrementedYear), "00", "00" };
+                    }
+                    else {
                         closing = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], closingTime[0],
                                 closingTime[1] };
                     }
