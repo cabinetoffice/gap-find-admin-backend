@@ -1,10 +1,10 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
 import lombok.*;
+import javax.persistence.Id;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.time.Instant;
 
 @Entity
 @Table(name = "feedback")
@@ -12,14 +12,21 @@ import javax.persistence.Table;
 @Setter
 @ToString
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 public class FeedbackEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer id;
 
     @Column(name = "satisfaction")
     private Integer satisfaction;
 
     @Column(name = "comment")
     private String comment;
+
+    @Column(name = "created")
+    private Instant created;
 
 }
