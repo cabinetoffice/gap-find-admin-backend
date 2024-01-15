@@ -13,14 +13,22 @@ import java.time.Instant;
 @Log4j2
 public class FeedbackService {
 
+    private static final int minimumSatisfaction = 1;
+    private static final int maximumSatisfaction = 5;
+
     private final FeedbackRepository feedbackRepository;
 
-    public void addFeedback(Integer satisfactionScore, String userComment) {
+    public void addFeedback(int satisfactionScore, String userComment) {
         try {
-            FeedbackEntity feedback = FeedbackEntity.builder().satisfaction(satisfactionScore).comment(userComment)
-                    .created(Instant.now()).build();
-
-            this.feedbackRepository.save(feedback);
+            // We need a valid satisfaction score or a non-empty user comment in order to save
+            if((minimumSatisfaction <= satisfactionScore && satisfactionScore <= maximumSatisfaction)
+            || (userComment  != null && !userComment.isEmpty())) {
+                FeedbackEntity feedback = FeedbackEntity.builder().satisfaction(satisfactionScore).comment(userComment)
+                        .created(Instant.now()).build();
+                this.feedbackRepository.save(feedback);
+            } else {
+                throw new Exception("No satisfaction score or valid comment found.");
+            }
         }
         catch (Exception e) {
             log.error("Failed to add feedback: {}", e.getMessage());
