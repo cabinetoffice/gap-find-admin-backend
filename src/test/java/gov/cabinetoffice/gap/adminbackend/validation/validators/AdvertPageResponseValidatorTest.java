@@ -873,8 +873,8 @@ class AdvertPageResponseValidatorTest {
     }
 
     private static Stream<Arguments> provideNonMatchingOpeningClosingDates() {
-        return Stream.of(Arguments.of(new String[] { "1", "1", "2023" }, new String[] { "31", "12", "2022" }),
-                Arguments.of(new String[] { "1", "1", "2022" }, new String[] { "1", "1", "2022" }));
+        return Stream.of(Arguments.of(new String[] { "1", "1", "2023", "12:00" }, new String[] { "31", "12", "2022", "12:00" }),
+                Arguments.of(new String[] { "1", "1", "2022", "00:54" }, new String[] { "1", "1", "2022", "18:43" }));
     }
 
     @ParameterizedTest
@@ -1015,8 +1015,8 @@ class AdvertPageResponseValidatorTest {
 
     @Test
     void validateDate_returnsTrue() {
-        String[] openingDate = new String[] { "1", "12", "2022" };
-        String[] closingDate = new String[] { "31", "12", "2022" };
+        String[] openingDate = new String[] { "1", "12", "2022", "19:18" };
+        String[] closingDate = new String[] { "31", "12", "2022", "14:18" };
         GrantAdvertPageResponseValidationDto response = GrantAdvertPageResponseValidationDto.builder()
                 .grantAdvertId(UUID.randomUUID()).sectionId(ADVERT_DATES_SECTION_ID)
                 .page(GrantAdvertPageResponse.builder().id(ADVERT_DATES_SECTION_ID)
