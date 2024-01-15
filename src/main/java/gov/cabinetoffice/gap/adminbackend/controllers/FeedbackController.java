@@ -26,8 +26,9 @@ public class FeedbackController {
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successfully added feedback"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to add feedback"),
             @ApiResponse(responseCode = "400", description = "Bad request") })
-    public ResponseEntity<String> addFeedback(@RequestParam final int satisfaction,
-            @RequestParam final String comment, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> addFeedback(
+            @RequestParam(required = false, defaultValue = "0") final Integer satisfaction,
+            @RequestParam(required = false) final String comment, @RequestHeader("Authorization") String token) {
 
         // TODO: Do we need to check the authorization of the user to add the feedback?
 
