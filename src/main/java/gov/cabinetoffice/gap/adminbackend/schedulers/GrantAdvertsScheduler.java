@@ -29,7 +29,7 @@ public class GrantAdvertsScheduler {
 
     private final GrantAdvertsSchedulerConfigProperties advertsSchedulerConfigProperties;
 
-    @Scheduled(cron = "${grant-adverts-scheduler.cronExpression:0 0 * * * ?}", zone = "UTC")
+    @Scheduled(cron = "${grant-adverts-scheduler.cronExpression:0 0 * * * ?}")
     @SchedulerLock(name = "grantAdverts_publishUnpublishScheduler",
             lockAtMostFor = "${grant-adverts-scheduler.lock.atMostFor:30m}",
             lockAtLeastFor = "${grant-adverts-scheduler.lock.atLeastFor:5m}")
