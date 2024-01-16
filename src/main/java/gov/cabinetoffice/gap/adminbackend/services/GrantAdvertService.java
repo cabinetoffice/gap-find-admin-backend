@@ -206,34 +206,35 @@ public class GrantAdvertService {
                 String[] multiResponse = question.getMultiResponse();
                 if (question.getId().equals(OPENING_DATE_ID)) {
                     String[] openingTime = multiResponse[3].split(":");
-                    String[] opening = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
+                    String[] openingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
                             openingTime[0], openingTime[1] };
-                    pagePatchDto.getPage().getQuestions().get(0).setMultiResponse(opening);
+                    pagePatchDto.getPage().getQuestions().get(0).setMultiResponse(openingDateTime);
                 }
                 else if (question.getId().equals(CLOSING_DATE_ID)) {
                     String[] closingTime = multiResponse[3].split(":");
-                    String[] closing;
+                    String[] closingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], closingTime[0],
+                            closingTime[1] };
 
                     if (multiResponse[3].equals("23:59")) {
-                        // increment date by 1 day and set time to 00:00
-                        LocalDateTime dateTime = convertToDateTime(multiResponse, closingTime);
-                        LocalDateTime incrementedDateTime = dateTime.plusDays(1);
-                        int incrementedDay = incrementedDateTime.getDayOfMonth();
-                        int incrementedMonth = incrementedDateTime.getMonthValue();
-                        int incrementedYear = incrementedDateTime.getYear();
-
-                        closing = new String[] { String.format("%02d", incrementedDay),
-                                String.valueOf(incrementedMonth), String.valueOf(incrementedYear), "00", "00" };
-                    }
-                    else {
-                        closing = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], closingTime[0],
-                                closingTime[1] };
+                        closingDateTime = adjustToMidnightNextDay(multiResponse, closingTime);
                     }
 
-                    pagePatchDto.getPage().getQuestions().get(1).setMultiResponse(closing);
+                    pagePatchDto.getPage().getQuestions().get(1).setMultiResponse(closingDateTime);
                 }
             });
         }
+    }
+
+    private String[] adjustToMidnightNextDay(String[] multiResponse, String[] closingTime) {
+        // increment date by 1 day and set time to 00:00
+        LocalDateTime dateTime = convertToDateTime(multiResponse, closingTime);
+        LocalDateTime incrementedDateTime = dateTime.plusDays(1);
+        int incrementedDay = incrementedDateTime.getDayOfMonth();
+        int incrementedMonth = incrementedDateTime.getMonthValue();
+        int incrementedYear = incrementedDateTime.getYear();
+
+        return new String[] { String.format("%02d", incrementedDay),
+                String.valueOf(incrementedMonth), String.valueOf(incrementedYear), "00", "00" };
     }
 
     private static LocalDateTime convertToDateTime(String[] date, String[] time) {
