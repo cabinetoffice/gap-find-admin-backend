@@ -43,6 +43,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.transaction.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -211,17 +212,46 @@ public class GrantAdvertService {
             pagePatchDto.getPage().getQuestions().forEach(question -> {
                 String[] multiResponse = question.getMultiResponse();
                 if (question.getId().equals(OPENING_DATE_ID)) {
-                    String[] opening = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], "00",
-                            "01" };
-                    pagePatchDto.getPage().getQuestions().get(0).setMultiResponse(opening);
+                    String[] openingTime = multiResponse[3].split(":");
+                    String[] openingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
+                            openingTime[0], openingTime[1] };
+                    pagePatchDto.getPage().getQuestions().get(0).setMultiResponse(openingDateTime);
                 }
                 else if (question.getId().equals(CLOSING_DATE_ID)) {
-                    String[] closing = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], "23",
-                            "59" };
-                    pagePatchDto.getPage().getQuestions().get(1).setMultiResponse(closing);
+                    String[] closingTime = multiResponse[3].split(":");
+                    String[] closingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
+                            closingTime[0], closingTime[1] };
+
+                    if (multiResponse[3].equals("23:59")) {
+                        closingDateTime = adjustToMidnightNextDay(multiResponse, closingTime);
+                    }
+
+                    pagePatchDto.getPage().getQuestions().get(1).setMultiResponse(closingDateTime);
                 }
             });
         }
+    }
+
+    private String[] adjustToMidnightNextDay(String[] multiResponse, String[] closingTime) {
+        // increment date by 1 day and set time to 00:00
+        LocalDateTime dateTime = convertToDateTime(multiResponse, closingTime);
+        LocalDateTime incrementedDateTime = dateTime.plusDays(1);
+        int incrementedDay = incrementedDateTime.getDayOfMonth();
+        int incrementedMonth = incrementedDateTime.getMonthValue();
+        int incrementedYear = incrementedDateTime.getYear();
+
+        return new String[] { String.format("%02d", incrementedDay), String.valueOf(incrementedMonth),
+                String.valueOf(incrementedYear), "00", "00" };
+    }
+
+    private static LocalDateTime convertToDateTime(String[] date, String[] time) {
+        int day = Integer.parseInt(date[0]);
+        int month = Integer.parseInt(date[1]);
+        int year = Integer.parseInt(date[2]);
+        int hour = Integer.parseInt(time[0]);
+        int minute = Integer.parseInt(time[1]);
+
+        return LocalDateTime.of(year, Month.of(month), day, hour, minute);
     }
 
     private void updateSectionStatus(GrantAdvertSectionResponse section) {

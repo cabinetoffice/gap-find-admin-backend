@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.validation.ConstraintValidator;
@@ -340,16 +341,18 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         }
 
         // convert the string[] to int[], to easily build Calendars
-        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
-                .toArray();
-        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
-                .toArray();
+        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse())
+                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt).toArray();
+        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse())
+                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt).toArray();
 
         // build Calendar objs to compare
         Calendar openingDate = new Calendar.Builder()
-                .setDate(openingResponse[2], openingResponse[1], openingResponse[0]).build();
+                .setDate(openingResponse[2], openingResponse[1], openingResponse[0])
+                .setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
         Calendar closingDate = new Calendar.Builder()
-                .setDate(closingResponse[2], closingResponse[1], closingResponse[0]).build();
+                .setDate(closingResponse[2], closingResponse[1], closingResponse[0])
+                .setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
 
         // c o m p a r e
         if (openingDate.compareTo(closingDate) >= 0) {
@@ -360,6 +363,16 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         if (result.getFieldErrors().isEmpty())
             result.setValid(Boolean.TRUE);
         return result;
+    }
+
+    private static IntStream parseTimeStringToInt(String timeString) {
+        if (timeString.contains(":")) {
+            String[] parts = timeString.split(":");
+            int hours = Integer.parseInt(parts[0]);
+            int minutes = Integer.parseInt(parts[1]);
+            return IntStream.of(hours, minutes);
+        }
+        return IntStream.of(Integer.parseInt(timeString));
     }
 
     private SimpleEntry<String, String> getMandatoryFieldViolationMessage(

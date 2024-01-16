@@ -642,14 +642,14 @@ class GrantAdvertServiceTest {
         @Test
         void updatePageResponse_DateQuestion() {
 
-            String[] openingMultiResponse = new String[] { "10", "10", "2010" };
+            String[] openingMultiResponse = new String[] { "10", "10", "2010", "13:00" };
             GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder().id(OPENING_DATE_ID)
                     .multiResponse(openingMultiResponse).build();
-            String[] closingMultiResponse = new String[] { "12", "12", "2012" };
+            String[] closingMultiResponse = new String[] { "12", "12", "2012", "13:00" };
             GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder().id(CLOSING_DATE_ID)
                     .multiResponse(closingMultiResponse).build();
-            String[] expectedOpeningMultiResponse = new String[] { "10", "10", "2010", "00", "01" };
-            String[] expectedClosingMultiResponse = new String[] { "12", "12", "2012", "23", "59" };
+            String[] expectedOpeningMultiResponse = new String[] { "10", "10", "2010", "13", "00" };
+            String[] expectedClosingMultiResponse = new String[] { "12", "12", "2012", "13", "00" };
 
             GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder().id(pageId)
                     .status(GrantAdvertPageResponseStatus.COMPLETED)
