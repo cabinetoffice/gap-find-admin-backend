@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ApplicationFormController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(classes = { FeedbackController.class })
+@WithAdminSession
 public class FeedbackControllerTest {
 
     @Autowired
@@ -27,10 +28,34 @@ public class FeedbackControllerTest {
     private FeedbackService feedbackService;
 
     @Test
-    @WithAdminSession
     void submitFeedback() throws Exception {
+        this.mockMvc
+                .perform(post("/feedback/add").param("comment", "test").param("satisfaction", "1")
+                        .header(HttpHeaders.AUTHORIZATION, "JWT"))
+                .andExpect(status().isOk()).andExpect(content().string("")).andReturn();
+    }
+
+    @Test
+    void submitScoreOnly() throws Exception {
+        this.mockMvc.perform(post("/feedback/add").param("satisfaction", "3").header(HttpHeaders.AUTHORIZATION, "JWT"))
+                .andExpect(status().isOk()).andExpect(content().string("")).andReturn();
+    }
+
+    @Test
+    void submitCommentOnly() throws Exception {
         this.mockMvc.perform(post("/feedback/add").param("comment", "test").header(HttpHeaders.AUTHORIZATION, "JWT"))
                 .andExpect(status().isOk()).andExpect(content().string("")).andReturn();
+    }
+
+    @Test
+    void submitNothing() throws Exception {
+        this.mockMvc.perform(post("/feedback/add").header(HttpHeaders.AUTHORIZATION, "JWT"))
+                .andExpect(status().isBadRequest()).andReturn();
+    }
+
+    @Test
+    void submitFeedbackAdminJourney() throws Exception {
+
     }
 
 }

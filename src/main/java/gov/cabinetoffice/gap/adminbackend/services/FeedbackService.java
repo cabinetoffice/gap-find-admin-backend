@@ -19,18 +19,11 @@ public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
 
-    public void addFeedback(int satisfactionScore, String userComment) {
+    public void addFeedback(int satisfactionScore, String userComment, String userJourney) {
         try {
-            // We need a valid satisfaction score or a user comment to save
-            if ((minimumSatisfaction <= satisfactionScore && satisfactionScore <= maximumSatisfaction)
-                    || (userComment != null && !userComment.isEmpty())) {
-                FeedbackEntity feedback = FeedbackEntity.builder().satisfaction(satisfactionScore).comment(userComment)
-                        .created(Instant.now()).build();
-                this.feedbackRepository.save(feedback);
-            }
-            else {
-                throw new Exception("No satisfaction score or valid comment found.");
-            }
+            FeedbackEntity feedback = FeedbackEntity.builder().satisfaction(satisfactionScore).comment(userComment)
+                    .journey(userJourney).created(Instant.now()).build();
+            this.feedbackRepository.save(feedback);
         }
         catch (Exception e) {
             log.error("Failed to add feedback: {}", e.getMessage());

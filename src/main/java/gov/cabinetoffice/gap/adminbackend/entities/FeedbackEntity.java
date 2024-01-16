@@ -29,4 +29,7 @@ public class FeedbackEntity {
     @Column(name = "created")
     private Instant created;
 
+    @Column(name = "journey")
+    private String journey;
+
 }

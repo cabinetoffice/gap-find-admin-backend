@@ -8,9 +8,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import javax.validation.constraints.NotNull;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @Tag(name = "Feedback")
@@ -28,13 +29,16 @@ public class FeedbackController {
             @ApiResponse(responseCode = "400", description = "Bad request") })
     public ResponseEntity<String> addFeedback(
             @RequestParam(required = false, defaultValue = "0") final Integer satisfaction,
-            @RequestParam(required = false) final String comment, @RequestHeader("Authorization") String token) {
+            @RequestParam(required = false, defaultValue = "") final String comment,
+            @RequestParam final String journey) {
 
-        // TODO: Do we need to check the authorization of the user to add the feedback?
-
-        feedbackService.addFeedback(satisfaction, comment);
-
-        return ResponseEntity.ok().build();
+        if (satisfaction != 0 || !comment.equals("")) {
+            feedbackService.addFeedback(satisfaction, comment, journey);
+            return ResponseEntity.ok().build();
+        }
+        else {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
 }
