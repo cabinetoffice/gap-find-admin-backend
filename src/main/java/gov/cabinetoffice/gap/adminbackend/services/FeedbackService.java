@@ -13,10 +13,6 @@ import java.time.Instant;
 @Log4j2
 public class FeedbackService {
 
-    private static final int minimumSatisfaction = 1;
-
-    private static final int maximumSatisfaction = 5;
-
     private final FeedbackRepository feedbackRepository;
 
     public void addFeedback(int satisfactionScore, String userComment, String userJourney) {
