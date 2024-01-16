@@ -6,16 +6,16 @@ SELECT GRANT_ADVERT_ID AS ID,
     CASE
         WHEN
             STATUS = 'SCHEDULED'
-            AND (OPENING_DATE AT TIME ZONE 'Europe/London') <= (NOW() AT TIME ZONE 'Europe/London')
+            AND (OPENING_DATE AT TIME ZONE 'Europe/London') <= NOW()
         THEN 'PUBLISH'
         WHEN
             STATUS = 'PUBLISHED'
-            AND (CLOSING_DATE AT TIME ZONE 'Europe/London') <= ((NOW() AT TIME ZONE 'Europe/London'))
+            AND (CLOSING_DATE AT TIME ZONE 'Europe/London') <= NOW()
         THEN 'UNPUBLISH'
     END AS ACTION
 FROM GRANT_ADVERT
 WHERE (
-    STATUS = 'SCHEDULED' AND (OPENING_DATE AT TIME ZONE 'Europe/London') <= (NOW() AT TIME ZONE 'Europe/London')
+    STATUS = 'SCHEDULED' AND (OPENING_DATE AT TIME ZONE 'Europe/London') <= NOW()
 ) OR (
-    STATUS = 'PUBLISHED' AND (CLOSING_DATE AT TIME ZONE 'Europe/London') <= ((NOW() AT TIME ZONE 'Europe/London'))
+    STATUS = 'PUBLISHED' AND (CLOSING_DATE AT TIME ZONE 'Europe/London') <= NOW()
 );
