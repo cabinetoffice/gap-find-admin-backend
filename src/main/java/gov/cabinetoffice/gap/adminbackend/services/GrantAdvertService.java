@@ -241,7 +241,7 @@ public class GrantAdvertService {
         int month = Integer.parseInt(date[1]);
         int year = Integer.parseInt(date[2]);
         int hour = Integer.parseInt(time[0]);
-        int minute = Integer.parseInt(date[1]);
+        int minute = Integer.parseInt(time[1]);
 
         return LocalDateTime.of(year, Month.of(month), day, hour, minute);
     }
