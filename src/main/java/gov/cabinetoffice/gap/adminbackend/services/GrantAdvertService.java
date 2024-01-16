@@ -212,8 +212,8 @@ public class GrantAdvertService {
                 }
                 else if (question.getId().equals(CLOSING_DATE_ID)) {
                     String[] closingTime = multiResponse[3].split(":");
-                    String[] closingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], closingTime[0],
-                            closingTime[1] };
+                    String[] closingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
+                            closingTime[0], closingTime[1] };
 
                     if (multiResponse[3].equals("23:59")) {
                         closingDateTime = adjustToMidnightNextDay(multiResponse, closingTime);
@@ -233,8 +233,8 @@ public class GrantAdvertService {
         int incrementedMonth = incrementedDateTime.getMonthValue();
         int incrementedYear = incrementedDateTime.getYear();
 
-        return new String[] { String.format("%02d", incrementedDay),
-                String.valueOf(incrementedMonth), String.valueOf(incrementedYear), "00", "00" };
+        return new String[] { String.format("%02d", incrementedDay), String.valueOf(incrementedMonth),
+                String.valueOf(incrementedYear), "00", "00" };
     }
 
     private static LocalDateTime convertToDateTime(String[] date, String[] time) {

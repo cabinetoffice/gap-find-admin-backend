@@ -348,7 +348,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             int minutes = Integer.parseInt(parts[1]);
             return IntStream.of(hours, minutes);
         }
-            return IntStream.of(Integer.parseInt(timeString));
+        return IntStream.of(Integer.parseInt(timeString));
     }
 
     private SimpleEntry<String, String> getMandatoryFieldViolationMessage(
