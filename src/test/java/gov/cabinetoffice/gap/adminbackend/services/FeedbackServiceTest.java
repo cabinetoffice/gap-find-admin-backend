@@ -43,13 +43,14 @@ public class FeedbackServiceTest {
     public static final FeedbackEntity FEEDBACK_ENTITY = new FeedbackEntity(null, 5, SAMPLE_COMMENT, SAMPLE_CREATED,
             DEFAULT_JOURNEY);
 
-    public static final FeedbackEntity APPLICATION_JOURNEY_ENTITY = new FeedbackEntity(null, 5, SAMPLE_COMMENT, SAMPLE_CREATED,
-            APPLICATION_JOURNEY);
+    public static final FeedbackEntity APPLICATION_JOURNEY_ENTITY = new FeedbackEntity(null, 5, SAMPLE_COMMENT,
+            SAMPLE_CREATED, APPLICATION_JOURNEY);
 
-    public static final FeedbackEntity OUTWITH_LIMIT_ENTITY = new FeedbackEntity(null, 9, SAMPLE_COMMENT, SAMPLE_CREATED,
+    public static final FeedbackEntity OUTWITH_LIMIT_ENTITY = new FeedbackEntity(null, 9, SAMPLE_COMMENT,
+            SAMPLE_CREATED, DEFAULT_JOURNEY);
+
+    public static final FeedbackEntity EMPTY_COMMENT_ENTITY = new FeedbackEntity(null, 0, "", SAMPLE_CREATED,
             DEFAULT_JOURNEY);
-
-    public static final FeedbackEntity EMPTY_COMMENT_ENTITY = new FeedbackEntity(null, 0, "", SAMPLE_CREATED, DEFAULT_JOURNEY);
 
     @Mock
     private FeedbackRepository feedbackRepository;
@@ -110,4 +111,5 @@ public class FeedbackServiceTest {
             verify(this.feedbackRepository).save(APPLICATION_JOURNEY_ENTITY);
         }
     }
+
 }
