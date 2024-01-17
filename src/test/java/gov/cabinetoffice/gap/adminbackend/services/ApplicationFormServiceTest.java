@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -73,9 +72,6 @@ import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomAppli
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
@@ -328,7 +324,7 @@ class ApplicationFormServiceTest {
         }
 
         @Test
-        void deleteApplicationForminsufficientPermissionsToDeleteThisApplication() {
+        void deleteApplicationFormInsufficientPermissionsToDeleteThisApplication() {
             ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
@@ -810,7 +806,7 @@ class ApplicationFormServiceTest {
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
                     .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
                             .isInstanceOf(ApplicationFormException.class)
-                            .hasMessage("Error occured when patching appliction with id of " + applicationId);
+                            .hasMessage("Error occurred when patching application with id of " + applicationId);
         }
 
         @Test

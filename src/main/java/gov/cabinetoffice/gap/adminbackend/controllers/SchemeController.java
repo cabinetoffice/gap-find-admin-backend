@@ -39,7 +39,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
@@ -70,18 +69,28 @@ public class SchemeController {
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity<SchemeDTO> getSchemeById(@PathVariable final Integer schemeId) {
+        log.info("Getting scheme with id " + schemeId + " from database");
+
         SchemeDTO scheme = null;
         try {
             scheme = this.schemeService.getSchemeBySchemeId(schemeId);
+
+            log.info("Found scheme with id " + schemeId + " from database");
+
             return ResponseEntity.ok(scheme);
         }
         catch (EntityNotFoundException enfe) {
+            log.info("No scheme found with id " + schemeId + " from database");
+
             return ResponseEntity.notFound().build();
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            log.info("User does not have permissions to access scheme with id " + schemeId + " from database");
+
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         catch (IllegalArgumentException iae) {
+
             return ResponseEntity.badRequest().build();
         }
     }
@@ -124,7 +133,7 @@ public class SchemeController {
             return ResponseEntity.notFound().build();
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();
@@ -149,7 +158,7 @@ public class SchemeController {
             return ResponseEntity.notFound().build();
         }
         catch (AccessDeniedException ade) {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();
@@ -226,6 +235,9 @@ public class SchemeController {
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity<Boolean> hasInternalApplicationForm(@PathVariable final Integer schemeId) {
+
+        log.info("Checking if scheme " + schemeId + " has an internal application form");
+
         try {
             this.schemeService.getSchemeBySchemeId(schemeId);
         }
@@ -233,11 +245,17 @@ public class SchemeController {
             return ResponseEntity.notFound().build();
         }
 
-        Optional<ApplicationFormEntity> optionalApplication = this.applicationFormService
+        final Optional<ApplicationFormEntity> optionalApplication = this.applicationFormService
                 .getOptionalApplicationFromSchemeId(schemeId);
+
         if (optionalApplication.isEmpty()) {
+            log.info("Scheme " + schemeId + " does not have an internal application form");
+
             return ResponseEntity.ok(false);
         }
+
+        log.info("Scheme " + schemeId + " has an internal application form");
+
         return ResponseEntity.ok(true);
     }
 

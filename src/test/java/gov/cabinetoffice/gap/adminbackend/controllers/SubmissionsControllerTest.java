@@ -1,5 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
@@ -9,13 +12,18 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
-import gov.cabinetoffice.gap.adminbackend.services.*;
+import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
+import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
+import gov.cabinetoffice.gap.adminbackend.services.FileService;
+import gov.cabinetoffice.gap.adminbackend.services.S3Service;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGenerator;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,17 +43,27 @@ import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SubmissionsController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = { SubmissionsController.class, ControllerExceptionHandler.class })
+@ContextConfiguration(
+        classes = { SubmissionsController.class, ControllerExceptionHandler.class, LambdasInterceptor.class })
 class SubmissionsControllerTest {
 
     @Autowired
@@ -53,6 +71,9 @@ class SubmissionsControllerTest {
 
     @MockBean
     private SubmissionsService submissionsService;
+
+    @MockBean
+    private LambdaSecretConfigProperties mockLambdaSecretConfigProperties;
 
     @MockBean
     private S3Service s3Service;
@@ -64,10 +85,14 @@ class SubmissionsControllerTest {
     private SchemeService schemeService;
 
     @MockBean
-    private SecretAuthService secretAuthService;
+    private FileService fileService;
 
     @MockBean
-    private FileService fileService;
+    @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
+    private AuthorizationHeaderInterceptor mockAuthorizationHeaderInterceptor;
+
+    @MockBean
+    private LambdasInterceptor mockLambdasInterceptor;
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
@@ -82,23 +107,28 @@ class SubmissionsControllerTest {
 
         @Test
         void exportSpotlightChecksHappyPathTest() throws Exception {
-            doReturn("test_file_name").when(submissionsService).generateExportFileName(1);
-            final byte[] data = exampleFile.getInputStream().readAllBytes();
-            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(data);
-            final InputStreamResource inputStream = new InputStreamResource(
-                    new ByteArrayInputStream(outputStream.toByteArray()));
+            final ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOut = new ZipOutputStream(zipStream)) {
+                final ZipEntry entry = new ZipEntry("mock_excel_file.xlsx");
+                zipOut.putNextEntry(entry);
+                zipOut.write("Mock Excel File Content".getBytes());
+                zipOut.closeEntry();
+            }
 
-            when(fileService.createTemporaryFile(outputStream, "test_file_name")).thenReturn(inputStream);
-            when(submissionsService.exportSpotlightChecks(1)).thenReturn(outputStream);
+            when(fileService.createTemporaryFile(zipStream, SpotlightExports.REQUIRED_CHECKS_FILENAME))
+                    .thenReturn(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray()))
+
+                    );
+            when(submissionsService.exportSpotlightChecks(1)).thenReturn(zipStream);
             doNothing().when(submissionsService).updateSubmissionLastRequiredChecksExport(1);
 
             mockMvc.perform(get("/submissions/spotlight-export/" + 1)).andExpect(status().isOk())
-                    .andExpect(
-                            header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_file_name\""))
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"required_checks.zip\""))
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, EXPORT_CONTENT_TYPE))
-                    .andExpect(header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(data.length)))
-                    .andExpect(content().bytes(data));
+                    .andExpect(
+                            header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipStream.toByteArray().length)))
+                    .andExpect(content().bytes(zipStream.toByteArray()));
         }
 
         @Test
@@ -130,7 +160,7 @@ class SubmissionsControllerTest {
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(data);
             when(submissionsService.exportSpotlightChecks(1)).thenReturn(outputStream);
-            when(submissionsService.generateExportFileName(1)).thenReturn("test_file_name");
+            when(submissionsService.generateExportFileName(1, 1)).thenReturn("test_file_name");
             doThrow(new RuntimeException("forced service error")).when(submissionsService)
                     .updateSubmissionLastRequiredChecksExport(1);
 
@@ -184,14 +214,10 @@ class SubmissionsControllerTest {
     @Nested
     class getSubmissionInfo {
 
-        @BeforeEach
-        void beforeEach() {
-            doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
-        }
-
         @Test
         void happyPath() throws Exception {
             final LambdaSubmissionDefinition lambdaSubmissionDefinition = LambdaSubmissionDefinition.builder().build();
+            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
             when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenReturn(lambdaSubmissionDefinition);
 
@@ -204,6 +230,7 @@ class SubmissionsControllerTest {
 
         @Test
         void unauthorisedPath() throws Exception {
+            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
             when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenThrow(new UnauthorizedException());
 
@@ -215,6 +242,7 @@ class SubmissionsControllerTest {
 
         @Test
         void resourceNotFoundPath() throws Exception {
+            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
             when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
                     .thenThrow(new NotFoundException());
 
@@ -295,8 +323,6 @@ class SubmissionsControllerTest {
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(mockRequest))
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isNoContent()).andReturn();
-
-            System.out.println(res);
         }
 
     }
@@ -325,11 +351,6 @@ class SubmissionsControllerTest {
 
     @Nested
     class updateExportRecordLocation {
-
-        @BeforeEach
-        void beforeEach() {
-            doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
-        }
 
         @Test
         void updateExportRecordLocation_BadRequest_PathVariables() throws Exception {

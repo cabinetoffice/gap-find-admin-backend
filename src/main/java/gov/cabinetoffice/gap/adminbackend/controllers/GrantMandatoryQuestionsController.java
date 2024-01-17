@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayOutputStream;
@@ -27,31 +28,31 @@ import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsControll
 @RequiredArgsConstructor
 public class GrantMandatoryQuestionsController {
 
-    final private GrantMandatoryQuestionService grantMandatoryQuestionService;
+    private final GrantMandatoryQuestionService grantMandatoryQuestionService;
 
-    final private FileService fileService;
+    private final FileService fileService;
 
-    @GetMapping("/scheme/{schemeId}/complete")
-    public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId) {
-        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedMandatoryQuestions(schemeId));
+    @GetMapping("/scheme/{schemeId}/is-completed")
+    public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId,
+            @RequestParam boolean isInternal) {
+        log.info("Checking if mandatory questions are completed for scheme " + schemeId);
+
+        final Boolean hasCompletedMandatoryQuestions = grantMandatoryQuestionService
+                .hasCompletedMandatoryQuestions(schemeId, isInternal);
+
+        log.info("Mandatory questions are completed for scheme " + schemeId + "? : " + hasCompletedMandatoryQuestions);
+
+        return ResponseEntity.ok(hasCompletedMandatoryQuestions);
     }
 
-    @GetMapping("/scheme/{schemeId}/spotlight-complete")
-    public ResponseEntity<Boolean> hasCompletedMandatoryQuestionsForSpotlightExport(@PathVariable Integer schemeId) {
-        return ResponseEntity.ok(grantMandatoryQuestionService.hasCompletedDataForSpotlight(schemeId));
-    }
+    @GetMapping(value = "/scheme/{schemeId}/due-diligence", produces = EXPORT_CONTENT_TYPE)
+    public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId,
+            @RequestParam boolean isInternal) {
+        final String logMessage = isInternal ? "internal" : "external";
+        log.info("Exporting all due diligence data for {} scheme with id {}", logMessage, schemeId);
 
-    @GetMapping(value = "/due-diligence/{schemeId}", produces = EXPORT_CONTENT_TYPE)
-    public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId) {
-        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId);
+        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId, isInternal);
         final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId, null);
-        return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
-    }
-
-    @GetMapping(value = "/spotlight-export/{schemeId}", produces = EXPORT_CONTENT_TYPE)
-    public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer schemeId) {
-        final ByteArrayOutputStream stream = grantMandatoryQuestionService.getSpotlightChecks(schemeId);
-        final String exportFileName = "spotlight_checks.zip";
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
     }
 

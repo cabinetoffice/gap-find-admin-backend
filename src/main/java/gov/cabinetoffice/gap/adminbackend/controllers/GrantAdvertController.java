@@ -1,8 +1,14 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.contentful.java.cma.model.CMAHttpException;
+import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPagePatchResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -10,7 +16,6 @@ import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertPageResponse;
 import gov.cabinetoffice.gap.adminbackend.models.ValidationError;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
-import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,9 +25,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolation;
@@ -49,8 +61,6 @@ public class GrantAdvertController {
     private final EventLogService eventLogService;
 
     private final Validator validator;
-
-    private final SecretAuthService secretAuthService;
 
     @PostMapping("/create")
     public ResponseEntity<CreateGrantAdvertResponseDto> create(HttpServletRequest request,
@@ -79,7 +89,8 @@ public class GrantAdvertController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @PatchMapping("/{grantAdvertId}/sections/{sectionId}/pages/{pageId}")
+    @PatchMapping(value = "/{grantAdvertId}/sections/{sectionId}/pages/{pageId}", consumes = "application/json",
+            produces = "application/json")
     public ResponseEntity updatePage(HttpServletRequest request, @PathVariable UUID grantAdvertId,
             @PathVariable String sectionId, @PathVariable String pageId,
             @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
@@ -87,7 +98,6 @@ public class GrantAdvertController {
                 .status(patchAdvertPageResponse.getStatus()).questions(patchAdvertPageResponse.getQuestions()).build();
         GrantAdvertPageResponseValidationDto patchPageDto = GrantAdvertPageResponseValidationDto.builder()
                 .grantAdvertId(grantAdvertId).sectionId(sectionId).page(responseWithId).build();
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         // given we need sectionId to validate the Dto, we can't validate in the
         // controller method
         Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet = validator
@@ -102,6 +112,7 @@ public class GrantAdvertController {
         grantAdvertService.updatePageResponse(patchPageDto);
 
         try {
+            AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
             eventLogService.logAdvertUpdatedEvent(request.getRequestedSessionId(), session.getUserSub(),
                     session.getFunderId(), grantAdvertId.toString());
         }
@@ -182,12 +193,10 @@ public class GrantAdvertController {
         List<ValidationError> validationErrorsList = new ArrayList<>();
 
         // map questions, if question errors exist
-        patchAdvertPageResponse.getQuestions().forEach(questionResponse -> {
-            validationErrorsSet.stream()
-                    .filter(error -> error.getPropertyPath().toString().startsWith(questionResponse.getId()))
-                    .findFirst().ifPresent(violation -> validationErrorsList
-                            .add(new ValidationError(violation.getPropertyPath().toString(), violation.getMessage())));
-        });
+        patchAdvertPageResponse.getQuestions().forEach(questionResponse -> validationErrorsSet.stream()
+                .filter(error -> error.getPropertyPath().toString().startsWith(questionResponse.getId())).findFirst()
+                .ifPresent(violation -> validationErrorsList
+                        .add(new ValidationError(violation.getPropertyPath().toString(), violation.getMessage()))));
 
         // map page status, if it exists
         validationErrorsSet.stream().filter(error -> error.getPropertyPath().toString().equals("completed")).findFirst()
@@ -217,9 +226,9 @@ public class GrantAdvertController {
     }
 
     @PostMapping("/lambda/{grantAdvertId}/publish")
-    public ResponseEntity publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId,
-            final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-        secretAuthService.authenticateSecret(authHeader);
+    @LambdasHeaderValidator
+    public ResponseEntity publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId) {
+
         try {
             grantAdvertService.publishAdvert(grantAdvertId, true);
         }
@@ -265,9 +274,9 @@ public class GrantAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401", description = "No credentials or invalid credentials provided",
                     content = @Content(mediaType = "application/json")), })
-    public ResponseEntity unpublishGrantAdvert(final @PathVariable UUID grantAdvertId,
-            final @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
-        secretAuthService.authenticateSecret(authHeader);
+    @LambdasHeaderValidator
+    public ResponseEntity unpublishGrantAdvertForLambda(final @PathVariable UUID grantAdvertId) {
+
         grantAdvertService.unpublishAdvert(grantAdvertId, true);
         return ResponseEntity.ok().build();
     }

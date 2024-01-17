@@ -8,9 +8,9 @@ public enum GrantMandatoryQuestionOrgType {
     REGISTERED_CHARITY("Registered charity"), UNREGISTERED_CHARITY("Unregistered charity"), CHARITY("Charity"),
     INDIVIDUAL("I am applying as an Individual"), OTHER("Other"), SOLE_TRADER("Sole Trader");
 
-    private String name;
+    private final String name;
 
-    private GrantMandatoryQuestionOrgType(String name) {
+    GrantMandatoryQuestionOrgType(String name) {
         this.name = name;
     }
 

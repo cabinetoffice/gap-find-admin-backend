@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.spotlightBatch;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +17,8 @@ public class GetSpotlightBatchErrorCountDTO {
     private int errorCount;
 
     private boolean errorFound;
+
+    @JsonProperty("isValidationErrorPresent")
+    private boolean isValidationErrorPresent;
 
 }

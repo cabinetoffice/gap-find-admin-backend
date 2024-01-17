@@ -1,0 +1,1 @@
+ALTER TABLE grant_submission ADD mandatory_sections_completed boolean DEFAULT false;

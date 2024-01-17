@@ -62,10 +62,11 @@ public class UserController {
             return ResponseEntity.ok(Boolean.FALSE);
         }
 
-        AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
         if (!oneLoginEnabled) {
             return ResponseEntity.ok(Boolean.TRUE);
         }
+
+        AdminSession adminSession = ((AdminSession) authentication.getPrincipal());
         String emailAddress = adminSession.getEmailAddress();
         String roles = adminSession.getRoles();
 
@@ -136,13 +137,12 @@ public class UserController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity checkNewAdminEmailIsValid(
             @RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
-        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-
         if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
             throw new FieldViolationException("emailAddress", "This user already owns this grant.");
         }
 
         try {
+            final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
             userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), jwt);
         }
         catch (Exception e) {

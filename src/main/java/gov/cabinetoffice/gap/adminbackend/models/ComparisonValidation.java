@@ -13,8 +13,8 @@ public class ComparisonValidation {
 
     private String errorMessage;
 
-    private boolean greaterThan = false;
+    private boolean greaterThan;
 
-    private boolean lessThan = false;
+    private boolean lessThan;
 
 }

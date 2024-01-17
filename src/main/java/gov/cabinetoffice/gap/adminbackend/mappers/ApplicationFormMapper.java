@@ -80,14 +80,14 @@ public interface ApplicationFormMapper {
         if (questionGenericPatchDTO.getQuestionSuffix() != null) {
             questionDto.setQuestionSuffix(questionGenericPatchDTO.getQuestionSuffix());
         }
+
+        Map<String, Object> map = questionGenericPatchDTO.getValidation();
         if (questionDto.getValidation() != null) {
-            Map<String, Object> map = questionGenericPatchDTO.getValidation();
             if (map != null) {
                 questionDto.getValidation().putAll(map);
             }
         }
         else {
-            Map<String, Object> map = questionGenericPatchDTO.getValidation();
             if (map != null) {
                 questionDto.setValidation(map);
             }

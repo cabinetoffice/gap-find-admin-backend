@@ -33,7 +33,7 @@ public class TemplateApplicationFormEntity {
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
             return false;
         TemplateApplicationFormEntity that = (TemplateApplicationFormEntity) o;
-        return templateId != null && Objects.equals(templateId, that.templateId);
+        return templateId != null && templateId.equals(that.templateId);
     }
 
     @Override

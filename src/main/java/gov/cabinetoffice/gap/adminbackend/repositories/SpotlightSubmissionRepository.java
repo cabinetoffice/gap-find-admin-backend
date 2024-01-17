@@ -19,4 +19,10 @@ public interface SpotlightSubmissionRepository extends JpaRepository<SpotlightSu
     @Query("select s from SpotlightSubmission s where s.mandatoryQuestions.gapId = ?1")
     Optional<SpotlightSubmission> findByMandatoryQuestions_GapId(String gapId);
 
+    boolean existsByGrantScheme_Id(Integer id);
+
+    List<SpotlightSubmission> findByGrantScheme_Id(Integer id);
+
+    boolean existsByGrantScheme_IdAndStatus(Integer id, String status);
+
 }

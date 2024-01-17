@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import com.contentful.java.cma.model.CMAHttpException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -10,19 +11,18 @@ import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertPageResponse;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertQuestionResponse;
+import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
-import gov.cabinetoffice.gap.adminbackend.services.SecretAuthService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -43,14 +43,24 @@ import java.util.UUID;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomGrantAdvertGenerators.randomGrantAdvertEntity;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(GrantAdvertController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = { GrantAdvertController.class, ControllerExceptionHandler.class })
+@ContextConfiguration(
+        classes = { GrantAdvertController.class, ControllerExceptionHandler.class, LambdasInterceptor.class })
 class GrantAdvertControllerTest {
 
     @Autowired
@@ -58,9 +68,6 @@ class GrantAdvertControllerTest {
 
     @MockBean
     private GrantAdvertService grantAdvertService;
-
-    @MockBean
-    private SecretAuthService secretAuthService;
 
     @SpyBean
     private GrantAdvertMapperImpl grantAdvertMapper;
@@ -73,6 +80,13 @@ class GrantAdvertControllerTest {
 
     @MockBean
     private Validator validator;
+
+    @MockBean
+    @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
+    private AuthorizationHeaderInterceptor mockAuthorizationHeaderInterceptor;
+
+    @MockBean
+    private LambdasInterceptor mockLambdasInterceptor;
 
     @Nested
     class createAdvert {
@@ -147,7 +161,7 @@ class GrantAdvertControllerTest {
 
         // missing test around failed validation - I can't find a way to handcraft a
         // ConstraintViolationImpl obj
-        // if time permits, can create our own impl, but very time consuming for just this
+        // if time permits, can create our own impl, but very time-consuming for just this
         // test scenario
         // verified manually, failed validation produces expected fieldErrors and a 400
 
@@ -167,7 +181,7 @@ class GrantAdvertControllerTest {
         void updatePageResponse_NullBody() throws Exception {
             mockMvc.perform(
                     patch(String.format("/grant-advert/%s/sections/%s/pages/%s", grantAdvertId, sectionId, pageId)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnsupportedMediaType());
         }
 
         @Test
@@ -280,11 +294,6 @@ class GrantAdvertControllerTest {
 
         final String LAMBDA_AUTH_HEADER = "topSecretKey";
 
-        @BeforeEach
-        void beforeEach() {
-            doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
-        }
-
         @Test
         void unpublishGrantAdvertLambda_success() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
@@ -313,16 +322,6 @@ class GrantAdvertControllerTest {
         }
 
         @Test
-        void unpublishGrantAdvertLambda_unauthenticatedError() throws Exception {
-            final UUID grantAdvertId = UUID.randomUUID();
-
-            doThrow(new UnauthorizedException()).when(secretAuthService).authenticateSecret(anyString());
-
-            mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/unpublish")
-                    .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isUnauthorized());
-        }
-
-        @Test
         void unpublishGrantAdvertLambda_notFoundError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
@@ -338,11 +337,6 @@ class GrantAdvertControllerTest {
     class publishGrantAdvertLambda {
 
         final String LAMBDA_AUTH_HEADER = "topSecretKey";
-
-        @BeforeEach
-        void beforeEach() {
-            doNothing().when(secretAuthService).authenticateSecret(LAMBDA_AUTH_HEADER);
-        }
 
         @Test
         void publishGrantAdvertLambda_success() throws Exception {
@@ -372,16 +366,6 @@ class GrantAdvertControllerTest {
         }
 
         @Test
-        void publishGrantAdvertLambda_unauthenticatedError() throws Exception {
-            final UUID grantAdvertId = UUID.randomUUID();
-
-            doThrow(new UnauthorizedException()).when(secretAuthService).authenticateSecret(anyString());
-
-            mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/publish").header(HttpHeaders.AUTHORIZATION,
-                    LAMBDA_AUTH_HEADER)).andExpect(status().isUnauthorized());
-        }
-
-        @Test
         void publishGrantAdvertLambda_notFoundError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
@@ -402,10 +386,9 @@ class GrantAdvertControllerTest {
 
         private final GrantAdvertStatus grantAdvertStatus = GrantAdvertStatus.DRAFT;
 
-        private final String contentfulSlug = "dummy-contentful-slug";
-
         @Test
         void getAdvertStatus_GrantAdvertStatusReturned() throws Exception {
+            String contentfulSlug = "dummy-contentful-slug";
             GetGrantAdvertStatusResponseDTO grantAdvertStatusResponseDTO = GetGrantAdvertStatusResponseDTO.builder()
                     .grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus).contentfulSlug(contentfulSlug)
                     .build();
@@ -461,8 +444,6 @@ class GrantAdvertControllerTest {
 
         private final GrantAdvertStatus grantAdvertStatus = GrantAdvertStatus.DRAFT;
 
-        private final String contentfulSlug = "dummy-contentful-slug";
-
         private final Instant dateTimeInput = Instant.parse("2022-01-01T00:00:00.00Z");
 
         private final Instant openingDate = dateTimeInput;
@@ -477,6 +458,7 @@ class GrantAdvertControllerTest {
 
         @Test
         void getAdvertPublishingInformation_GrantAdvertPublishingInformationReturned() throws Exception {
+            String contentfulSlug = "dummy-contentful-slug";
             GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponseDTO = GetGrantAdvertPublishingInformationResponseDTO
                     .builder().grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus)
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)

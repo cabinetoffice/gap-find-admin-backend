@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -22,7 +23,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -44,8 +44,6 @@ import java.util.UUID;
 public class ApplicationFormController {
 
     private final ApplicationFormService applicationFormService;
-
-    private final SecretAuthService secretAuthService;
 
     private final GrantAdvertService grantAdvertService;
 
@@ -157,11 +155,10 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
-
-    public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable @NotNull UUID grantAdvertId) {
+    @LambdasHeaderValidator
+    public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(@PathVariable @NotNull UUID grantAdvertId) {
         try {
-            secretAuthService.authenticateSecret(authHeader);
+
             Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
             Optional<ApplicationFormEntity> applicationForm = applicationFormService
                     .getOptionalApplicationFromSchemeId(schemeId);

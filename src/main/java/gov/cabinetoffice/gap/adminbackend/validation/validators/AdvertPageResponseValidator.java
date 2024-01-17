@@ -2,14 +2,8 @@ package gov.cabinetoffice.gap.adminbackend.validation.validators;
 
 import java.time.Month;
 import java.time.Year;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -30,6 +24,7 @@ import gov.cabinetoffice.gap.adminbackend.validation.ValidationResult;
 import gov.cabinetoffice.gap.adminbackend.validation.annotations.ValidPageResponse;
 import io.github.furstenheim.CopyDown;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
 public class AdvertPageResponseValidator implements ConstraintValidator<ValidPageResponse, Object> {
@@ -121,7 +116,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             }
         }
 
-        // will be use to convert Html to Markdown
+        // will be used to convert Html to Markdown
         CopyDown converter = new CopyDown();
         String convertedHtml = "";
         if (isRichText) {
@@ -136,6 +131,62 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         }
 
         // min length validation
+        SimpleEntry<String, String> question2 = validateMinLength(question, validation, validationMessages, isRichText,
+                convertedHtml);
+        if (question2 != null)
+            return question2;
+
+        /*
+         * URL validation - examples of valid url patterns: https://www.google.com |
+         * http://www.google.com | https://google.com
+         * https://www.google.com/nested/page.html | https://www.google.co.uk?query=true
+         * https://www.google.co.uk/nested?query=true
+         */
+        if (validation.isUrl()) {
+            SimpleEntry<String, String> question1 = validateURL(question, validationMessages);
+            if (question1 != null)
+                return question1;
+        }
+
+        // Integer / currency field validation
+        SimpleEntry<String, String> question1 = validateNumericField(question, questionDefinition, validation,
+                validationMessages);
+        if (question1 != null)
+            return question1;
+
+        // comparison validation
+        if (validation.getComparedTo() != null) {
+            ComparisonValidation comparisonValidation = validation.getComparedTo();
+
+            try {
+                GrantAdvertQuestionResponse questionToCompare = page
+                        .getQuestionById(comparisonValidation.getQuestionId()).orElseThrow(NotFoundException::new);
+
+                SimpleEntry<String, String> validateQuestion = validateQuestion(sectionId, page, questionToCompare);
+
+                // If the linked question has validation errors
+                if (validateQuestion != null) {
+                    // don't compare
+                    return null;
+                }
+
+                return validateComparison(comparisonValidation, questionToCompare, question, questionDefinition,
+                        question.getId());
+
+            }
+            catch (NotFoundException nfe) {
+                return new SimpleEntry<>(question.getId(), "Unable to find linked question to validate against.");
+            }
+
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private SimpleEntry<String, String> validateMinLength(GrantAdvertQuestionResponse question,
+            AdvertDefinitionQuestionValidation validation,
+            AdvertDefinitionQuestionValidationMessages validationMessages, boolean isRichText, String convertedHtml) {
         if (validation.getMinLength() != null
                 && ((!isRichText && question.getResponse().length() < validation.getMinLength())
                         || (isRichText && convertedHtml.length() < validation.getMinLength()))) {
@@ -156,42 +207,44 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             return new SimpleEntry<>(question.getId(), customMaxLengthErrorMessage != null ? customMaxLengthErrorMessage
                     : String.format("Answer must be %s characters or less", validation.getMaxLength()));
         }
+        return null;
+    }
 
-        /*
-         * URL validation - examples of valid url patterns: https://www.google.com |
-         * http://www.google.com | https://google.com
-         * https://www.google.com/nested/page.html | https://www.google.co.uk?query=true
-         * https://www.google.co.uk/nested?query=true
-         */
-        if (validation.isUrl()) {
-            // (mandatory) protocol | (optional) www | domain, can't be www | .subdomain
-            // (incl. .com) (repeating) |
-            // (optional) slash | (optional) additional path | (optional) slash |
-            // (optional) query params
-            String urlValidPattern = "^(http://|https://)(www.)?((?!www)[a-zA-Z0-9\\-]{2,}+)(\\.[a-zA-Z0-9\\-]{2,})+(/)?(/[a-z0-9\\-._~%!$&'()*+,;=:@]+)*?(/)?(\\?[a-z0-9\\-._~%!$&'()*+,;=:@/]*)?$";
-            Pattern pattern = Pattern.compile(urlValidPattern, Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(question.getResponse());
+    @Nullable
+    private SimpleEntry<String, String> validateURL(GrantAdvertQuestionResponse question,
+            AdvertDefinitionQuestionValidationMessages validationMessages) {
+        // (mandatory) protocol | (optional) www | domain, can't be www | .subdomain
+        // (incl. .com) (repeating) |
+        // (optional) slash | (optional) additional path | (optional) slash |
+        // (optional) query params
+        String urlValidPattern = "^(http://|https://)(www.)?((?!www)[a-zA-Z0-9\\-]{2,}+)(\\.[a-zA-Z0-9\\-]{2,})+(/)?(/[a-z0-9\\-._~%!$&'()*+,;=:@]+)*?(/)?(\\?[a-z0-9\\-._~%!$&'()*+,;=:@/]*)?$";
+        Pattern pattern = Pattern.compile(urlValidPattern, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(question.getResponse());
 
-            String customUrlErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.URL, validationMessages);
+        String customUrlErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.URL, validationMessages);
 
-            if (!matcher.find())
-                return new SimpleEntry<>(question.getId(),
-                        customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter a valid link");
+        if (!matcher.find())
+            return new SimpleEntry<>(question.getId(),
+                    customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter a valid link");
 
-            // check against list of known url shortening sites
-            List<String> shortUrlProviders = Arrays.asList("Bit.ly", "TinyURL", "Ow.ly");
-            boolean found = shortUrlProviders.stream()
-                    .anyMatch(provider -> question.getResponse().toLowerCase().contains(provider.toLowerCase()));
-            if (found)
-                return new SimpleEntry<>(question.getId(),
-                        customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter the full link");
-        }
+        // check against list of known url shortening sites
+        List<String> shortUrlProviders = Arrays.asList("Bit.ly", "TinyURL", "Ow.ly");
+        boolean found = shortUrlProviders.stream().anyMatch(
+                provider -> question.getResponse().toLowerCase(Locale.UK).contains(provider.toLowerCase(Locale.UK)));
+        if (found)
+            return new SimpleEntry<>(question.getId(),
+                    customUrlErrorMessage != null ? customUrlErrorMessage : "You must enter the full link");
+        return null;
+    }
 
-        // Integer / currency field validation
+    @Nullable
+    private SimpleEntry<String, String> validateNumericField(GrantAdvertQuestionResponse question,
+            AdvertDefinitionQuestion questionDefinition, AdvertDefinitionQuestionValidation validation,
+            AdvertDefinitionQuestionValidationMessages validationMessages) {
         if (questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.INTEGER)
                 || questionDefinition.getResponseType().equals(AdvertDefinitionQuestionResponseType.CURRENCY)) {
             try {
-                Integer response = Integer.parseInt(question.getResponse());
+                int response = Integer.parseInt(question.getResponse());
 
                 if (validation.getGreaterThan() != null && response <= validation.getGreaterThan()) {
                     String customGreaterThanErrorMessage = getCustomErrorMessage(GrantAdvertValidationType.GREATER_THAN,
@@ -215,33 +268,6 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
                 return new SimpleEntry<>(question.getId(), "You must only enter numbers");
             }
         }
-
-        // comparison validation
-        if (validation.getComparedTo() != null) {
-            ComparisonValidation comparisonValidation = validation.getComparedTo();
-
-            try {
-                GrantAdvertQuestionResponse questionToCompare = page
-                        .getQuestionById(comparisonValidation.getQuestionId()).orElseThrow(NotFoundException::new);
-
-                SimpleEntry<String, String> validateQuestion = validateQuestion(sectionId, page, questionToCompare);
-
-                // If the linked question has validation errors
-                if (validateQuestion != null) {
-                    // dont compare
-                    return null;
-                }
-
-                return validateComparison(comparisonValidation, questionToCompare, question, questionDefinition,
-                        question.getId());
-
-            }
-            catch (NotFoundException nfe) {
-                return new SimpleEntry<>(question.getId(), "Unable to find linked question to validate against.");
-            }
-
-        }
-
         return null;
     }
 
@@ -277,9 +303,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             }
 
         }
-
         return null;
-
     }
 
     private ValidationResult validateAdvertDates(GrantAdvertPageResponseValidationDto submittedPage) {
@@ -359,17 +383,16 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
     private AbstractMap.SimpleEntry<String, String> validateDate(final String[] dateComponents,
             final boolean isMandatory, String questionId, GrantAdvertPageResponseValidationDto submittedPage) {
-
-        // retrieve question and validation messages from static definition
-        AdvertDefinitionQuestion questionDefinition = advertDefinition.getSectionById(submittedPage.getSectionId())
-                .getPageById(submittedPage.getPage().getId()).getQuestionById(questionId);
-        AdvertDefinitionQuestionValidationMessages validationMessages = questionDefinition.getValidationMessages();
-
         // if it's not mandatory and date part is empty, skip rest of the validation
         if (!isMandatory && (dateComponents.length >= 3
                 && arrayAnswerIsEmpty(Arrays.copyOfRange(dateComponents, 0, 2), false))) {
             return null;
         }
+
+        // retrieve question and validation messages from static definition
+        AdvertDefinitionQuestion questionDefinition = advertDefinition.getSectionById(submittedPage.getSectionId())
+                .getPageById(submittedPage.getPage().getId()).getQuestionById(questionId);
+        AdvertDefinitionQuestionValidationMessages validationMessages = questionDefinition.getValidationMessages();
 
         ArrayList<String> nullList = new ArrayList<>();
         ArrayList<String> invalidList = new ArrayList<>();
@@ -389,7 +412,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
         if (!nullList.isEmpty()) {
             String errorId = String.format("%s-%s", questionId, nullList.get(0));
-            String formattedError = "";
+            String formattedError;
             if (nullList.size() == 3) {
                 formattedError = getCustomErrorMessage(GrantAdvertValidationType.MANDATORY, validationMessages);
             }
@@ -431,7 +454,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
             // throw an exception if day is over 31,
             // but if month or year on invalid, don't throw exception
             // lastly if day is less than 31 and month and year aren't invalid, check if
-            // the day is valid for that month (ie. can June have 31)
+            // the day is valid for that month (i.e. can June have 31)
             if (day > 31 || day < 1 || ((!invalidList.contains("month") && !invalidList.contains("year"))
                     && !dayIsValidForMonth(day, month, year))) {
                 throw new NumberFormatException();
@@ -463,13 +486,13 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
      * @return formatted error message
      */
     private String getDateErrorMessage(ArrayList<String> errorList, String errorTemplate, String terminalConcatString) {
-        terminalConcatString = terminalConcatString != null ? terminalConcatString : " and %s";
+        String terminalConcat = terminalConcatString != null ? terminalConcatString : " and %s";
 
         String formattedError;
         int last = errorList.size() - 1;
         if (last != 0) {
             String joinedNulls = StringUtils.join(errorList.subList(0, last), ", ");
-            formattedError = String.format(String.format("%s%s", errorTemplate, terminalConcatString), joinedNulls,
+            formattedError = String.format(String.format("%s%s", errorTemplate, terminalConcat), joinedNulls,
                     errorList.get(last));
         }
         else {
@@ -480,7 +503,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
 
     /**
      * Checks if day is valid for that particular month and year (takes into account leap
-     * years) ie. does June have 31 days
+     * years) i.e. does June have 31 days
      * @return boolean
      */
     private boolean dayIsValidForMonth(final int day, final int month, final int year) {
