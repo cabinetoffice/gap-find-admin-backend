@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-
 @Service
 @RequiredArgsConstructor
 @Log4j2
@@ -18,7 +16,7 @@ public class FeedbackService {
     public void addFeedback(int satisfactionScore, String userComment, String userJourney) {
         try {
             FeedbackEntity feedback = FeedbackEntity.builder().satisfaction(satisfactionScore).comment(userComment)
-                    .journey(userJourney).created(Instant.now()).build();
+                    .journey(userJourney).build();
             this.feedbackRepository.save(feedback);
         }
         catch (Exception e) {

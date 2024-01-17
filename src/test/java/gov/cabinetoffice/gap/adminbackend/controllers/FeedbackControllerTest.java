@@ -34,9 +34,7 @@ public class FeedbackControllerTest {
         params.add("satisfaction", "5");
         params.add("comment", "I am satisfied!");
         params.add("journey", "advert");
-        this.mockMvc
-                .perform(post("/feedback/add").params(params)
-                        .header(HttpHeaders.AUTHORIZATION, "JWT"))
+        this.mockMvc.perform(post("/feedback/add").params(params).header(HttpHeaders.AUTHORIZATION, "JWT"))
                 .andExpect(status().isOk()).andReturn();
     }
 
@@ -45,8 +43,7 @@ public class FeedbackControllerTest {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("satisfaction", "5");
         params.add("journey", "advert");
-        this.mockMvc.perform(post("/feedback/add").params(params))
-                .andExpect(status().isOk()).andReturn();
+        this.mockMvc.perform(post("/feedback/add").params(params)).andExpect(status().isOk()).andReturn();
     }
 
     @Test
@@ -54,8 +51,7 @@ public class FeedbackControllerTest {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("comment", "I am so satisfied!");
         params.add("journey", "advert");
-        this.mockMvc.perform(post("/feedback/add").params(params))
-                .andExpect(status().isOk()).andReturn();
+        this.mockMvc.perform(post("/feedback/add").params(params)).andExpect(status().isOk()).andReturn();
     }
 
     @Test
@@ -63,8 +59,7 @@ public class FeedbackControllerTest {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("satisfaction", "9");
         params.add("journey", "advert");
-        this.mockMvc.perform(post("/feedback/add").params(params))
-                .andExpect(status().isBadRequest()).andReturn();
+        this.mockMvc.perform(post("/feedback/add").params(params)).andExpect(status().isBadRequest()).andReturn();
     }
 
     @Test
@@ -72,8 +67,7 @@ public class FeedbackControllerTest {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("satisfaction", "-1");
         params.add("journey", "advert");
-        this.mockMvc.perform(post("/feedback/add").params(params))
-                .andExpect(status().isBadRequest()).andReturn();
+        this.mockMvc.perform(post("/feedback/add").params(params)).andExpect(status().isBadRequest()).andReturn();
     }
 
     @Test
@@ -81,21 +75,19 @@ public class FeedbackControllerTest {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("comment", "");
         params.add("journey", "advert");
-        this.mockMvc.perform(post("/feedback/add").params(params))
-                .andExpect(status().isBadRequest()).andReturn();
+        this.mockMvc.perform(post("/feedback/add").params(params)).andExpect(status().isBadRequest()).andReturn();
     }
 
     @Test
     void submitJourneyOnly() throws Exception {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("journey", "advert");
-        this.mockMvc.perform(post("/feedback/add").params(params))
-                .andExpect(status().isBadRequest()).andReturn();
+        this.mockMvc.perform(post("/feedback/add").params(params)).andExpect(status().isBadRequest()).andReturn();
     }
 
     @Test
     void submitNothing() throws Exception {
-        this.mockMvc.perform(post("/feedback/add"))
-                .andExpect(status().isBadRequest()).andReturn();
+        this.mockMvc.perform(post("/feedback/add")).andExpect(status().isBadRequest()).andReturn();
     }
+
 }
