@@ -1,5 +1,21 @@
 package gov.cabinetoffice.gap.adminbackend.validation.validators;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
+import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertValidationType;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConvertHtmlToMdException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.models.*;
+import gov.cabinetoffice.gap.adminbackend.validation.ValidationResult;
+import gov.cabinetoffice.gap.adminbackend.validation.annotations.ValidPageResponse;
+import io.github.furstenheim.CopyDown;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+import org.jetbrains.annotations.Nullable;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
 import java.time.Month;
 import java.time.Year;
 import java.util.*;
@@ -8,24 +24,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-
-import gov.cabinetoffice.gap.adminbackend.models.*;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.util.Strings;
-
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
-import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
-import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertValidationType;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ConvertHtmlToMdException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.validation.ValidationResult;
-import gov.cabinetoffice.gap.adminbackend.validation.annotations.ValidPageResponse;
-import io.github.furstenheim.CopyDown;
-import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
 public class AdvertPageResponseValidator implements ConstraintValidator<ValidPageResponse, Object> {
@@ -352,7 +350,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
                 .setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
         Calendar closingDate = new Calendar.Builder()
                 .setDate(closingResponse[2], closingResponse[1], closingResponse[0])
-                .setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
+                .setTimeOfDay(closingResponse[3], closingResponse[4], 0).build();
 
         // c o m p a r e
         if (openingDate.compareTo(closingDate) >= 0) {
