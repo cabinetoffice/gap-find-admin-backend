@@ -10,9 +10,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ApplicationFormController.class)
@@ -28,34 +29,73 @@ public class FeedbackControllerTest {
     private FeedbackService feedbackService;
 
     @Test
-    void submitFeedback() throws Exception {
+    void submitFullFeedback() throws Exception {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("satisfaction", "5");
+        params.add("comment", "I am satisfied!");
+        params.add("journey", "advert");
         this.mockMvc
-                .perform(post("/feedback/add").param("comment", "test").param("satisfaction", "1")
+                .perform(post("/feedback/add").params(params)
                         .header(HttpHeaders.AUTHORIZATION, "JWT"))
-                .andExpect(status().isOk()).andExpect(content().string("")).andReturn();
+                .andExpect(status().isOk()).andReturn();
     }
 
     @Test
     void submitScoreOnly() throws Exception {
-        this.mockMvc.perform(post("/feedback/add").param("satisfaction", "3").header(HttpHeaders.AUTHORIZATION, "JWT"))
-                .andExpect(status().isOk()).andExpect(content().string("")).andReturn();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("satisfaction", "5");
+        params.add("journey", "advert");
+        this.mockMvc.perform(post("/feedback/add").params(params))
+                .andExpect(status().isOk()).andReturn();
     }
 
     @Test
     void submitCommentOnly() throws Exception {
-        this.mockMvc.perform(post("/feedback/add").param("comment", "test").header(HttpHeaders.AUTHORIZATION, "JWT"))
-                .andExpect(status().isOk()).andExpect(content().string("")).andReturn();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("comment", "I am so satisfied!");
+        params.add("journey", "advert");
+        this.mockMvc.perform(post("/feedback/add").params(params))
+                .andExpect(status().isOk()).andReturn();
     }
 
     @Test
-    void submitNothing() throws Exception {
-        this.mockMvc.perform(post("/feedback/add").header(HttpHeaders.AUTHORIZATION, "JWT"))
+    void submitTooGreatSatisfactionScore() throws Exception {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("satisfaction", "9");
+        params.add("journey", "advert");
+        this.mockMvc.perform(post("/feedback/add").params(params))
                 .andExpect(status().isBadRequest()).andReturn();
     }
 
     @Test
-    void submitFeedbackAdminJourney() throws Exception {
-
+    void submitTooSmallSatisfactionScore() throws Exception {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("satisfaction", "-1");
+        params.add("journey", "advert");
+        this.mockMvc.perform(post("/feedback/add").params(params))
+                .andExpect(status().isBadRequest()).andReturn();
     }
 
+    @Test
+    void submitEmptyCommentOnly() throws Exception {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("comment", "");
+        params.add("journey", "advert");
+        this.mockMvc.perform(post("/feedback/add").params(params))
+                .andExpect(status().isBadRequest()).andReturn();
+    }
+
+    @Test
+    void submitJourneyOnly() throws Exception {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("journey", "advert");
+        this.mockMvc.perform(post("/feedback/add").params(params))
+                .andExpect(status().isBadRequest()).andReturn();
+    }
+
+    @Test
+    void submitNothing() throws Exception {
+        this.mockMvc.perform(post("/feedback/add"))
+                .andExpect(status().isBadRequest()).andReturn();
+    }
 }
