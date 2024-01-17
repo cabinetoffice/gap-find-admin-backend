@@ -34,8 +34,7 @@ public class FeedbackControllerTest {
         params.add("satisfaction", "5");
         params.add("comment", "I am satisfied!");
         params.add("journey", "advert");
-        this.mockMvc.perform(post("/feedback/add").params(params).header(HttpHeaders.AUTHORIZATION, "JWT"))
-                .andExpect(status().isOk()).andReturn();
+        this.mockMvc.perform(post("/feedback/add").params(params)).andExpect(status().isOk()).andReturn();
     }
 
     @Test
