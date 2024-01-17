@@ -870,7 +870,7 @@ class AdvertPageResponseValidatorTest {
     private static Stream<Arguments> provideNonMatchingOpeningClosingDates() {
         return Stream.of(
                 Arguments.of(new String[] { "1", "1", "2023", "12:00" }, new String[] { "31", "12", "2022", "12:00" }),
-                Arguments.of(new String[] { "1", "1", "2022", "00:54" }, new String[] { "1", "1", "2022", "18:43" }));
+                Arguments.of(new String[] { "1", "1", "2022", "00:54" }, new String[] { "1", "1", "2022", "00:53" }));
     }
 
     @ParameterizedTest
