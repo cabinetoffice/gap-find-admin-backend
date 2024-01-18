@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -11,11 +12,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
 
@@ -31,6 +28,8 @@ public class GrantMandatoryQuestionsController {
     private final GrantMandatoryQuestionService grantMandatoryQuestionService;
 
     private final FileService fileService;
+
+    private final SubmissionsService submissionsService;
 
     @GetMapping("/scheme/{schemeId}/is-completed")
     public ResponseEntity<Boolean> hasCompletedMandatoryQuestions(@PathVariable Integer schemeId,
@@ -53,6 +52,9 @@ public class GrantMandatoryQuestionsController {
 
         final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId, isInternal);
         final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId, null);
+
+        submissionsService.updateLastRequiredChecksExportBySchemeIdAndStatus(schemeId);
+
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
     }
 

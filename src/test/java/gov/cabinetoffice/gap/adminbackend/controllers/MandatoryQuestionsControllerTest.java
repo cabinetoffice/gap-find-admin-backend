@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,9 @@ class MandatoryQuestionsControllerTest {
 
     @MockBean
     private FileService fileService;
+
+    @MockBean
+    private SubmissionsService submissionsService;
 
     @Value("classpath:spotlight/XLSX_Spotlight_Template.xlsx")
     Resource exampleFile;

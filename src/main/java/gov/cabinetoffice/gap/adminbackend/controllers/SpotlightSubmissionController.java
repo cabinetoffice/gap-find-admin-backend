@@ -1,7 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.GetSpotlightSubmissionDataBySchemeIdDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
@@ -11,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightSubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,6 +47,8 @@ public class SpotlightSubmissionController {
     private final SchemeService schemeService;
 
     private final FileService fileService;
+
+    private final SubmissionsService submissionsService;
 
     // check spring security whitelist before adding endpoints
 
@@ -111,6 +114,8 @@ public class SpotlightSubmissionController {
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(schemeId);
         final ByteArrayOutputStream stream = spotlightSubmissionService.generateDownloadFile(scheme,
                 onlyValidationErrors);
+
+        submissionsService.updateLastRequiredChecksExportBySchemeIdAndStatus(schemeId);
 
         return getInputStreamResourceResponseEntity(schemeId, stream, SpotlightExports.SPOTLIGHT_CHECKS_FILENAME);
     }

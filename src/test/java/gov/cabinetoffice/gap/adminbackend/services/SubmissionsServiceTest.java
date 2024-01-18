@@ -320,12 +320,20 @@ class SubmissionsServiceTest {
 
         @Test
         void updateApplicationExportSpotlightFlag() {
-            doNothing().when(submissionRepository).updateSubmissionLastRequiredChecksExportByGrantApplicationId(any(),
-                    any());
+            doNothing().when(submissionRepository).updateLastRequiredChecksExportByGrantApplicationIdAndStatus(any(),
+                    any(), eq(SubmissionStatus.SUBMITTED));
 
             assertThatNoException().isThrownBy(() -> submissionsService.updateSubmissionLastRequiredChecksExport(1));
         }
 
+    }
+
+    @Test
+    void updateLastRequiredChecksExportBySchemeIdAndStatus() {
+        doNothing().when(submissionRepository).updateLastRequiredChecksExportBySchemeIdAndStatus(any(),
+                any(), eq(SubmissionStatus.SUBMITTED));
+
+        assertThatNoException().isThrownBy(() -> submissionsService.updateLastRequiredChecksExportBySchemeIdAndStatus(1));
     }
 
     @Nested

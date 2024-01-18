@@ -1,8 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
-import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHea
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +70,9 @@ class SpotlightSubmissionControllerTest {
 
     @MockBean
     private FileService fileService;
+
+    @MockBean
+    private SubmissionsService submissionsService;
 
     private final Integer SCHEME_ID = 1;
 
