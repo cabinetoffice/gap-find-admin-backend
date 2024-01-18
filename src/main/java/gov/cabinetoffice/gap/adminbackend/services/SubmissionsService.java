@@ -115,11 +115,13 @@ public class SubmissionsService {
     }
 
     public void updateSubmissionLastRequiredChecksExport(Integer applicationId) {
-        submissionRepository.updateLastRequiredChecksExportByGrantApplicationIdAndStatus(Instant.now(), applicationId, SubmissionStatus.SUBMITTED);
+        submissionRepository.updateLastRequiredChecksExportByGrantApplicationIdAndStatus(Instant.now(), applicationId,
+                SubmissionStatus.SUBMITTED);
     }
 
     public void updateLastRequiredChecksExportBySchemeIdAndStatus(Integer schemeId) {
-        submissionRepository.updateLastRequiredChecksExportBySchemeIdAndStatus(Instant.now(), schemeId, SubmissionStatus.SUBMITTED);
+        submissionRepository.updateLastRequiredChecksExportBySchemeIdAndStatus(Instant.now(), schemeId,
+                SubmissionStatus.SUBMITTED);
     }
 
     static String mandatoryValue(UUID id, String identifier, String value) {

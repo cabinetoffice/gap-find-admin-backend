@@ -29,12 +29,13 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     @Query("""
             update Submission s set s.lastRequiredChecksExport = ?1
             where s.application.grantApplicationId = ?2 and s.status = ?3""")
-    void updateLastRequiredChecksExportByGrantApplicationIdAndStatus(Instant lastRequiredChecksExport, Integer grantApplicationId, SubmissionStatus status);
+    void updateLastRequiredChecksExportByGrantApplicationIdAndStatus(Instant lastRequiredChecksExport,
+            Integer grantApplicationId, SubmissionStatus status);
 
     @Transactional
     @Modifying
     @Query("update Submission s set s.lastRequiredChecksExport = ?1 where s.scheme.id = ?2 and s.status = ?3")
-    void updateLastRequiredChecksExportBySchemeIdAndStatus(Instant lastRequiredChecksExport, Integer id, SubmissionStatus status);
-
+    void updateLastRequiredChecksExportBySchemeIdAndStatus(Instant lastRequiredChecksExport, Integer id,
+            SubmissionStatus status);
 
 }
