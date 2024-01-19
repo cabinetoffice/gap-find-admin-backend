@@ -119,38 +119,9 @@ public class SubmissionsService {
                 SubmissionStatus.SUBMITTED);
     }
 
-    public void updateLastRequiredChecksExportBySchemeIdAndStatus(Integer schemeId) {
+    public void updateLastRequiredChecksExportBySchemeId(Integer schemeId) {
         submissionRepository.updateLastRequiredChecksExportBySchemeIdAndStatus(Instant.now(), schemeId,
                 SubmissionStatus.SUBMITTED);
-    }
-
-    static String mandatoryValue(UUID id, String identifier, String value) {
-        if (StringUtils.isBlank(value)) {
-            throw new SpotlightExportException(
-                    "Missing mandatory " + identifier + " value for submission_id " + id.toString());
-        }
-        return value;
-    }
-
-    static String combineAddressLines(String[] addressLines) {
-        if (addressLines == null || addressLines.length < 2) {
-            return "";
-        }
-
-        if (StringUtils.isEmpty(addressLines[0]) && StringUtils.isEmpty(addressLines[1])) {
-            return "";
-        }
-
-        if (StringUtils.isEmpty(addressLines[1])) {
-            return StringUtils.defaultString(addressLines[0]);
-        }
-
-        if (StringUtils.isEmpty(addressLines[0])) {
-            return StringUtils.defaultString(addressLines[1]);
-        }
-
-        return String.join(", ", StringUtils.defaultString(addressLines[0]),
-                StringUtils.defaultString(addressLines[1]));
     }
 
     /**
@@ -227,6 +198,99 @@ public class SubmissionsService {
                 });
     }
 
+    // TODO handle new EXPIRED and ERROR statuses
+    public GrantExportStatus getExportStatus(Integer applicationId) {
+        if (!grantExportRepository.existsByApplicationId(applicationId)) {
+            return GrantExportStatus.NOT_STARTED;
+        }
+        if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.PROCESSING)) {
+            return GrantExportStatus.PROCESSING;
+        }
+        if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.REQUESTED)) {
+            return GrantExportStatus.REQUESTED;
+        }
+        return GrantExportStatus.COMPLETE;
+    }
+
+    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId,
+            final String authHeader) {
+
+        if (!grantExportRepository
+                .existsById(GrantExportId.builder().exportBatchId(exportBatchId).submissionId(submissionId).build())) {
+            throw new NotFoundException();
+        }
+
+        final Submission submission = submissionRepository.findByIdWithApplicant(submissionId)
+                .orElseThrow(NotFoundException::new);
+        final String userId = submission.getApplicant().getUserId();
+        final String email = getEmailFromUserId(userId, authHeader);
+
+        final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper
+                .submissionToLambdaSubmissionDefinition(submission);
+        lambdaSubmissionDefinition.setEmail(email);
+        return lambdaSubmissionDefinition;
+    }
+
+    public List<SubmissionExportsDTO> getCompletedSubmissionExportsForBatch(UUID exportBatchId) {
+
+        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
+
+        List<GrantExportEntity> exports = grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(
+                exportBatchId, GrantExportStatus.COMPLETE, adminSession.getGrantAdminId());
+
+        return exports.stream().map(entity -> SubmissionExportsDTO.builder().s3key(entity.getLocation())
+                .label(getFilenameFromExportsS3Key(entity)).build()).toList();
+    }
+
+    public void updateExportStatus(String submissionId, String batchExportId, GrantExportStatus status) {
+        final Integer result = grantExportRepository.updateExportRecordStatus(submissionId, batchExportId,
+                status.toString());
+
+        if (result == 1) {
+            log.info(String.format("Updated entry in export records table to %s\nexportBatchId: %s\nsubmissionId: %s",
+                    status, batchExportId, submissionId));
+        }
+        else {
+            log.error(String.format(
+                    "Could not update entry in export records table to %s\nexportBatchId: %s\nsubmissionId: %s", status,
+                    batchExportId, submissionId));
+            throw new RuntimeException("Could not update entry in export records table to " + status);
+        }
+    }
+
+    public void addS3ObjectKeyToSubmissionExport(UUID submissionId, UUID exportId, String s3ObjectKey) {
+        grantExportRepository.updateExportRecordLocation(submissionId, exportId, s3ObjectKey);
+    }
+
+    static String mandatoryValue(UUID id, String identifier, String value) {
+        if (StringUtils.isBlank(value)) {
+            throw new SpotlightExportException(
+                    "Missing mandatory " + identifier + " value for submission_id " + id.toString());
+        }
+        return value;
+    }
+
+    static String combineAddressLines(String[] addressLines) {
+        if (addressLines == null || addressLines.length < 2) {
+            return "";
+        }
+
+        if (StringUtils.isEmpty(addressLines[0]) && StringUtils.isEmpty(addressLines[1])) {
+            return "";
+        }
+
+        if (StringUtils.isEmpty(addressLines[1])) {
+            return StringUtils.defaultString(addressLines[0]);
+        }
+
+        if (StringUtils.isEmpty(addressLines[0])) {
+            return StringUtils.defaultString(addressLines[1]);
+        }
+
+        return String.join(", ", StringUtils.defaultString(addressLines[0]),
+                StringUtils.defaultString(addressLines[1]));
+    }
+
     private List<GrantExportEntity> mapExportRecordListToBatchMessageRequest(Integer applicationId, UUID exportId,
             AdminSession adminSession, List<Submission> list) {
         return list.stream()
@@ -270,31 +334,6 @@ public class SubmissionsService {
 
     }
 
-    // TODO handle new EXPIRED and ERROR statuses
-    public GrantExportStatus getExportStatus(Integer applicationId) {
-        if (!grantExportRepository.existsByApplicationId(applicationId)) {
-            return GrantExportStatus.NOT_STARTED;
-        }
-        if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.PROCESSING)) {
-            return GrantExportStatus.PROCESSING;
-        }
-        if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.REQUESTED)) {
-            return GrantExportStatus.REQUESTED;
-        }
-        return GrantExportStatus.COMPLETE;
-    }
-
-    public List<SubmissionExportsDTO> getCompletedSubmissionExportsForBatch(UUID exportBatchId) {
-
-        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
-
-        List<GrantExportEntity> exports = grantExportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(
-                exportBatchId, GrantExportStatus.COMPLETE, adminSession.getGrantAdminId());
-
-        return exports.stream().map(entity -> SubmissionExportsDTO.builder().s3key(entity.getLocation())
-                .label(getFilenameFromExportsS3Key(entity)).build()).toList();
-    }
-
     /**
      * <p>
      * Extract filename from AWS SignedURL. Expected path format: <strong>
@@ -318,25 +357,6 @@ public class SubmissionsService {
 
     }
 
-    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId,
-            final String authHeader) {
-
-        if (!grantExportRepository
-                .existsById(GrantExportId.builder().exportBatchId(exportBatchId).submissionId(submissionId).build())) {
-            throw new NotFoundException();
-        }
-
-        final Submission submission = submissionRepository.findByIdWithApplicant(submissionId)
-                .orElseThrow(NotFoundException::new);
-        final String userId = submission.getApplicant().getUserId();
-        final String email = getEmailFromUserId(userId, authHeader);
-
-        final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper
-                .submissionToLambdaSubmissionDefinition(submission);
-        lambdaSubmissionDefinition.setEmail(email);
-        return lambdaSubmissionDefinition;
-    }
-
     private String getEmailFromUserId(final String userId, final String authHeader) {
         final String url = userServiceUrl + "/user?userSub=" + userId;
         final HttpHeaders requestHeaders = new HttpHeaders();
@@ -344,26 +364,6 @@ public class SubmissionsService {
         HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
         final ResponseEntity<UserV2DTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserV2DTO.class);
         return Objects.requireNonNull(user.getBody()).emailAddress();
-    }
-
-    public void updateExportStatus(String submissionId, String batchExportId, GrantExportStatus status) {
-        final Integer result = grantExportRepository.updateExportRecordStatus(submissionId, batchExportId,
-                status.toString());
-
-        if (result == 1) {
-            log.info(String.format("Updated entry in export records table to %s\nexportBatchId: %s\nsubmissionId: %s",
-                    status, batchExportId, submissionId));
-        }
-        else {
-            log.error(String.format(
-                    "Could not update entry in export records table to %s\nexportBatchId: %s\nsubmissionId: %s", status,
-                    batchExportId, submissionId));
-            throw new RuntimeException("Could not update entry in export records table to " + status);
-        }
-    }
-
-    public void addS3ObjectKeyToSubmissionExport(UUID submissionId, UUID exportId, String s3ObjectKey) {
-        grantExportRepository.updateExportRecordLocation(submissionId, exportId, s3ObjectKey);
     }
 
 }

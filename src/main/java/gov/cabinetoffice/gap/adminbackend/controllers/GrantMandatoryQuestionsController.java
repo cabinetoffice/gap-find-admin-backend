@@ -53,7 +53,7 @@ public class GrantMandatoryQuestionsController {
         final ByteArrayOutputStream stream = grantMandatoryQuestionService.getDueDiligenceData(schemeId, isInternal);
         final String exportFileName = grantMandatoryQuestionService.generateExportFileName(schemeId, null);
 
-        submissionsService.updateLastRequiredChecksExportBySchemeIdAndStatus(schemeId);
+        submissionsService.updateLastRequiredChecksExportBySchemeId(schemeId);
 
         return getInputStreamResourceResponseEntity(schemeId, stream, exportFileName);
     }

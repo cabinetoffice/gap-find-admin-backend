@@ -333,8 +333,7 @@ class SubmissionsServiceTest {
         doNothing().when(submissionRepository).updateLastRequiredChecksExportBySchemeIdAndStatus(any(), any(),
                 eq(SubmissionStatus.SUBMITTED));
 
-        assertThatNoException()
-                .isThrownBy(() -> submissionsService.updateLastRequiredChecksExportBySchemeIdAndStatus(1));
+        assertThatNoException().isThrownBy(() -> submissionsService.updateLastRequiredChecksExportBySchemeId(1));
     }
 
     @Nested

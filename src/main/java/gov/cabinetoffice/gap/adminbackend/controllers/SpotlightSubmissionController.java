@@ -115,7 +115,7 @@ public class SpotlightSubmissionController {
         final ByteArrayOutputStream stream = spotlightSubmissionService.generateDownloadFile(scheme,
                 onlyValidationErrors);
 
-        submissionsService.updateLastRequiredChecksExportBySchemeIdAndStatus(schemeId);
+        submissionsService.updateLastRequiredChecksExportBySchemeId(schemeId);
 
         return getInputStreamResourceResponseEntity(schemeId, stream, SpotlightExports.SPOTLIGHT_CHECKS_FILENAME);
     }
