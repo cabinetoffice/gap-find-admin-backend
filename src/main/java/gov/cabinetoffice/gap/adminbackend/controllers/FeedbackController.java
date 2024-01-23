@@ -37,7 +37,7 @@ public class FeedbackController {
             @RequestParam(required = false, defaultValue = "") final String comment,
             @RequestParam final String journey) {
 
-        if ((satisfaction != 0 && (1 <= satisfaction && satisfaction <= 5)) || !comment.equals("")) {
+        if ((1 <= satisfaction && satisfaction <= 5) || !comment.equals("")) {
             feedbackService.addFeedback(satisfaction, comment, journey);
             return ResponseEntity.ok().build();
         }
