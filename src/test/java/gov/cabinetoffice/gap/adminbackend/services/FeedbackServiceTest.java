@@ -24,6 +24,8 @@ public class FeedbackServiceTest {
 
     public final static Instant SAMPLE_CREATED = Instant.parse(instantExpected);
 
+    public final static Integer SAMPLE_CREATED_BY = 1;
+
     final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
 
     final Instant instant = Instant.now(clock);
@@ -35,22 +37,22 @@ public class FeedbackServiceTest {
     public final static String APPLICATION_JOURNEY = "application";
 
     public static final FeedbackEntity SATISFACTION_ONLY_ENTITY = new FeedbackEntity(null, 1, "", SAMPLE_CREATED,
-            DEFAULT_JOURNEY);
+            SAMPLE_CREATED_BY, DEFAULT_JOURNEY);
 
     public static final FeedbackEntity COMMENT_ONLY_ENTITY = new FeedbackEntity(null, 0, SAMPLE_COMMENT, SAMPLE_CREATED,
-            DEFAULT_JOURNEY);
+            SAMPLE_CREATED_BY, DEFAULT_JOURNEY);
 
     public static final FeedbackEntity FEEDBACK_ENTITY = new FeedbackEntity(null, 5, SAMPLE_COMMENT, SAMPLE_CREATED,
-            DEFAULT_JOURNEY);
+            SAMPLE_CREATED_BY, DEFAULT_JOURNEY);
 
     public static final FeedbackEntity APPLICATION_JOURNEY_ENTITY = new FeedbackEntity(null, 5, SAMPLE_COMMENT,
-            SAMPLE_CREATED, APPLICATION_JOURNEY);
+            SAMPLE_CREATED, SAMPLE_CREATED_BY, APPLICATION_JOURNEY);
 
     public static final FeedbackEntity OUTWITH_LIMIT_ENTITY = new FeedbackEntity(null, 9, SAMPLE_COMMENT,
-            SAMPLE_CREATED, DEFAULT_JOURNEY);
+            SAMPLE_CREATED, SAMPLE_CREATED_BY, DEFAULT_JOURNEY);
 
     public static final FeedbackEntity EMPTY_COMMENT_ENTITY = new FeedbackEntity(null, 0, "", SAMPLE_CREATED,
-            DEFAULT_JOURNEY);
+            SAMPLE_CREATED_BY, DEFAULT_JOURNEY);
 
     @Mock
     private FeedbackRepository feedbackRepository;
