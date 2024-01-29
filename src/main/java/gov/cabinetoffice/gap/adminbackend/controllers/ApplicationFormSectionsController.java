@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectionDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationSectionOrderPatchDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
@@ -163,6 +164,29 @@ public class ApplicationFormSectionsController {
         }
         catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @PatchMapping("/order")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Section order updated successfully.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to update section.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity<String> updateSectionOrder(final HttpServletRequest request,
+                                                     final @PathVariable Integer applicationId, final @RequestBody ApplicationSectionOrderPatchDto sectionOrderPatchDto) {
+        try {
+            this.applicationFormSectionService.updateSectionOrder(applicationId, sectionOrderPatchDto.getSectionId(), sectionOrderPatchDto.getUpOrDown());
+            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
+            return ResponseEntity.ok().build();
+        }
+        catch (NotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+        catch (AccessDeniedException ade) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 

@@ -118,4 +118,37 @@ public class ApplicationFormSectionService {
         this.applicationFormRepository.save(applicationForm);
     }
 
+    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Boolean upOrDown) {
+        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+
+        ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+
+        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
+            throw new AccessDeniedException("User " + session.getGrantAdminId()
+                    + " is unable to access the application form with id " + applicationId);
+        }
+
+        List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
+        ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
+        int index = sections.indexOf(section);
+        int indexToSwap = upOrDown ? index - 1 : index + 1;
+
+        if (upOrDown) {
+            if (index <= 2) {
+                throw new FieldViolationException("sectionId", "Section is already at the top");
+            }
+        }
+        else {
+            if (index == sections.size() - 1) {
+                throw new FieldViolationException("sectionId", "Section is already at the bottom");
+            }
+        }
+
+        sections.remove(index);
+        sections.add(indexToSwap, section);
+
+        applicationForm.getDefinition().setSections(sections);
+        this.applicationFormRepository.save(applicationForm);
+    }
 }
