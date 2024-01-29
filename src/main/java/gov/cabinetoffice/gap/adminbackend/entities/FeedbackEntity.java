@@ -32,6 +32,9 @@ public class FeedbackEntity {
     @Builder.Default
     private Instant created = Instant.now();
 
+    @Column(name = "created_by", nullable = false)
+    private Integer created_by;
+
     @Column(name = "journey")
     private String journey;
 
