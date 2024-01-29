@@ -12,4 +12,5 @@ public class ApplicationSectionOrderPatchDto {
     private String sectionId;
 
     private Boolean upOrDown;
+
 }

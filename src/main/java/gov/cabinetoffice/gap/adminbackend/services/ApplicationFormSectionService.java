@@ -151,4 +151,5 @@ public class ApplicationFormSectionService {
         applicationForm.getDefinition().setSections(sections);
         this.applicationFormRepository.save(applicationForm);
     }
+
 }

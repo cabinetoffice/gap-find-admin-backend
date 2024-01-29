@@ -176,9 +176,11 @@ public class ApplicationFormSectionsController {
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity<String> updateSectionOrder(final HttpServletRequest request,
-                                                     final @PathVariable Integer applicationId, final @RequestBody ApplicationSectionOrderPatchDto sectionOrderPatchDto) {
+            final @PathVariable Integer applicationId,
+            final @RequestBody ApplicationSectionOrderPatchDto sectionOrderPatchDto) {
         try {
-            this.applicationFormSectionService.updateSectionOrder(applicationId, sectionOrderPatchDto.getSectionId(), sectionOrderPatchDto.getUpOrDown());
+            this.applicationFormSectionService.updateSectionOrder(applicationId, sectionOrderPatchDto.getSectionId(),
+                    sectionOrderPatchDto.getUpOrDown());
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
             return ResponseEntity.ok().build();
         }
