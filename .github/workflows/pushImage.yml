@@ -10,9 +10,6 @@ on:
     paths-ignore:
       - "*.md"
 
-env:
-  AWS_REGION: eu-west-2
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -72,11 +69,11 @@ jobs:
           cache: maven
 
       - name: Setup AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: eu-west-2
 
       - name: Login to AWS ECR
         id: login-ecr
@@ -127,11 +124,11 @@ jobs:
           fetch-depth: 0
 
       - name: Setup AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: eu-west-2
 
       - name: Login to AWS ECR
         id: login-ecr
