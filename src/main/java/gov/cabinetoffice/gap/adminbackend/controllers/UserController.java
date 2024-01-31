@@ -6,12 +6,15 @@ import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UpdateFundingOrgDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.CreateTechSupportUserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.entities.TechSupportUser;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
+import gov.cabinetoffice.gap.adminbackend.services.TechSupportUserService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +47,8 @@ public class UserController {
     private final UserService userService;
 
     private final UserServiceConfig userServiceConfig;
+
+    private final TechSupportUserService techSupportUserService;
 
     @Value("${feature.onelogin.enabled}")
     private boolean oneLoginEnabled;
@@ -121,16 +126,24 @@ public class UserController {
                     .body("User not authorized to update user's funding organisation: " + jwtPayload.getSub());
         }
 
+        Optional<TechSupportUser> techSupportUser = techSupportUserService.getTechSupportUserBySub(updateFundingOrgDto.sub());
         Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(updateFundingOrgDto.sub());
 
-        if (grantAdmin.isPresent()) {
-            userService.updateFundingOrganisation(grantAdmin.get(), updateFundingOrgDto.departmentName());
-            return ResponseEntity.ok("User's funding organisation updated successfully");
-        }
-        else {
-            return ResponseEntity.status(404).body("No grant Admin found with sub " + jwtPayload.getSub());
+
+        grantAdmin.ifPresent(user ->
+            userService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName())
+        );
+
+        techSupportUser.ifPresent(user ->
+                techSupportUserService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName()));
+
+        if (grantAdmin.isEmpty() && techSupportUser.isEmpty()) {
+            return ResponseEntity.status(404).body("No grant Admin or tech support user found with sub "
+                    + jwtPayload.getSub());
+
         }
 
+        return ResponseEntity.ok("User's funding organisation updated successfully");
     }
 
     @PostMapping(value = "/validate-admin-email")
@@ -151,4 +164,32 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping(value = "tech-support-user")
+    public ResponseEntity<String> createTechSupportUser(@RequestBody CreateTechSupportUserDto techSupportUserDto,
+                                                      @RequestHeader("Authorization") String token) {
+        if (isEmpty(token) || !token.startsWith("Bearer "))
+            return ResponseEntity.status(401).body("Delete user: Expected Authorization header not provided");
+        final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
+        final JwtPayload jwtPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+        if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
+            return ResponseEntity.status(403).body("User not authorized to delete user: " + techSupportUserDto.userSub());
+        }
+
+        techSupportUserService.createTechSupportUser(techSupportUserDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping(value = "/tech-support-user/{userSub}")
+    public ResponseEntity<String> deleteTechSupportUser(@PathVariable String userSub,
+                                                      @RequestHeader("Authorization") String token) {
+        if (isEmpty(token) || !token.startsWith("Bearer "))
+            return ResponseEntity.status(401).body("Delete user: Expected Authorization header not provided");
+        final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
+        final JwtPayload jwtPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+        if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
+            return ResponseEntity.status(403).body("User not authorized to delete user: " + userSub);
+        }
+        techSupportUserService.deleteTechSupportUser(userSub);
+        return ResponseEntity.ok().build();
+    }
 }
