@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import io.netty.handler.codec.HeadersUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -115,6 +116,21 @@ public class ApplicationFormSectionService {
 
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
+        this.applicationFormRepository.save(applicationForm);
+    }
+
+    public void updateSectionTitle(final Integer applicationId, final String sectionId,
+                                   final String title) {
+        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+        ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+
+        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
+            throw new AccessDeniedException("User " + session.getGrantAdminId()
+                    + " is unable to access the application form with id " + applicationId);
+        }
+        applicationForm.getDefinition().getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
         this.applicationFormRepository.save(applicationForm);
     }
 
