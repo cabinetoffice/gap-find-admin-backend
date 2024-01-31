@@ -377,7 +377,8 @@ class ApplicationFormSectionServiceTest {
         void updateSectionStatus_HappyPath() {
             String newTitle = "newTitle";
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.of(testApplicationForm));
 
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
@@ -390,13 +391,13 @@ class ApplicationFormSectionServiceTest {
         @Test
         void updateSectionStatus_NotFound() {
             String newTitle = "newTitle";
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessage("Application with id 111 does not exist");
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle)).isInstanceOf(NotFoundException.class)
+                            .hasMessage("Application with id 111 does not exist");
         }
 
         @Test
@@ -404,24 +405,26 @@ class ApplicationFormSectionServiceTest {
             String newTitle = "newTitle";
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(2).build();
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.of(testApplicationForm));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle))
-                    .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage("User 1 is unable to access the application form with id 111");
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle)).isInstanceOf(AccessDeniedException.class)
+                            .hasMessage("User 1 is unable to access the application form with id 111");
         }
 
         @Test
-        void updateSectionStatus_throwsFieldErrorWithAMatchingSectionTitle(){
+        void updateSectionStatus_throwsFieldErrorWithAMatchingSectionTitle() {
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository
-                            .findById(SAMPLE_APPLICATION_ID)).thenReturn(Optional.of(testApplicationForm));
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
 
-             Assertions.assertThrows(FieldViolationException.class,
-                     () -> applicationFormSectionService
-                             .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title"));
+            Assertions.assertThrows(FieldViolationException.class, () -> applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title"));
         }
+
     }
+
 }

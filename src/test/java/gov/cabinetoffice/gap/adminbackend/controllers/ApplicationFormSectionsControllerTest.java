@@ -277,28 +277,28 @@ class ApplicationFormSectionsControllerTest {
                     .andExpect(status().isForbidden()).andExpect(content().string(""));
         }
 
-
         @Test
         void updateSectionTitle__HappyPath() throws Exception {
 
             String sectionTitle = "sectionTitle";
 
             doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                    .updateSectionTitle(any(), any(),any());
+                    .updateSectionTitle(any(), any(), any());
 
-            ApplicationFormSectionsControllerTest.this.mockMvc
-                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
-                    .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
                     .andExpect(status().isOk());
         }
 
         @Test
         void updateSectionTitle__BadRequest__NoPayload() throws Exception {
             doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                    .updateSectionTitle(any(), any(),any());
+                    .updateSectionTitle(any(), any(), any());
 
             ApplicationFormSectionsControllerTest.this.mockMvc
-                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title"))
+                    .perform(patch(
+                            "/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title"))
                     .andExpect(status().isBadRequest());
         }
 
@@ -306,10 +306,10 @@ class ApplicationFormSectionsControllerTest {
         void updateSectionTitle__BadRequest__NotACustomSection() throws Exception {
             String sectionTitle = "sectionTitle";
             doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                    .updateSectionTitle(any(), any(),any());
+                    .updateSectionTitle(any(), any(), any());
 
-            ApplicationFormSectionsControllerTest.this.mockMvc
-                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ELIGIBILITY" + "/title")
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ELIGIBILITY" + "/title")
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
                     .andExpect(status().isBadRequest());
         }
@@ -317,11 +317,12 @@ class ApplicationFormSectionsControllerTest {
         @Test
         void updateSectionTitle__NotFound() throws Exception {
             String sectionTitle = "sectionTitle";
-            doThrow(NotFoundException.class).when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                    .updateSectionTitle(any(), any(),any());
+            doThrow(NotFoundException.class)
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionTitle(any(), any(), any());
 
-            ApplicationFormSectionsControllerTest.this.mockMvc
-                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
                     .andExpect(status().isNotFound());
         }
@@ -329,11 +330,12 @@ class ApplicationFormSectionsControllerTest {
         @Test
         void updateSectionTitle__AccessDenied() throws Exception {
             String sectionTitle = "sectionTitle";
-            doThrow(AccessDeniedException.class).when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                    .updateSectionTitle(any(), any(),any());
+            doThrow(AccessDeniedException.class)
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionTitle(any(), any(), any());
 
-            ApplicationFormSectionsControllerTest.this.mockMvc
-                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
                     .andExpect(status().isForbidden());
         }

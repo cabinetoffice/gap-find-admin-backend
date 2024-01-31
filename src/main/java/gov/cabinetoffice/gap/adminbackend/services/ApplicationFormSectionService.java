@@ -120,8 +120,7 @@ public class ApplicationFormSectionService {
         this.applicationFormRepository.save(applicationForm);
     }
 
-    public void updateSectionTitle(final Integer applicationId, final String sectionId,
-                                   final String title) {
+    public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
@@ -134,7 +133,7 @@ public class ApplicationFormSectionService {
         boolean isUniqueSectionName = applicationDefinition.getSections().stream()
                 .noneMatch(section -> Objects.equals(section.getSectionTitle(), title));
 
-        if(!isUniqueSectionName) {
+        if (!isUniqueSectionName) {
             throw new FieldViolationException("sectionTitle", "Section name has to be unique");
         }
 
@@ -142,4 +141,5 @@ public class ApplicationFormSectionService {
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
         this.applicationFormRepository.save(applicationForm);
     }
+
 }
