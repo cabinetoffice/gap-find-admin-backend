@@ -180,8 +180,8 @@ public class ApplicationFormSectionsController {
             final @RequestBody ApplicationSectionOrderPatchDto sectionOrderPatchDto) {
         try {
             this.applicationFormSectionService.updateSectionOrder(applicationId, sectionOrderPatchDto.getSectionId(),
-                    sectionOrderPatchDto.getUpOrDown());
-            logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
+                    sectionOrderPatchDto.getIncrement());
+            logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
             return ResponseEntity.ok().build();
         }
         catch (NotFoundException e) {

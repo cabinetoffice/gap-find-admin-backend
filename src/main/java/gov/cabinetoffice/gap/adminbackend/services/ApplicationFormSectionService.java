@@ -118,7 +118,7 @@ public class ApplicationFormSectionService {
         this.applicationFormRepository.save(applicationForm);
     }
 
-    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Boolean upOrDown) {
+    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
@@ -132,21 +132,18 @@ public class ApplicationFormSectionService {
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
         ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
         int index = sections.indexOf(section);
-        int indexToSwap = upOrDown ? index - 1 : index + 1;
 
-        if (upOrDown) {
-            if (index <= 2) {
-                throw new FieldViolationException("sectionId", "Section is already at the top");
-            }
-        }
-        else {
-            if (index == sections.size() - 1) {
-                throw new FieldViolationException("sectionId", "Section is already at the bottom");
-            }
-        }
+        final int BOTTOM_ENTRY = sections.size() - 1;
+        final int ESSENTIAL_AND_ELIGIBILITY = 2;
+
+        if (increment > 0 && index <= ESSENTIAL_AND_ELIGIBILITY)
+            throw new FieldViolationException("sectionId", "Section is already at the top");
+
+        if (increment < 0 && index >= BOTTOM_ENTRY)
+            throw new FieldViolationException("sectionId", "Section is already at the bottom");
 
         sections.remove(index);
-        sections.add(indexToSwap, section);
+        sections.add(index + -increment, section);
 
         applicationForm.getDefinition().setSections(sections);
         this.applicationFormRepository.save(applicationForm);
