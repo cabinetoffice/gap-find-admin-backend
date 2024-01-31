@@ -136,14 +136,14 @@ public class ApplicationFormSectionService {
         final int BOTTOM_ENTRY = sections.size() - 1;
         final int ESSENTIAL_AND_ELIGIBILITY = 2;
 
-        if (increment > 0 && index <= ESSENTIAL_AND_ELIGIBILITY)
+        if (increment < 0 && index <= ESSENTIAL_AND_ELIGIBILITY)
             throw new FieldViolationException("sectionId", "Section is already at the top");
 
-        if (increment < 0 && index >= BOTTOM_ENTRY)
+        if (increment > 0 && index >= BOTTOM_ENTRY)
             throw new FieldViolationException("sectionId", "Section is already at the bottom");
 
         sections.remove(index);
-        sections.add(index + -increment, section);
+        sections.add(index + increment, section);
 
         applicationForm.getDefinition().setSections(sections);
         this.applicationFormRepository.save(applicationForm);
