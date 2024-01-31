@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationDefinitionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
@@ -129,9 +130,16 @@ public class ApplicationFormSectionService {
             throw new AccessDeniedException("User " + session.getGrantAdminId()
                     + " is unable to access the application form with id " + applicationId);
         }
-        applicationForm.getDefinition().getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
+        ApplicationDefinitionDTO applicationDefinition = applicationForm.getDefinition();
+        boolean isUniqueSectionName = applicationDefinition.getSections().stream()
+                .noneMatch(section -> Objects.equals(section.getSectionTitle(), title));
+
+        if(!isUniqueSectionName) {
+            throw new FieldViolationException("sectionTitle", "Section name has to be unique");
+        }
+
+        applicationDefinition.getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
         this.applicationFormRepository.save(applicationForm);
     }
-
 }

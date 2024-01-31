@@ -16,6 +16,7 @@ import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -410,6 +411,17 @@ class ApplicationFormSectionServiceTest {
                     .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle))
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessage("User 1 is unable to access the application form with id 111");
+        }
+
+        @Test
+        void updateSectionStatus_throwsFieldErrorWithAMatchingSectionTitle(){
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
+            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository
+                            .findById(SAMPLE_APPLICATION_ID)).thenReturn(Optional.of(testApplicationForm));
+
+             Assertions.assertThrows(FieldViolationException.class,
+                     () -> applicationFormSectionService
+                             .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title"));
         }
     }
 }

@@ -174,8 +174,9 @@ public class ApplicationFormSectionsController {
                 return new ResponseEntity(new GenericErrorDTO("You cannot update the status of a custom section"),
                         HttpStatus.BAD_REQUEST);
             }
-            this.applicationFormSectionService.updateSectionTitle(applicationId,
-                    sectionId, sectionDTO.getSectionTitle());
+            this.applicationFormSectionService
+                    .updateSectionTitle(applicationId, sectionId, sectionDTO.getSectionTitle());
+
             return ResponseEntity.ok().build();
     }
 
