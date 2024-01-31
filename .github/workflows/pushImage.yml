@@ -10,13 +10,10 @@ on:
     paths-ignore:
       - "*.md"
 
-env:
-  AWS_REGION: eu-west-2
-
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     # Need to check here as create event can't be filtered by branch name: https://github.com/orgs/community/discussions/54860
     if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release')
 
@@ -74,12 +71,12 @@ jobs:
           distribution: "temurin"
           cache: maven
 
-      - uses: aws-actions/configure-aws-credentials@v3
-        name: Configure AWS credentials
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: github-gap-find-admin-backend
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: eu-west-2
 
       - name: Login to AWS ECR
         id: login-ecr
@@ -132,12 +129,12 @@ jobs:
           # Fetch all commits since we use the total commit count to determine the build version
           fetch-depth: 0
 
-      - uses: aws-actions/configure-aws-credentials@v3
-        name: Configure AWS credentials
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: github-gap-find-admin-backend
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: eu-west-2
 
       - name: Login to AWS ECR
         id: login-ecr
