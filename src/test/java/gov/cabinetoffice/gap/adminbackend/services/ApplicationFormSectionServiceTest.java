@@ -22,10 +22,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import javax.validation.Validation;
 import javax.validation.Validator;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.EmptySectionApplicationFormGenerators.emptySectionApplicationFormGenerator;
@@ -360,6 +357,81 @@ class ApplicationFormSectionServiceTest {
                             .hasMessage("User 1 is unable to access the application form with id " + applicationId);
         }
 
+    }
+
+    @Nested
+    class updateSectionOrder {
+
+        @Test
+        void updateSectionOrderSuccessful() {
+            MockedStatic<ApplicationFormUtils> utilMock = mockStatic(ApplicationFormUtils.class);
+
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(List.of(
+                    ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
+                    ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
+                    ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
+                    ApplicationFormSectionDTO.builder().sectionId("Section4").build()
+                    ));
+            testApplicationFormEntity.getDefinition().setSections(sections);
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(2).getSectionId();
+            final Integer increment = 1;
+
+            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            ApplicationFormSectionServiceTest.this.applicationFormSectionService.updateSectionOrder(applicationId,
+                    sectionId, increment);
+
+            Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
+            utilMock.close();
+        }
+
+        @Test
+        void updateSectionOrderOutsideOfRange() {
+            MockedStatic<ApplicationFormUtils> utilMock = mockStatic(ApplicationFormUtils.class);
+
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(List.of(
+                    ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
+                    ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
+                    ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
+                    ApplicationFormSectionDTO.builder().sectionId("Section4").build()
+            ));
+            testApplicationFormEntity.getDefinition().setSections(sections);
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(3).getSectionId();
+            final Integer increment = 1;
+
+            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService.updateSectionOrder(applicationId,
+                    sectionId, increment)).isInstanceOf(FieldViolationException.class).hasMessage("Section is already at the bottom");
+
+        }
+
+        @Test
+        void updateSectionOrderUnauthorised() {
+            final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().createdBy(2).build();
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = "test-section-id";
+            final Integer increment = 1;
+
+            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionOrder(applicationId, sectionId, increment))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+
+        }
     }
 
 }
