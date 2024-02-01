@@ -37,7 +37,6 @@ public class TechSupportUserService {
 
     @Transactional
     public void deleteTechSupportUser(String userSub) {
-
         log.info("Removing tech support user: {} ", userSub);
         techSupportUserRepository.deleteByUserSub(userSub);
     }
