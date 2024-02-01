@@ -41,8 +41,7 @@ public class WebSecurityConfig {
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/publish",
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/unpublish",
                                 "/users/migrate", "/users/delete", "/users/tech-support-user/**",
-                                "/users/funding-organisation",
-                                "/application-forms/lambda/**", "/feedback/add")
+                                "/users/funding-organisation", "/application-forms/lambda/**", "/feedback/add")
                         .permitAll()
                         .antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/swagger-ui.html",
                                 "/webjars/**")

@@ -21,18 +21,17 @@ import java.util.Optional;
 public class TechSupportUserService {
 
     private final TechSupportUserRepository techSupportUserRepository;
+
     private final FundingOrganisationRepository fundingOrganisationRepository;
 
     public void createTechSupportUser(CreateTechSupportUserDto techSupportUserDto) {
 
         FundingOrganisation fundingOrganisation = fundingOrganisationRepository
-                .findById(techSupportUserDto.departmentId()).orElseThrow(()
-                        -> new NotFoundException("Department not found with id: "
-                        .concat(String.valueOf(techSupportUserDto.departmentId()))));
+                .findById(techSupportUserDto.departmentId()).orElseThrow(() -> new NotFoundException(
+                        "Department not found with id: ".concat(String.valueOf(techSupportUserDto.departmentId()))));
 
-        techSupportUserRepository.save(TechSupportUser.builder()
-                .userSub(techSupportUserDto.userSub())
-                .funder(fundingOrganisation).build());
+        techSupportUserRepository.save(
+                TechSupportUser.builder().userSub(techSupportUserDto.userSub()).funder(fundingOrganisation).build());
     }
 
     @Transactional
@@ -65,4 +64,5 @@ public class TechSupportUserService {
             log.info("Updated tech support user's funding organisation: {}", techSupportUser.getUserSub());
         }
     }
+
 }

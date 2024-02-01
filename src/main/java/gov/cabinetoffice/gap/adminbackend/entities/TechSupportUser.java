@@ -5,7 +5,6 @@ import lombok.*;
 
 import javax.persistence.*;
 
-
 @Entity
 @Table(name = "tech_support_user")
 @Getter
@@ -26,7 +25,7 @@ public class TechSupportUser {
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "funder_id", referencedColumnName = "funder_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private FundingOrganisation funder;
 
 }
