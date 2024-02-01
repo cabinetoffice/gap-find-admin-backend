@@ -2,7 +2,6 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.user.CreateTechSupportUserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.TechSupportUser;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.repositories.FundingOrganisationRepository;
@@ -28,7 +27,8 @@ public class TechSupportUserService {
 
         FundingOrganisation fundingOrganisation = fundingOrganisationRepository
                 .findById(techSupportUserDto.departmentId()).orElseThrow(()
-                        -> new NotFoundException("Department not found"));
+                        -> new NotFoundException("Department not found with id: "
+                        .concat(String.valueOf(techSupportUserDto.departmentId()))));
 
         techSupportUserRepository.save(TechSupportUser.builder()
                 .userSub(techSupportUserDto.userSub())
