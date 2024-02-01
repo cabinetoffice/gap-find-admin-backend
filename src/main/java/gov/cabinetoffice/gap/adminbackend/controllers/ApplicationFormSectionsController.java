@@ -170,8 +170,7 @@ public class ApplicationFormSectionsController {
     public ResponseEntity<Void> updateSectionTitle(final @PathVariable Integer applicationId,
             final @PathVariable String sectionId, final @RequestBody @Validated PostSectionDTO sectionDTO) {
         if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
-            return new ResponseEntity(
-                    new GenericErrorDTO("You cannot update the title of a non-custom section"),
+            return new ResponseEntity(new GenericErrorDTO("You cannot update the title of a non-custom section"),
                     HttpStatus.BAD_REQUEST);
         }
         this.applicationFormSectionService.updateSectionTitle(applicationId, sectionId, sectionDTO.getSectionTitle());
