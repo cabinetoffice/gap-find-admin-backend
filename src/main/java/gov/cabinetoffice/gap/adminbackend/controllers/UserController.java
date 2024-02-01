@@ -129,20 +129,18 @@ public class UserController {
                     .body("User not authorized to update user's funding organisation: " + jwtPayload.getSub());
         }
 
-        Optional<TechSupportUser> techSupportUser = techSupportUserService.getTechSupportUserBySub(updateFundingOrgDto.sub());
+        Optional<TechSupportUser> techSupportUser = techSupportUserService
+                .getTechSupportUserBySub(updateFundingOrgDto.sub());
         Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(updateFundingOrgDto.sub());
 
+        grantAdmin.ifPresent(user -> userService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName()));
 
-        grantAdmin.ifPresent(user ->
-            userService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName())
-        );
-
-        techSupportUser.ifPresent(user ->
-                techSupportUserService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName()));
+        techSupportUser.ifPresent(
+                user -> techSupportUserService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName()));
 
         if (grantAdmin.isEmpty() && techSupportUser.isEmpty()) {
-            return ResponseEntity.status(404).body("No grant Admin or tech support user found with sub "
-                    + jwtPayload.getSub());
+            return ResponseEntity.status(404)
+                    .body("No grant Admin or tech support user found with sub " + jwtPayload.getSub());
 
         }
 
@@ -169,7 +167,7 @@ public class UserController {
 
     @PostMapping(value = "tech-support-user")
     public ResponseEntity<String> createTechSupportUser(@RequestBody CreateTechSupportUserDto techSupportUserDto,
-                                                      @RequestHeader("Authorization") String token) {
+            @RequestHeader("Authorization") String token) {
         final String logMessage = String.format("User not authorized to create user: %s", techSupportUserDto.userSub());
         validateToken(token, logMessage);
 
@@ -180,7 +178,7 @@ public class UserController {
 
     @DeleteMapping(value = "/tech-support-user/{userSub}")
     public ResponseEntity<String> deleteTechSupportUser(@PathVariable String userSub,
-                                                      @RequestHeader("Authorization") String token) {
+            @RequestHeader("Authorization") String token) {
         final String logMessage = String.format("User not authorized to delete user: %s", userSub);
         validateToken(token, logMessage);
 
@@ -201,4 +199,5 @@ public class UserController {
             throw new ForbiddenException(message);
         }
     }
+
 }

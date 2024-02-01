@@ -10,4 +10,5 @@ public interface TechSupportUserRepository extends CrudRepository<TechSupportUse
     void deleteByUserSub(String userSub);
 
     Optional<TechSupportUser> findByUserSub(String userSub);
+
 }
