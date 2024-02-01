@@ -133,17 +133,18 @@ public class ApplicationFormSectionService {
         ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
         int index = sections.indexOf(section);
 
-        final int BOTTOM_ENTRY = sections.size() - 1;
+        final int SECTION_LIST_SIZE = sections.size() - 1;
         final int ESSENTIAL_AND_ELIGIBILITY = 2;
+        final int NEW_SECTION_INDEX = index + increment;
 
-        if (increment < 0 && index <= ESSENTIAL_AND_ELIGIBILITY)
+        if (NEW_SECTION_INDEX < ESSENTIAL_AND_ELIGIBILITY)
             throw new FieldViolationException("sectionId", "Section is already at the top");
 
-        if (increment > 0 && index >= BOTTOM_ENTRY)
+        if (NEW_SECTION_INDEX > SECTION_LIST_SIZE)
             throw new FieldViolationException("sectionId", "Section is already at the bottom");
 
         sections.remove(index);
-        sections.add(index + increment, section);
+        sections.add(NEW_SECTION_INDEX, section);
 
         applicationForm.getDefinition().setSections(sections);
         this.applicationFormRepository.save(applicationForm);
