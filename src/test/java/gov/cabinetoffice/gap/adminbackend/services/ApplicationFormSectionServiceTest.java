@@ -413,6 +413,8 @@ class ApplicationFormSectionServiceTest {
                     .updateSectionOrder(applicationId, sectionId, increment))
                             .isInstanceOf(FieldViolationException.class).hasMessage("Section is already at the bottom");
 
+            utilMock.close();
+
         }
 
         @Test
