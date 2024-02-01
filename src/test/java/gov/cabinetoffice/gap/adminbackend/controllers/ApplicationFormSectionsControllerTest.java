@@ -279,42 +279,46 @@ class ApplicationFormSectionsControllerTest {
     @WithAdminSession
     class updateSectionOrder {
 
-            @Test
-            void updateSectionOrderHappyPathTest() throws Exception {
+        @Test
+        void updateSectionOrderHappyPathTest() throws Exception {
 
-                doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                        .updateSectionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid", 1);
+            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid", 1);
 
-                ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder().sectionId("test").increment(1).build();
-                ApplicationFormSectionsControllerTest.this.mockMvc
-                        .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
-                                .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(applicationSectionOrderPatchDto)))
-                        .andExpect(status().isOk());
-            }
+            ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
+                    .sectionId("test").increment(1).build();
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(HelperUtils.asJsonString(applicationSectionOrderPatchDto)))
+                    .andExpect(status().isOk());
+        }
 
-            @Test
-            void updateSectionOrderNoBody() throws Exception {
+        @Test
+        void updateSectionOrderNoBody() throws Exception {
 
-                ApplicationFormSectionsControllerTest.this.mockMvc
-                        .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order"))
-                        .andExpect(status().isBadRequest());
-            }
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order"))
+                    .andExpect(status().isBadRequest());
+        }
 
+        @Test
+        void updateSectionOrder_AccessDeniedTest() throws Exception {
 
-            @Test
-            void updateSectionOrder_AccessDeniedTest() throws Exception {
+            doThrow(new AccessDeniedException("Error message"))
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "test", 1);
 
-                doThrow(new AccessDeniedException("Error message"))
-                        .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                        .updateSectionOrder(SAMPLE_APPLICATION_ID, "test", 1);
+            ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
+                    .sectionId("test").increment(1).build();
 
-                ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder().sectionId("test").increment(1).build();
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(HelperUtils.asJsonString(applicationSectionOrderPatchDto)))
+                    .andExpect(status().isForbidden()).andExpect(content().string(""));
+        }
 
-                ApplicationFormSectionsControllerTest.this.mockMvc
-                        .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
-                                .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(applicationSectionOrderPatchDto)))
-                        .andExpect(status().isForbidden()).andExpect(content().string(""));
-            }
     }
 
 }

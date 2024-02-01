@@ -369,12 +369,11 @@ class ApplicationFormSectionServiceTest {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
-            List<ApplicationFormSectionDTO> sections = new ArrayList<>(List.of(
-                    ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
-                    ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
-                    ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
-                    ApplicationFormSectionDTO.builder().sectionId("Section4").build()
-                    ));
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(
+                    List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section4").build()));
             testApplicationFormEntity.getDefinition().setSections(sections);
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(2).getSectionId();
@@ -397,12 +396,11 @@ class ApplicationFormSectionServiceTest {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
-            List<ApplicationFormSectionDTO> sections = new ArrayList<>(List.of(
-                    ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
-                    ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
-                    ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
-                    ApplicationFormSectionDTO.builder().sectionId("Section4").build()
-            ));
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(
+                    List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section4").build()));
             testApplicationFormEntity.getDefinition().setSections(sections);
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(3).getSectionId();
@@ -411,8 +409,9 @@ class ApplicationFormSectionServiceTest {
             Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
 
-            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService.updateSectionOrder(applicationId,
-                    sectionId, increment)).isInstanceOf(FieldViolationException.class).hasMessage("Section is already at the bottom");
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionOrder(applicationId, sectionId, increment))
+                            .isInstanceOf(FieldViolationException.class).hasMessage("Section is already at the bottom");
 
         }
 
@@ -427,11 +426,11 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.of(testApplicationFormEntity));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionOrder(applicationId, sectionId, increment))
-                    .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .updateSectionOrder(applicationId, sectionId, increment)).isInstanceOf(AccessDeniedException.class)
+                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
         }
+
     }
 
 }
