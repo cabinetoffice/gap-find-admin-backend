@@ -27,8 +27,8 @@ public class ApplicationFormSectionService {
 
     public ApplicationFormSectionDTO getSectionById(Integer applicationId, String sectionId, Boolean withQuestions) {
         ApplicationFormEntity entity = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist or insufficient permissions"));
-
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         ApplicationFormSectionDTO sectionById = entity.getDefinition().getSectionById(sectionId);
         if (!withQuestions) {
@@ -41,7 +41,8 @@ public class ApplicationFormSectionService {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist or insufficient permissions"));
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         ApplicationFormSectionDTO newSection = new ApplicationFormSectionDTO(sectionDTO.getSectionTitle());
 
@@ -67,7 +68,8 @@ public class ApplicationFormSectionService {
     public void deleteSectionFromApplication(Integer applicationId, String sectionId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist or insufficient permissions"));
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         boolean sectionDeleted = applicationForm.getDefinition().getSections()
                 .removeIf(section -> Objects.equals(section.getSectionId(), sectionId));
@@ -86,7 +88,8 @@ public class ApplicationFormSectionService {
             final SectionStatusEnum newStatus) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist or insufficient permissions"));
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         applicationForm.getDefinition().getSectionById(sectionId).setSectionStatus(newStatus);
 
@@ -97,7 +100,8 @@ public class ApplicationFormSectionService {
 
     public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist or insufficient permissions"));
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
         ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);

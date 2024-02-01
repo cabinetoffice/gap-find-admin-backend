@@ -123,10 +123,9 @@ class ApplicationFormSectionServiceTest {
             Integer applicationId = testApplicationForm.getGrantApplicationId();
             String sectionId = "test-section-id";
 
-
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .getSectionById(applicationId, sectionId, true)).isInstanceOf(NotFoundException.class)
-                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
+                    .getSectionById(applicationId, sectionId, true)).isInstanceOf(NotFoundException.class).hasMessage(
+                            "Application with id " + applicationId + " does not exist or insufficient permissions");
         }
 
     }
@@ -173,8 +172,8 @@ class ApplicationFormSectionServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .addSectionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_POST_SECTION))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id "
+                                    + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
 
         }
 
@@ -196,11 +195,10 @@ class ApplicationFormSectionServiceTest {
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationForm.getGrantApplicationId();
 
-
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .addSectionToApplicationForm(applicationId, SAMPLE_POST_SECTION))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
 
         }
 
@@ -244,8 +242,8 @@ class ApplicationFormSectionServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id "
+                                    + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
         }
 
         @Test
@@ -269,10 +267,10 @@ class ApplicationFormSectionServiceTest {
             Integer applicationId = testApplicationForm.getGrantApplicationId();
             String sectionId = "test-section-id";
 
-
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .deleteSectionFromApplication(applicationId, sectionId)).isInstanceOf(NotFoundException.class)
-                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
+                            .hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
 
         }
 
@@ -315,8 +313,8 @@ class ApplicationFormSectionServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .updateSectionStatus(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SectionStatusEnum.COMPLETE))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id "
+                                    + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
         }
 
         @Test
@@ -340,11 +338,10 @@ class ApplicationFormSectionServiceTest {
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = "test-section-id";
 
-
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .updateSectionStatus(applicationId, sectionId, SectionStatusEnum.COMPLETE))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
         }
 
     }
@@ -414,10 +411,10 @@ class ApplicationFormSectionServiceTest {
             final String sectionId = "test-section-id";
             final Integer increment = 1;
 
-
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .updateSectionOrder(applicationId, sectionId, increment)).isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
+                            .hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
 
         }
 
