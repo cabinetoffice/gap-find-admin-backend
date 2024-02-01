@@ -15,7 +15,7 @@ import java.util.Optional;
 @Repository
 public interface ApplicationFormRepository extends JpaRepository<ApplicationFormEntity, Integer> {
 
-    @PostAuthorize("!returnObject.isEmpty() ? returnObject.get().createdBy.id == authentication.principal.grantAdminId : true")
+    @PostAuthorize("!returnObject.isEmpty() ? returnObject.get().createdBy == authentication.principal.grantAdminId : true")
     Optional<ApplicationFormEntity> findById(Integer applicationId);
 
     Optional<ApplicationFormNoSections> findByGrantApplicationId(Integer applicationId);
