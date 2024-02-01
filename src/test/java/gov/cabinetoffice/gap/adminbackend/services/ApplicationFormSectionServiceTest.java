@@ -123,12 +123,10 @@ class ApplicationFormSectionServiceTest {
             Integer applicationId = testApplicationForm.getGrantApplicationId();
             String sectionId = "test-section-id";
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationForm));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .getSectionById(applicationId, sectionId, true)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .getSectionById(applicationId, sectionId, true)).isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
         }
 
     }
@@ -176,7 +174,7 @@ class ApplicationFormSectionServiceTest {
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .addSectionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_POST_SECTION))
                             .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
 
         }
 
@@ -197,15 +195,12 @@ class ApplicationFormSectionServiceTest {
         void addNewSection_insufficientPermissionsToAddThisSection() {
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationForm.getGrantApplicationId();
-            String sectionId = "test-section-id";
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationForm));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .addSectionToApplicationForm(applicationId, SAMPLE_POST_SECTION))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                            .isInstanceOf(NotFoundException.class)
+                            .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
 
         }
 
@@ -249,9 +244,8 @@ class ApplicationFormSectionServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
-
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
         }
 
         @Test
@@ -275,12 +269,10 @@ class ApplicationFormSectionServiceTest {
             Integer applicationId = testApplicationForm.getGrantApplicationId();
             String sectionId = "test-section-id";
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationForm));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .deleteSectionFromApplication(applicationId, sectionId)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .deleteSectionFromApplication(applicationId, sectionId)).isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
 
         }
 
@@ -324,7 +316,7 @@ class ApplicationFormSectionServiceTest {
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .updateSectionStatus(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SectionStatusEnum.COMPLETE))
                             .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
         }
 
         @Test
@@ -348,13 +340,11 @@ class ApplicationFormSectionServiceTest {
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = "test-section-id";
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationFormEntity));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .updateSectionStatus(applicationId, sectionId, SectionStatusEnum.COMPLETE))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
         }
 
     }
@@ -424,12 +414,10 @@ class ApplicationFormSectionServiceTest {
             final String sectionId = "test-section-id";
             final Integer increment = 1;
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationFormEntity));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionOrder(applicationId, sectionId, increment)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .updateSectionOrder(applicationId, sectionId, increment)).isInstanceOf(NotFoundException.class)
+                            .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
 
         }
 
