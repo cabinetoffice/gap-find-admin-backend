@@ -167,6 +167,20 @@ public class ApplicationFormSectionsController {
         }
     }
 
+    @PatchMapping("/{sectionId}/title")
+    public ResponseEntity<Void> updateSectionTitle(final HttpServletRequest request,
+            final @PathVariable Integer applicationId, final @PathVariable String sectionId,
+            final @RequestBody @Validated PostSectionDTO sectionDTO) {
+        if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
+            return new ResponseEntity(new GenericErrorDTO("You cannot update the title of a non-custom section"),
+                    HttpStatus.BAD_REQUEST);
+        }
+        this.applicationFormSectionService.updateSectionTitle(applicationId, sectionId, sectionDTO.getSectionTitle());
+        logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
+
+        return ResponseEntity.ok().build();
+    }
+
     @PatchMapping("/order")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Section order updated successfully.",

@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationDefinitionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
@@ -10,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import io.netty.handler.codec.HeadersUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -48,19 +50,13 @@ public class ApplicationFormSectionService {
 
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
 
-        // check if any sections already exist with the new name
-        boolean isUniqueSectionName = sections.stream()
-                .noneMatch(section -> Objects.equals(section.getSectionTitle(), newSection.getSectionTitle()));
-
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
-        if (isUniqueSectionName) {
-            sections.add(newSection);
-            this.applicationFormRepository.save(applicationForm);
-        }
-        else {
-            throw new FieldViolationException("sectionTitle", "Section name has to be unique");
-        }
+        verifyUniqueSectionName(applicationForm, newSection.getSectionTitle());
+
+        sections.add(newSection);
+
+        this.applicationFormRepository.save(applicationForm);
 
         return newSection.getSectionId();
     }
@@ -98,6 +94,21 @@ public class ApplicationFormSectionService {
         this.applicationFormRepository.save(applicationForm);
     }
 
+    public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title) {
+
+        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+        ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+
+        ApplicationDefinitionDTO applicationDefinition = applicationForm.getDefinition();
+
+        verifyUniqueSectionName(applicationForm, title);
+
+        applicationDefinition.getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        this.applicationFormRepository.save(applicationForm);
+    }
+
     public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
@@ -122,6 +133,14 @@ public class ApplicationFormSectionService {
 
         applicationForm.getDefinition().setSections(sections);
         this.applicationFormRepository.save(applicationForm);
+    }
+
+    private void verifyUniqueSectionName(final ApplicationFormEntity applicationForm, final String title) {
+        boolean isUniqueSectionName = applicationForm.getDefinition().getSections().stream()
+                .noneMatch(section -> Objects.equals(section.getSectionTitle(), title));
+        if (!isUniqueSectionName) {
+            throw new FieldViolationException("sectionTitle", "Section name has to be unique");
+        }
     }
 
 }
