@@ -50,19 +50,13 @@ public class ApplicationFormSectionService {
 
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
 
-        // check if any sections already exist with the new name
-        boolean isUniqueSectionName = sections.stream()
-                .noneMatch(section -> Objects.equals(section.getSectionTitle(), newSection.getSectionTitle()));
-
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
-        if (isUniqueSectionName) {
-            sections.add(newSection);
-            this.applicationFormRepository.save(applicationForm);
-        }
-        else {
-            throw new FieldViolationException("sectionTitle", "Section name has to be unique");
-        }
+        verifyUniqueSectionName(applicationForm, newSection.getSectionTitle());
+
+        sections.add(newSection);
+
+        this.applicationFormRepository.save(applicationForm);
 
         return newSection.getSectionId();
     }
@@ -101,23 +95,18 @@ public class ApplicationFormSectionService {
     }
 
     public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title) {
+
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
 
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
         ApplicationDefinitionDTO applicationDefinition = applicationForm.getDefinition();
-        boolean isUniqueSectionName = applicationDefinition.getSections().stream()
-                .noneMatch(section -> Objects.equals(section.getSectionTitle(), title));
 
-        if (!isUniqueSectionName) {
-            throw new FieldViolationException("sectionTitle", "Section name has to be unique");
-        }
+        verifyUniqueSectionName(applicationForm, title);
+
         applicationDefinition.getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        this.applicationFormRepository.save(applicationForm);
     }
 
     public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment) {
@@ -144,6 +133,14 @@ public class ApplicationFormSectionService {
 
         applicationForm.getDefinition().setSections(sections);
         this.applicationFormRepository.save(applicationForm);
+    }
+
+    private void verifyUniqueSectionName(final ApplicationFormEntity applicationForm, final String title) {
+        boolean isUniqueSectionName = applicationForm.getDefinition().getSections().stream()
+                .noneMatch(section -> Objects.equals(section.getSectionTitle(), title));
+        if (!isUniqueSectionName) {
+            throw new FieldViolationException("sectionTitle", "Section name has to be unique");
+        }
     }
 
 }

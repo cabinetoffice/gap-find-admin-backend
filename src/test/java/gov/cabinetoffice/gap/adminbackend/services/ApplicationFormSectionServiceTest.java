@@ -432,7 +432,7 @@ class ApplicationFormSectionServiceTest {
     class updateSectionTitle {
 
         @Test
-        void updateSectionStatus_HappyPath() {
+        void updateSectionTitle_HappyPath() {
             String newTitle = "newTitle";
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
             Mockito.when(
@@ -447,7 +447,7 @@ class ApplicationFormSectionServiceTest {
         }
 
         @Test
-        void updateSectionStatus_NotFound() {
+        void updateSectionTitle_NotFound() {
             String newTitle = "newTitle";
             Mockito.when(
                     ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
@@ -459,21 +459,7 @@ class ApplicationFormSectionServiceTest {
         }
 
         @Test
-        void updateSectionStatus_AccessDenied() {
-            String newTitle = "newTitle";
-            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(2).build();
-
-            Mockito.when(
-                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-                    .thenReturn(Optional.of(testApplicationForm));
-
-            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id 111");
-        }
-
-        @Test
-        void updateSectionStatus_throwsFieldErrorWithAMatchingSectionTitle() {
+        void updateSectionTitle_throwsFieldErrorWithAMatchingSectionTitle() {
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
             Mockito.when(
                     ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
