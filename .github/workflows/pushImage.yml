@@ -10,9 +10,6 @@ on:
     paths-ignore:
       - "*.md"
 
-env:
-  AWS_REGION: eu-west-2
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -28,8 +25,9 @@ jobs:
           java-version: "17"
           distribution: "temurin"
           cache: maven
+
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: AWS_REGION="ew-west-2" mvn -B package --file pom.xml
 
       - name: DependencyCheck
         uses: dependency-check/Dependency-Check_Action@main
@@ -54,6 +52,9 @@ jobs:
     if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release')
 
     runs-on: ubuntu-latest
+    permissions:
+        id-token: write
+        contents: read
 
     outputs:
       docker-image-name: ${{ steps.docker-image-name.outputs.name }}
@@ -72,11 +73,11 @@ jobs:
           cache: maven
 
       - name: Setup AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-gap-find-admin-backend
+          aws-region: eu-west-2
 
       - name: Login to AWS ECR
         id: login-ecr
@@ -118,6 +119,9 @@ jobs:
   deploy:
     environment: AWS
     runs-on: ubuntu-latest
+    permissions:
+        id-token: write
+        contents: read
     needs: [build, test]
 
     steps:
@@ -127,11 +131,11 @@ jobs:
           fetch-depth: 0
 
       - name: Setup AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-gap-find-admin-backend
+          aws-region: eu-west-2
 
       - name: Login to AWS ECR
         id: login-ecr

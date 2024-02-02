@@ -28,15 +28,9 @@ public class ApplicationFormSectionService {
     private final ApplicationFormRepository applicationFormRepository;
 
     public ApplicationFormSectionDTO getSectionById(Integer applicationId, String sectionId, Boolean withQuestions) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         ApplicationFormEntity entity = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(NotFoundException::new);
-
-        if (!session.getGrantAdminId().equals(entity.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         ApplicationFormSectionDTO sectionById = entity.getDefinition().getSectionById(sectionId);
         if (!withQuestions) {
@@ -49,12 +43,8 @@ public class ApplicationFormSectionService {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
-
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         ApplicationFormSectionDTO newSection = new ApplicationFormSectionDTO(sectionDTO.getSectionTitle());
 
@@ -79,14 +69,9 @@ public class ApplicationFormSectionService {
 
     public void deleteSectionFromApplication(Integer applicationId, String sectionId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
-
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         boolean sectionDeleted = applicationForm.getDefinition().getSections()
                 .removeIf(section -> Objects.equals(section.getSectionId(), sectionId));
@@ -104,14 +89,9 @@ public class ApplicationFormSectionService {
     public void updateSectionStatus(final Integer applicationId, final String sectionId,
             final SectionStatusEnum newStatus) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
-
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         applicationForm.getDefinition().getSectionById(sectionId).setSectionStatus(newStatus);
 
@@ -136,9 +116,33 @@ public class ApplicationFormSectionService {
         if (!isUniqueSectionName) {
             throw new FieldViolationException("sectionTitle", "Section name has to be unique");
         }
-
         applicationDefinition.getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+    }
+
+    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment) {
+        ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
+        ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
+        int index = sections.indexOf(section);
+
+        final int SECTION_LIST_SIZE = sections.size() - 1;
+        final int ESSENTIAL_AND_ELIGIBILITY = 2;
+        final int NEW_SECTION_INDEX = index + increment;
+
+        if (NEW_SECTION_INDEX < ESSENTIAL_AND_ELIGIBILITY)
+            throw new FieldViolationException("sectionId", "Section is already at the top");
+
+        if (NEW_SECTION_INDEX > SECTION_LIST_SIZE)
+            throw new FieldViolationException("sectionId", "Section is already at the bottom");
+
+        sections.remove(index);
+        sections.add(NEW_SECTION_INDEX, section);
+
+        applicationForm.getDefinition().setSections(sections);
         this.applicationFormRepository.save(applicationForm);
     }
 

@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationSectionOrderPatchDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -338,6 +339,52 @@ class ApplicationFormSectionsControllerTest {
                     patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
                             .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
                     .andExpect(status().isForbidden());
+        }
+
+    }
+
+    @Nested
+    @WithAdminSession
+    class updateSectionOrder {
+
+        @Test
+        void updateSectionOrderHappyPathTest() throws Exception {
+
+            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid", 1);
+
+            ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
+                    .sectionId("test").increment(1).build();
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(HelperUtils.asJsonString(applicationSectionOrderPatchDto)))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        void updateSectionOrderNoBody() throws Exception {
+
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updateSectionOrder_AccessDeniedTest() throws Exception {
+
+            doThrow(new AccessDeniedException("Error message"))
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "test", 1);
+
+            ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
+                    .sectionId("test").increment(1).build();
+
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(HelperUtils.asJsonString(applicationSectionOrderPatchDto)))
+                    .andExpect(status().isForbidden()).andExpect(content().string(""));
         }
 
     }
