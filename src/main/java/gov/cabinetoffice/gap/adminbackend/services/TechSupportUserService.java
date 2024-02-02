@@ -27,8 +27,8 @@ public class TechSupportUserService {
     public void createTechSupportUser(CreateTechSupportUserDto techSupportUserDto) {
 
         FundingOrganisation fundingOrganisation = fundingOrganisationRepository
-                .findById(techSupportUserDto.departmentId()).orElseThrow(() -> new NotFoundException(
-                        "Department not found with id: ".concat(String.valueOf(techSupportUserDto.departmentId()))));
+                .findByName(techSupportUserDto.departmentName()).orElseGet(() -> fundingOrganisationRepository
+                        .save(new FundingOrganisation(null, techSupportUserDto.departmentName())));
 
         techSupportUserRepository.save(
                 TechSupportUser.builder().userSub(techSupportUserDto.userSub()).funder(fundingOrganisation).build());
