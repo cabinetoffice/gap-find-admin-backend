@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -312,6 +313,43 @@ class ApplicationFormQuestionsControllerTest {
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
 
         verifyNoInteractions(eventLogService);
+    }
+
+    @Nested
+    @WithAdminSession
+    class updateSectionOrder {
+
+        @Test
+        void updateSectionOrderHappyPathTest() throws Exception {
+
+            doNothing().when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
+                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1);
+
+            ApplicationFormQuestionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        void updateSectionOrderNoIncrement() throws Exception {
+
+            ApplicationFormQuestionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void updateSectionOrder_AccessDeniedTest() throws Exception {
+
+            doThrow(new AccessDeniedException("Error message"))
+                    .when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
+                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1);
+
+            ApplicationFormQuestionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))
+                    .andExpect(status().isForbidden()).andExpect(content().string(""));
+        }
+
     }
 
 }
