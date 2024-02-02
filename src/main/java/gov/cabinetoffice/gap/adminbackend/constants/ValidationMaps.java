@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class ValidationMaps {
+
     static int HARD_CHAR_LIMIT = 40000;
 
     public final static ConcurrentMap<String, Object> SHORT_ANSWER_VALIDATION = new ConcurrentHashMap<>(
