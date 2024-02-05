@@ -8,13 +8,15 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ValidationMaps {
 
+    static int HARD_CHAR_LIMIT = 40000;
+
     public final static ConcurrentMap<String, Object> SHORT_ANSWER_VALIDATION = new ConcurrentHashMap<>(
             Map.ofEntries(new AbstractMap.SimpleEntry<String, Object>("minLength", 1),
-                    new AbstractMap.SimpleEntry<String, Object>("maxLength", 250)));
+                    new AbstractMap.SimpleEntry<String, Object>("maxLength", HARD_CHAR_LIMIT)));
 
     public final static ConcurrentMap<String, Object> LONG_ANSWER_VALIDATION = new ConcurrentHashMap<>(
             Map.ofEntries(new AbstractMap.SimpleEntry<String, Object>("minLength", 2),
-                    new AbstractMap.SimpleEntry<String, Object>("maxLength", 6000)));
+                    new AbstractMap.SimpleEntry<String, Object>("maxLength", HARD_CHAR_LIMIT)));
 
     public final static ConcurrentMap<String, Object> NUMERIC_ANSWER_VALIDATION = new ConcurrentHashMap<>(
             Map.ofEntries((new AbstractMap.SimpleEntry<String, Object>("greaterThanZero", true))));
