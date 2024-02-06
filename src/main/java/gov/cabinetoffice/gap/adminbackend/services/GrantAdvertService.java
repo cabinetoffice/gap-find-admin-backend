@@ -35,6 +35,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -74,6 +78,8 @@ public class GrantAdvertService {
     private final CDAClient contentfulDeliveryClient;
 
     private final RestTemplate restTemplate;
+
+    private final WebClient.Builder webClientBuilder;
 
     private final ContentfulConfigProperties contentfulProperties;
 
@@ -427,10 +433,10 @@ public class GrantAdvertService {
         if (responses != null && !responses.isEmpty()) {
             final String requestBody = buildRichTextPatchRequestBody(responses);
 
-            final HttpHeaders headers = new HttpHeaders();
-            headers.add("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
-            headers.add("Content-Type", "application/json-patch+json");
-            headers.add("X-Contentful-Version", contentfulAdvert.getVersion().toString());
+//            final HttpHeaders headers = new HttpHeaders();
+//            headers.add("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
+//            headers.add("Content-Type", "application/json-patch+json");
+//            headers.add("X-Contentful-Version", contentfulAdvert.getVersion().toString());
 
             // send to contentful
             final String url = String.format("https://api.contentful.com/spaces/%1$s/environments/%2$s/entries/%3$s",
@@ -438,7 +444,24 @@ public class GrantAdvertService {
                     contentfulAdvert.getId());
             log.debug(url);
 
-            restTemplate.patchForObject(url, new HttpEntity<>(requestBody, headers), CMAEntry.class);
+            //restTemplate.patchForObject(url, new HttpEntity<>(requestBody, headers), CMAEntry.class);
+            webClientBuilder.build()
+                    .patch()
+                    .uri(url)
+                    .headers((h) -> {
+                        h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
+                        h.set("Content-Type", "application/json-patch+json");
+                        h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
+                    })
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .onStatus(httpStatus -> !httpStatus.equals(HttpStatus.OK), clientResponse -> {
+                        log.error("Failed to send rich text questions to contentful with error response: " + clientResponse.toString());
+                        return Mono.empty();
+                    })
+                    .bodyToMono(Void.class)
+                    .block();
         }
     }
 
