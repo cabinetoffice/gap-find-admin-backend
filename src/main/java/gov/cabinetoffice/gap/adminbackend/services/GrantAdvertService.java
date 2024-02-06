@@ -76,7 +76,7 @@ public class GrantAdvertService {
 
     private final RestTemplate restTemplate;
 
-    private WebClient.Builder webClientBuilder;
+    private final WebClient.Builder webClientBuilder;
 
     private final ContentfulConfigProperties contentfulProperties;
 
