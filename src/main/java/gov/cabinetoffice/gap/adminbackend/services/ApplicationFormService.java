@@ -356,4 +356,30 @@ public class ApplicationFormService {
         }
     }
 
+    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId, final Integer increment) {
+        ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        final List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
+        final ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
+        final List<ApplicationFormQuestionDTO> questions = section.getQuestions();
+        final ApplicationFormQuestionDTO question = section.getQuestionById(questionId);
+
+        final int index = questions.indexOf(question);
+        final int questionListSize = questions.size() - 1;
+        final int newSectionIndex = index + increment;
+
+        if (newSectionIndex < 0)
+            throw new FieldViolationException("questionId", "Question is already at the top");
+
+        if (newSectionIndex > questionListSize)
+            throw new FieldViolationException("questionId", "Question is already at the bottom");
+
+        questions.remove(index);
+        questions.add(newSectionIndex, question);
+
+        applicationForm.getDefinition().setSections(sections);
+        this.applicationFormRepository.save(applicationForm);
+    }
 }
