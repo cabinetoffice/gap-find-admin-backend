@@ -444,14 +444,10 @@ public class GrantAdvertService {
                         h.set("Content-Type", "application/json-patch+json");
                         h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
                     })
-                    .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)
                     .retrieve()
-                    .onStatus(httpStatus -> !httpStatus.equals(HttpStatus.OK), clientResponse -> {
-                        log.error("Failed to send rich text questions to contentful with error response: " + clientResponse.toString());
-                        return Mono.empty();
-                    })
                     .bodyToMono(Void.class)
+                    .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", url, exception.getMessage()))
                     .block();
         }
     }
