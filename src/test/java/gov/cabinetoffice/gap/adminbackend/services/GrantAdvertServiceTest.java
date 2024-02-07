@@ -853,11 +853,10 @@ class GrantAdvertServiceTest {
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
-            when(requestBodyUriSpec.contentType(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-            when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -886,10 +885,8 @@ class GrantAdvertServiceTest {
             verify(webClient).patch();
             verify(requestBodyUriSpec).uri(anyString());
             verify(requestBodyUriSpec).headers(any());
-            verify(requestBodyUriSpec).contentType(any());
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
-            verify(responseSpec).onStatus(any(), any());
             verify(responseSpec).bodyToMono(Void.class);
 
             // verify that we've refreshed the data after adding RTF data
@@ -931,10 +928,8 @@ class GrantAdvertServiceTest {
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
-            when(requestBodyUriSpec.contentType(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-            when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
@@ -952,10 +947,8 @@ class GrantAdvertServiceTest {
             verify(webClient).patch();
             verify(requestBodyUriSpec).uri(anyString());
             verify(requestBodyUriSpec).headers(any());
-            verify(requestBodyUriSpec).contentType(any());
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
-            verify(responseSpec).onStatus(any(), any());
             verify(responseSpec).bodyToMono(Void.class);
 
             verify(contentfulEntries).update(publishedContentfulAdvert);
@@ -1006,10 +999,8 @@ class GrantAdvertServiceTest {
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
-            when(requestBodyUriSpec.contentType(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-            when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
             when(advertDefinition.getSections()).thenReturn(definition.getSections());
@@ -1058,10 +1049,8 @@ class GrantAdvertServiceTest {
             verify(webClient).patch();
             verify(requestBodyUriSpec).uri(anyString());
             verify(requestBodyUriSpec).headers(any());
-            verify(requestBodyUriSpec).contentType(any());
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
-            verify(responseSpec).onStatus(any(), any());
             verify(responseSpec).bodyToMono(Void.class);
 
             // verify that we've refreshed the data after adding RTF data
