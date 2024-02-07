@@ -189,7 +189,6 @@ public class ApplicationFormService {
         }
         violationsSet = this.validator.validate(mappedQuestion);
 
-        // FIXME significant changes needed to refactor the DTO to support an Object for validation
         validateMaxWordsValidationField(questionPatchDto, responseType);
 
         if (!violationsSet.isEmpty()) {
@@ -201,7 +200,7 @@ public class ApplicationFormService {
 
     }
 
-    // FIXME significant changes needed to refactor the DTO to support an Object for validation
+    // TODO GAP-2429: Refactor validation of validation Map to use a DTO with proper validation annotations
     private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
         if (responseType == ResponseTypeEnum.LongAnswer) {
             final String MAX_WORDS_FIELD = "maxWords";
