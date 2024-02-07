@@ -1,0 +1,2 @@
+ALTER TABLE api_key
+ALTER COLUMN revoked_by TYPE VARCHAR(256);

@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
+import gov.cabinetoffice.gap.adminbackend.services.TechSupportUserService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.TestDecodedJwt;
@@ -69,6 +70,9 @@ class UserControllerTest {
 
     @MockBean
     private UserServiceConfig userServiceConfig;
+
+    @MockBean
+    private TechSupportUserService techSupportService;
 
     @Nested
     class MigrateUser {
@@ -225,7 +229,7 @@ class UserControllerTest {
     }
 
     @Test
-    public void testValidateAdminSession() throws Exception {
+    void testValidateAdminSession() throws Exception {
         AdminSession adminSession = new AdminSession();
         adminSession.setEmailAddress("admin@example.com");
         adminSession.setRoles("[FIND, APPLY, ADMIN]");
@@ -247,7 +251,7 @@ class UserControllerTest {
     }
 
     @Test
-    public void testValidateAdminSessionAuthenticationNotAuthenticated() throws Exception {
+    void testValidateAdminSessionAuthenticationNotAuthenticated() throws Exception {
         SecurityContext securityContext = mock(SecurityContext.class);
         SecurityContextHolder.setContext(securityContext);
 
@@ -260,7 +264,7 @@ class UserControllerTest {
     }
 
     @Test
-    public void testValidateAdminSessionRolesDoNotMatch() throws Exception {
+    void testValidateAdminSessionRolesDoNotMatch() throws Exception {
         AdminSession adminSession = new AdminSession();
         adminSession.setEmailAddress("admin@example.com");
         adminSession.setRoles("[FIND, APPLY, ADMIN]");

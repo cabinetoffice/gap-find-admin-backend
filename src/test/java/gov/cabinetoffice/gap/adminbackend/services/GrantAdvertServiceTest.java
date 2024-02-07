@@ -37,6 +37,8 @@ import org.mockito.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.time.*;
 import java.util.Collections;
@@ -94,6 +96,9 @@ class GrantAdvertServiceTest {
 
     @Mock
     private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
+
+    @Mock
+    private WebClient.Builder webClientBuilder;
 
     @InjectMocks
     @Spy
@@ -642,14 +647,14 @@ class GrantAdvertServiceTest {
         @Test
         void updatePageResponse_DateQuestion() {
 
-            String[] openingMultiResponse = new String[] { "10", "10", "2010" };
+            String[] openingMultiResponse = new String[] { "10", "10", "2010", "13:00" };
             GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder().id(OPENING_DATE_ID)
                     .multiResponse(openingMultiResponse).build();
-            String[] closingMultiResponse = new String[] { "12", "12", "2012" };
+            String[] closingMultiResponse = new String[] { "12", "12", "2012", "13:00" };
             GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder().id(CLOSING_DATE_ID)
                     .multiResponse(closingMultiResponse).build();
-            String[] expectedOpeningMultiResponse = new String[] { "10", "10", "2010", "00", "01" };
-            String[] expectedClosingMultiResponse = new String[] { "12", "12", "2012", "23", "59" };
+            String[] expectedOpeningMultiResponse = new String[] { "10", "10", "2010", "13", "00" };
+            String[] expectedClosingMultiResponse = new String[] { "12", "12", "2012", "13", "00" };
 
             GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder().id(pageId)
                     .status(GrantAdvertPageResponseStatus.COMPLETED)
@@ -839,6 +844,20 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
+            final WebClient webClient = mock(WebClient.class);
+            final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+            final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+            when(webClientBuilder.build()).thenReturn(webClient);
+            when(webClient.patch()).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+            when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
@@ -863,10 +882,12 @@ class GrantAdvertServiceTest {
             assertThat(capturedBeforeSave.getId()).isNull();
             assertThat(capturedBeforeSave.getVersion()).isNull();
 
-            // verify we've updated the RTF fields
-            verify(restTemplate).patchForObject(
-                    eq("https://api.contentful.com/spaces/a-space-id/environments/dev/entries/7gqb4FzwI4W22Ap3X29xsS"),
-                    any(), eq(CMAEntry.class));
+            verify(webClient).patch();
+            verify(requestBodyUriSpec).uri(anyString());
+            verify(requestBodyUriSpec).headers(any());
+            verify(requestBodyUriSpec).bodyValue(any());
+            verify(requestHeadersSpec).retrieve();
+            verify(responseSpec).bodyToMono(Void.class);
 
             // verify that we've refreshed the data after adding RTF data
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
@@ -898,6 +919,19 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert,
                     publishedContentfulAdvert);
 
+            final WebClient webClient = mock(WebClient.class);
+            final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+            final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+            when(webClientBuilder.build()).thenReturn(webClient);
+            when(webClient.patch()).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+            when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
             grantAdvertService.publishAdvert(grantAdvertId, false);
@@ -910,12 +944,14 @@ class GrantAdvertServiceTest {
             assertThat(savedAdvert.getOpeningDate()).isEqualTo(openingDate);
             assertThat(savedAdvert.getClosingDate()).isEqualTo(closingDate);
 
-            verify(contentfulEntries).update(publishedContentfulAdvert);
+            verify(webClient).patch();
+            verify(requestBodyUriSpec).uri(anyString());
+            verify(requestBodyUriSpec).headers(any());
+            verify(requestBodyUriSpec).bodyValue(any());
+            verify(requestHeadersSpec).retrieve();
+            verify(responseSpec).bodyToMono(Void.class);
 
-            // verify we've updated the RTF fields
-            verify(restTemplate).patchForObject(
-                    eq("https://api.contentful.com/spaces/a-space-id/environments/dev/entries/7gqb4FzwI4W22Ap3X29xsS"),
-                    any(), eq(CMAEntry.class));
+            verify(contentfulEntries).update(publishedContentfulAdvert);
 
             // verify that we've refreshed the data after adding RTF data
             verify(contentfulEntries, atLeastOnce()).fetchOne(contentfulAdvertId);
@@ -953,6 +989,19 @@ class GrantAdvertServiceTest {
                     .contentfulEntryId("entry-id").contentfulSlug("contentful-slug")
                     .grantAdvertName("Grant Advert Name").response(response).grantAdvertName("Homelessness Grant")
                     .build();
+
+            final WebClient webClient = mock(WebClient.class);
+            final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+            final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+            when(webClientBuilder.build()).thenReturn(webClient);
+            when(webClient.patch()).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+            when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+            when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
             when(advertDefinition.getSections()).thenReturn(definition.getSections());
 
@@ -997,10 +1046,12 @@ class GrantAdvertServiceTest {
             assertThat(capturedBeforeSave.getId()).isNull();
             assertThat(capturedBeforeSave.getVersion()).isNull();
 
-            // verify we've updated the RTF fields
-            verify(restTemplate).patchForObject(
-                    eq("https://api.contentful.com/spaces/a-space-id/environments/dev/entries/7gqb4FzwI4W22Ap3X29xsS"),
-                    any(), eq(CMAEntry.class));
+            verify(webClient).patch();
+            verify(requestBodyUriSpec).uri(anyString());
+            verify(requestBodyUriSpec).headers(any());
+            verify(requestBodyUriSpec).bodyValue(any());
+            verify(requestHeadersSpec).retrieve();
+            verify(responseSpec).bodyToMono(Void.class);
 
             // verify that we've refreshed the data after adding RTF data
             verify(contentfulEntries).fetchOne(contentfulAdvertId);

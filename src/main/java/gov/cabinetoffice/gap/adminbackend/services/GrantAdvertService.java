@@ -29,25 +29,27 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.CurrencyFormatter;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import javax.transaction.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +75,8 @@ public class GrantAdvertService {
     private final CDAClient contentfulDeliveryClient;
 
     private final RestTemplate restTemplate;
+
+    private final WebClient.Builder webClientBuilder;
 
     private final ContentfulConfigProperties contentfulProperties;
 
@@ -211,17 +215,46 @@ public class GrantAdvertService {
             pagePatchDto.getPage().getQuestions().forEach(question -> {
                 String[] multiResponse = question.getMultiResponse();
                 if (question.getId().equals(OPENING_DATE_ID)) {
-                    String[] opening = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], "00",
-                            "01" };
-                    pagePatchDto.getPage().getQuestions().get(0).setMultiResponse(opening);
+                    String[] openingTime = multiResponse[3].split(":");
+                    String[] openingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
+                            openingTime[0], openingTime[1] };
+                    pagePatchDto.getPage().getQuestions().get(0).setMultiResponse(openingDateTime);
                 }
                 else if (question.getId().equals(CLOSING_DATE_ID)) {
-                    String[] closing = new String[] { multiResponse[0], multiResponse[1], multiResponse[2], "23",
-                            "59" };
-                    pagePatchDto.getPage().getQuestions().get(1).setMultiResponse(closing);
+                    String[] closingTime = multiResponse[3].split(":");
+                    String[] closingDateTime = new String[] { multiResponse[0], multiResponse[1], multiResponse[2],
+                            closingTime[0], closingTime[1] };
+
+                    if (multiResponse[3].equals("23:59")) {
+                        closingDateTime = adjustToMidnightNextDay(multiResponse, closingTime);
+                    }
+
+                    pagePatchDto.getPage().getQuestions().get(1).setMultiResponse(closingDateTime);
                 }
             });
         }
+    }
+
+    private String[] adjustToMidnightNextDay(String[] multiResponse, String[] closingTime) {
+        // increment date by 1 day and set time to 00:00
+        LocalDateTime dateTime = convertToDateTime(multiResponse, closingTime);
+        LocalDateTime incrementedDateTime = dateTime.plusDays(1);
+        int incrementedDay = incrementedDateTime.getDayOfMonth();
+        int incrementedMonth = incrementedDateTime.getMonthValue();
+        int incrementedYear = incrementedDateTime.getYear();
+
+        return new String[] { String.format("%02d", incrementedDay), String.valueOf(incrementedMonth),
+                String.valueOf(incrementedYear), "00", "00" };
+    }
+
+    private static LocalDateTime convertToDateTime(String[] date, String[] time) {
+        int day = Integer.parseInt(date[0]);
+        int month = Integer.parseInt(date[1]);
+        int year = Integer.parseInt(date[2]);
+        int hour = Integer.parseInt(time[0]);
+        int minute = Integer.parseInt(time[1]);
+
+        return LocalDateTime.of(year, Month.of(month), day, hour, minute);
     }
 
     private void updateSectionStatus(GrantAdvertSectionResponse section) {
@@ -397,18 +430,25 @@ public class GrantAdvertService {
         if (responses != null && !responses.isEmpty()) {
             final String requestBody = buildRichTextPatchRequestBody(responses);
 
-            final HttpHeaders headers = new HttpHeaders();
-            headers.add("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
-            headers.add("Content-Type", "application/json-patch+json");
-            headers.add("X-Contentful-Version", contentfulAdvert.getVersion().toString());
-
             // send to contentful
             final String url = String.format("https://api.contentful.com/spaces/%1$s/environments/%2$s/entries/%3$s",
                     contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
                     contentfulAdvert.getId());
             log.debug(url);
 
-            restTemplate.patchForObject(url, new HttpEntity<>(requestBody, headers), CMAEntry.class);
+            webClientBuilder.build()
+                    .patch()
+                    .uri(url)
+                    .headers(h -> {
+                        h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
+                        h.set("Content-Type", "application/json-patch+json");
+                        h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
+                    })
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", url, exception.getMessage()))
+                    .block();
         }
     }
 

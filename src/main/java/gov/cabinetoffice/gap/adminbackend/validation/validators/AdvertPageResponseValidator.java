@@ -1,30 +1,29 @@
 package gov.cabinetoffice.gap.adminbackend.validation.validators;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
+import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertValidationType;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConvertHtmlToMdException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.models.*;
+import gov.cabinetoffice.gap.adminbackend.validation.ValidationResult;
+import gov.cabinetoffice.gap.adminbackend.validation.annotations.ValidPageResponse;
+import io.github.furstenheim.CopyDown;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+import org.jetbrains.annotations.Nullable;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
 import java.time.Month;
 import java.time.Year;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-
-import gov.cabinetoffice.gap.adminbackend.models.*;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.util.Strings;
-
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
-import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
-import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertValidationType;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ConvertHtmlToMdException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.validation.ValidationResult;
-import gov.cabinetoffice.gap.adminbackend.validation.annotations.ValidPageResponse;
-import io.github.furstenheim.CopyDown;
-import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
 public class AdvertPageResponseValidator implements ConstraintValidator<ValidPageResponse, Object> {
@@ -340,16 +339,18 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         }
 
         // convert the string[] to int[], to easily build Calendars
-        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
-                .toArray();
-        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
-                .toArray();
+        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse())
+                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt).toArray();
+        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse())
+                .flatMapToInt(AdvertPageResponseValidator::parseTimeStringToInt).toArray();
 
         // build Calendar objs to compare
         Calendar openingDate = new Calendar.Builder()
-                .setDate(openingResponse[2], openingResponse[1], openingResponse[0]).build();
+                .setDate(openingResponse[2], openingResponse[1], openingResponse[0])
+                .setTimeOfDay(openingResponse[3], openingResponse[4], 0).build();
         Calendar closingDate = new Calendar.Builder()
-                .setDate(closingResponse[2], closingResponse[1], closingResponse[0]).build();
+                .setDate(closingResponse[2], closingResponse[1], closingResponse[0])
+                .setTimeOfDay(closingResponse[3], closingResponse[4], 0).build();
 
         // c o m p a r e
         if (openingDate.compareTo(closingDate) >= 0) {
@@ -360,6 +361,16 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         if (result.getFieldErrors().isEmpty())
             result.setValid(Boolean.TRUE);
         return result;
+    }
+
+    private static IntStream parseTimeStringToInt(String timeString) {
+        if (timeString.contains(":")) {
+            String[] parts = timeString.split(":");
+            int hours = Integer.parseInt(parts[0]);
+            int minutes = Integer.parseInt(parts[1]);
+            return IntStream.of(hours, minutes);
+        }
+        return IntStream.of(Integer.parseInt(timeString));
     }
 
     private SimpleEntry<String, String> getMandatoryFieldViolationMessage(
