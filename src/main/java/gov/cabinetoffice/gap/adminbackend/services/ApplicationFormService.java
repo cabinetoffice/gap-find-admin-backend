@@ -20,12 +20,14 @@ import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
+import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
 import java.time.Instant;
@@ -198,6 +200,29 @@ public class ApplicationFormService {
         }
 
     }
+    // FIXME significant changes needed to refactor the DTO to support an Object for validation
+    private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
+        if (responseType == ResponseTypeEnum.LongAnswer) {
+            final String MAX_WORDS_FIELD = "maxWords";
+            if (!questionPatchDto.getValidation().containsKey(MAX_WORDS_FIELD)) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
+            }
+            final String maxWordsString = questionPatchDto.getValidation().get("maxWords").toString();
+            if (maxWordsString.isBlank()) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
+            }
+            if (!NumberUtils.isCreatable(maxWordsString)) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be a number");
+            }
+            final long maxWords = Long.parseLong(maxWordsString);
+            if (maxWords < 1) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be greater than 0");
+            }
+            if (maxWords > 5000) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be less than 5000");
+            }
+        }
+    }
 
     public String addQuestionToApplicationForm(Integer applicationId, String sectionId,
             ApplicationFormQuestionDTO question, HttpSession session) {
@@ -247,19 +272,20 @@ public class ApplicationFormService {
 
         // check response type, map to the correct model, and validate
         // left as switch statement in the event of new question types
-        Set violationsSet;
+        Set<ConstraintViolation<QuestionAbstractPostDTO>> violationsSet;
         QuestionAbstractPostDTO mappedQuestion;
 
         switch (questionPostDto.getResponseType()) {
             case MultipleSelection, Dropdown, SingleSelection -> {
                 mappedQuestion = this.applicationFormMapper.questionDtoToQuestionOptionsPost(questionPostDto);
-                violationsSet = this.validator.validate(mappedQuestion);
             }
             default -> {
                 mappedQuestion = this.applicationFormMapper.questionDtoToQuestionGenericPost(questionPostDto);
-                violationsSet = this.validator.validate(mappedQuestion);
             }
         }
+        violationsSet = this.validator.validate(mappedQuestion);
+
+        validateMaxWordsValidationField(questionPostDto, questionPostDto.getResponseType());
 
         if (!violationsSet.isEmpty()) {
             throw new ConstraintViolationException(violationsSet);
