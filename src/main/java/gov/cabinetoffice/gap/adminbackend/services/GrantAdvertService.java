@@ -447,7 +447,7 @@ public class GrantAdvertService {
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(Void.class)
-                    .doOnError(exception -> log.warn("Failed to PATCH {}, cause {}", url, exception.getMessage()))
+                    .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", url, exception.getMessage()))
                     .block();
         }
     }
