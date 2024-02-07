@@ -446,11 +446,8 @@ public class GrantAdvertService {
                     })
                     .bodyValue(requestBody)
                     .retrieve()
-                    .onStatus(httpStatus -> !httpStatus.equals(HttpStatus.OK), clientResponse -> {
-                        log.error("Failed to send rich text questions to contentful with error response: " + clientResponse.toString());
-                        return Mono.empty();
-                    })
                     .bodyToMono(Void.class)
+                    .doOnError(exception -> log.warn("Failed to PATCH {}, cause {}", url, exception.getMessage()))
                     .block();
         }
     }
