@@ -444,7 +444,6 @@ public class GrantAdvertService {
                         h.set("Content-Type", "application/json-patch+json");
                         h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
                     })
-                    .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)
                     .retrieve()
                     .onStatus(httpStatus -> !httpStatus.equals(HttpStatus.OK), clientResponse -> {
