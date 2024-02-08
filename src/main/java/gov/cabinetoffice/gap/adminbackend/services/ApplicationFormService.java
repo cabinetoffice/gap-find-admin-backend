@@ -199,30 +199,6 @@ public class ApplicationFormService {
         }
 
     }
-    // FIXME significant changes needed to refactor the DTO to support an Object for validation
-    private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
-        if (responseType == ResponseTypeEnum.LongAnswer) {
-            final String MAX_WORDS_FIELD = "maxWords";
-            if (!questionPatchDto.getValidation().containsKey(MAX_WORDS_FIELD)) {
-                throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
-            }
-            final String maxWordsString = questionPatchDto.getValidation().get("maxWords").toString();
-            if (maxWordsString.isBlank()) {
-                throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
-            }
-            if (!NumberUtils.isCreatable(maxWordsString)) {
-                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be a number");
-            }
-            final long maxWords = Long.parseLong(maxWordsString);
-            if (maxWords < 1) {
-                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be greater than 0");
-            }
-            if (maxWords > 5000) {
-                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be less than 5000");
-            }
-        }
-    }
-
     // TODO GAP-2429: Refactor validation of validation Map to use a DTO with proper validation annotations
     private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
         if (responseType == ResponseTypeEnum.LongAnswer) {
