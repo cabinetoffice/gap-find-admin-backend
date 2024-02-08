@@ -7,25 +7,30 @@ import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.validation.Validation;
 import javax.validation.Validator;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.EmptySectionApplicationFormGenerators.emptySectionApplicationFormGenerator;
@@ -35,7 +40,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -126,12 +131,9 @@ class ApplicationFormSectionServiceTest {
             Integer applicationId = testApplicationForm.getGrantApplicationId();
             String sectionId = "test-section-id";
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationForm));
-
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .getSectionById(applicationId, sectionId, true)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .getSectionById(applicationId, sectionId, true)).isInstanceOf(NotFoundException.class).hasMessage(
+                            "Application with id " + applicationId + " does not exist or insufficient permissions");
         }
 
     }
@@ -178,8 +180,8 @@ class ApplicationFormSectionServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .addSectionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_POST_SECTION))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id "
+                                    + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
 
         }
 
@@ -200,15 +202,11 @@ class ApplicationFormSectionServiceTest {
         void addNewSection_insufficientPermissionsToAddThisSection() {
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationForm.getGrantApplicationId();
-            String sectionId = "test-section-id";
-
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationForm));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .addSectionToApplicationForm(applicationId, SAMPLE_POST_SECTION))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
 
         }
 
@@ -252,9 +250,8 @@ class ApplicationFormSectionServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
-
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id "
+                                    + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
         }
 
         @Test
@@ -278,12 +275,10 @@ class ApplicationFormSectionServiceTest {
             Integer applicationId = testApplicationForm.getGrantApplicationId();
             String sectionId = "test-section-id";
 
-            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationForm));
-
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .deleteSectionFromApplication(applicationId, sectionId)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .deleteSectionFromApplication(applicationId, sectionId)).isInstanceOf(NotFoundException.class)
+                            .hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
 
         }
 
@@ -326,8 +321,8 @@ class ApplicationFormSectionServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
                     .updateSectionStatus(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SectionStatusEnum.COMPLETE))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id "
+                                    + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
         }
 
         @Test
@@ -351,13 +346,127 @@ class ApplicationFormSectionServiceTest {
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = "test-section-id";
 
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionStatus(applicationId, sectionId, SectionStatusEnum.COMPLETE))
+                            .isInstanceOf(NotFoundException.class).hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
+        }
+
+    }
+
+    @Nested
+    class updateSectionOrder {
+
+        @Test
+        void updateSectionOrderSuccessful() {
+            MockedStatic<ApplicationFormUtils> utilMock = mockStatic(ApplicationFormUtils.class);
+
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(
+                    List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section4").build()));
+            testApplicationFormEntity.getDefinition().setSections(sections);
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(2).getSectionId();
+            final Integer increment = 1;
+
+            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            ApplicationFormSectionServiceTest.this.applicationFormSectionService.updateSectionOrder(applicationId,
+                    sectionId, increment);
+
+            Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
+            utilMock.close();
+        }
+
+        @Test
+        void updateSectionOrderOutsideOfRange() {
+            MockedStatic<ApplicationFormUtils> utilMock = mockStatic(ApplicationFormUtils.class);
+
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(
+                    List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section2").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section3").build(),
+                            ApplicationFormSectionDTO.builder().sectionId("Section4").build()));
+            testApplicationFormEntity.getDefinition().setSections(sections);
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(3).getSectionId();
+            final Integer increment = 1;
+
             Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionStatus(applicationId, sectionId, SectionStatusEnum.COMPLETE))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
+                    .updateSectionOrder(applicationId, sectionId, increment))
+                            .isInstanceOf(FieldViolationException.class).hasMessage("Section is already at the bottom");
+
+            utilMock.close();
+
+        }
+
+        @Test
+        void updateSectionOrderUnauthorised() {
+            final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().createdBy(2).build();
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = "test-section-id";
+            final Integer increment = 1;
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionOrder(applicationId, sectionId, increment)).isInstanceOf(NotFoundException.class)
+                            .hasMessage("Application with id " + applicationId
+                                    + " does not exist or insufficient permissions");
+
+        }
+
+    }
+
+    @Nested
+    class updateSectionTitle {
+
+        @Test
+        void updateSectionTitle_HappyPath() {
+            String newTitle = "newTitle";
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            applicationFormSectionService.updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle);
+
+            Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
+        }
+
+        @Test
+        void updateSectionTitle_NotFound() {
+            String newTitle = "newTitle";
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle)).isInstanceOf(NotFoundException.class)
+                            .hasMessage("Application with id 111 does not exist");
+        }
+
+        @Test
+        void updateSectionTitle_throwsFieldErrorWithAMatchingSectionTitle() {
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            Assertions.assertThrows(FieldViolationException.class, () -> applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title"));
         }
 
     }

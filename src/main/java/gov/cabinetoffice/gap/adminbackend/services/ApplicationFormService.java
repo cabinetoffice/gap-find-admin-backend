@@ -20,12 +20,14 @@ import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
+import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
 import java.time.Instant;
@@ -174,21 +176,20 @@ public class ApplicationFormService {
 
     private QuestionAbstractPatchDTO validatePatchQuestion(ApplicationFormQuestionDTO questionPatchDto,
             ResponseTypeEnum responseType) {
-        Set violationsSet;
+        Set<ConstraintViolation<QuestionAbstractPatchDTO>> violationsSet;
         QuestionAbstractPatchDTO mappedQuestion;
 
         // check response type, map to the correct model, and validate
-        // left as switch statement in the event of new question types
-        switch (responseType) {
-            case MultipleSelection, Dropdown, SingleSelection -> {
-                mappedQuestion = this.applicationFormMapper.questionDtoToQuestionOptionsPatch(questionPatchDto);
-                violationsSet = this.validator.validate(mappedQuestion);
-            }
-            default -> {
-                mappedQuestion = this.applicationFormMapper.questionDtoToQuestionGenericPatch(questionPatchDto);
-                violationsSet = this.validator.validate(mappedQuestion);
-            }
+        if (Objects.requireNonNull(responseType) == ResponseTypeEnum.MultipleSelection
+                || responseType == ResponseTypeEnum.Dropdown || responseType == ResponseTypeEnum.SingleSelection) {
+            mappedQuestion = this.applicationFormMapper.questionDtoToQuestionOptionsPatch(questionPatchDto);
         }
+        else {
+            mappedQuestion = this.applicationFormMapper.questionDtoToQuestionGenericPatch(questionPatchDto);
+        }
+        violationsSet = this.validator.validate(mappedQuestion);
+
+        validateMaxWordsValidationField(questionPatchDto, responseType);
 
         if (!violationsSet.isEmpty()) {
             throw new ConstraintViolationException(violationsSet);
@@ -197,6 +198,30 @@ public class ApplicationFormService {
             return mappedQuestion;
         }
 
+    }
+
+    // TODO GAP-2429: Refactor validation of validation Map to use a DTO with proper validation annotations
+    private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
+        if (responseType == ResponseTypeEnum.LongAnswer) {
+            final String MAX_WORDS_FIELD = "maxWords";
+            if (!questionPatchDto.getValidation().containsKey(MAX_WORDS_FIELD)) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
+            }
+            final String maxWordsString = questionPatchDto.getValidation().get("maxWords").toString();
+            if (maxWordsString.isBlank()) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
+            }
+            if (!NumberUtils.isCreatable(maxWordsString)) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be a number");
+            }
+            final long maxWords = Long.parseLong(maxWordsString);
+            if (maxWords < 1) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be greater than 0");
+            }
+            if (maxWords > 5000) {
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be less than 5000");
+            }
+        }
     }
 
     public String addQuestionToApplicationForm(Integer applicationId, String sectionId,
@@ -356,4 +381,30 @@ public class ApplicationFormService {
         }
     }
 
+    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId, final Integer increment) {
+        ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        final List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
+        final ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
+        final List<ApplicationFormQuestionDTO> questions = section.getQuestions();
+        final ApplicationFormQuestionDTO question = section.getQuestionById(questionId);
+
+        final int index = questions.indexOf(question);
+        final int questionListSize = questions.size() - 1;
+        final int newSectionIndex = index + increment;
+
+        if (newSectionIndex < 0)
+            throw new FieldViolationException("questionId", "Question is already at the top");
+
+        if (newSectionIndex > questionListSize)
+            throw new FieldViolationException("questionId", "Question is already at the bottom");
+
+        questions.remove(index);
+        questions.add(newSectionIndex, question);
+
+        applicationForm.getDefinition().setSections(sections);
+        this.applicationFormRepository.save(applicationForm);
+    }
 }
