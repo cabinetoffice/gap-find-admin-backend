@@ -199,7 +199,6 @@ public class ApplicationFormService {
         }
 
     }
-
     // TODO GAP-2429: Refactor validation of validation Map to use a DTO with proper validation annotations
     private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
         if (responseType == ResponseTypeEnum.LongAnswer) {
@@ -272,19 +271,20 @@ public class ApplicationFormService {
 
         // check response type, map to the correct model, and validate
         // left as switch statement in the event of new question types
-        Set violationsSet;
+        Set<ConstraintViolation<QuestionAbstractPostDTO>> violationsSet;
         QuestionAbstractPostDTO mappedQuestion;
 
         switch (questionPostDto.getResponseType()) {
             case MultipleSelection, Dropdown, SingleSelection -> {
                 mappedQuestion = this.applicationFormMapper.questionDtoToQuestionOptionsPost(questionPostDto);
-                violationsSet = this.validator.validate(mappedQuestion);
             }
             default -> {
                 mappedQuestion = this.applicationFormMapper.questionDtoToQuestionGenericPost(questionPostDto);
-                violationsSet = this.validator.validate(mappedQuestion);
             }
         }
+        violationsSet = this.validator.validate(mappedQuestion);
+
+        validateMaxWordsValidationField(questionPostDto, questionPostDto.getResponseType());
 
         if (!violationsSet.isEmpty()) {
             throw new ConstraintViolationException(violationsSet);
