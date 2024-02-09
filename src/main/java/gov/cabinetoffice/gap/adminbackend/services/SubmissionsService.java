@@ -209,6 +209,9 @@ public class SubmissionsService {
         if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.REQUESTED)) {
             return GrantExportStatus.REQUESTED;
         }
+        if (grantExportRepository.existsByApplicationIdAndStatus(applicationId, GrantExportStatus.FAILED)) {
+            return GrantExportStatus.FAILED;
+        }
         return GrantExportStatus.COMPLETE;
     }
 
