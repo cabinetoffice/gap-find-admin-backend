@@ -6,16 +6,22 @@ import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.MigrateUserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UpdateFundingOrgDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.CreateTechSupportUserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.entities.TechSupportUser;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
+import gov.cabinetoffice.gap.adminbackend.services.TechSupportUserService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,6 +50,8 @@ public class UserController {
     private final UserService userService;
 
     private final UserServiceConfig userServiceConfig;
+
+    private final TechSupportUserService techSupportUserService;
 
     @Value("${feature.onelogin.enabled}")
     private boolean oneLoginEnabled;
@@ -121,21 +129,27 @@ public class UserController {
                     .body("User not authorized to update user's funding organisation: " + jwtPayload.getSub());
         }
 
+        Optional<TechSupportUser> techSupportUser = techSupportUserService
+                .getTechSupportUserBySub(updateFundingOrgDto.sub());
         Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(updateFundingOrgDto.sub());
 
-        if (grantAdmin.isPresent()) {
-            userService.updateFundingOrganisation(grantAdmin.get(), updateFundingOrgDto.departmentName());
-            return ResponseEntity.ok("User's funding organisation updated successfully");
-        }
-        else {
-            return ResponseEntity.status(404).body("No grant Admin found with sub " + jwtPayload.getSub());
+        grantAdmin.ifPresent(user -> userService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName()));
+
+        techSupportUser.ifPresent(
+                user -> techSupportUserService.updateFundingOrganisation(user, updateFundingOrgDto.departmentName()));
+
+        if (grantAdmin.isEmpty() && techSupportUser.isEmpty()) {
+            return ResponseEntity.status(404)
+                    .body("No grant Admin or tech support user found with sub " + jwtPayload.getSub());
+
         }
 
+        return ResponseEntity.ok("User's funding organisation updated successfully");
     }
 
     @PostMapping(value = "/validate-admin-email")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity checkNewAdminEmailIsValid(
+    public ResponseEntity<Void> checkNewAdminEmailIsValid(
             @RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
         if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
             throw new FieldViolationException("emailAddress", "This user already owns this grant.");
@@ -149,6 +163,41 @@ public class UserController {
             throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
         }
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "tech-support-user")
+    public ResponseEntity<String> createTechSupportUser(@RequestBody CreateTechSupportUserDto techSupportUserDto,
+            @RequestHeader("Authorization") String token) {
+        final String logMessage = String.format("User not authorized to create user: %s", techSupportUserDto.userSub());
+        validateToken(token, logMessage);
+
+        techSupportUserService.createTechSupportUser(techSupportUserDto);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping(value = "/tech-support-user/{userSub}")
+    public ResponseEntity<String> deleteTechSupportUser(@PathVariable String userSub,
+            @RequestHeader("Authorization") String token) {
+        final String logMessage = String.format("User not authorized to delete user: %s", userSub);
+        validateToken(token, logMessage);
+
+        techSupportUserService.deleteTechSupportUser(userSub);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @Nullable
+    private void validateToken(String token, String message) {
+        if (isEmpty(token) || !token.startsWith("Bearer "))
+            throw new UnauthorizedException("Delete user: Expected Authorization header not provided");
+
+        final DecodedJWT decodedJWT = jwtService.verifyToken(token.split(" ")[1]);
+        final JwtPayload jwtPayload = this.jwtService.getPayloadFromJwtV2(decodedJWT);
+
+        if (!jwtPayload.getRoles().contains("SUPER_ADMIN")) {
+            throw new ForbiddenException(message);
+        }
     }
 
 }
