@@ -440,6 +440,17 @@ class SubmissionsServiceTest {
             assertThat(result).isEqualTo(GrantExportStatus.COMPLETE);
         }
 
+        @Test
+        void whenExportRecordsExist_returnFailed() {
+            when(grantExportRepository.existsByApplicationId(APPLICATION_ID)).thenReturn(true);
+            when(grantExportRepository.existsByApplicationIdAndStatus(APPLICATION_ID, GrantExportStatus.FAILED))
+                    .thenReturn(true);
+
+            final GrantExportStatus result = submissionsService.getExportStatus(APPLICATION_ID);
+
+            assertThat(result).isEqualTo(GrantExportStatus.FAILED);
+        }
+
     }
 
     @Nested
