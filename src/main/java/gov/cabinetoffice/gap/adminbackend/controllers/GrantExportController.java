@@ -48,7 +48,7 @@ public class GrantExportController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Returned list of completed grant exports for batch",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
+                            schema = @Schema(implementation = GrantExportEntity.class))),
             @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
