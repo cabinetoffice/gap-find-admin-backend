@@ -1,6 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
@@ -25,7 +24,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
-@WithAdminSession
 public class GrantExportServiceTest {
 
     @Mock
@@ -80,12 +78,12 @@ public class GrantExportServiceTest {
                     .emailAddress("test-email@gmail.com")
                     .build());
 
-            when(exportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(id.getExportBatchId(),GrantExportStatus.COMPLETE, 1))
+            when(exportRepository.findById_ExportBatchIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE))
                     .thenReturn(mockGrantExports);
 
-            List<GrantExportEntity> response = grantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
+            final List<GrantExportEntity> response = grantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
 
-            verify(exportRepository).findAllByIdExportBatchIdAndStatusAndCreatedBy(id.getExportBatchId(),GrantExportStatus.COMPLETE, 1);
+            verify(exportRepository).findById_ExportBatchIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
             assertThat(response).isEqualTo(mockGrantExports);
 
         }
