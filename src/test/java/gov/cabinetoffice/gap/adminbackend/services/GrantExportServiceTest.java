@@ -1,5 +1,8 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import org.junit.jupiter.api.Nested;
@@ -9,8 +12,12 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
+@WithAdminSession
 public class GrantExportServiceTest {
 
     @Mock
@@ -49,6 +57,37 @@ public class GrantExportServiceTest {
             when(exportRepository.countByIdExportBatchIdAndStatusNot(any(), any())).thenThrow(RuntimeException.class);
 
             assertThrows(RuntimeException.class, () -> grantExportService.getOutstandingExportCount(mockUUID));
+        }
+
+    }
+
+    @Nested
+    class getGrantExportsByIdAndStatus {
+
+        @Test
+        void successfullyGetGrantExports() {
+            final GrantExportId id = GrantExportId.builder()
+                    .exportBatchId(UUID.randomUUID())
+                    .submissionId(UUID.randomUUID())
+                    .build();
+            final List<GrantExportEntity> mockGrantExports = Collections.singletonList(GrantExportEntity.builder()
+                    .id(id)
+                    .applicationId(1)
+                    .status(GrantExportStatus.COMPLETE)
+                    .createdBy(1)
+                    .lastUpdated(Instant.now())
+                    .location("location")
+                    .emailAddress("test-email@gmail.com")
+                    .build());
+
+            when(exportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(id.getExportBatchId(),GrantExportStatus.COMPLETE, 1))
+                    .thenReturn(mockGrantExports);
+
+            List<GrantExportEntity> response = grantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
+
+            verify(exportRepository).findAllByIdExportBatchIdAndStatusAndCreatedBy(id.getExportBatchId(),GrantExportStatus.COMPLETE, 1);
+            assertThat(response).isEqualTo(mockGrantExports);
+
         }
 
     }

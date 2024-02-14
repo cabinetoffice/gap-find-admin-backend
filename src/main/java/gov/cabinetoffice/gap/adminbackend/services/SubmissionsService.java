@@ -12,6 +12,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionSection;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantExportBatchEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.Submission;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
@@ -21,6 +22,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -61,6 +63,8 @@ public class SubmissionsService {
     private final RestTemplate restTemplate;
 
     private final ZipService zipService;
+
+    private final GrantExportBatchRepository grantExportBatchRepository;
 
     @Value("${cloud.aws.sqs.submissions-export-queue}")
     private String submissionsExportQueue;
@@ -194,6 +198,7 @@ public class SubmissionsService {
         partitionedSubmissions.stream().map(submissionsBatch -> mapExportRecordListToBatchMessageRequest(applicationId,
                 exportBatchId, adminSession, submissionsBatch)).forEach(exportRecordsBatch -> {
                     grantExportRepository.saveAll(exportRecordsBatch);
+                    grantExportBatchRepository.saveAll(mapGrantExportToGrantExportBatch(exportRecordsBatch));
                     amazonSQS.sendMessageBatch(mapExportRecordListToBatchMessageRequest(exportRecordsBatch));
                 });
     }
@@ -300,6 +305,19 @@ public class SubmissionsService {
                 .map(submission -> GrantExportEntity.builder().id(new GrantExportId(exportId, submission.getId()))
                         .status(GrantExportStatus.REQUESTED).applicationId(applicationId)
                         .emailAddress(adminSession.getEmailAddress()).createdBy(adminSession.getGrantAdminId()).build())
+                .toList();
+    }
+
+    private List<GrantExportBatchEntity> mapGrantExportToGrantExportBatch(List<GrantExportEntity> grantExportEntityList) {
+        return grantExportEntityList.stream()
+                .map(grantExportEntity -> GrantExportBatchEntity.builder()
+                        .id(grantExportEntity.getId().getExportBatchId())
+                        .applicationId(grantExportEntity.getApplicationId())
+                        .status(GrantExportStatus.NOT_GENERATED)
+                        .created(grantExportEntity.getCreated())
+                        .createdBy(grantExportEntity.getCreatedBy())
+                        .emailAddress(grantExportEntity.getEmailAddress())
+                        .build())
                 .toList();
     }
 
