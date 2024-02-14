@@ -81,7 +81,7 @@ public class GrantExportServiceTest {
             when(exportRepository.findById_ExportBatchIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE))
                     .thenReturn(mockGrantExports);
 
-            List<GrantExportEntity> response = grantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
+            final List<GrantExportEntity> response = grantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
 
             verify(exportRepository).findById_ExportBatchIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
             assertThat(response).isEqualTo(mockGrantExports);
