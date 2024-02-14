@@ -199,6 +199,7 @@ public class SubmissionsService {
                 exportBatchId, adminSession, submissionsBatch)).forEach(exportRecordsBatch -> {
                     grantExportBatchRepository.saveAll(mapGrantExportToGrantExportBatch(exportRecordsBatch));
                     grantExportRepository.saveAll(exportRecordsBatch);
+                    grantExportBatchRepository.saveAll(mapGrantExportToGrantExportBatch(exportRecordsBatch));
                     amazonSQS.sendMessageBatch(mapExportRecordListToBatchMessageRequest(exportRecordsBatch));
                 });
     }
