@@ -19,6 +19,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomGrantExportEntityGenerator;
@@ -65,6 +66,9 @@ class SubmissionsServiceTest {
 
     @Mock
     private GrantExportRepository grantExportRepository;
+
+    @Mock
+    private GrantExportBatchRepository grantExportBatchRepository;
 
     @InjectMocks
     @Spy
@@ -438,6 +442,17 @@ class SubmissionsServiceTest {
             final GrantExportStatus result = submissionsService.getExportStatus(APPLICATION_ID);
 
             assertThat(result).isEqualTo(GrantExportStatus.COMPLETE);
+        }
+
+        @Test
+        void whenExportRecordsExist_returnFailed() {
+            when(grantExportRepository.existsByApplicationId(APPLICATION_ID)).thenReturn(true);
+            when(grantExportRepository.existsByApplicationIdAndStatus(APPLICATION_ID, GrantExportStatus.FAILED))
+                    .thenReturn(true);
+
+            final GrantExportStatus result = submissionsService.getExportStatus(APPLICATION_ID);
+
+            assertThat(result).isEqualTo(GrantExportStatus.FAILED);
         }
 
     }

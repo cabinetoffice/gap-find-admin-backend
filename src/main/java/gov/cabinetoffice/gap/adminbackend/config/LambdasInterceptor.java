@@ -43,6 +43,9 @@ public class LambdasInterceptor implements WebMvcConfigurer {
                         "/submissions/{submissionId:" + UUID_REGEX_STRING + "}/export-batch/{batchExportId:"
                                 + UUID_REGEX_STRING + "}/s3-object-key",
                         "/export-batch/{exportId:" + UUID_REGEX_STRING + "}/outstandingCount",
+                        "/export-batch/{exportId:" + UUID_REGEX_STRING + "}/completed",
+                        "/grant-export-batch/{exportId:" + UUID_REGEX_STRING + "}/status",
+                        "/grant-export-batch/{exportId:" + UUID_REGEX_STRING + "}/s3-object-key",
                         "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/publish",
                         "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/unpublish",
                         "/application-forms/lambda/**")
