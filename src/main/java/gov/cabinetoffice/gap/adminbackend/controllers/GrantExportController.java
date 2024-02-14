@@ -2,6 +2,8 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -38,6 +41,22 @@ public class GrantExportController {
         Long count = exportService.getOutstandingExportCount(exportId);
 
         return ResponseEntity.ok(new OutstandingExportCountDTO(count));
+
+    }
+
+    @GetMapping("/{exportId}/completed")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Returned list of completed grant exports for batch",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
+                    content = @Content(mediaType = "application/json")) })
+    @LambdasHeaderValidator
+    public ResponseEntity<List<GrantExportEntity>> getCompletedExportRecordsByExportId(@PathVariable UUID exportId) {
+
+        List<GrantExportEntity> completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
+
+        return ResponseEntity.ok(completedGrantExports);
 
     }
 

@@ -19,6 +19,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomGrantExportEntityGenerator;
@@ -65,6 +66,9 @@ class SubmissionsServiceTest {
 
     @Mock
     private GrantExportRepository grantExportRepository;
+
+    @Mock
+    private GrantExportBatchRepository grantExportBatchRepository;
 
     @InjectMocks
     @Spy

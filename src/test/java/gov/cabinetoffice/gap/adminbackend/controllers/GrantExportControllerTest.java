@@ -2,6 +2,9 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
+import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
@@ -18,6 +21,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -81,6 +87,35 @@ public class GrantExportControllerTest {
 
             mockMvc.perform(get("/export-batch/" + mockExportId + "/outstandingCount").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class getCompletedExportRecordsByBatchId {
+
+        @Test
+        void successfullyGetsCompletesExportRecords() throws Exception {
+            final GrantExportId id = GrantExportId.builder()
+                    .exportBatchId(UUID.randomUUID())
+                    .submissionId(UUID.randomUUID())
+                    .build();
+            final List<GrantExportEntity> mockGrantExports = Collections.singletonList(GrantExportEntity.builder()
+                    .id(id)
+                    .applicationId(1)
+                    .status(GrantExportStatus.COMPLETE)
+                    .createdBy(1)
+                    .lastUpdated(Instant.now())
+                    .location("location")
+                    .emailAddress("test-email@gmail.com")
+                    .build());
+
+            when(mockGrantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),  GrantExportStatus.COMPLETE))
+                    .thenReturn(mockGrantExports);
+
+            mockMvc.perform(get("/export-batch/" + id.getExportBatchId() + "/completed").header(HttpHeaders.AUTHORIZATION,
+                            LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(content().string(HelperUtils.asJsonString(mockGrantExports)));
         }
 
     }
