@@ -197,8 +197,8 @@ public class SubmissionsService {
 
         partitionedSubmissions.stream().map(submissionsBatch -> mapExportRecordListToBatchMessageRequest(applicationId,
                 exportBatchId, adminSession, submissionsBatch)).forEach(exportRecordsBatch -> {
-                    grantExportRepository.saveAll(exportRecordsBatch);
                     grantExportBatchRepository.saveAll(mapGrantExportToGrantExportBatch(exportRecordsBatch));
+                    grantExportRepository.saveAll(exportRecordsBatch);
                     amazonSQS.sendMessageBatch(mapExportRecordListToBatchMessageRequest(exportRecordsBatch));
                 });
     }
