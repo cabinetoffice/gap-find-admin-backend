@@ -54,7 +54,7 @@ public class GrantExportController {
     @LambdasHeaderValidator
     public ResponseEntity<GrantExportListDTO> getCompletedExportRecordsByExportId(@PathVariable UUID exportId) {
 
-        GrantExportListDTO completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
+        final GrantExportListDTO completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
 
         return ResponseEntity.ok(completedGrantExports);
 
