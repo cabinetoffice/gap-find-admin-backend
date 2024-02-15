@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -52,9 +52,9 @@ public class GrantExportController {
             @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
-    public ResponseEntity<List<GrantExportEntity>> getCompletedExportRecordsByExportId(@PathVariable UUID exportId) {
+    public ResponseEntity<GrantExportListDTO> getCompletedExportRecordsByExportId(@PathVariable UUID exportId) {
 
-        List<GrantExportEntity> completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
+        GrantExportListDTO completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
 
         return ResponseEntity.ok(completedGrantExports);
 
