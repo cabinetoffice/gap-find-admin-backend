@@ -25,12 +25,8 @@ public class GrantExportService {
 
     public GrantExportListDTO getGrantExportsByIdAndStatus(UUID exportId, GrantExportStatus status) {
         final List<GrantExportDTO> grantExportEntityList = exportRepository.findById_ExportBatchIdAndStatus(exportId, status)
-                .stream().map(this::mapGrantExportEntityToGrantExportDto).toList();
+                .stream().map(grantExportMapper::grantExportEntityToGrantExportDTO).toList();
         return GrantExportListDTO.builder().exportBatchId(exportId).grantExports(grantExportEntityList).build();
-    }
-
-    private GrantExportDTO mapGrantExportEntityToGrantExportDto(GrantExportEntity grantExportEntity) {
-        return grantExportMapper.grantExportEntityToGrantExportDTO(grantExportEntity);
     }
 
 }
