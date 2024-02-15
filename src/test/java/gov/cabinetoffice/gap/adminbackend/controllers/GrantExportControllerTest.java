@@ -2,7 +2,8 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
@@ -100,22 +101,27 @@ public class GrantExportControllerTest {
                     .exportBatchId(UUID.randomUUID())
                     .submissionId(UUID.randomUUID())
                     .build();
-            final List<GrantExportEntity> mockGrantExports = Collections.singletonList(GrantExportEntity.builder()
-                    .id(id)
+            final List<GrantExportDTO> mockGrantExportDtoList = Collections.singletonList(GrantExportDTO.builder()
+                    .exportBatchId(id.getExportBatchId())
+                    .submissionId(id.getSubmissionId())
                     .applicationId(1)
                     .status(GrantExportStatus.COMPLETE)
+                    .created(Instant.now())
                     .createdBy(1)
                     .lastUpdated(Instant.now())
                     .location("location")
-                    .emailAddress("test-email@gmail.com")
-                    .build());
+                    .emailAddress("test-email@gmail.com").build());
+            final GrantExportListDTO mockGrantExportList = GrantExportListDTO.builder()
+                    .exportBatchId(id.getExportBatchId())
+                    .grantExports(mockGrantExportDtoList)
+                    .build();
 
             when(mockGrantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),  GrantExportStatus.COMPLETE))
-                    .thenReturn(mockGrantExports);
+                    .thenReturn(mockGrantExportList);
 
             mockMvc.perform(get("/export-batch/" + id.getExportBatchId() + "/completed").header(HttpHeaders.AUTHORIZATION,
                             LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
-                    .andExpect(content().string(HelperUtils.asJsonString(mockGrantExports)));
+                    .andExpect(content().string(HelperUtils.asJsonString(mockGrantExportList)));
         }
 
     }
