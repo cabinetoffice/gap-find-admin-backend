@@ -96,7 +96,7 @@ public class GrantExportServiceTest {
                     .grantExports(mockGrantExportDtoList)
                     .build();
 
-            when(exportRepository.findAllByIdExportBatchIdAndStatusAndCreatedBy(id.getExportBatchId(),GrantExportStatus.COMPLETE, 1))
+            when(exportRepository.findById_ExportBatchIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE))
                     .thenReturn(mockGrantExports);
 
             final GrantExportListDTO response = grantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
