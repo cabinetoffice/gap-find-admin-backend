@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
+import gov.cabinetoffice.gap.adminbackend.mappers.GrantExportMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ public class GrantExportServiceTest {
 
     @Mock
     private GrantExportRepository exportRepository;
+
+    @Mock
+    private GrantExportMapper grantExportMapper;
 
     @InjectMocks
     @Spy
@@ -81,7 +85,7 @@ public class GrantExportServiceTest {
                     .location("location")
                     .emailAddress("test-email@gmail.com")
                     .build());
-            final List<GrantExportDTO> mockGrantExportDtoList = Collections.singletonList(GrantExportDTO.builder()
+            final GrantExportDTO mockGrantExportDTO = GrantExportDTO.builder()
                     .exportBatchId(id.getExportBatchId())
                     .submissionId(id.getSubmissionId())
                     .applicationId(1)
@@ -90,7 +94,8 @@ public class GrantExportServiceTest {
                     .createdBy(1)
                     .lastUpdated(date)
                     .location("location")
-                    .emailAddress("test-email@gmail.com").build());
+                    .emailAddress("test-email@gmail.com").build();
+            final List<GrantExportDTO> mockGrantExportDtoList = Collections.singletonList(mockGrantExportDTO);
             final GrantExportListDTO mockGrantExportList = GrantExportListDTO.builder()
                     .exportBatchId(id.getExportBatchId())
                     .grantExports(mockGrantExportDtoList)
@@ -98,6 +103,7 @@ public class GrantExportServiceTest {
 
             when(exportRepository.findById_ExportBatchIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE))
                     .thenReturn(mockGrantExports);
+            when(grantExportMapper.grantExportEntityToGrantExportDTO(any())).thenReturn(mockGrantExportDTO);
 
             final GrantExportListDTO response = grantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),GrantExportStatus.COMPLETE);
 
