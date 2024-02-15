@@ -16,6 +16,7 @@ public class GrantExportBatchService {
     private final GrantExportBatchRepository grantExportBatchRepository;
 
     public void updateExportBatchStatusById(UUID exportBatchId, GrantExportStatus status) {
+        log.info(String.format("Updating grant_export_batch table to %s\nexportBatchId: %s", status, exportBatchId));
         final Integer result = grantExportBatchRepository.updateStatusById(exportBatchId.toString(), status.toString());
 
         if (result == 1) {
