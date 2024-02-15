@@ -32,14 +32,14 @@ public class GrantExportBatchServiceTest {
 
         @Test
         void successfullyUpdateExportBatchStatusById() {
-            when(grantExportBatchRepository.updateStatusById(mockExportId,  GrantExportStatus.COMPLETE.toString())).thenReturn(1);
+            when(grantExportBatchRepository.updateStatusById(mockExportId.toString(),  GrantExportStatus.COMPLETE.toString())).thenReturn(1);
             grantExportBatchService.updateExportBatchStatusById(mockExportId, GrantExportStatus.COMPLETE);
-            verify(grantExportBatchRepository).updateStatusById(mockExportId, GrantExportStatus.COMPLETE.toString());
+            verify(grantExportBatchRepository).updateStatusById(mockExportId.toString(), GrantExportStatus.COMPLETE.toString());
         }
 
         @Test
         void errorThrownFromRepository() {
-            when(grantExportBatchRepository.updateStatusById(mockExportId,GrantExportStatus.COMPLETE.toString())).thenReturn(0);
+            when(grantExportBatchRepository.updateStatusById(mockExportId.toString(),GrantExportStatus.COMPLETE.toString())).thenReturn(0);
             assertThrows(RuntimeException.class, () ->
                     grantExportBatchService.updateExportBatchStatusById(mockExportId, GrantExportStatus.COMPLETE),
                     "Could not update entry in grant_export_batch table to " + GrantExportStatus.COMPLETE);

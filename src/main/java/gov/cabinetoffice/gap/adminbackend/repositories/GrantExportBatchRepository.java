@@ -15,8 +15,9 @@ public interface GrantExportBatchRepository extends JpaRepository<GrantExportBat
     @Transactional
     @Modifying
     @Query(nativeQuery = true,
-            value = "UPDATE grant_export_batch SET status = :status, last_updated = now() WHERE export_batch_id = :exportBatchId")
-    Integer updateStatusById(@Param("exportBatchId") UUID exportBatchId, @Param("status") String status);
+            value = "UPDATE grant_export_batch SET status = :status, last_updated = now() WHERE export_batch_id = export_batch_id = cast(:exportBatchId AS UUID)")
+    Integer updateStatusById(@Param("exportBatchId") String exportBatchId, @Param("status") String status);
+
 
     @Transactional
     @Modifying
