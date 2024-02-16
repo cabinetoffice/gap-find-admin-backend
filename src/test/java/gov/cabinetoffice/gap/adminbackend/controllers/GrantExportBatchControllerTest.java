@@ -23,7 +23,6 @@ import java.util.UUID;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(GrantExportBatchController.class)
@@ -51,7 +50,6 @@ public class GrantExportBatchControllerTest {
     private ValidationErrorMapperImpl validationErrorMapper;
 
     final UUID mockExportId = UUID.randomUUID();
-
 
     @Nested
     class updateGrantExportBatchStatus {
