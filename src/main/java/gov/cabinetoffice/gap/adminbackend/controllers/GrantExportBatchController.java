@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+
 @Log4j2
 @RestController
 @RequestMapping("/grant-export-batch")
@@ -36,7 +37,7 @@ public class GrantExportBatchController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity updateGrantExportBatchStatus(@PathVariable UUID exportId, @RequestBody GrantExportStatus newStatus) {
-        log.info("Hitting endpoint to update grant_export_batch table status to");
+        log.info("Hitting endpoint to update grant_export_batch table status to {}", newStatus);
         grantExportBatchService.updateExportBatchStatusById(exportId, newStatus);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
