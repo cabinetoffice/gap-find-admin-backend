@@ -1,7 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.enums;
 
 public enum SubmissionStatus {
-
-    IN_PROGRESS, INELIGABLE, SUBMITTED, UNDER_REVIEW, AWARDED, NOT_AWARDED, WITHDRAWN
-
+    IN_PROGRESS, SUBMITTED, GRANT_CLOSED
 }

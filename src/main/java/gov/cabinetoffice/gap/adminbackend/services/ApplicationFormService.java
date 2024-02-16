@@ -154,8 +154,11 @@ public class ApplicationFormService {
             ApplicationFormQuestionDTO questionById = applicationForm.getDefinition().getSectionById(sectionId)
                     .getQuestionById(questionId);
 
-            QuestionAbstractPatchDTO questionPatchDTO = validatePatchQuestion(questionDto,
-                    questionById.getResponseType());
+            ResponseTypeEnum responseType = Optional
+                    .ofNullable(questionDto.getResponseType())
+                    .orElse(questionById.getResponseType());
+
+            QuestionAbstractPatchDTO questionPatchDTO = validatePatchQuestion(questionDto, responseType);
 
             if (questionPatchDTO.getClass() == QuestionGenericPatchDTO.class) {
                 this.applicationFormMapper.updateGenericQuestionPatchToQuestionDto(
@@ -197,8 +200,8 @@ public class ApplicationFormService {
         else {
             return mappedQuestion;
         }
-
     }
+
     // TODO GAP-2429: Refactor validation of validation Map to use a DTO with proper validation annotations
     private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
         if (responseType == ResponseTypeEnum.LongAnswer) {
@@ -211,7 +214,7 @@ public class ApplicationFormService {
                 throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
             }
             if (!NumberUtils.isCreatable(maxWordsString)) {
-                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be a number");
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be ass number");
             }
             final long maxWords = Long.parseLong(maxWordsString);
             if (maxWords < 1) {
