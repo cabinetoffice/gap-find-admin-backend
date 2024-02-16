@@ -6,7 +6,7 @@ public enum GrantMandatoryQuestionOrgType {
 
     LIMITED_COMPANY("Limited company"), NON_LIMITED_COMPANY("Non-limited company"),
     REGISTERED_CHARITY("Registered charity"), UNREGISTERED_CHARITY("Unregistered charity"), CHARITY("Charity"),
-    INDIVIDUAL("I am applying as an Individual"), OTHER("Other"), SOLE_TRADER("Sole Trader");
+    INDIVIDUAL("I am applying as an Individual"), LOCAL_AUTHORITY("Local authority"), OTHER("Other"), SOLE_TRADER("Sole Trader");
 
     private final String name;
 
