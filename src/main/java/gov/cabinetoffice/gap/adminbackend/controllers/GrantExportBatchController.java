@@ -37,7 +37,7 @@ public class GrantExportBatchController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity updateGrantExportBatchStatus(@PathVariable UUID exportId, @RequestBody GrantExportStatus newStatus) {
-        log.info("Hitting endpoint to update grant_export_batch table status to {}", newStatus);
+        log.info("Hitting endpoint to update grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
         grantExportBatchService.updateExportBatchStatusById(exportId, newStatus);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
