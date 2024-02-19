@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.FailedExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
@@ -122,6 +123,36 @@ public class GrantExportControllerTest {
             mockMvc.perform(get("/export-batch/" + id.getExportBatchId() + "/completed").header(HttpHeaders.AUTHORIZATION,
                             LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
                     .andExpect(content().string(HelperUtils.asJsonString(mockGrantExportList)));
+        }
+
+    }
+
+    @Nested
+    class getFailedExportsCount {
+        final UUID mockExportId = UUID.randomUUID();
+        final Long mockCount = 2L;
+        final FailedExportCountDTO expectedResponse = new FailedExportCountDTO(mockCount);
+
+        @Test
+        void successfullyGetFailedExportsCount() throws Exception {
+            when(mockGrantExportService.getFailedExportsCount(any())).thenReturn(mockCount);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount").header(HttpHeaders.AUTHORIZATION,
+                            LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(content().string(HelperUtils.asJsonString(expectedResponse)));
+        }
+
+        @Test
+        void badRequest_IncorrectPathVariables() throws Exception {
+            mockMvc.perform(get("/export-batch/this_isnt_a_uuid/failedCount")).andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void unexpectedErrorOccurred() throws Exception {
+            when(mockGrantExportService.getFailedExportsCount(any())).thenThrow(RuntimeException.class);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount").header(HttpHeaders.AUTHORIZATION,
+                    LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
         }
 
     }

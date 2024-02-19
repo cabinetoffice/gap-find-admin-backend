@@ -29,4 +29,8 @@ public class GrantExportService {
         return GrantExportListDTO.builder().exportBatchId(exportId).grantExports(grantExportEntityList).build();
     }
 
+    public Long getFailedExportsCount(UUID exportId) {
+        return exportRepository.countByIdExportBatchIdAndStatus(exportId, GrantExportStatus.FAILED);
+    }
+
 }

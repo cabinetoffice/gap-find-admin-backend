@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
+import gov.cabinetoffice.gap.adminbackend.dtos.FailedExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
@@ -57,6 +58,20 @@ public class GrantExportController {
         final GrantExportListDTO completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
 
         return ResponseEntity.ok(completedGrantExports);
+
+    }
+
+    @GetMapping("/{exportId}/failedCount")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Returned failed submission exports count for batch",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
+                    content = @Content(mediaType = "application/json")) })
+    @LambdasHeaderValidator
+    public ResponseEntity getFailedExportsCount(@PathVariable UUID exportId) {
+        final Long count = exportService.getFailedExportsCount(exportId);
+        return ResponseEntity.ok(new FailedExportCountDTO(count));
 
     }
 

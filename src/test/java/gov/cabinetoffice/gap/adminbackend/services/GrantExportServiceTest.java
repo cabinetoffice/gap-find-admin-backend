@@ -114,4 +114,17 @@ public class GrantExportServiceTest {
 
     }
 
+    @Test
+    void getFailedExportsCount() {
+        final UUID mockExportId = UUID.randomUUID();
+        final long expectedResponse = 2L;
+        when(exportRepository.countByIdExportBatchIdAndStatus(mockExportId, GrantExportStatus.FAILED)).thenReturn(expectedResponse);
+
+        final long response = grantExportService.getFailedExportsCount(mockExportId);
+
+        verify(exportRepository).countByIdExportBatchIdAndStatus(mockExportId, GrantExportStatus.FAILED);
+        assertThat(response).isEqualTo(expectedResponse);
+
+    }
+
 }
