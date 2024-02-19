@@ -2,7 +2,6 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantExportMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
@@ -31,6 +30,11 @@ public class GrantExportService {
 
     public Long getFailedExportsCount(UUID exportId) {
         return exportRepository.countByIdExportBatchIdAndStatus(exportId, GrantExportStatus.FAILED);
+    }
+
+    public Long getRemainingExportsCount(UUID exportId) {
+        return exportRepository.countByIdExportBatchIdAndStatusIsNotIn(exportId,
+                List.of(GrantExportStatus.COMPLETE, GrantExportStatus.FAILED));
     }
 
 }

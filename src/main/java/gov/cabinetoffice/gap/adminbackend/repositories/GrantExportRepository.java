@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,6 +43,6 @@ public interface GrantExportRepository extends JpaRepository<GrantExportEntity, 
 
     long countByIdExportBatchIdAndStatus(UUID exportBatchId, GrantExportStatus status);
 
-
+    long countByIdExportBatchIdAndStatusIsNotIn(UUID exportBatchId, Collection<GrantExportStatus> statuses);
 
 }

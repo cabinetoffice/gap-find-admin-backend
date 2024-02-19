@@ -75,4 +75,20 @@ public class GrantExportController {
 
     }
 
+    @GetMapping("/{exportId}/remainingCount")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Returned remaining submission exports for batch",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
+                    content = @Content(mediaType = "application/json")) })
+    @LambdasHeaderValidator
+    public ResponseEntity getRemainingExportsCount(@PathVariable UUID exportId) {
+
+        Long count = exportService.getRemainingExportsCount(exportId);
+
+        return ResponseEntity.ok(new OutstandingExportCountDTO(count));
+
+    }
+
 }
