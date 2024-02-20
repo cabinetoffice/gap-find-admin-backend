@@ -216,8 +216,7 @@ public class AdvertPageResponseValidator implements ConstraintValidator<ValidPag
         // (incl. .com) (repeating) |
         // (optional) slash | (optional) additional path | (optional) slash |
         // (optional) query params
-        // String urlValidPattern = "^(http://|https://)(www.)?((?!www)[a-zA-Z0-9\\-]{2,}+)(\\.[a-zA-Z0-9\\-]{2,})+(/)?(/[a-z0-9\\-._~%!$&'()*+,;=:@]+)*?(/)?(\\?[a-z0-9\\-._~%!$&'()*+,;=:@/]*)?$";
-        String urlValidPattern = "(.*?)";
+        String urlValidPattern = "^(http://|https://)(www.)?((?!www)[a-zA-Z0-9\\-]{2,}+)(\\.[a-zA-Z0-9\\-]{2,})+(/)?(/[a-z0-9\\-._~%!$&'()*+,;=:@]+)*?(/)?(\\?[a-z0-9\\-._~%!$&'()*+,;=:@/]*)?$";
         Pattern pattern = Pattern.compile(urlValidPattern, Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(question.getResponse());
 
