@@ -141,13 +141,13 @@ public class ApplicationFormService {
     }
 
     public void patchQuestionValues(Integer applicationId, String sectionId, String questionId,
-            ApplicationFormQuestionDTO questionDto) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+            ApplicationFormQuestionDTO questionDto, HttpSession session) {
+        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
 
-            if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-                throw new AccessDeniedException("User " + session.getGrantAdminId()
+            if (!adminSession.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
+                throw new AccessDeniedException("User " + adminSession.getGrantAdminId()
                         + " is unable to access the application form with id " + applicationId);
             }
 
@@ -169,9 +169,10 @@ public class ApplicationFormService {
                         (QuestionOptionsPatchDTO) questionPatchDTO, questionById);
             }
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
 
             this.applicationFormRepository.save(applicationForm);
+            this.sessionsService.deleteObjectFromSession(SessionObjectEnum.updatedQuestion, session);
         }, () -> {
             throw new NotFoundException("Application with id " + applicationId + " does not exist");
         });

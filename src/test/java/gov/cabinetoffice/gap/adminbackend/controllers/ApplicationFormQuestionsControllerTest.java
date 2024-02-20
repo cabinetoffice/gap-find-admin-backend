@@ -53,7 +53,7 @@ class ApplicationFormQuestionsControllerTest {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         applicationFormQuestionDTO.setDisplayText("New display text");
         doNothing().when(this.applicationFormService).patchQuestionValues(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
-                SAMPLE_QUESTION_ID, applicationFormQuestionDTO);
+                SAMPLE_QUESTION_ID, applicationFormQuestionDTO, any(HttpSession.class));
 
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
@@ -78,7 +78,7 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestionGenericErrorTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         doThrow(new ApplicationFormException("Error message")).when(this.applicationFormService).patchQuestionValues(
-                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO);
+                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO, any(HttpSession.class));
 
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
@@ -94,7 +94,7 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestion_AccessDeniedTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         doThrow(new AccessDeniedException("Error message")).when(this.applicationFormService).patchQuestionValues(
-                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO);
+                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO, any(HttpSession.class));
 
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
