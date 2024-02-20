@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Log4j2
 @RestController
 @RequestMapping("/export-batch")
 @Tag(name = "Grant Exports", description = "API for handling grant/submissions exports")
@@ -54,10 +56,15 @@ public class GrantExportController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity<GrantExportListDTO> getCompletedExportRecordsByExportId(@PathVariable UUID exportId) {
-
-        final GrantExportListDTO completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
-
-        return ResponseEntity.ok(completedGrantExports);
+        try {
+            final GrantExportListDTO completedGrantExports = exportService.getGrantExportsByIdAndStatus(exportId, GrantExportStatus.COMPLETE);
+            log.info("Successfully got grant exports with completed status with export id {}", exportId);
+            return ResponseEntity.ok(completedGrantExports);
+        }
+        catch (Exception e) {
+            log.error("Error retrieving completed grant exports with export id {}", exportId);
+            throw e;
+        }
 
     }
 
