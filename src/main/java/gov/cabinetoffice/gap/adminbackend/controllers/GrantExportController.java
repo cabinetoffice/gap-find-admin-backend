@@ -91,11 +91,8 @@ public class GrantExportController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity getRemainingExportsCount(@PathVariable UUID exportId) {
-
-        Long count = exportService.getRemainingExportsCount(exportId);
-
+        final Long count = exportService.getRemainingExportsCount(exportId);
         return ResponseEntity.ok(new OutstandingExportCountDTO(count));
-
     }
 
 }
