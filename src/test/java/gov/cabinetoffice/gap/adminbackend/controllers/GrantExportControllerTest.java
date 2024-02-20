@@ -5,7 +5,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.FailedExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
@@ -58,12 +57,12 @@ public class GrantExportControllerTest {
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
 
+    private final UUID mockExportId = UUID.randomUUID();
+
     @Nested
     class getOutstandingExportsCount {
-
         @Test
         void successfullyGetOutstandingExportsCount() throws Exception {
-            final UUID mockExportId = UUID.randomUUID();
             final Long mockCount = 10L;
             final OutstandingExportCountDTO expectedResponse = new OutstandingExportCountDTO(mockCount);
 
@@ -81,7 +80,6 @@ public class GrantExportControllerTest {
 
         @Test
         void unexpectedErrorOccurred() throws Exception {
-            final UUID mockExportId = UUID.randomUUID();
             final Long mockCount = 10L;
             final OutstandingExportCountDTO expectedResponse = new OutstandingExportCountDTO(mockCount);
 
@@ -95,16 +93,12 @@ public class GrantExportControllerTest {
 
     @Nested
     class getCompletedExportRecordsByBatchId {
-
         @Test
         void successfullyGetsCompletesExportRecords() throws Exception {
-            final GrantExportId id = GrantExportId.builder()
-                    .exportBatchId(UUID.randomUUID())
-                    .submissionId(UUID.randomUUID())
-                    .build();
+            final UUID submissionId = UUID.randomUUID();
             final List<GrantExportDTO> mockGrantExportDtoList = Collections.singletonList(GrantExportDTO.builder()
-                    .exportBatchId(id.getExportBatchId())
-                    .submissionId(id.getSubmissionId())
+                    .exportBatchId(mockExportId)
+                    .submissionId(submissionId)
                     .applicationId(1)
                     .status(GrantExportStatus.COMPLETE)
                     .created(Instant.now())
@@ -113,16 +107,25 @@ public class GrantExportControllerTest {
                     .location("location")
                     .emailAddress("test-email@gmail.com").build());
             final GrantExportListDTO mockGrantExportList = GrantExportListDTO.builder()
-                    .exportBatchId(id.getExportBatchId())
+                    .exportBatchId(mockExportId)
                     .grantExports(mockGrantExportDtoList)
                     .build();
 
-            when(mockGrantExportService.getGrantExportsByIdAndStatus(id.getExportBatchId(),  GrantExportStatus.COMPLETE))
+            when(mockGrantExportService.getGrantExportsByIdAndStatus(mockExportId, GrantExportStatus.COMPLETE))
                     .thenReturn(mockGrantExportList);
 
-            mockMvc.perform(get("/export-batch/" + id.getExportBatchId() + "/completed").header(HttpHeaders.AUTHORIZATION,
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/completed").header(HttpHeaders.AUTHORIZATION,
                             LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
                     .andExpect(content().string(HelperUtils.asJsonString(mockGrantExportList)));
+        }
+
+        @Test
+        void exceptionThrown() throws Exception {
+            when(mockGrantExportService.getGrantExportsByIdAndStatus(mockExportId, GrantExportStatus.COMPLETE))
+                    .thenThrow(RuntimeException.class);
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/completed")
+                            .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isInternalServerError());
         }
 
     }

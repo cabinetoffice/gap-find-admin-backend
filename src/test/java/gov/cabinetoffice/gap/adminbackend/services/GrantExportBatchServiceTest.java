@@ -25,7 +25,7 @@ public class GrantExportBatchServiceTest {
     @Spy
     private GrantExportBatchService grantExportBatchService;
 
-    final UUID mockExportId = UUID.randomUUID();
+    private final UUID mockExportId = UUID.randomUUID();
 
     @Nested
     class updateExportBatchStatusById {
@@ -46,13 +46,26 @@ public class GrantExportBatchServiceTest {
         }
     }
 
-    @Test
-    void successfullyUpdatesLocation() {
+    @Nested
+    class addS3ObjectKeyToGrantExportBatch {
         final String s3ObjectKey = "s3ObjectKey";
 
-        when(grantExportBatchRepository.updateLocationById(mockExportId, s3ObjectKey)).thenReturn(1);
-        grantExportBatchService.addS3ObjectKeyToGrantExportBatch(mockExportId, s3ObjectKey);
-        verify(grantExportBatchRepository).updateLocationById(mockExportId, s3ObjectKey);
+        @Test
+        void successfullyUpdatesLocation() {
+            when(grantExportBatchRepository.updateLocationById(mockExportId, s3ObjectKey)).thenReturn(1);
+            grantExportBatchService.addS3ObjectKeyToGrantExportBatch(mockExportId, s3ObjectKey);
+            verify(grantExportBatchRepository).updateLocationById(mockExportId, s3ObjectKey);
+        }
+
+        @Test
+        void errorThrownFromRepository() {
+            when(grantExportBatchRepository.updateLocationById(mockExportId, s3ObjectKey)).thenReturn(0);
+
+            assertThrows(RuntimeException.class, () -> grantExportBatchService
+                .addS3ObjectKeyToGrantExportBatch(mockExportId, s3ObjectKey),
+                    "Could not update entry in grant_export_batch table to " + s3ObjectKey);
+
+        }
     }
 
 }
