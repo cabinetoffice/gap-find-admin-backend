@@ -91,41 +91,8 @@ public class GrantExportController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity getRemainingExportsCount(@PathVariable UUID exportId) {
-
-        Long count = exportService.getRemainingExportsCount(exportId);
-
+        final Long count = exportService.getRemainingExportsCount(exportId);
         return ResponseEntity.ok(new OutstandingExportCountDTO(count));
-
-    }
-
-    @GetMapping("/{exportId}/failedCount")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Returned failed submission exports count for batch",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
-                    content = @Content(mediaType = "application/json")) })
-    @LambdasHeaderValidator
-    public ResponseEntity getFailedExportsCount(@PathVariable UUID exportId) {
-        final Long count = exportService.getFailedExportsCount(exportId);
-        return ResponseEntity.ok(new FailedExportCountDTO(count));
-
-    }
-
-    @GetMapping("/{exportId}/remainingCount")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Returned remaining submission exports for batch",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
-                    content = @Content(mediaType = "application/json")) })
-    @LambdasHeaderValidator
-    public ResponseEntity getRemainingExportsCount(@PathVariable UUID exportId) {
-
-        Long count = exportService.getRemainingExportsCount(exportId);
-
-        return ResponseEntity.ok(new OutstandingExportCountDTO(count));
-
     }
 
 }
