@@ -215,7 +215,7 @@ public class ApplicationFormService {
                 throw new FieldViolationException(MAX_WORDS_FIELD, "Please enter the max words an applicant could enter");
             }
             if (!NumberUtils.isCreatable(maxWordsString)) {
-                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be ass number");
+                throw new FieldViolationException(MAX_WORDS_FIELD, "Max words must be a number");
             }
             final long maxWords = Long.parseLong(maxWordsString);
             if (maxWords < 1) {
