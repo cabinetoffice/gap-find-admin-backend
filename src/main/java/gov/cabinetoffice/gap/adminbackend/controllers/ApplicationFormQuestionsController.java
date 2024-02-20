@@ -39,29 +39,23 @@ public class ApplicationFormQuestionsController {
 
     @PatchMapping("/{questionId}")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Question updated successfully.",
-                    content = @Content(mediaType = "application/json",
-                        schema = @Schema(implementation = GenericPostResponseDTO.class))),
+            @ApiResponse(responseCode = "204", description = "Question updated successfully.",
+                    content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Valid request body is required to update question",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions to update this question.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No question found with id.",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<ApplicationFormQuestionDTO> patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
+    public ResponseEntity<Void> patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
             @RequestBody @NotNull ApplicationFormQuestionDTO question, HttpSession session) {
         try {
             this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question, session);
-            ApplicationFormQuestionDTO questionDTO = this.applicationFormService.retrieveQuestion(
-                applicationId,
-                sectionId,
-                questionId
-            );
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
-            return ResponseEntity.ok().body(questionDTO);
+            return ResponseEntity.ok().build();
         }
         catch (NotFoundException e) {
             return new ResponseEntity(new GenericErrorDTO(e.getMessage()), HttpStatus.NOT_FOUND);

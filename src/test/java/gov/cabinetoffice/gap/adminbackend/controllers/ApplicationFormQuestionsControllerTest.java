@@ -52,13 +52,13 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestionHappyPathTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         applicationFormQuestionDTO.setDisplayText("New display text");
-        doNothing().when(this.applicationFormService).patchQuestionValues(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
-                SAMPLE_QUESTION_ID, applicationFormQuestionDTO, any(HttpSession.class));
+        doNothing().when(this.applicationFormService).patchQuestionValues(eq(SAMPLE_APPLICATION_ID), eq(SAMPLE_SECTION_ID),
+                eq(SAMPLE_QUESTION_ID), eq(applicationFormQuestionDTO), any(HttpSession.class));
 
-        this.mockMvc
-                .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
-                        + "/questions/" + SAMPLE_QUESTION_ID).contentType(MediaType.APPLICATION_JSON)
-                                .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
+        this.mockMvc.perform(
+                patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/questions/" + SAMPLE_QUESTION_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk());
 
         verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
@@ -78,7 +78,7 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestionGenericErrorTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         doThrow(new ApplicationFormException("Error message")).when(this.applicationFormService).patchQuestionValues(
-                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO, any(HttpSession.class));
+                eq(SAMPLE_APPLICATION_ID), eq(SAMPLE_SECTION_ID), eq(SAMPLE_QUESTION_ID), eq(applicationFormQuestionDTO), any(HttpSession.class));
 
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
@@ -94,7 +94,7 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestion_AccessDeniedTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         doThrow(new AccessDeniedException("Error message")).when(this.applicationFormService).patchQuestionValues(
-                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO, any(HttpSession.class));
+                eq(SAMPLE_APPLICATION_ID), eq(SAMPLE_SECTION_ID), eq(SAMPLE_QUESTION_ID), eq(applicationFormQuestionDTO), any(HttpSession.class));
 
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
