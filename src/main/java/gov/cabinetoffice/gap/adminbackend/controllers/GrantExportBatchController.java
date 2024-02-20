@@ -12,12 +12,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Log4j2
 @RestController
 @RequestMapping("/grant-export-batch")
 @Tag(name = "Grant Export Batch", description = "API for handling grant submission export batches")
@@ -35,9 +37,15 @@ public class GrantExportBatchController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity updateGrantExportBatchStatus(@PathVariable UUID exportId, @RequestBody GrantExportStatus newStatus) {
-        grantExportBatchService.updateExportBatchStatusById(exportId, newStatus);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-
+        try {
+            grantExportBatchService.updateExportBatchStatusById(exportId, newStatus);
+            log.info("Updated grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        catch (Exception e) {
+            log.error("Error updating grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
+            throw e;
+        }
     }
 
     @PatchMapping("/{exportId}/s3-object-key")
@@ -52,9 +60,16 @@ public class GrantExportBatchController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity updateGrantExportBatchLocation(@PathVariable UUID exportId, @RequestBody S3ObjectKeyDTO s3ObjectKeyDTO) {
-        grantExportBatchService.addS3ObjectKeyToGrantExportBatch(exportId,
-                s3ObjectKeyDTO.getS3ObjectKey());
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        try {
+            grantExportBatchService.addS3ObjectKeyToGrantExportBatch(exportId, s3ObjectKeyDTO.getS3ObjectKey());
+            log.info("Updated grant_export_batch table location to {} with exportId: {}", s3ObjectKeyDTO.toString(), exportId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        catch (Exception e) {
+            log.error("Error updating grant_export_batch table location to {} with exportId: {}", s3ObjectKeyDTO.toString(), exportId);
+            throw e;
+        }
+
     }
 
 }
