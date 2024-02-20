@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantExportMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GrantExportService {
 
     private final GrantExportRepository exportRepository;
@@ -29,10 +31,12 @@ public class GrantExportService {
     }
 
     public Long getFailedExportsCount(UUID exportId) {
+        log.info(String.format("Getting failed export count from grant_export table for exportId: %s", exportId));
         return exportRepository.countByIdExportBatchIdAndStatus(exportId, GrantExportStatus.FAILED);
     }
 
     public Long getRemainingExportsCount(UUID exportId) {
+        log.info(String.format("Getting remaining export count from grant_export table for exportId: %s", exportId));
         return exportRepository.countByIdExportBatchIdAndStatusIsNotIn(exportId,
                 List.of(GrantExportStatus.COMPLETE, GrantExportStatus.FAILED));
     }
