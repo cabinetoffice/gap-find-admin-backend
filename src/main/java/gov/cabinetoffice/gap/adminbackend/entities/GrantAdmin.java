@@ -34,8 +34,6 @@ public class GrantAdmin {
     @JoinColumn(name = "user_id", referencedColumnName = "gap_user_id")
     private GapUser gapUser;
 
-
-
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "grantAdmins")
     @ToString.Exclude
     @JsonBackReference
