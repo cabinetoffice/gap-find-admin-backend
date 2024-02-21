@@ -1,10 +1,14 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -53,6 +57,16 @@ public class SchemeEntity {
     @Column(name = "scheme_contact")
     private String email;
 
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @JoinTable(name = "scheme_permissions",
+            joinColumns = {@JoinColumn(name = "grant_scheme_id", referencedColumnName = "grant_scheme_id")},
+            inverseJoinColumns = {@JoinColumn(name = "grant_admin_id", referencedColumnName = "grant_admin_id")}
+            )
+    @ToString.Exclude
+    @JsonManagedReference
+    @Builder.Default
+    private List<GrantAdmin> grantAdmins = new ArrayList<>();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -70,4 +84,7 @@ public class SchemeEntity {
         return getClass().hashCode();
     }
 
+    public void addAdmin(final GrantAdmin admin) {
+        this.grantAdmins.add(admin);
+    }
 }

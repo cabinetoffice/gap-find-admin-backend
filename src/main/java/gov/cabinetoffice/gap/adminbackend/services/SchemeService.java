@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.s3.model.Grant;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
@@ -10,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,8 @@ public class SchemeService {
     private final SessionsService sessionsService;
 
     private final UserService userService;
+
+    private final GrantAdminRepository grantAdminRepository;
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
@@ -66,6 +71,14 @@ public class SchemeService {
             if (featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()) {
                 entity.setVersion(2);
             }
+
+            //find admin and add to join table
+            Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findById(adminSession.getGrantAdminId());
+            if (grantAdmin.isPresent()) {
+                entity.addAdmin(grantAdmin.get());
+                System.out.println("Grant admin found and added to scheme");
+            }
+
             entity = this.schemeRepo.save(entity);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newScheme, session);
 
