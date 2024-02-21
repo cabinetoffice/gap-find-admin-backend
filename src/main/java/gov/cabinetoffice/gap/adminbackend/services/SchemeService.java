@@ -76,7 +76,10 @@ public class SchemeService {
             Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findById(adminSession.getGrantAdminId());
             if (grantAdmin.isPresent()) {
                 entity.addAdmin(grantAdmin.get());
-                System.out.println("Grant admin found and added to scheme");
+            }
+            else {
+                throw new SchemeEntityException("Something went wrong while creating a new grant scheme: "
+                        + "No grant admin found for id: " + adminSession.getGrantAdminId());
             }
 
             entity = this.schemeRepo.save(entity);
