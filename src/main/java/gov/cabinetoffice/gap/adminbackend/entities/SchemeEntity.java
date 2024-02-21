@@ -1,6 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import org.hibernate.Hibernate;
