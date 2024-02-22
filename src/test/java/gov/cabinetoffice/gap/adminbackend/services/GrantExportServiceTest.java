@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsListDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
@@ -158,8 +159,9 @@ public class GrantExportServiceTest {
     }
 
     @Nested
+    @WithAdminSession
     class generateExportedSubmissionsListDto {
-
+        public final static Integer SEC_CONTEXT_ADMIN_ID = 1;
         @Test
         void generateExportedSubmissionsListDto() {
             final UUID mockExportId = UUID.fromString("a3e3e3e3-3e3e-3e3e-3e3e-3e3e3e3e3e3e");
@@ -189,7 +191,7 @@ public class GrantExportServiceTest {
                 .name("name1")
                 .build();
 
-            when(exportRepository.getById_ExportBatchIdAndStatus(mockExportId, GrantExportStatus.COMPLETE, pagination))
+            when(exportRepository.findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination))
                 .thenReturn(List.of(grantExport, grantExport2));
             when(customGrantExportMapper.grantExportEntityToExportedSubmissions(grantExport))
                 .thenReturn(exportedSubmissionsDto);
@@ -199,7 +201,7 @@ public class GrantExportServiceTest {
             final ExportedSubmissionsListDto response = grantExportService
                 .generateExportedSubmissionsListDto(mockExportId, GrantExportStatus.COMPLETE, pagination);
 
-            verify(exportRepository).getById_ExportBatchIdAndStatus(mockExportId, GrantExportStatus.COMPLETE, pagination);
+            verify(exportRepository).findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination);
             assertThat(response.getGrantExportId()).isEqualTo(mockExportId);
             assertThat(response.getExportedSubmissionDtos().get(0))
                 .isEqualTo(exportedSubmissionsDto2);

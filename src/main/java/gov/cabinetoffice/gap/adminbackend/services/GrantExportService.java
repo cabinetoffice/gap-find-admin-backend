@@ -7,7 +7,9 @@ import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.CustomGrantExportMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -48,8 +50,9 @@ public class GrantExportService {
     }
 
     public ExportedSubmissionsListDto generateExportedSubmissionsListDto(UUID exportId, GrantExportStatus status, Pageable pagination) {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        final List<GrantExportEntity> grantExports = exportRepository.getById_ExportBatchIdAndStatus(exportId, status, pagination );
+        final List<GrantExportEntity> grantExports = exportRepository.findByCreatedByAndId_ExportBatchIdAndStatus(adminSession.getGrantAdminId(),exportId, status, pagination );
 
         return ExportedSubmissionsListDto.builder()
             .grantExportId(exportId)

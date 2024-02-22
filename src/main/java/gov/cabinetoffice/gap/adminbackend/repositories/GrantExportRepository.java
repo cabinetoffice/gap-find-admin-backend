@@ -46,7 +46,7 @@ public interface GrantExportRepository extends JpaRepository<GrantExportEntity, 
 
     long countByIdExportBatchIdAndStatusIsNotIn(UUID exportBatchId, Collection<GrantExportStatus> statuses);
 
-    List<GrantExportEntity> getById_ExportBatchIdAndStatus(UUID exportBatchId, GrantExportStatus status,
-            Pageable pageable);
+    List<GrantExportEntity> findByCreatedByAndId_ExportBatchIdAndStatus(Integer createdBy, UUID exportBatchId,
+            GrantExportStatus status, Pageable pageable);
 
 }

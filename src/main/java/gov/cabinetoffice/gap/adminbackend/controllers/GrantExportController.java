@@ -118,6 +118,7 @@ public class GrantExportController {
             @RequestParam(name = "grabOnlyFailed", required = false,
                     defaultValue = "false") final boolean grabOnlyFailed, final Pageable pagination) {
         log.info("Getting submissions for exportId: {}, grabOnlyFailed : {}", exportId, grabOnlyFailed);
+
         final GrantExportStatus status = grabOnlyFailed ? GrantExportStatus.FAILED : GrantExportStatus.COMPLETE;
         final ExportedSubmissionsListDto exportedSubmissionsListDto = exportService
             .generateExportedSubmissionsListDto(exportId, status, pagination);
