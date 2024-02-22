@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +37,8 @@ public class SchemeService {
     private final SessionsService sessionsService;
 
     private final UserService userService;
+
+    private final GrantAdminRepository grantAdminRepository;
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
@@ -66,6 +70,13 @@ public class SchemeService {
             if (featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()) {
                 entity.setVersion(2);
             }
+
+            this.grantAdminRepository.findById(adminSession.getGrantAdminId())
+                    .ifPresentOrElse(
+                            entity::addAdmin,
+                            () -> new SchemeEntityException("Something went wrong while creating a new grant scheme: No grant admin found for id: " + adminSession.getGrantAdminId())
+                    );
+
             entity = this.schemeRepo.save(entity);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newScheme, session);
 

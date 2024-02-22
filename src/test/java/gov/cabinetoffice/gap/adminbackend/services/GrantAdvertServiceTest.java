@@ -41,10 +41,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.*;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.SAMPLE_SCHEME_ID;
 import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
@@ -819,8 +816,8 @@ class GrantAdvertServiceTest {
         void publishAdvert_successfullyPublishedAdvert() {
 
             final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme).version(1)
-                    .created(Instant.now()).createdBy(new GrantAdmin(1, null, null)).lastUpdated(Instant.now())
-                    .lastUpdatedBy(new GrantAdmin(1, null, null)).status(GrantAdvertStatus.DRAFT)
+                    .created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).lastUpdated(Instant.now())
+                    .lastUpdatedBy(new GrantAdmin(1, null, null, new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
                     .contentfulEntryId("entry-id").contentfulSlug("contentful-slug")
                     .grantAdvertName("Grant Advert Name").response(response).grantAdvertName("Homelessness Grant")
                     .build();
@@ -901,8 +898,8 @@ class GrantAdvertServiceTest {
         void publishAdvert_updatesExistingAdvert_IfFirstPublishedDateHasBeenSet() {
 
             final GrantAdvert grantAvertInDatabase = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme)
-                    .version(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null))
-                    .lastUpdated(Instant.now()).lastUpdatedBy(new GrantAdmin(1, null, null))
+                    .version(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>()))
+                    .lastUpdated(Instant.now()).lastUpdatedBy(new GrantAdmin(1, null, null, new ArrayList<>()))
                     .status(GrantAdvertStatus.DRAFT).contentfulEntryId(contentfulAdvertId)
                     .contentfulSlug("contentful-slug").grantAdvertName("Grant Advert Name").response(response)
                     .grantAdvertName("Homelessness Grant")
@@ -965,8 +962,8 @@ class GrantAdvertServiceTest {
         void publishAdvert_AccessDenied() {
             UUID grantAdvertId = UUID.randomUUID();
             final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(grantAdvertId).scheme(scheme).version(1)
-                    .created(Instant.now()).createdBy(new GrantAdmin(2, null, null)).lastUpdated(Instant.now())
-                    .lastUpdatedBy(new GrantAdmin(2, null, null)).status(GrantAdvertStatus.DRAFT)
+                    .created(Instant.now()).createdBy(new GrantAdmin(2, null, null, new ArrayList<>())).lastUpdated(Instant.now())
+                    .lastUpdatedBy(new GrantAdmin(2, null, null, new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
                     .contentfulEntryId("entry-id").contentfulSlug("contentful-slug")
                     .grantAdvertName("Grant Advert Name").response(response).grantAdvertName("Homelessness Grant")
                     .build();
@@ -984,8 +981,8 @@ class GrantAdvertServiceTest {
         @Test
         void publishAdvertThroughLambda_successfullyPublishedAdvert() {
             final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme).version(1)
-                    .created(Instant.now()).createdBy(new GrantAdmin(1, null, null)).lastUpdated(Instant.now())
-                    .lastUpdatedBy(new GrantAdmin(1, null, null)).status(GrantAdvertStatus.DRAFT)
+                    .created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).lastUpdated(Instant.now())
+                    .lastUpdatedBy(new GrantAdmin(1, null, null, new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
                     .contentfulEntryId("entry-id").contentfulSlug("contentful-slug")
                     .grantAdvertName("Grant Advert Name").response(response).grantAdvertName("Homelessness Grant")
                     .build();
@@ -1246,7 +1243,7 @@ class GrantAdvertServiceTest {
 
         final GrantAdvert scheduledGrantAdvert = GrantAdvert.builder().id(grantAdvertId).response(response)
                 .status(GrantAdvertStatus.DRAFT).grantAdvertName("Schedule Test Advert")
-                .createdBy(new GrantAdmin(1, null, null)).build();
+                .createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).build();
 
         @Test
         void scheduleGrantAdvert_Success() {
@@ -1273,7 +1270,7 @@ class GrantAdvertServiceTest {
         void scheduleGrantAdvert_AccessDenied() {
             final GrantAdvert scheduledGrantAdvert = GrantAdvert.builder().id(grantAdvertId).response(response)
                     .status(GrantAdvertStatus.DRAFT).grantAdvertName("Schedule Test Advert")
-                    .createdBy(new GrantAdmin(2, null, null)).build();
+                    .createdBy(new GrantAdmin(2, null, null, new ArrayList<>())).build();
 
             when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(scheduledGrantAdvert));
 
@@ -1303,7 +1300,7 @@ class GrantAdvertServiceTest {
 
         final GrantAdvert scheduledGrantAdvert = GrantAdvert.builder().id(grantAdvertId)
                 .status(GrantAdvertStatus.SCHEDULED).grantAdvertName("Scheduled Test Advert")
-                .createdBy(new GrantAdmin(1, null, null)).build();
+                .createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).build();
 
         @Test
         void scheduleGrantAdvert_Success() {
@@ -1324,7 +1321,7 @@ class GrantAdvertServiceTest {
         void scheduleGrantAdvert_AccessDenied() {
             final GrantAdvert scheduledGrantAdvert = GrantAdvert.builder().id(grantAdvertId).response(response)
                     .status(GrantAdvertStatus.SCHEDULED).grantAdvertName("Schedule Test Advert")
-                    .createdBy(new GrantAdmin(2, null, null)).build();
+                    .createdBy(new GrantAdmin(2, null, null, new ArrayList<>())).build();
 
             when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(scheduledGrantAdvert));
 
