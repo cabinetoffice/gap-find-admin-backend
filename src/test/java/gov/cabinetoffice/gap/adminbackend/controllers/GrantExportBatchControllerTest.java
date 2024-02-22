@@ -1,10 +1,15 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportBatchDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantExportBatchEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportBatchService;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +23,16 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(GrantExportBatchController.class)
@@ -91,6 +101,33 @@ public class GrantExportBatchControllerTest {
 
             mockMvc.perform(patch("/grant-export-batch/" + mockExportId + "/s3-object-key").contentType(MediaType.APPLICATION_JSON)
                             .content("\"" + s3ObjectKey + "\"")
+                            .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class getExportBatchInfo {
+
+        @Test
+        void successfullyGetsCompletesExportRecords() throws Exception {
+            final GrantExportBatchEntity grantExportBatchEntity = GrantExportBatchEntity.builder().id(UUID.randomUUID()).applicationId(1).createdBy(1)
+                    .build();
+
+            when(grantExportBatchService.getGrantExportBatch(mockExportId))
+                    .thenReturn(grantExportBatchEntity);
+
+            mockMvc.perform(get("/grant-export-batch/" + mockExportId).header(HttpHeaders.AUTHORIZATION,
+                            LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(content().string(HelperUtils.asJsonString(grantExportBatchEntity)));
+        }
+
+        @Test
+        void exceptionThrown() throws Exception {
+            when(grantExportBatchService.getGrantExportBatch(mockExportId))
+                    .thenThrow(RuntimeException.class);
+            mockMvc.perform(get("/grant-export-batch/" + mockExportId)
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isInternalServerError());
         }
