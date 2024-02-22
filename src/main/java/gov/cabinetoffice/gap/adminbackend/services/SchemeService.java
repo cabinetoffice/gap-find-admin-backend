@@ -185,4 +185,16 @@ public class SchemeService {
         this.schemeRepo.save(scheme);
     }
 
+    public void addEditorToScheme(GrantAdmin admin, Integer schemeId) {
+        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+        SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
+
+        if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
+            throw new AccessDeniedException(
+                    "User " + session.getGrantAdminId() + "is unable to add an editor to the scheme with id " + schemeId);
+        }
+       scheme.addAdmin(admin);
+        this.schemeRepo.save(scheme);
+    }
+
 }

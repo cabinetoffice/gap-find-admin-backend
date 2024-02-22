@@ -7,6 +7,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
@@ -259,4 +260,21 @@ public class SchemeController {
         return ResponseEntity.ok(true);
     }
 
+    @PostMapping("/{schemeId}/editors")
+    public ResponseEntity<String> addEditorToScheme(@PathVariable final Integer schemeId, @RequestBody final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
+        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
+
+        if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
+            throw new FieldViolationException("emailAddress", "This user is already an editor of this scheme");
+        }
+        try {
+            GrantAdmin grantAdmin = userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), jwt);
+            schemeService.addEditorToScheme(grantAdmin, schemeId);
+            return ResponseEntity.ok("Editor added to scheme successfully");
+        }
+        catch (Exception e) {
+            throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
+        }
+
+    }
 }
