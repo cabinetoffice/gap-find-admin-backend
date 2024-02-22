@@ -80,6 +80,9 @@ public interface ApplicationFormMapper {
         if (questionGenericPatchDTO.getQuestionSuffix() != null) {
             questionDto.setQuestionSuffix(questionGenericPatchDTO.getQuestionSuffix());
         }
+        if (questionGenericPatchDTO.getResponseType() != null) {
+            questionDto.setResponseType(questionGenericPatchDTO.getResponseType());
+        }
 
         Map<String, Object> map = questionGenericPatchDTO.getValidation();
         if (questionDto.getValidation() != null) {
@@ -114,6 +117,9 @@ public interface ApplicationFormMapper {
         }
         if (questionOptionsPatchDTO.getQuestionSuffix() != null) {
             questionDto.setQuestionSuffix(questionOptionsPatchDTO.getQuestionSuffix());
+        }
+        if (questionOptionsPatchDTO.getResponseType() != null) {
+            questionDto.setResponseType(questionOptionsPatchDTO.getResponseType());
         }
         if (questionDto.getValidation() != null) {
             Map<String, Object> map = questionOptionsPatchDTO.getValidation();
