@@ -209,4 +209,19 @@ public class GrantExportServiceTest {
                     .isEqualTo(exportedSubmissionsDto);
         }
     }
+
+    @Nested
+    class getExportCountByStatus{
+        @Test
+        void getExportCountByStatus() {
+            final UUID mockExportId = UUID.randomUUID();
+            final long expectedResponse = 2L;
+            when(exportRepository.countByIdExportBatchIdAndStatus(mockExportId, GrantExportStatus.FAILED)).thenReturn(expectedResponse);
+
+            final long response = grantExportService.getExportCountByStatus(mockExportId, GrantExportStatus.FAILED);
+
+            verify(exportRepository).countByIdExportBatchIdAndStatus(mockExportId, GrantExportStatus.FAILED);
+            assertThat(response).isEqualTo(expectedResponse);
+        }
+    }
 }

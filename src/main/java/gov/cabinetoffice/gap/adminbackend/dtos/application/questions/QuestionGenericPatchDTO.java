@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.dtos.application.questions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import gov.cabinetoffice.gap.adminbackend.annotations.NotAllNull;
+import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -20,12 +21,13 @@ import java.util.Map;
 public class QuestionGenericPatchDTO extends QuestionAbstractPatchDTO {
 
     public QuestionGenericPatchDTO(String fieldTitle, String profileField, String hintText, String displayText,
-            String questionSuffix, Map<String, Object> validation) {
+        String questionSuffix, ResponseTypeEnum responseType, Map<String, Object> validation) {
         super.setFieldTitle(fieldTitle);
         super.setProfileField(profileField);
         super.setHintText(hintText);
         super.setDisplayText(displayText);
         super.setQuestionSuffix(questionSuffix);
+        super.setResponseType(responseType);
         super.setValidation(validation);
     }
 
