@@ -138,7 +138,7 @@ public class GrantExportControllerTest {
 
         @Test
         void successfullyGetFailedExportsCount() throws Exception {
-            when(mockGrantExportService.getFailedExportsCount(any())).thenReturn(mockCount);
+            when(mockGrantExportService.getExportCountByStatus(any(), any())).thenReturn(mockCount);
 
             mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount").header(HttpHeaders.AUTHORIZATION,
                             LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
@@ -152,10 +152,27 @@ public class GrantExportControllerTest {
 
         @Test
         void unexpectedErrorOccurred() throws Exception {
-            when(mockGrantExportService.getFailedExportsCount(any())).thenThrow(RuntimeException.class);
+            when(mockGrantExportService.getExportCountByStatus(any(), any())).thenThrow(RuntimeException.class);
 
             mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class getExportCountByStatus {
+
+        @Test
+        void successfullyGetExportCountByStatus() throws Exception {
+            final Long expectedResponse = 2L;
+            when(mockGrantExportService.getExportCountByStatus(mockExportId, GrantExportStatus.COMPLETE))
+                    .thenReturn(expectedResponse);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId +"/status/count")
+                            .param("status", String.valueOf(GrantExportStatus.COMPLETE)))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(String.valueOf(expectedResponse)));
         }
 
     }
