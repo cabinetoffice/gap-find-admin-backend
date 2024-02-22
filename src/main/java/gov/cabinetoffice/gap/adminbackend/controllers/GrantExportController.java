@@ -99,7 +99,7 @@ public class GrantExportController {
                             schema = @Schema(implementation = OutstandingExportCountDTO.class))),
             @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
                     content = @Content(mediaType = "application/json")) })
-    public ResponseEntity getExportCountByStatus(@PathVariable() UUID exportId, @RequestParam @NotNull GrantExportStatus status){
+    public ResponseEntity<Long> getExportCountByStatus(@PathVariable() UUID exportId, @RequestParam @NotNull GrantExportStatus status){
         final Long count = exportService.getExportCountByStatus(exportId, status);
         return ResponseEntity.ok(count);
     }
