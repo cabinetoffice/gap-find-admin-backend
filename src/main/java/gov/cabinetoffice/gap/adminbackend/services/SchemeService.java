@@ -147,8 +147,7 @@ public class SchemeService {
     public List<SchemeDTO> getPaginatedSchemes(Pageable pagination) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
-            List<SchemeEntity> schemes;
-            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId(), pagination);
+            List<SchemeEntity> schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId(), pagination);
             return this.schemeMapper.schemeEntityListtoDtoList(schemes);
         }
         catch (Exception e) {
