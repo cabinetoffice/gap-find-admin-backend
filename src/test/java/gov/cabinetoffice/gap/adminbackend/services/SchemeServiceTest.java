@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -48,6 +49,9 @@ class SchemeServiceTest {
 
     @Mock
     private SchemeRepository schemeRepository;
+
+    @Mock
+    private GrantAdminRepository grantAdminRepository;
 
     @Mock
     private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
@@ -144,6 +148,7 @@ class SchemeServiceTest {
         SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
         SchemeEntity testEntityAfterSave = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntityAfterSave.getId();
+        GrantAdmin mockAdmin = GrantAdmin.builder().id(1).build();
 
         MockHttpSession mockSession = new MockHttpSession();
 
@@ -152,10 +157,14 @@ class SchemeServiceTest {
         when(this.schemeRepository.save(mockEntity)).thenReturn(testEntityAfterSave);
         when(this.featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(false);
 
+        when(this.grantAdminRepository.findById(mockAdmin.getId())).thenReturn(Optional.of(mockAdmin));
+
+
         Integer response = this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, mockSession);
 
         verify(mockEntity).setCreatedBy(1);
         verify(this.schemeRepository).save(mockEntity);
+        verify(mockEntity).addAdmin(mockAdmin);
         verify(this.sessionsService).deleteObjectFromSession(SessionObjectEnum.newScheme, mockSession);
         assertThat(response).as("Scheme ID should match value from mock object").isEqualTo(testSchemeId);
     }
@@ -165,6 +174,8 @@ class SchemeServiceTest {
         SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
         SchemeEntity testEntityAfterSave = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntityAfterSave.getId();
+        GrantAdmin mockAdmin = GrantAdmin.builder().id(1).build();
+
 
         MockHttpSession mockSession = new MockHttpSession();
 
@@ -173,11 +184,14 @@ class SchemeServiceTest {
         when(this.schemeRepository.save(mockEntity)).thenReturn(testEntityAfterSave);
         when(this.featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(true);
 
+        when(this.grantAdminRepository.findById(mockAdmin.getId())).thenReturn(Optional.of(mockAdmin));
+
         Integer response = this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, mockSession);
 
         verify(mockEntity).setCreatedBy(1);
         verify(mockEntity).setVersion(2);
         verify(this.schemeRepository).save(mockEntity);
+        verify(mockEntity).addAdmin(mockAdmin);
         verify(this.sessionsService).deleteObjectFromSession(SessionObjectEnum.newScheme, mockSession);
         assertThat(response).as("Scheme ID should match value from mock object").isEqualTo(testSchemeId);
     }
@@ -197,11 +211,27 @@ class SchemeServiceTest {
     @Test
     void postNewScheme_IllegalArgumentException() {
         SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
+        GrantAdmin mockAdmin = GrantAdmin.builder().id(1).build();
+
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
+        when(this.grantAdminRepository.findById(mockAdmin.getId())).thenReturn(Optional.of(mockAdmin));
         when(this.schemeRepository.save(testEntity)).thenThrow(new IllegalArgumentException());
 
         assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, new MockHttpSession()))
                 .isInstanceOf(IllegalArgumentException.class);
+
+    }
+
+    @Test
+    void postNewScheme_SchemeEntityException() {
+        Integer invalidId = 999;
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
+        when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
+        when(this.grantAdminRepository.findById(invalidId)).thenReturn(null);
+
+
+        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, new MockHttpSession()))
+                .isInstanceOf(SchemeEntityException.class);
 
     }
 
