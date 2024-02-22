@@ -1,6 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import com.amazonaws.services.s3.model.Grant;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
@@ -72,7 +71,6 @@ public class SchemeService {
                 entity.setVersion(2);
             }
 
-            //find admin and add to join table
             Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findById(adminSession.getGrantAdminId());
             if (grantAdmin.isPresent()) {
                 entity.addAdmin(grantAdmin.get());
