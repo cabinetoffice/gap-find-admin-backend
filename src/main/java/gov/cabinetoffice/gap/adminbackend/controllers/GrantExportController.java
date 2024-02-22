@@ -3,11 +3,14 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.FailedExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsListDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
+import gov.cabinetoffice.gap.adminbackend.services.GrantExportBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,24 +20,27 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @Log4j2
 @RestController
-@RequestMapping("/export-batch")
+@RequestMapping("/grant-export")
 @Tag(name = "Grant Exports", description = "API for handling grant/submissions exports")
 @RequiredArgsConstructor
 public class GrantExportController {
 
     private final GrantExportService exportService;
+    private final GrantExportBatchService grantExportBatchService;
 
     @GetMapping("/{exportId}/outstandingCount")
     @ApiResponses(value = {
@@ -111,20 +117,7 @@ public class GrantExportController {
         return ResponseEntity.ok(new OutstandingExportCountDTO(count));
     }
 
-    @GetMapping("/{exportId}/status/count")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Returned submission exports count for batch id by status",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
-                    content = @Content(mediaType = "application/json")) })
-    public ResponseEntity<Long> getExportCountByStatus(@PathVariable() UUID exportId, @RequestParam @NotNull GrantExportStatus status){
-        final Long count = exportService.getExportCountByStatus(exportId, status);
-        return ResponseEntity.ok(count);
-    }
-
-
-    @GetMapping("/{exportId}/submissions")
+    @GetMapping("/{exportId}/details")
     @PageableAsQueryParam
     public ResponseEntity<ExportedSubmissionsListDto> getSubmissions(@PathVariable final UUID exportId,
             @RequestParam(name = "grabOnlyFailed", required = false,
@@ -132,12 +125,60 @@ public class GrantExportController {
         log.info("Getting submissions for exportId: {}, grabOnlyFailed : {}", exportId, grabOnlyFailed);
 
         final GrantExportStatus status = grabOnlyFailed ? GrantExportStatus.FAILED : GrantExportStatus.COMPLETE;
+        final String superZipLocation = grantExportBatchService.getSuperZipLocation(exportId);
         final ExportedSubmissionsListDto exportedSubmissionsListDto = exportService
-            .generateExportedSubmissionsListDto(exportId, status, pagination);
+            .generateExportedSubmissionsListDto(exportId, status, pagination, superZipLocation);
 
         return ResponseEntity.ok()
                 .header("cache-control", "private, no-cache, max-age=0, must-revalidate")
                 .body(exportedSubmissionsListDto);
+    }
+
+    @PatchMapping("/{exportId}/batch/status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Updates grant export batch status",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
+                    content = @Content(mediaType = "application/json")) })
+    @LambdasHeaderValidator
+    public ResponseEntity updateGrantExportBatchStatus(@PathVariable UUID exportId, @RequestBody GrantExportStatus newStatus) {
+       log.info("Updating grant export {} batch status to {}", exportId, newStatus);
+        try {
+            grantExportBatchService.updateExportBatchStatusById(exportId, newStatus);
+            log.info("Updated grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        catch (Exception e) {
+            log.error("Error updating grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
+            throw e;
+        }
+    }
+
+    @PatchMapping("/{exportId}/batch/s3-object-key")
+    @Operation(summary = "Add AWS S3 object key to grant export batch for download")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully added S3 key to grant export batch location",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400",
+                    description = "Required path variables and body not provided in expected format",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "Something went wrong while updating S3 key",
+                    content = @Content(mediaType = "application/json")) })
+    @LambdasHeaderValidator
+    public ResponseEntity updateGrantExportBatchLocation(@PathVariable UUID exportId, @RequestBody S3ObjectKeyDTO s3ObjectKeyDTO) {
+        log.info("Updating grant export {} batch s3 Object key to {}", exportId, s3ObjectKeyDTO.getS3ObjectKey());
+
+        try {
+            grantExportBatchService.addS3ObjectKeyToGrantExportBatch(exportId, s3ObjectKeyDTO.getS3ObjectKey());
+            log.info("Updated grant_export_batch table location to {} with exportId: {}", s3ObjectKeyDTO.toString(), exportId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        catch (Exception e) {
+            log.error("Error updating grant_export_batch table location to {} with exportId: {}", s3ObjectKeyDTO.toString(), exportId);
+            throw e;
+        }
+
     }
 
 }

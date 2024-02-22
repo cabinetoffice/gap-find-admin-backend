@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -57,6 +58,7 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
         exportedSubmissionsDto.zipFileLocation(grantExportEntity.getLocation());
         exportedSubmissionsDto.status(grantExportEntity.getStatus());
         exportedSubmissionsDto.name(mapExportedSubmissionName(grantExportEntity));
+        exportedSubmissionsDto.date(mapExportedSubmissionSubmittedDate(grantExportEntity));
 
         return exportedSubmissionsDto.build();
     }
@@ -76,6 +78,21 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
                 .getSectionById(ESSENTIAL_SECTION_ID)
                 .getQuestionById(APPLICANT_ORG_NAME)
                 .getResponse();
+    }
+
+    @Override
+    public ZonedDateTime mapExportedSubmissionSubmittedDate(GrantExportEntity grantExportEntity) {
+        log.info("Getting submitted date from grant export {} and submission {}", grantExportEntity.getId(),
+                grantExportEntity.getId().getSubmissionId());
+
+        final UUID submissionId = grantExportEntity.getId().getSubmissionId();
+        final Optional<Submission> submission = submissionRepository.findById(submissionId);
+        if (submission.isEmpty()) {
+            log.error("Submission not found for id: {}", submissionId);
+            return null;
+        }
+
+        return submission.get().getSubmittedDate();
     }
     private UUID grantExportEntityIdSubmissionId(GrantExportEntity grantExportEntity) {
         if (grantExportEntity == null) {

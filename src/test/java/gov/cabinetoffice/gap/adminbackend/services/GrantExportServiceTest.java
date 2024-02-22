@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -168,6 +169,8 @@ public class GrantExportServiceTest {
             final UUID submissionId = UUID.fromString("f5e3e3e3-3e3e-3e3e-3e3e-3e3e3e3e3e3e");
             final UUID submissionId2 = UUID.fromString("a3e3e3e3-3e3e-3e3e-3e3e-3e3e3e3e3e3e");
             final Pageable pagination = Pageable.unpaged();
+            final ZonedDateTime date = ZonedDateTime.now();
+            final ZonedDateTime oldDate = ZonedDateTime.now().minusDays(10);
             final GrantExportEntity grantExport = GrantExportEntity.builder()
                 .id(GrantExportId.builder().exportBatchId(mockExportId).submissionId(submissionId).build())
                 .status(GrantExportStatus.COMPLETE)
@@ -183,30 +186,41 @@ public class GrantExportServiceTest {
                 .zipFileLocation("location")
                 .status(GrantExportStatus.COMPLETE)
                 .name("name2")
+                .date(date)
                 .build();
             final ExportedSubmissionsDto exportedSubmissionsDto2 = ExportedSubmissionsDto.builder()
                 .submissionId(submissionId2)
                 .zipFileLocation("location2")
                 .status(GrantExportStatus.COMPLETE)
                 .name("name1")
+                .date(oldDate)
                 .build();
 
             when(exportRepository.findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination))
                 .thenReturn(List.of(grantExport, grantExport2));
+            when(exportRepository.countByIdExportBatchIdAndStatus(mockExportId, GrantExportStatus.COMPLETE))
+                .thenReturn(2L);
+            when(exportRepository.countByIdExportBatchIdAndStatus(mockExportId, GrantExportStatus.FAILED))
+                .thenReturn(0L);
+
             when(customGrantExportMapper.grantExportEntityToExportedSubmissions(grantExport))
                 .thenReturn(exportedSubmissionsDto);
             when(customGrantExportMapper.grantExportEntityToExportedSubmissions(grantExport2))
                 .thenReturn(exportedSubmissionsDto2);
 
             final ExportedSubmissionsListDto response = grantExportService
-                .generateExportedSubmissionsListDto(mockExportId, GrantExportStatus.COMPLETE, pagination);
+                .generateExportedSubmissionsListDto(mockExportId, GrantExportStatus.COMPLETE, pagination, "superZip");
 
             verify(exportRepository).findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination);
             assertThat(response.getGrantExportId()).isEqualTo(mockExportId);
-            assertThat(response.getExportedSubmissionDtos().get(0))
+            assertThat(response.getExportedSubmissions().get(0))
                 .isEqualTo(exportedSubmissionsDto2);
-            assertThat(response.getExportedSubmissionDtos().get(1))
+            assertThat(response.getExportedSubmissions().get(1))
                     .isEqualTo(exportedSubmissionsDto);
+            assertThat(response.getSuperZipFileLocation()).isEqualTo("superZip");
+            assertThat(response.getSuccessCount()).isEqualTo(2);
+            assertThat(response.getFailedCount()).isEqualTo(0);
+
         }
     }
 

@@ -21,6 +21,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,7 +37,11 @@ class CustomGrantExportMapperImplTest {
 
     final UUID mockExportId = UUID.fromString("a3e3e3e3-3e3e-3e3e-3e3e-3e3e3e3e3e3e");
     final UUID submissionId = UUID.fromString("f5e3e3e3-3e3e-3e3e-3e3e-3e3e3e3e3e3e");
-    final UUID submissionId2 = UUID.fromString("a3e3e3e3-3e3e-3e3e-3e3e-3e3e3e3e3e3e");
+    public final ZonedDateTime FIXED_DATE_TIME = ZonedDateTime.of(
+            LocalDate.of(2024, 2, 22),
+            LocalTime.NOON,
+            ZoneId.systemDefault()
+    );
     final GrantExportEntity grantExport = GrantExportEntity.builder()
         .id(GrantExportId.builder().exportBatchId(mockExportId).submissionId(submissionId).build())
         .status(GrantExportStatus.COMPLETE)
@@ -44,6 +52,7 @@ class CustomGrantExportMapperImplTest {
         .zipFileLocation("location")
         .status(GrantExportStatus.COMPLETE)
         .name("Some company name")
+            .date(FIXED_DATE_TIME)
         .build();
     final SubmissionQuestion ORG_NAME_SUBMISSION_QUESTION = SubmissionQuestion.builder()
         .questionId("APPLICANT_ORG_NAME")
@@ -69,6 +78,7 @@ class CustomGrantExportMapperImplTest {
         .status(SubmissionStatus.SUBMITTED)
         .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
         .definition(submissionDefinition)
+            .submittedDate(FIXED_DATE_TIME)
         .build();
 
     @Mock
@@ -108,6 +118,7 @@ class CustomGrantExportMapperImplTest {
         final ExportedSubmissionsDto exportedSubmissions = customGrantExportMapper.grantExportEntityToExportedSubmissions(grantExport);
 
         exportedSubmissionsDto.setName(submissionId.toString());
+        exportedSubmissionsDto.setDate(null);
         assertEquals(exportedSubmissionsDto, exportedSubmissions);
     }
 }

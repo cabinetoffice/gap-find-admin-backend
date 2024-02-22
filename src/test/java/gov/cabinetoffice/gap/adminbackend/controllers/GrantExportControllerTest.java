@@ -9,6 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
+import gov.cabinetoffice.gap.adminbackend.services.GrantExportBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
@@ -19,7 +20,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,8 +32,11 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,6 +53,9 @@ public class GrantExportControllerTest {
 
     @MockBean
     private GrantExportService mockGrantExportService;
+
+    @MockBean
+    private GrantExportBatchService mockGrantExportBatchService;
 
     @MockBean
     @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
@@ -71,7 +80,7 @@ public class GrantExportControllerTest {
             when(mockGrantExportService.getOutstandingExportCount(any())).thenReturn(mockCount);
 
             mockMvc
-                .perform(get("/export-batch/" + mockExportId + "/outstandingCount")
+                .perform(get("/grant-export/" + mockExportId + "/outstandingCount")
                         .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                 .andExpect(status().isOk())
                 .andExpect(content().string(HelperUtils.asJsonString(expectedResponse)));
@@ -79,7 +88,7 @@ public class GrantExportControllerTest {
 
         @Test
         void badRequest_IncorrectPathVariables() throws Exception {
-            mockMvc.perform(get("/export-batch/this_isnt_a_uuid/outstandingCount")).andExpect(status().isBadRequest());
+            mockMvc.perform(get("/grant-export/this_isnt_a_uuid/outstandingCount")).andExpect(status().isBadRequest());
         }
 
         @Test
@@ -90,7 +99,7 @@ public class GrantExportControllerTest {
             when(mockGrantExportService.getOutstandingExportCount(any())).thenThrow(RuntimeException.class);
 
             mockMvc
-                .perform(get("/export-batch/" + mockExportId + "/outstandingCount")
+                .perform(get("/grant-export/" + mockExportId + "/outstandingCount")
                         .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                 .andExpect(status().isInternalServerError());
         }
@@ -123,7 +132,7 @@ public class GrantExportControllerTest {
                 .thenReturn(mockGrantExportList);
 
             mockMvc
-                .perform(get("/export-batch/" + mockExportId + "/completed")
+                .perform(get("/grant-export/" + mockExportId + "/completed")
                         .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                 .andExpect(status().isOk())
                 .andExpect(content().string(HelperUtils.asJsonString(mockGrantExportList)));
@@ -133,7 +142,7 @@ public class GrantExportControllerTest {
         void exceptionThrown() throws Exception {
             when(mockGrantExportService.getGrantExportsByIdAndStatus(mockExportId, GrantExportStatus.COMPLETE))
                     .thenThrow(RuntimeException.class);
-            mockMvc.perform(get("/export-batch/" + mockExportId + "/completed")
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/completed")
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isInternalServerError());
         }
@@ -151,7 +160,7 @@ public class GrantExportControllerTest {
         void successfullyGetFailedExportsCount() throws Exception {
             when(mockGrantExportService.getExportCountByStatus(any(), any())).thenReturn(mockCount);
 
-            mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount")
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/failedCount")
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk())
                     .andExpect(content().string(HelperUtils.asJsonString(expectedResponse)));
@@ -159,7 +168,7 @@ public class GrantExportControllerTest {
 
         @Test
         void badRequest_IncorrectPathVariables() throws Exception {
-            mockMvc.perform(get("/export-batch/this_isnt_a_uuid/failedCount"))
+            mockMvc.perform(get("/grant-export/this_isnt_a_uuid/failedCount"))
                     .andExpect(status().isBadRequest());
         }
 
@@ -167,26 +176,9 @@ public class GrantExportControllerTest {
         void unexpectedErrorOccurred() throws Exception {
             when(mockGrantExportService.getExportCountByStatus(any(), any())).thenThrow(RuntimeException.class);
 
-            mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount")
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/failedCount")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isInternalServerError());
-        }
-
-    }
-
-    @Nested
-    class getExportCountByStatus {
-
-        @Test
-        void successfullyGetExportCountByStatus() throws Exception {
-            final Long expectedResponse = 2L;
-            when(mockGrantExportService.getExportCountByStatus(mockExportId, GrantExportStatus.COMPLETE))
-                    .thenReturn(expectedResponse);
-
-            mockMvc.perform(get("/export-batch/" + mockExportId +"/status/count")
-                            .param("status", String.valueOf(GrantExportStatus.COMPLETE)))
-                    .andExpect(status().isOk())
-                    .andExpect(content().string(String.valueOf(expectedResponse)));
         }
 
     }
@@ -202,7 +194,7 @@ public class GrantExportControllerTest {
         void successfullyGetRemainingExportsCount() throws Exception {
             when(mockGrantExportService.getRemainingExportsCount(any())).thenReturn(mockCount);
 
-            mockMvc.perform(get("/export-batch/" + mockExportId + "/remainingCount")
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/remainingCount")
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isOk())
                     .andExpect(content().string(HelperUtils.asJsonString(expectedResponse)));
@@ -210,7 +202,7 @@ public class GrantExportControllerTest {
 
         @Test
         void badRequest_IncorrectPathVariables() throws Exception {
-            mockMvc.perform(get("/export-batch/this_isnt_a_uuid/remainingCount"))
+            mockMvc.perform(get("/grant-export/this_isnt_a_uuid/remainingCount"))
                     .andExpect(status().isBadRequest());
         }
 
@@ -218,7 +210,7 @@ public class GrantExportControllerTest {
         void unexpectedErrorOccurred() throws Exception {
             when(mockGrantExportService.getRemainingExportsCount(any())).thenThrow(RuntimeException.class);
 
-            mockMvc.perform(get("/export-batch/" + mockExportId + "/remainingCount")
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/remainingCount")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isInternalServerError());
         }
@@ -232,30 +224,81 @@ public class GrantExportControllerTest {
 
         @Test
         void successfullyGetExportedSubmissionsListDto() throws Exception {
-            final ExportedSubmissionsListDto expectedResponse = ExportedSubmissionsListDto.builder().grantExportId(exportId).build();
-
-            when(mockGrantExportService.generateExportedSubmissionsListDto(any(), any(), any()))
+            final ExportedSubmissionsListDto expectedResponse = ExportedSubmissionsListDto.builder()
+                    .grantExportId(exportId)
+                    .superZipFileLocation("superZipLocation")
+                    .build();
+            final Pageable pageable = Pageable.unpaged();
+            when(mockGrantExportBatchService.getSuperZipLocation(any())).thenReturn("superZipLocation");
+            when(mockGrantExportService.generateExportedSubmissionsListDto(any(), any(), any(), any()))
                 .thenReturn(expectedResponse);
 
-            mockMvc.perform(get("/export-batch/" + mockExportId + "/submissions"))
+
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/details"))
                     .andExpect(status().isOk())
                     .andExpect(content().string(HelperUtils.asJsonString(expectedResponse)));
         }
 
         @Test
         void badRequest_IncorrectPathVariables() throws Exception {
-            mockMvc.perform(get("/export-batch/this_isnt_a_uuid/submissions"))
+            mockMvc.perform(get("/grant-export/this_isnt_a_uuid/details"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void unexpectedErrorOccurred() throws Exception {
-            when(mockGrantExportService.generateExportedSubmissionsListDto(any(), any(), any()))
+            when(mockGrantExportBatchService.getSuperZipLocation(exportId)).thenReturn("superZipLocation");
+            when(mockGrantExportService.generateExportedSubmissionsListDto(any(), any(), any(), any()))
                     .thenThrow(RuntimeException.class);
 
-            mockMvc.perform(get("/export-batch/" + mockExportId + "/submissions"))
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/details"))
                     .andExpect(status().isInternalServerError());
         }
+    }
+    @Nested
+    class updateGrantExportBatchStatus {
+
+        @Test
+        void successfullyUpdateGrantExportBatchStatus() throws Exception {
+            doNothing().when(mockGrantExportBatchService).updateExportBatchStatusById(mockExportId, GrantExportStatus.COMPLETE);
+            mockMvc.perform(patch("/grant-export/" + mockExportId + "/batch/status").contentType(MediaType.APPLICATION_JSON)
+                            .content("\"COMPLETE\"").header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void errorThrown() throws Exception {
+            doThrow(new RuntimeException()).when(mockGrantExportBatchService).updateExportBatchStatusById(mockExportId, GrantExportStatus.COMPLETE);
+
+            mockMvc.perform(patch("/grant-export/" + mockExportId + "/batch/status").contentType(MediaType.APPLICATION_JSON)
+                            .content("\"COMPLETE\"").header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class updateGrantExportBatchLocation {
+        final String s3ObjectKey = "s3ObjectKey";
+
+        @Test
+        void successfullyUpdateGrantExportBatchLocation() throws Exception {
+            mockMvc.perform(patch("/grant-export/" + mockExportId + "/batch/s3-object-key").contentType(MediaType.APPLICATION_JSON)
+                            .content("\"" + s3ObjectKey + "\"")
+                            .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void errorThrown() throws Exception {
+            doThrow(new RuntimeException()).when(mockGrantExportBatchService).addS3ObjectKeyToGrantExportBatch(mockExportId, s3ObjectKey);
+
+            mockMvc.perform(patch("/grant-export/" + mockExportId + "/batch/s3-object-key").contentType(MediaType.APPLICATION_JSON)
+                            .content("\"" + s3ObjectKey + "\"")
+                            .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isInternalServerError());
+        }
+
     }
 
 }

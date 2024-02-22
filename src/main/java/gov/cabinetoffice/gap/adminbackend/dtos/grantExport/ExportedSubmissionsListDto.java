@@ -14,5 +14,9 @@ public class ExportedSubmissionsListDto {
 
     private UUID grantExportId;
     @Builder.Default
-    private List<ExportedSubmissionsDto> exportedSubmissionDtos = List.of();
+    private List<ExportedSubmissionsDto> exportedSubmissions = List.of();
+    private int failedCount;
+    private int successCount;
+    private String superZipFileLocation;
+
 }

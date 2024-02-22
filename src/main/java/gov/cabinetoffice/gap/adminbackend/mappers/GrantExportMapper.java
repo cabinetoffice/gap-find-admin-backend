@@ -6,6 +6,8 @@ import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.time.ZonedDateTime;
+
 
 @Mapper(componentModel = "spring", uses = {CustomGrantExportMapperImpl.class})
 public interface GrantExportMapper {
@@ -21,11 +23,16 @@ public interface GrantExportMapper {
     @Mapping(target = "zipFileLocation", source = "location")
     @Mapping(target = "name", expression = "java(mapExportedSubmissionName(grantExportEntity))")
     @Mapping(target ="status", source = "status")
+    @Mapping(target = "date", expression = "java(mapExportedSubmissionSubmittedDate(grantExportEntity))")
     ExportedSubmissionsDto grantExportEntityToExportedSubmissions(GrantExportEntity grantExportEntity);
 
 
     default String mapExportedSubmissionName(GrantExportEntity grantExportEntity) {
         return "";
+    }
+
+    default ZonedDateTime mapExportedSubmissionSubmittedDate(GrantExportEntity grantExportEntity) {
+        return null;
     }
 
 }
