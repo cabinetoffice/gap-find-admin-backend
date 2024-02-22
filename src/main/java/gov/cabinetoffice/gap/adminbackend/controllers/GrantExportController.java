@@ -15,11 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @Log4j2
@@ -77,9 +75,8 @@ public class GrantExportController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity getFailedExportsCount(@PathVariable UUID exportId) {
-        final Long count = exportService.getFailedExportsCount(exportId);
+        final Long count = exportService.getExportCountByStatus(exportId, GrantExportStatus.FAILED);
         return ResponseEntity.ok(new FailedExportCountDTO(count));
-
     }
 
     @GetMapping("/{exportId}/remainingCount")
@@ -93,6 +90,18 @@ public class GrantExportController {
     public ResponseEntity getRemainingExportsCount(@PathVariable UUID exportId) {
         final Long count = exportService.getRemainingExportsCount(exportId);
         return ResponseEntity.ok(new OutstandingExportCountDTO(count));
+    }
+
+    @GetMapping("/{exportId}/status/count")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Returned submission exports count for batch id by status",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OutstandingExportCountDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Required path variables not provided in expected format",
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity<Long> getExportCountByStatus(@PathVariable() UUID exportId, @RequestParam @NotNull GrantExportStatus status){
+        final Long count = exportService.getExportCountByStatus(exportId, status);
+        return ResponseEntity.ok(count);
     }
 
 }
