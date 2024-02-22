@@ -57,7 +57,7 @@ public class SchemeEntity {
     private String email;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
-    @JoinTable(name = "scheme_permissions",
+    @JoinTable(name = "scheme_editors",
             joinColumns = {@JoinColumn(name = "grant_scheme_id", referencedColumnName = "grant_scheme_id")},
             inverseJoinColumns = {@JoinColumn(name = "grant_admin_id", referencedColumnName = "grant_admin_id")}
             )
