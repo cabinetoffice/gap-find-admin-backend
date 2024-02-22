@@ -71,14 +71,11 @@ public class SchemeService {
                 entity.setVersion(2);
             }
 
-            Optional<GrantAdmin> grantAdmin = this.grantAdminRepository.findById(adminSession.getGrantAdminId());
-            if (grantAdmin.isPresent()) {
-                entity.addAdmin(grantAdmin.get());
-            }
-            else {
-                throw new SchemeEntityException("Something went wrong while creating a new grant scheme: "
-                        + "No grant admin found for id: " + adminSession.getGrantAdminId());
-            }
+            this.grantAdminRepository.findById(adminSession.getGrantAdminId())
+                    .ifPresentOrElse(
+                            entity::addAdmin,
+                            () -> new SchemeEntityException("Something went wrong while creating a new grant scheme: No grant admin found for id: " + adminSession.getGrantAdminId())
+                    );
 
             entity = this.schemeRepo.save(entity);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newScheme, session);
