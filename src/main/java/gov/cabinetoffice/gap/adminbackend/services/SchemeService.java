@@ -7,6 +7,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -185,15 +186,28 @@ public class SchemeService {
         this.schemeRepo.save(scheme);
     }
 
-    public void addEditorToScheme(GrantAdmin admin, Integer schemeId) {
+    public void addEditorToScheme(Integer schemeId, String editorEmailAddress, String jwt) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
+        List<GrantAdmin> existingEditors = scheme.getGrantAdmins();
+        GrantAdmin editorToAdd;
+        try {
+            editorToAdd = userService.getGrantAdminIdFromUserServiceEmail(editorEmailAddress, jwt);
+        } catch (Exception e) {
+            throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
+        }
+
+        if (existingEditors.stream().anyMatch(editor -> editor.getId().equals(editorToAdd.getId()))) {
+            System.out.println("editorEmailAddress: " + editorEmailAddress + " is already an editor of this scheme");
+            throw new FieldViolationException("editorEmailAddress", editorEmailAddress + " is already an editor of this scheme");
+        }
 
         if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
             throw new AccessDeniedException(
-                    "User " + session.getGrantAdminId() + "is unable to add an editor to the scheme with id " + schemeId);
+                    "You are unable to add an editor to the scheme with id " + schemeId);
         }
-       scheme.addAdmin(admin);
+
+        scheme.addAdmin(editorToAdd);
         this.schemeRepo.save(scheme);
     }
 
