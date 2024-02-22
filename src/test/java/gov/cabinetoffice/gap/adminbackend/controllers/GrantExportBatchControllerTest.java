@@ -2,10 +2,9 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportBatchDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportBatchEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
+import gov.cabinetoffice.gap.adminbackend.mappers.GrantExportMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportBatchService;
@@ -24,12 +23,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -38,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(GrantExportBatchController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(
-        classes = { GrantExportBatchController.class, ControllerExceptionHandler.class, LambdasInterceptor.class })
+        classes = {GrantExportBatchController.class, GrantExportMapper.class, ControllerExceptionHandler.class, LambdasInterceptor.class})
 public class GrantExportBatchControllerTest {
 
     private final String LAMBDA_AUTH_HEADER = "topSecretKey";
@@ -58,6 +54,9 @@ public class GrantExportBatchControllerTest {
 
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
+
+    @MockBean
+    private GrantExportMapper grantExportMapper;
 
     final UUID mockExportId = UUID.randomUUID();
 
@@ -111,16 +110,31 @@ public class GrantExportBatchControllerTest {
     class getExportBatchInfo {
 
         @Test
-        void successfullyGetsCompletesExportRecords() throws Exception {
-            final GrantExportBatchEntity grantExportBatchEntity = GrantExportBatchEntity.builder().id(UUID.randomUUID()).applicationId(1).createdBy(1)
+        void successfullyGetsBatchInfo() throws Exception {
+            UUID randomUUID = UUID.randomUUID();
+            final GrantExportBatchEntity grantExportBatchEntity = GrantExportBatchEntity.builder()
+                    .id(randomUUID)
+                    .applicationId(1)
+                    .createdBy(1)
+                    .build();
+            final GrantExportBatchDTO grantExportBatchDTO = GrantExportBatchDTO.builder()
+                    .exportBatchId(randomUUID)
+                    .applicationId(1)
+                    .createdBy(1)
+                    .status(GrantExportStatus.COMPLETE)
+                    .emailAddress("test123@test.com")
+                    .created(Instant.now())
+                    .lastUpdated(Instant.now())
+                    .location("here")
                     .build();
 
             when(grantExportBatchService.getGrantExportBatch(mockExportId))
                     .thenReturn(grantExportBatchEntity);
+            when(grantExportMapper.grantExportBatchEntityToGrantExportBatchDTO(grantExportBatchEntity)).thenReturn(grantExportBatchDTO);
 
             mockMvc.perform(get("/grant-export-batch/" + mockExportId).header(HttpHeaders.AUTHORIZATION,
                             LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
-                    .andExpect(content().string(HelperUtils.asJsonString(grantExportBatchEntity)));
+                    .andExpect(content().string(HelperUtils.asJsonString(grantExportBatchDTO)));
         }
 
         @Test
