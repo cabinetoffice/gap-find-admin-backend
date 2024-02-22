@@ -47,7 +47,11 @@ public class GrantExportBatchController {
     public ResponseEntity<GrantExportBatchDTO> getExportBatchInfo(@PathVariable UUID exportBatchId) {
         try {
             final GrantExportBatchEntity grantExportBatchEntity = grantExportBatchService.getGrantExportBatch(exportBatchId);
-            return ResponseEntity.ok(grantExportMapper.grantExportBatchEntityToGrantExportBatchDTO(grantExportBatchEntity));
+            if (grantExportBatchEntity != null) {
+                return ResponseEntity.ok(grantExportMapper.grantExportBatchEntityToGrantExportBatchDTO(grantExportBatchEntity));
+            } else {
+                throw new NotFoundException();
+            }
         } catch (NotFoundException e) {
             return ResponseEntity.notFound().build();
         }

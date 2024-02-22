@@ -43,7 +43,6 @@ public class WebSecurityConfig {
                                 "/export-batch/{exportId:" + UUID_REGEX_STRING + "}/completed",
                                 "/grant-export-batch/{exportId:" + UUID_REGEX_STRING + "}/status",
                                 "/grant-export-batch/{exportId:" + UUID_REGEX_STRING + "}/s3-object-key",
-                                "/grant-export-batch/{exportId:" + UUID_REGEX_STRING + "}",
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/publish",
                                 "/grant-advert/lambda/{grantAdvertId:" + UUID_REGEX_STRING + "}/unpublish",
                                 "/users/migrate", "/users/delete", "/users/tech-support-user/**",
