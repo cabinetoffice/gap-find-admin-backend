@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditor.SchemeEditorPostDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
@@ -24,7 +25,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.conn.scheme.Scheme;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -261,20 +264,9 @@ public class SchemeController {
     }
 
     @PostMapping("/{schemeId}/editors")
-    public ResponseEntity<String> addEditorToScheme(@PathVariable final Integer schemeId, @RequestBody final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
+    public ResponseEntity<String> addEditorToScheme(@PathVariable final Integer schemeId, @RequestBody @Valid final SchemeEditorPostDTO newEditorDto, final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-
-        if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
-            throw new FieldViolationException("emailAddress", "This user is already an editor of this scheme");
-        }
-        try {
-            GrantAdmin grantAdmin = userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), jwt);
-            schemeService.addEditorToScheme(grantAdmin, schemeId);
-            return ResponseEntity.ok("Editor added to scheme successfully");
-        }
-        catch (Exception e) {
-            throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
-        }
-
+        schemeService.addEditorToScheme(schemeId, newEditorDto.getEditorEmailAddress(), jwt);
+        return ResponseEntity.ok("Editor added to scheme successfully");
     }
 }
