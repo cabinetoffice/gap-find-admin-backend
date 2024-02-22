@@ -111,14 +111,13 @@ public class GrantExportBatchControllerTest {
 
         @Test
         void successfullyGetsBatchInfo() throws Exception {
-            UUID randomUUID = UUID.randomUUID();
             final GrantExportBatchEntity grantExportBatchEntity = GrantExportBatchEntity.builder()
-                    .id(randomUUID)
+                    .id(mockExportId)
                     .applicationId(1)
                     .createdBy(1)
                     .build();
             final GrantExportBatchDTO grantExportBatchDTO = GrantExportBatchDTO.builder()
-                    .exportBatchId(randomUUID)
+                    .exportBatchId(mockExportId)
                     .applicationId(1)
                     .createdBy(1)
                     .status(GrantExportStatus.COMPLETE)
@@ -132,8 +131,7 @@ public class GrantExportBatchControllerTest {
                     .thenReturn(grantExportBatchEntity);
             when(grantExportMapper.grantExportBatchEntityToGrantExportBatchDTO(grantExportBatchEntity)).thenReturn(grantExportBatchDTO);
 
-            mockMvc.perform(get("/grant-export-batch/" + mockExportId).header(HttpHeaders.AUTHORIZATION,
-                            LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+            mockMvc.perform(get("/grant-export-batch/" + mockExportId)).andExpect(status().isOk())
                     .andExpect(content().string(HelperUtils.asJsonString(grantExportBatchDTO)));
         }
 
@@ -141,8 +139,7 @@ public class GrantExportBatchControllerTest {
         void exceptionThrown() throws Exception {
             when(grantExportBatchService.getGrantExportBatch(mockExportId))
                     .thenThrow(RuntimeException.class);
-            mockMvc.perform(get("/grant-export-batch/" + mockExportId)
-                            .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+            mockMvc.perform(get("/grant-export-batch/" + mockExportId).header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isInternalServerError());
         }
 
