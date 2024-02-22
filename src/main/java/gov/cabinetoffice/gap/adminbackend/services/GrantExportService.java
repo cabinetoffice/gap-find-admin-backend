@@ -51,8 +51,7 @@ public class GrantExportService {
 
     public ExportedSubmissionsListDto generateExportedSubmissionsListDto(UUID exportId, GrantExportStatus status,
             Pageable pagination, String superZipLocation) {
-         final AdminSession adminSession =
-         HelperUtils.getAdminSessionForAuthenticatedUser();
+         final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
          log.info("Grabbing list of grant-export with id {} and status {} with pagination set as size {}, page{}",
                  exportId,status.toString(), pagination.getPageSize(), pagination.getPageNumber());
 
