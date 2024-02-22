@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.dtos.application.questions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import gov.cabinetoffice.gap.adminbackend.annotations.NotAllNull;
+import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import lombok.Data;
 
 import javax.validation.constraints.Size;
@@ -24,12 +25,13 @@ public class QuestionOptionsPatchDTO extends QuestionAbstractPatchDTO {
             message = "Option cannot be greater than 255 characters") String> options;
 
     public QuestionOptionsPatchDTO(String fieldTitle, String profileField, String hintText, String displayText,
-            String questionSuffix, Map<String, Object> validation, List<String> options) {
+        String questionSuffix, ResponseTypeEnum responseType, Map<String, Object> validation, List<String> options) {
         super.setFieldTitle(fieldTitle);
         super.setProfileField(profileField);
         super.setHintText(hintText);
         super.setDisplayText(displayText);
         super.setQuestionSuffix(questionSuffix);
+        super.setResponseType(responseType);
         super.setValidation(validation);
         this.options = options;
     }

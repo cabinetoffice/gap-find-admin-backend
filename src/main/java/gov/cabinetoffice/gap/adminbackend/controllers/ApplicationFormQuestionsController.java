@@ -49,9 +49,9 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity<Void> patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
-            @RequestBody @NotNull ApplicationFormQuestionDTO question) {
+            @RequestBody @NotNull ApplicationFormQuestionDTO question, HttpSession session) {
         try {
-            this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question);
+            this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question, session);
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 

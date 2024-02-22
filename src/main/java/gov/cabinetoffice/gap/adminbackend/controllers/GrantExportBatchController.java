@@ -37,10 +37,15 @@ public class GrantExportBatchController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity updateGrantExportBatchStatus(@PathVariable UUID exportId, @RequestBody GrantExportStatus newStatus) {
-        log.info("Hitting endpoint to update grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
-        grantExportBatchService.updateExportBatchStatusById(exportId, newStatus);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-
+        try {
+            grantExportBatchService.updateExportBatchStatusById(exportId, newStatus);
+            log.info("Updated grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        catch (Exception e) {
+            log.error("Error updating grant_export_batch table status to {} with exportId: {}", newStatus, exportId);
+            throw e;
+        }
     }
 
     @PatchMapping("/{exportId}/s3-object-key")
@@ -55,9 +60,16 @@ public class GrantExportBatchController {
                     content = @Content(mediaType = "application/json")) })
     @LambdasHeaderValidator
     public ResponseEntity updateGrantExportBatchLocation(@PathVariable UUID exportId, @RequestBody S3ObjectKeyDTO s3ObjectKeyDTO) {
-        grantExportBatchService.addS3ObjectKeyToGrantExportBatch(exportId,
-                s3ObjectKeyDTO.getS3ObjectKey());
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        try {
+            grantExportBatchService.addS3ObjectKeyToGrantExportBatch(exportId, s3ObjectKeyDTO.getS3ObjectKey());
+            log.info("Updated grant_export_batch table location to {} with exportId: {}", s3ObjectKeyDTO.toString(), exportId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        catch (Exception e) {
+            log.error("Error updating grant_export_batch table location to {} with exportId: {}", s3ObjectKeyDTO.toString(), exportId);
+            throw e;
+        }
+
     }
 
 }
