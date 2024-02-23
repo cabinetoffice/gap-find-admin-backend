@@ -54,7 +54,7 @@ public class SubmissionsController {
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returned submission.",
             content = @Content(mediaType = "application/json",
                     array = @ArraySchema(schema = @Schema(implementation = SubmissionDto.class)))) })
-    public ResponseEntity getSubmissionById(@PathVariable UUID submissionId) {
+    public ResponseEntity<SubmissionDto> getSubmissionById(@PathVariable UUID submissionId) {
         try {
             final SubmissionDto submission = submissionsService.getSubmissionById(submissionId);
             return ResponseEntity.ok(submission);
