@@ -66,7 +66,7 @@ public class GrantExportService {
             .superZipFileLocation(superZipLocation)
             .exportedSubmissions(grantExports.stream()
                 .map(customGrantExportMapper::grantExportEntityToExportedSubmissions)
-                .sorted(comparing(ExportedSubmissionsDto::getDate))
+                .sorted(comparing(ExportedSubmissionsDto::getSubmittedDate))
                 .toList())
             .build();
 

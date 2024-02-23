@@ -17,5 +17,5 @@ public class ExportedSubmissionsDto {
     private String zipFileLocation;
     private UUID submissionId;
     private GrantExportStatus status;
-    private ZonedDateTime date;
+    private ZonedDateTime submittedDate;
 }

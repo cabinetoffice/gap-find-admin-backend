@@ -52,7 +52,7 @@ class CustomGrantExportMapperImplTest {
         .zipFileLocation("location")
         .status(GrantExportStatus.COMPLETE)
         .name("Some company name")
-            .date(FIXED_DATE_TIME)
+            .submittedDate(FIXED_DATE_TIME)
         .build();
     final SubmissionQuestion ORG_NAME_SUBMISSION_QUESTION = SubmissionQuestion.builder()
         .questionId("APPLICANT_ORG_NAME")
@@ -118,7 +118,7 @@ class CustomGrantExportMapperImplTest {
         final ExportedSubmissionsDto exportedSubmissions = customGrantExportMapper.grantExportEntityToExportedSubmissions(grantExport);
 
         exportedSubmissionsDto.setName(submissionId.toString());
-        exportedSubmissionsDto.setDate(null);
+        exportedSubmissionsDto.setSubmittedDate(null);
         assertEquals(exportedSubmissionsDto, exportedSubmissions);
     }
 }

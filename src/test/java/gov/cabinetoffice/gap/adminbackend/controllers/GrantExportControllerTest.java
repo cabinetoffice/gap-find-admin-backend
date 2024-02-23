@@ -20,7 +20,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -228,7 +227,6 @@ public class GrantExportControllerTest {
                     .grantExportId(exportId)
                     .superZipFileLocation("superZipLocation")
                     .build();
-            final Pageable pageable = Pageable.unpaged();
             when(mockGrantExportBatchService.getSuperZipLocation(any())).thenReturn("superZipLocation");
             when(mockGrantExportService.generateExportedSubmissionsListDto(any(), any(), any(), any()))
                 .thenReturn(expectedResponse);

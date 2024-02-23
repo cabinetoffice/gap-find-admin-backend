@@ -58,7 +58,7 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
         exportedSubmissionsDto.zipFileLocation(grantExportEntity.getLocation());
         exportedSubmissionsDto.status(grantExportEntity.getStatus());
         exportedSubmissionsDto.name(mapExportedSubmissionName(grantExportEntity));
-        exportedSubmissionsDto.date(mapExportedSubmissionSubmittedDate(grantExportEntity));
+        exportedSubmissionsDto.submittedDate(mapExportedSubmissionSubmittedDate(grantExportEntity));
 
         return exportedSubmissionsDto.build();
     }

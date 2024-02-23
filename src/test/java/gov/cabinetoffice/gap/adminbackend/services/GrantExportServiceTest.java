@@ -186,14 +186,14 @@ public class GrantExportServiceTest {
                 .zipFileLocation("location")
                 .status(GrantExportStatus.COMPLETE)
                 .name("name2")
-                .date(date)
+                .submittedDate(date)
                 .build();
             final ExportedSubmissionsDto exportedSubmissionsDto2 = ExportedSubmissionsDto.builder()
                 .submissionId(submissionId2)
                 .zipFileLocation("location2")
                 .status(GrantExportStatus.COMPLETE)
                 .name("name1")
-                .date(oldDate)
+                .submittedDate(oldDate)
                 .build();
 
             when(exportRepository.findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination))
