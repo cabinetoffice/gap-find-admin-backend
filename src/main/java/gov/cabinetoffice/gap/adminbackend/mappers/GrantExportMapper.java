@@ -23,7 +23,7 @@ public interface GrantExportMapper {
     @Mapping(target = "zipFileLocation", source = "location")
     @Mapping(target = "name", expression = "java(mapExportedSubmissionName(grantExportEntity))")
     @Mapping(target ="status", source = "status")
-    @Mapping(target = "date", expression = "java(mapExportedSubmissionSubmittedDate(grantExportEntity))")
+    @Mapping(target = "submittedDate", expression = "java(mapExportedSubmissionSubmittedDate(grantExportEntity))")
     ExportedSubmissionsDto grantExportEntityToExportedSubmissions(GrantExportEntity grantExportEntity);
 
 
