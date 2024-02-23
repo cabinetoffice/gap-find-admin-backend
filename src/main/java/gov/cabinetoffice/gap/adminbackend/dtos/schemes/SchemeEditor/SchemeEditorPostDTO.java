@@ -14,7 +14,7 @@ import javax.validation.constraints.NotBlank;
 @NoArgsConstructor
 public class SchemeEditorPostDTO {
 
-    @Email(message = "Please enter a valid email address")
-    @NotBlank(message = "Please enter an email address")
+    @Email(message = "Input a valid email address")
+    @NotBlank(message = "Input a valid email address")
     private String editorEmailAddress;
 }

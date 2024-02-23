@@ -25,7 +25,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -194,12 +193,11 @@ public class SchemeService {
         try {
             editorToAdd = userService.getGrantAdminIdFromUserServiceEmail(editorEmailAddress, jwt);
         } catch (Exception e) {
-            throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");
+            throw new FieldViolationException("emailAddress", "This account does not have an 'Administrator' account.");
         }
 
         if (existingEditors.stream().anyMatch(editor -> editor.getId().equals(editorToAdd.getId()))) {
-            System.out.println("editorEmailAddress: " + editorEmailAddress + " is already an editor of this scheme");
-            throw new FieldViolationException("editorEmailAddress", editorEmailAddress + " is already an editor of this scheme");
+            throw new FieldViolationException("editorEmailAddress", "This email address is already an editor for this scheme");
         }
 
         if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
