@@ -193,7 +193,7 @@ public class SchemeService {
         try {
             editorToAdd = userService.getGrantAdminIdFromUserServiceEmail(editorEmailAddress, jwt);
         } catch (Exception e) {
-            throw new FieldViolationException("emailAddress", "This account does not have an 'Administrator' account.");
+            throw new FieldViolationException("editorEmailAddress", "This account does not have an 'Administrator' account.");
         }
 
         if (existingEditors.stream().anyMatch(editor -> editor.getId().equals(editorToAdd.getId()))) {
