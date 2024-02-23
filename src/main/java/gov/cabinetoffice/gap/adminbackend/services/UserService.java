@@ -15,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +48,9 @@ public class UserService {
     private final WebClient.Builder webClientBuilder;
 
     private final UserServiceClient userServiceClient;
+
+    @Value("${user-service.domain}")
+    private String userServiceDomain;
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -111,6 +116,11 @@ public class UserService {
         return grantAdminRepository.findByGapUserUserSub(sub);
     }
 
+    public List<String> getListOfSubsFromListOfGrantAdminIds(final List<Integer> ids) {
+        List<GrantAdmin> admins = grantAdminRepository.findAllByGapUser_IdIn(ids).get();
+        return admins.stream().map(admin -> admin.getGapUser().getUserSub()).toList();
+    }
+
     public String getDepartmentGGISId(Integer adminId) {
         final GrantAdmin admin = grantAdminRepository.findById(adminId)
                 .orElseThrow(() -> new NotFoundException("No admin found for id: " + adminId));
@@ -139,5 +149,4 @@ public class UserService {
 
         }
     }
-
 }

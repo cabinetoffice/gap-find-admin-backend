@@ -2,11 +2,15 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
@@ -24,9 +28,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +43,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
@@ -57,6 +62,9 @@ public class SchemeController {
     private final ApplicationFormService applicationFormService;
 
     private final UserServiceConfig userServiceConfig;
+
+    @Value("${user-service.domain}")
+    private String userServiceDomain;
 
     @GetMapping("/{schemeId}")
     @Operation(summary = "Retrieve grant scheme which matches the given id.")
@@ -258,5 +266,33 @@ public class SchemeController {
 
         return ResponseEntity.ok(true);
     }
+
+    @GetMapping("/{schemeId}/isSchemeOwner")
+    public ResponseEntity<Boolean> isSchemeOwner(@PathVariable final Integer schemeId,
+                                                         final HttpServletRequest request) {
+        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+        Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(session.getUserSub());
+        if(grantAdmin.isEmpty()){
+            throw new UnauthorizedException("User is not a grant admin");
+        }
+
+        return ResponseEntity.ok().body(schemeService.doesAdminOwnScheme(schemeId, grantAdmin.get().getId()));
+    }
+
+    @GetMapping("/{schemeId}/editors")
+    public ResponseEntity<List<SchemeEditorsDTO>> getSchemeEditors(@PathVariable final Integer schemeId,
+                                                                   final HttpServletRequest request) {
+        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
+        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+        Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(session.getUserSub());
+        if (grantAdmin.isEmpty()) {
+            throw new UnauthorizedException("User is not a grant admin");
+        }
+
+        List<SchemeEditorsDTO> res = schemeService.getEditorsFromSchemeId(schemeId, jwt);
+
+        return ResponseEntity.ok().body(res);
+    }
+
 
 }
