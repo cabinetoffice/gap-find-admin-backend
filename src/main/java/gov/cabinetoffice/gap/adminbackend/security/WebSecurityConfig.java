@@ -29,6 +29,7 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        //if you add a path which is hit by the lambda, remember to update also the paths in gov/cabinetoffice/gap/adminbackend/config/LambdasInterceptor.java
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and()
                 .authorizeHttpRequests(auth -> auth
                         .mvcMatchers("/login",
