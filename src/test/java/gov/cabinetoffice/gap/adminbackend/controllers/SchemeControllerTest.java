@@ -3,9 +3,11 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditor.SchemeEditorPostDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
@@ -435,6 +437,31 @@ class SchemeControllerTest {
         when(schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenThrow(new AccessDeniedException(""));
         mockMvc.perform(get("/schemes/1/hasInternalApplicationForm")).andExpect(status().isForbidden())
                 .andExpect(content().string("{\"error\":{\"message\":\"\"}}"));
+    }
+
+    @Test
+    void addEditorToScheme_HappyPath() throws Exception {
+        SchemeEditorPostDTO schemeEditorPostDTO = SchemeEditorPostDTO.builder().editorEmailAddress("test@test.gov").build();
+        when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
+        when(schemeService.addEditorToScheme(1, "test@test.gov", "jwt")).thenReturn(SCHEME_ENTITY_EXAMPLE);
+            mockMvc.perform(post("/schemes/1/editors")
+                    .content(HelperUtils.asJsonString(schemeEditorPostDTO))
+                    .cookie(new Cookie("user-service-token", "jwt"))
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk());
+
+    }
+
+    @Test
+    void addEditorToScheme_isBadRequestWhenServiceMethodThrows() throws Exception {
+        SchemeEditorPostDTO schemeEditorPostDTO = SchemeEditorPostDTO.builder().editorEmailAddress("test@test.gov").build();
+        when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
+        when(schemeService.addEditorToScheme(1, "test@test.gov", "jwt")).thenThrow(new FieldViolationException("editorEmailAddress", "editorEmailAddress is already an editor of this scheme"));
+        mockMvc.perform(post("/schemes/1/editors")
+                .content(HelperUtils.asJsonString(schemeEditorPostDTO))
+                .cookie(new Cookie("user-service-token", "jwt"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
     }
 
 }

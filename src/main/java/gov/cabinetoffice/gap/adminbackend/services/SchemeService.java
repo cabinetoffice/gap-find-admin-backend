@@ -186,7 +186,7 @@ public class SchemeService {
         this.schemeRepo.save(scheme);
     }
 
-    public void addEditorToScheme(Integer schemeId, String editorEmailAddress, String jwt) {
+    public SchemeEntity addEditorToScheme(Integer schemeId, String editorEmailAddress, String jwt) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
         List<GrantAdmin> existingEditors = scheme.getGrantAdmins();
@@ -209,6 +209,7 @@ public class SchemeService {
 
         scheme.addAdmin(editorToAdd);
         this.schemeRepo.save(scheme);
+        return scheme;
     }
 
 }

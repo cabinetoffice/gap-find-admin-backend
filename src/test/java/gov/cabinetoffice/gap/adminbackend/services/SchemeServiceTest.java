@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
@@ -46,6 +47,9 @@ class SchemeServiceTest {
 
     @Mock
     private SessionsService sessionsService;
+
+    @Mock
+    private UserService userService;
 
     @Mock
     private SchemeRepository schemeRepository;
@@ -386,6 +390,54 @@ class SchemeServiceTest {
                 () -> SchemeServiceTest.this.schemeService.patchCreatedBy(GrantAdmin.builder().id(1).build(), 1))
                 .isInstanceOf(SchemeEntityException.class).hasMessage(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: 1");
+    }
+
+    @Test
+    void addEditorToSchemeReturnsSchemeWithGrantAdmin() {
+        final SchemeEntity testScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        final GrantAdmin testAdmin = GrantAdmin.builder().id(1).build();
+        final SchemeEntity patchedScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        patchedScheme.addAdmin(testAdmin);
+
+        Mockito.when(SchemeServiceTest.this.userService.getGrantAdminIdFromUserServiceEmail("test@test.gov", "jwt"))
+                .thenReturn(testAdmin);
+        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
+        Mockito.when(SchemeServiceTest.this.grantAdminRepository.findById(1)).thenReturn(Optional.of(testAdmin));
+        Mockito.when(SchemeServiceTest.this.schemeRepository.save(testScheme)).thenReturn(patchedScheme);
+
+        SchemeServiceTest.this.schemeService.addEditorToScheme(1, "test@test.gov", "jwt");
+        AssertionsForClassTypes.assertThat(patchedScheme.getGrantAdmins().contains(testAdmin)).isTrue();
+
+    }
+
+    @Test
+    void addEditorToSchemeThrowsAnErrorIfSchemeIsNotPresent() {
+        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.empty());
+
+        AssertionsForClassTypes.assertThatThrownBy(
+                        () -> SchemeServiceTest.this.schemeService.addEditorToScheme(1, "test@test.gov", "jwt"))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    void addEditorToSchemeThrowsAnErrorIfGrantAdminIsNotPresent() {
+        final SchemeEntity testScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
+        Mockito.when(SchemeServiceTest.this.userService.getGrantAdminIdFromUserServiceEmail("test@test.gov", "jwt"))
+                .thenThrow(new EntityNotFoundException());
+    }
+
+    @Test
+    void addEditorThrowsAnErrorIfGrantAdminIsAlreadyAnEditor() {
+        final SchemeEntity testScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        final GrantAdmin testAdmin = GrantAdmin.builder().id(1).build();
+        testScheme.addAdmin(testAdmin);
+        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
+        Mockito.when(SchemeServiceTest.this.userService.getGrantAdminIdFromUserServiceEmail("test@test.gov", "jwt"))
+                .thenReturn(testAdmin);
+        AssertionsForClassTypes.assertThatThrownBy(
+                        () -> SchemeServiceTest.this.schemeService.addEditorToScheme(1, "test@test.gov", "jwt"))
+                .isInstanceOf(FieldViolationException.class);
     }
 
 }
