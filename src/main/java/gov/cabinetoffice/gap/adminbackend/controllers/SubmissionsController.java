@@ -53,7 +53,7 @@ public class SubmissionsController {
             summary = "Retrieve a submission by submission Id.")
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returned submission.",
             content = @Content(mediaType = "application/json",
-                    array = @ArraySchema(schema = @Schema(implementation = SubmissionExportsDTO.class)))) })
+                    array = @ArraySchema(schema = @Schema(implementation = SubmissionDto.class)))) })
     public ResponseEntity getSubmissionById(@PathVariable UUID submissionId) {
         try {
             final SubmissionDto submission = submissionsService.getSubmissionById(submissionId);

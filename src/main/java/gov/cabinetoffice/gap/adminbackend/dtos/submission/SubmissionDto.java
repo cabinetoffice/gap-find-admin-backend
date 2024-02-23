@@ -9,6 +9,7 @@ import java.util.UUID;
 @Data
 @Builder
 public class SubmissionDto {
+
     private UUID submissionId;
 
     private Integer schemeId;
