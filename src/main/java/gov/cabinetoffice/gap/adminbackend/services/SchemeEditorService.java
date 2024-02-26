@@ -32,16 +32,8 @@ public class SchemeEditorService {
     private final SchemeRepository schemeRepo;
     private final UserServiceConfig userServiceConfig;
 
-    @Value("${user-service.domain}")
-    private String userServiceUrl;
-
     public Boolean doesAdminOwnScheme(Integer schemeId, Integer adminId) {
-        SchemeEntity scheme = schemeService.findSchemeById(schemeId);
-        List<SchemeEntity> adminSchemes = schemeRepo.findByCreatedBy(adminId);
-        if (adminSchemes.contains(scheme)) {
-            return Boolean.TRUE;
-        }
-        return Boolean.FALSE;
+        return schemeRepo.existsByIdAndGrantAdminsId(schemeId, adminId);
     }
 
     public List<SchemeEditorsDTO> getEditorsFromSchemeId(Integer schemeId, String authHeader) {
@@ -52,6 +44,10 @@ public class SchemeEditorService {
         return this.mapEditorListToDto(editors, createdBy, authHeader);
     }
 
+    private String marryEmailFromSub(final List<String> emails, final List<String> userSubs, final GrantAdmin editor) {
+        return emails.get(userSubs.indexOf(editor.getGapUser().getUserSub()));
+    }
+
     private List<SchemeEditorsDTO> mapEditorListToDto(List<GrantAdmin> editors, Integer createdBy, String authHeader){
         List<String> userSubs = editors.stream()
                 .map(editor -> editor.getGapUser().getUserSub())
@@ -60,7 +56,7 @@ public class SchemeEditorService {
 
         return editors.stream()
                 .map(editor -> {
-                    String email = emails.get(userSubs.indexOf(editor.getGapUser().getUserSub()));
+                    String email = marryEmailFromSub(emails, userSubs, editor);
                     Integer id = editor.getId();
                     SchemeEditorRoleEnum role = id.equals(createdBy)
                             ? SchemeEditorRoleEnum.Owner : SchemeEditorRoleEnum.Editor;
@@ -73,7 +69,7 @@ public class SchemeEditorService {
 
 
     private List<String> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
-        final String url = userServiceUrl + "/user-emails-from-subs";
+        final String url = userServiceConfig.getDomain() + "/user-emails-from-subs";
 
         HttpHeaders requestHeaders = new HttpHeaders();
 

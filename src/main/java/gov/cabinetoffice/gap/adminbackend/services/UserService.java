@@ -49,9 +49,6 @@ public class UserService {
 
     private final UserServiceClient userServiceClient;
 
-    @Value("${user-service.domain}")
-    private String userServiceDomain;
-
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
         gapUserRepository.findByUserSub(colaSub.toString()).ifPresent(gapUser -> {

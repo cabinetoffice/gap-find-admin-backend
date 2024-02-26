@@ -23,18 +23,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Tag(name = "Scheme Editors", description = "API for handling scheme editors.")
-@RequestMapping("/schemeEditors/{schemeId}")
+@RequestMapping("/schemes/{schemeId}/editors")
 @RestController
 @RequiredArgsConstructor
 @Slf4j
 public class SchemeEditorController {
 
-    private final UserService userService;
     private final UserServiceConfig userServiceConfig;
     private final SchemeEditorService schemeEditorService;
 
-    @Value("${user-service.domain}")
-    private String userServiceDomain;
     @GetMapping("/isOwner")
     public ResponseEntity<Boolean> isSchemeOwner(@PathVariable final Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
