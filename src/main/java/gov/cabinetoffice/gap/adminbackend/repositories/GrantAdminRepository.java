@@ -12,7 +12,7 @@ public interface GrantAdminRepository extends JpaRepository<GrantAdmin, Integer>
 
     Optional<GrantAdmin> findByGapUserUserSub(String sub);
 
-    Optional<List<GrantAdmin>> findAllByGapUser_IdIn(List<Integer> userIds);
+   List<GrantAdmin> findAllByGapUserIdIn(List<Integer> userIds);
 
     void deleteByGapUserUserSub(String sub);
 
