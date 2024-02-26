@@ -50,11 +50,6 @@ public class SchemeEditorController {
     public ResponseEntity<List<SchemeEditorsDTO>> getSchemeEditors(@PathVariable final Integer schemeId,
                                                                    final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-        Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(session.getUserSub());
-        if (grantAdmin.isEmpty()) {
-            throw new UnauthorizedException("User is not a grant admin");
-        }
         try {
             List<SchemeEditorsDTO> res = schemeEditorService.getEditorsFromSchemeId(schemeId, jwt);
             return ResponseEntity.ok().body(res);
