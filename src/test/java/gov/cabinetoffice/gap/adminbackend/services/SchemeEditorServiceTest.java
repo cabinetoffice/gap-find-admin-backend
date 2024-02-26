@@ -78,7 +78,6 @@ public class SchemeEditorServiceTest {
 
     @Test
     public void testDoesAdminOwnScheme_SchemeNotFound() {
-        // Mocking data
         Integer schemeId = 1;
         Integer adminId = 1;
         when(schemeService.findSchemeById(schemeId)).thenThrow(new SchemeEntityException("Scheme not found"));

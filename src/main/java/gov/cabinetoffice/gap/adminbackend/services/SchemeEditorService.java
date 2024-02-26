@@ -37,7 +37,7 @@ public class SchemeEditorService {
 
     public Boolean doesAdminOwnScheme(Integer schemeId, Integer adminId) {
         SchemeEntity scheme = schemeService.findSchemeById(schemeId);
-        List<SchemeEntity> adminSchemes = this.schemeRepo.findByCreatedBy(adminId);
+        List<SchemeEntity> adminSchemes = schemeRepo.findByCreatedBy(adminId);
         if (adminSchemes.contains(scheme)) {
             return Boolean.TRUE;
         }
