@@ -38,12 +38,8 @@ public class SchemeEditorController {
     @GetMapping("/isOwner")
     public ResponseEntity<Boolean> isSchemeOwner(@PathVariable final Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-        Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(session.getUserSub());
-        if(grantAdmin.isEmpty()){
-            throw new UnauthorizedException("User is not a grant admin");
-        }
         try {
-            return ResponseEntity.ok().body(schemeEditorService.doesAdminOwnScheme(schemeId, grantAdmin.get().getId()));
+            return ResponseEntity.ok().body(schemeEditorService.doesAdminOwnScheme(schemeId, session.getGrantAdminId()));
         } catch(Exception e){
             log.error("Error checking if admin owns scheme", e);
             throw e;
