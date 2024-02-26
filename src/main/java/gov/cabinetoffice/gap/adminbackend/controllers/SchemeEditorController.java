@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Tag(name = "Scheme Editors", description = "API for handling scheme editors.")
-@RequestMapping("/schemeEditors")
+@RequestMapping("/schemeEditors/{schemeId}")
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -33,11 +33,9 @@ public class SchemeEditorController {
     private final UserServiceConfig userServiceConfig;
     private final SchemeEditorService schemeEditorService;
 
-
-
     @Value("${user-service.domain}")
     private String userServiceDomain;
-    @GetMapping("/{schemeId}/isSchemeOwner")
+    @GetMapping("/isOwner")
     public ResponseEntity<Boolean> isSchemeOwner(@PathVariable final Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(session.getUserSub());
@@ -52,7 +50,7 @@ public class SchemeEditorController {
         }
     }
 
-    @GetMapping("/{schemeId}/editors")
+    @GetMapping()
     public ResponseEntity<List<SchemeEditorsDTO>> getSchemeEditors(@PathVariable final Integer schemeId,
                                                                    final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
