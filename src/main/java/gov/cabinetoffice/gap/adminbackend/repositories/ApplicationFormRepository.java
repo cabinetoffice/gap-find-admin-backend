@@ -18,6 +18,9 @@ public interface ApplicationFormRepository extends JpaRepository<ApplicationForm
     @PostAuthorize("!returnObject.isEmpty() ? returnObject.get().createdBy == authentication.principal.grantAdminId : true")
     Optional<ApplicationFormEntity> findById(Integer applicationId);
 
+    @Query("SELECT af FROM ApplicationFormEntity af WHERE af.id = :applicationId")
+    Optional<ApplicationFormEntity> findByIdWithNoOwnershipCheck(Integer applicationId);
+
     Optional<ApplicationFormNoSections> findByGrantApplicationId(Integer applicationId);
 
     Optional<ApplicationFormEntity> findByGrantSchemeId(Integer grantSchemeId);
