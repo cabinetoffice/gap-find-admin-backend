@@ -67,7 +67,7 @@ public class SchemeEditorService {
 
                     return SchemeEditorsDTO.builder().id(id).email(email).role(role).build();
                 })
-                .sorted(Comparator.comparing(SchemeEditorsDTO::getRole, Comparator.reverseOrder()))
+                .sorted(Comparator.comparing(SchemeEditorsDTO::role, Comparator.reverseOrder()))
                 .toList();
     }
 
@@ -93,7 +93,7 @@ public class SchemeEditorService {
                 responseType
         );
         return Objects.requireNonNull(response.getBody()).stream().map((item) ->
-                awsEncryptionService.decryptField(item.getEmailAddress())).toList();
+                awsEncryptionService.decryptField(item.emailAddress())).toList();
     }
 
 }

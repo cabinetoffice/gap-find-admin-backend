@@ -126,7 +126,7 @@ public class SchemeEditorControllerTest {
                 GapUser.builder().userSub("sub").build()).id(1).build();
         when(authentication.getPrincipal()).thenReturn(adminSession);
         when(userService.getGrantAdminIdFromSub(any())).thenReturn(Optional.of(grantAdmin));
-        List<SchemeEditorsDTO> expectedResponse = List.of(new SchemeEditorsDTO());
+        List<SchemeEditorsDTO> expectedResponse = List.of(SchemeEditorsDTO.builder().build());
         when(schemeEditorService.getEditorsFromSchemeId(anyInt(), anyString())).thenReturn(expectedResponse);
         ResponseEntity<List<SchemeEditorsDTO>> responseEntity = schemeEditorController
                 .getSchemeEditors(1, request);

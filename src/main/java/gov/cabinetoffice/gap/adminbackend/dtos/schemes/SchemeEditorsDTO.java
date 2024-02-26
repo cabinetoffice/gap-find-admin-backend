@@ -6,15 +6,6 @@ import lombok.*;
 import lombok.Builder;
 
 @Builder
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class SchemeEditorsDTO {
-    private Integer id;
-    private String email;
-    private SchemeEditorRoleEnum role;
+public record SchemeEditorsDTO(Integer id, String email, SchemeEditorRoleEnum role) {
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
 }
