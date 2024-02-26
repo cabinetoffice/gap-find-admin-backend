@@ -7,6 +7,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
@@ -68,6 +69,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<SchemeDTO> getSchemeById(@PathVariable final Integer schemeId) {
         log.info("Getting scheme with id " + schemeId + " from database");
 
@@ -123,6 +125,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<String> updateSchemeData(@PathVariable final Integer schemeId,
             @Valid @RequestBody SchemePatchDTO scheme) {
         try {
@@ -149,6 +152,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<String> deleteAScheme(@PathVariable final Integer schemeId) {
         try {
             this.schemeService.deleteASchemeById(schemeId);
@@ -234,6 +238,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<Boolean> hasInternalApplicationForm(@PathVariable final Integer schemeId) {
 
         log.info("Checking if scheme " + schemeId + " has an internal application form");

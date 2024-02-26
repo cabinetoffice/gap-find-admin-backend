@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.spotlightSubmissions.SpotlightSub
 import gov.cabinetoffice.gap.adminbackend.entities.SpotlightSubmission;
 import gov.cabinetoffice.gap.adminbackend.enums.SpotlightSubmissionStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.SpotlightSubmissionMapper;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.SpotlightSubmissionService;
@@ -106,6 +107,7 @@ public class SpotlightSubmissionController {
     }
 
     @GetMapping(value = "/scheme/{schemeId}/download", produces = EXPORT_CONTENT_TYPE)
+    @CheckSchemeOwnership
     public ResponseEntity<InputStreamResource> downloadDueDiligenceChecks(@PathVariable Integer schemeId,
             @RequestParam boolean onlyValidationErrors) {
         final String logMessage = onlyValidationErrors ? "validation errors" : "all";

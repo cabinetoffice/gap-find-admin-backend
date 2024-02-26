@@ -85,10 +85,6 @@ public class GrantAdvertService {
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
         final GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
         final SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
-        if (!scheme.getFunderId().equals(grantAdmin.getFunder().getId())) {
-            throw new AccessDeniedException(
-                    "User " + grantAdminId + " is unable to access scheme with id " + scheme.getId());
-        }
         final Integer version = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
         final boolean doesAdvertExist = grantAdvertRepository.findBySchemeId(grantSchemeId).isPresent();
 
@@ -115,13 +111,14 @@ public class GrantAdvertService {
         GrantAdvert advert = grantAdvertRepository.findById(advertId)
                 .orElseThrow(() -> new NotFoundException("Advert with id " + advertId + " not found"));
 
-        if (!lambdaCall) {
-            final AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-            if (!advert.getCreatedBy().getId().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + " is unable to access advert with id " + advert.getId());
-            }
-        }
+        // todo: co-auth - remove this
+//        if (!lambdaCall) {
+//            final AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+//            if (!advert.getCreatedBy().getId().equals(session.getGrantAdminId())) {
+//                throw new AccessDeniedException(
+//                        "User " + session.getGrantAdminId() + " is unable to access advert with id " + advert.getId());
+//            }
+//        }
 
         log.debug("Advert with id {} found", advertId);
         return advert;
@@ -277,6 +274,7 @@ public class GrantAdvertService {
     public void deleteGrantAdvert(UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
+        // todo: co-auth - refactor this query
         Long deletedCount = grantAdvertRepository.deleteByIdAndCreatedById(grantAdvertId, session.getGrantAdminId());
 
         if (deletedCount == 0)

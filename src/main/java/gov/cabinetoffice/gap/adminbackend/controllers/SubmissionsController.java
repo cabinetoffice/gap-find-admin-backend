@@ -9,6 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefini
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.S3Service;
 import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
@@ -58,6 +59,7 @@ public class SubmissionsController {
     private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
 
     @GetMapping(value = "/spotlight-export/{applicationId}", produces = EXPORT_CONTENT_TYPE)
+    @CheckSchemeOwnership
     public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer applicationId) {
         log.info("Started submissions export for application " + applicationId);
         long start = System.currentTimeMillis();

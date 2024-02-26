@@ -74,7 +74,8 @@ public class SchemeService {
             this.grantAdminRepository.findById(adminSession.getGrantAdminId())
                     .ifPresentOrElse(
                             entity::addAdmin,
-                            () -> new SchemeEntityException("Something went wrong while creating a new grant scheme: No grant admin found for id: " + adminSession.getGrantAdminId())
+                            () -> new SchemeEntityException("Something went wrong while creating a new grant scheme: " +
+                                    "No grant admin found for id: " + adminSession.getGrantAdminId())
                     );
 
             entity = this.schemeRepo.save(entity);
@@ -97,11 +98,6 @@ public class SchemeService {
 
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
 
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + "is unable to update the scheme with id " + schemeId);
-            }
-
             scheme.setLastUpdated(Instant.now());
             scheme.setLastUpdatedBy(session.getGrantAdminId());
 
@@ -119,16 +115,9 @@ public class SchemeService {
     }
 
     public void deleteASchemeById(final Integer schemeId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
-
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + "is unable to delete the scheme with id " + schemeId);
-            }
-
             this.schemeRepo.delete(scheme);
         }
         catch (EntityNotFoundException | IllegalArgumentException | AccessDeniedException ex) {
@@ -146,7 +135,9 @@ public class SchemeService {
 
         try {
             List<SchemeEntity> schemes;
-            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId());
+            //todo - co-auth: refactor query
+            schemes = this.schemeRepo.findByGrantAdminsIdOrderByCreatedDateDesc(adminSession.getGrantAdminId());
+//            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId());
             return this.schemeMapper.schemeEntityListtoDtoList(schemes);
         }
         catch (Exception e) {
@@ -158,8 +149,8 @@ public class SchemeService {
     public List<SchemeDTO> getPaginatedSchemes(Pageable pagination) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
-            List<SchemeEntity> schemes;
-            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId(), pagination);
+            List<SchemeEntity> schemes = this.schemeRepo
+                    .findByGrantAdminsIdOrderByCreatedDateDesc(adminSession.getGrantAdminId(), pagination);
             return this.schemeMapper.schemeEntityListtoDtoList(schemes);
         }
         catch (Exception e) {

@@ -343,14 +343,15 @@ public class ApplicationFormService {
         ApplicationFormEntity application = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist."));
 
-        if (!isLambdaCall) {
-            session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
-            if (!application.getCreatedBy().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException("User " + session.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
-        }
+        //todo: co-auth remove this
+//        if (!isLambdaCall) {
+//            session = HelperUtils.getAdminSessionForAuthenticatedUser();
+//
+//            if (!application.getCreatedBy().equals(session.getGrantAdminId())) {
+//                throw new AccessDeniedException("User " + session.getGrantAdminId()
+//                        + " is unable to access the application form with id " + applicationId);
+//            }
+//        }
 
         if (patchDTO.getApplicationStatus() == ApplicationStatusEnum.PUBLISHED && application.getDefinition()
                 .getSections().stream().anyMatch(section -> section.getQuestions().isEmpty())) {

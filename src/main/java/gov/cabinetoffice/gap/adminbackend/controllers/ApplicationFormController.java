@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.InvalidEventException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -58,6 +59,7 @@ public class ApplicationFormController {
                             schema = @Schema(implementation = GenericPostResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")), })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> postApplicationForm(HttpServletRequest request,
             @RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(applicationFormPostDTO.getGrantSchemeId());
@@ -197,6 +199,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<GenericErrorDTO> updateApplicationForm(HttpServletRequest request,
             @PathVariable @NotNull Integer applicationId,
             @Valid @RequestBody ApplicationFormPatchDTO applicationFormPatchDTO) {

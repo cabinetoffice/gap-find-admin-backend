@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantMandatoryQuestionService;
 import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
@@ -45,6 +46,7 @@ public class GrantMandatoryQuestionsController {
     }
 
     @GetMapping(value = "/scheme/{schemeId}/due-diligence", produces = EXPORT_CONTENT_TYPE)
+    @CheckSchemeOwnership
     public ResponseEntity<InputStreamResource> exportDueDiligenceData(@PathVariable Integer schemeId,
             @RequestParam boolean isInternal) {
         final String logMessage = isInternal ? "internal" : "external";

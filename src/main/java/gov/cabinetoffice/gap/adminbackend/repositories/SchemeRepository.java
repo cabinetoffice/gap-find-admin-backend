@@ -16,6 +16,11 @@ public interface SchemeRepository extends JpaRepository<SchemeEntity, Integer> {
 
     List<SchemeEntity> findByCreatedByOrderByCreatedDateDesc(Integer grantAdminId, Pageable pageable);
 
+    List<SchemeEntity> findByIdAndCreatedBy(Integer schemeId, Integer grantAdminId);
+
+    List<SchemeEntity> findByGrantAdminsIdOrderByCreatedDateDesc(Integer grantAdminId, Pageable pageable);
+    List<SchemeEntity> findByGrantAdminsIdOrderByCreatedDateDesc(Integer grantAdminId);
+
     @Query("select s from SchemeEntity s where s.createdBy = ?1")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     List<SchemeEntity> findByCreatedBy(Integer createdBy);
