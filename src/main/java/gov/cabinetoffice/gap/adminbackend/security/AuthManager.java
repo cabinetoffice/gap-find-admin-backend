@@ -96,7 +96,7 @@ public class AuthManager implements AuthenticationManager {
 
         // save new admin to db. This also creates a matching GapUser
         return this.grantAdminRepository
-                .save(new GrantAdmin(null, fundingOrganisation.get(), new GapUser(null, jwtPayload.getSub())));
+                .save(new GrantAdmin(null, fundingOrganisation.get(), new GapUser(null, jwtPayload.getSub()), new ArrayList<>()));
     }
 
 }
