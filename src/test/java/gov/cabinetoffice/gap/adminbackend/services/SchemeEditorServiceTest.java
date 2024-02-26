@@ -109,12 +109,12 @@ public class SchemeEditorServiceTest {
         List<SchemeEditorsDTO> result = schemeEditorService.getEditorsFromSchemeId(1, "authHeader");
 
         Assertions.assertEquals(2, result.size());
-        Assertions.assertEquals(1, result.get(0).getId());
-        Assertions.assertEquals("decrypted-email", result.get(0).getEmail());
-        Assertions.assertEquals(SchemeEditorRoleEnum.Owner, result.get(0).getRole());
-        Assertions.assertEquals(2, result.get(1).getId());
-        Assertions.assertEquals("decrypted-email", result.get(1).getEmail());
-        Assertions.assertEquals(SchemeEditorRoleEnum.Editor, result.get(1).getRole());
+        Assertions.assertEquals(1, result.get(0).id());
+        Assertions.assertEquals("decrypted-email", result.get(0).email());
+        Assertions.assertEquals(SchemeEditorRoleEnum.Owner, result.get(0).role());
+        Assertions.assertEquals(2, result.get(1).id());
+        Assertions.assertEquals("decrypted-email", result.get(1).email());
+        Assertions.assertEquals(SchemeEditorRoleEnum.Editor, result.get(1).role());
     }
 
     @Test
