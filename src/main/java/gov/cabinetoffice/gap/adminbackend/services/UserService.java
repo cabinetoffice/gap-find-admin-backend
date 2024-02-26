@@ -116,11 +116,6 @@ public class UserService {
         return grantAdminRepository.findByGapUserUserSub(sub);
     }
 
-    public List<String> getListOfSubsFromListOfGrantAdminIds(final List<Integer> ids) {
-        List<GrantAdmin> admins = grantAdminRepository.findAllByGapUser_IdIn(ids).get();
-        return admins.stream().map(admin -> admin.getGapUser().getUserSub()).toList();
-    }
-
     public String getDepartmentGGISId(Integer adminId) {
         final GrantAdmin admin = grantAdminRepository.findById(adminId)
                 .orElseThrow(() -> new NotFoundException("No admin found for id: " + adminId));

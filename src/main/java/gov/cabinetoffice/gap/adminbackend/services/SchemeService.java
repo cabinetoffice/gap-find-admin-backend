@@ -1,41 +1,30 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
-import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
-import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
-import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -47,20 +36,11 @@ public class SchemeService {
 
     private final SessionsService sessionsService;
 
-    private final UserService userService;
 
     private final GrantAdminRepository grantAdminRepository;
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
-    private final RestTemplate restTemplate;
-
-    private final UserServiceConfig userServiceConfig;
-
-    private final AwsEncryptionServiceImpl awsEncryptionService;
-
-    @Value("${user-service.domain}")
-    private String userServiceUrl;
 
     @PostAuthorize("returnObject.createdBy == authentication.principal.grantAdminId or hasRole('SUPER_ADMIN')")
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
@@ -194,7 +174,7 @@ public class SchemeService {
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }
 
-    private SchemeEntity findSchemeById(Integer schemeId) {
+    public SchemeEntity findSchemeById(Integer schemeId) {
        return this.schemeRepo.findById(schemeId)
                 .orElseThrow(() -> new SchemeEntityException(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: "
@@ -207,74 +187,6 @@ public class SchemeService {
         scheme.setCreatedBy(grantAdmin.getId());
         scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
-    }
-
-
-    public Boolean doesAdminOwnScheme(Integer schemeId, Integer adminId) {
-        SchemeEntity scheme = this.findSchemeById(schemeId);
-        List<SchemeEntity> adminSchemes = this.schemeRepo.findByCreatedBy(adminId);
-        if (adminSchemes.contains(scheme)) {
-            return Boolean.TRUE;
-        }
-        return Boolean.FALSE;
-    }
-
-    public List<SchemeEditorsDTO> getEditorsFromSchemeId(Integer schemeId, String authHeader) {
-        SchemeEntity scheme = this.findSchemeById(schemeId);
-        List<GrantAdmin> editors = scheme.getGrantAdmins();
-        Integer createdBy = scheme.getCreatedBy();
-
-        return this.mapEditorListToDto(editors, createdBy, authHeader);
-    }
-
-    private List<SchemeEditorsDTO> mapEditorListToDto(List<GrantAdmin> editors, Integer createdBy, String authHeader){
-        List<String> userSubs = userService
-                .getListOfSubsFromListOfGrantAdminIds(editors.stream().map(GrantAdmin::getId).toList());
-
-        List<String> emails = this.getEmailsFromUserSubBatch(userSubs, authHeader);
-
-        List<Integer> ids = editors.stream().map(GrantAdmin::getId).toList();
-
-        List<SchemeEditorRoleEnum> roles = editors.stream()
-                .map(grantAdmin -> grantAdmin.getId().equals(createdBy)
-                        ? SchemeEditorRoleEnum.Owner
-                        : SchemeEditorRoleEnum.Editor)
-                .toList();
-
-        return IntStream.range(0, editors.size())
-                .mapToObj(i -> SchemeEditorsDTO.builder()
-                        .id(ids.get(i))
-                        .email(emails.get(i))
-                        .role(roles.get(i))
-                        .build())
-                .toList();
-    }
-
-    private List<String> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
-        final String url = userServiceUrl + "/user-emails-from-subs";
-
-        HttpHeaders requestHeaders = new HttpHeaders();
-
-        requestHeaders.add("Cookie", userServiceConfig.getCookieName() + "=" + authHeader);
-
-
-        UserEmailRequestDto requestBody = UserEmailRequestDto.builder().userSubs(userSubs).build();
-        HttpEntity<UserEmailRequestDto> httpEntity = new HttpEntity<>(requestBody, requestHeaders);
-
-        ParameterizedTypeReference<List<UserEmailResponseDto>> responseType =
-                new ParameterizedTypeReference<List<UserEmailResponseDto>>() {};
-
-        ResponseEntity<List<UserEmailResponseDto>> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                httpEntity,
-                responseType
-        );
-
-        return Objects.requireNonNull(response.getBody()).stream().map((item) ->
-                        awsEncryptionService.decryptField(item.getEmailAddress())).toList();
-
-
     }
 
 }

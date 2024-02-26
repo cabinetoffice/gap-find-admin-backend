@@ -63,8 +63,7 @@ public class SchemeController {
 
     private final UserServiceConfig userServiceConfig;
 
-    @Value("${user-service.domain}")
-    private String userServiceDomain;
+
 
     @GetMapping("/{schemeId}")
     @Operation(summary = "Retrieve grant scheme which matches the given id.")
@@ -265,33 +264,6 @@ public class SchemeController {
         log.info("Scheme " + schemeId + " has an internal application form");
 
         return ResponseEntity.ok(true);
-    }
-
-    @GetMapping("/{schemeId}/isSchemeOwner")
-    public ResponseEntity<Boolean> isSchemeOwner(@PathVariable final Integer schemeId,
-                                                         final HttpServletRequest request) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-        Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(session.getUserSub());
-        if(grantAdmin.isEmpty()){
-            throw new UnauthorizedException("User is not a grant admin");
-        }
-
-        return ResponseEntity.ok().body(schemeService.doesAdminOwnScheme(schemeId, grantAdmin.get().getId()));
-    }
-
-    @GetMapping("/{schemeId}/editors")
-    public ResponseEntity<List<SchemeEditorsDTO>> getSchemeEditors(@PathVariable final Integer schemeId,
-                                                                   final HttpServletRequest request) {
-        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-        Optional<GrantAdmin> grantAdmin = userService.getGrantAdminIdFromSub(session.getUserSub());
-        if (grantAdmin.isEmpty()) {
-            throw new UnauthorizedException("User is not a grant admin");
-        }
-
-        List<SchemeEditorsDTO> res = schemeService.getEditorsFromSchemeId(schemeId, jwt);
-
-        return ResponseEntity.ok().body(res);
     }
 
 
