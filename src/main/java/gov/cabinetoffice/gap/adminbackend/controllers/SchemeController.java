@@ -2,15 +2,11 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
-import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
@@ -28,7 +24,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
@@ -43,7 +38,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Tag(name = "Schemes", description = "API for handling grant schemes.")
@@ -62,8 +56,6 @@ public class SchemeController {
     private final ApplicationFormService applicationFormService;
 
     private final UserServiceConfig userServiceConfig;
-
-
 
     @GetMapping("/{schemeId}")
     @Operation(summary = "Retrieve grant scheme which matches the given id.")
@@ -265,6 +257,5 @@ public class SchemeController {
 
         return ResponseEntity.ok(true);
     }
-
 
 }
