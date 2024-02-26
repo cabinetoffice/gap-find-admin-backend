@@ -388,7 +388,8 @@ class ApplicationFormServiceTest {
         @Test
         void patchQuestionValuesApplicationNotFoundPathTest() {
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
@@ -754,7 +755,8 @@ class ApplicationFormServiceTest {
             final ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity()
                     .applicationStatus(ApplicationStatusEnum.PUBLISHED).build();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(patchedApplicationFormEntity))
                     .thenReturn(patchedApplicationFormEntity);
@@ -762,7 +764,7 @@ class ApplicationFormServiceTest {
             ApplicationFormServiceTest.this.applicationFormService.patchApplicationForm(applicationId,
                     SAMPLE_PATCH_APPLICATION_DTO, false);
 
-            verify(ApplicationFormServiceTest.this.applicationFormRepository).findById(applicationId);
+            verify(ApplicationFormServiceTest.this.applicationFormRepository).findByIdWithNoOwnershipCheck(applicationId);
             verify(ApplicationFormServiceTest.this.applicationFormMapper)
                     .updateApplicationEntityFromPatchDto(SAMPLE_PATCH_APPLICATION_DTO, testApplicationFormEntity);
             verify(ApplicationFormServiceTest.this.applicationFormRepository).save(patchedApplicationFormEntity);
@@ -790,7 +792,8 @@ class ApplicationFormServiceTest {
             final ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity()
                     .applicationStatus(ApplicationStatusEnum.PUBLISHED).build();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(patchedApplicationFormEntity))
                     .thenThrow(new RuntimeException());
@@ -806,8 +809,8 @@ class ApplicationFormServiceTest {
             ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(applicationId)).thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
                     .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))

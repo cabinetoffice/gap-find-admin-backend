@@ -340,7 +340,7 @@ public class ApplicationFormService {
 
     public void patchApplicationForm(Integer applicationId, ApplicationFormPatchDTO patchDTO, boolean isLambdaCall) {
         AdminSession session = null;
-        ApplicationFormEntity application = this.applicationFormRepository.findById(applicationId)
+        ApplicationFormEntity application = this.applicationFormRepository.findByIdWithNoOwnershipCheck(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist."));
 
         if (!isLambdaCall) {
