@@ -140,7 +140,7 @@ public class GrantAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")) })
-
+    @CheckSchemeOwnership
     public ResponseEntity getAdvertStatus(@RequestParam @NotNull final Integer grantSchemeId) {
 
         GetGrantAdvertStatusResponseDTO grantAdvertResponse = this.grantAdvertService
@@ -161,7 +161,7 @@ public class GrantAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")) })
-
+    @CheckSchemeOwnership
     public ResponseEntity getPublishInformation(@RequestParam @NotNull final Integer grantSchemeId) {
 
         GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponse = this.grantAdvertService
@@ -216,7 +216,7 @@ public class GrantAdvertController {
             final @PathVariable UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        final GrantAdvert publishedAdvert = grantAdvertService.publishAdvert(grantAdvertId, false);
+        final GrantAdvert publishedAdvert = grantAdvertService.publishAdvert(grantAdvertId);
 
         try {
             eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(),
@@ -235,7 +235,7 @@ public class GrantAdvertController {
     public ResponseEntity publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId) {
 
         try {
-            grantAdvertService.publishAdvert(grantAdvertId, true);
+            grantAdvertService.publishAdvert(grantAdvertId);
         }
         catch (CMAHttpException cmae) {
             log.error("Contentful Error Body - " + cmae.getErrorBody().toString());
@@ -270,7 +270,7 @@ public class GrantAdvertController {
             content = @Content(mediaType = "application/json")) })
     @CheckSchemeOwnership
     public ResponseEntity unpublishGrantAdvert(final @PathVariable UUID grantAdvertId) {
-        grantAdvertService.unpublishAdvert(grantAdvertId, false);
+        grantAdvertService.unpublishAdvert(grantAdvertId);
         return ResponseEntity.ok().build();
     }
 
@@ -284,11 +284,12 @@ public class GrantAdvertController {
     @LambdasHeaderValidator
     public ResponseEntity unpublishGrantAdvertForLambda(final @PathVariable UUID grantAdvertId) {
 
-        grantAdvertService.unpublishAdvert(grantAdvertId, true);
+        grantAdvertService.unpublishAdvert(grantAdvertId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{grantAdvertId}/unschedule")
+    @CheckSchemeOwnership
     public ResponseEntity unscheduleGrantAdvert(final @PathVariable UUID grantAdvertId) {
         grantAdvertService.unscheduleGrantAdvert(grantAdvertId);
         return ResponseEntity.ok().build();

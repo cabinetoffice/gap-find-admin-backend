@@ -131,6 +131,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> deleteApplicationForm(@PathVariable @NotNull Integer applicationId) {
         try {
             this.applicationFormService.deleteApplicationForm(applicationId);
@@ -161,7 +162,7 @@ public class ApplicationFormController {
     public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(@PathVariable @NotNull UUID grantAdvertId) {
         try {
 
-            Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
+            Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId).getScheme().getId();
             Optional<ApplicationFormEntity> applicationForm = applicationFormService
                     .getOptionalApplicationFromSchemeId(schemeId);
             if (applicationForm.isEmpty()) {

@@ -134,16 +134,6 @@ class SchemeServiceTest {
     }
 
     @Test
-    void sendSchemePatchRequest_AttemptingToPatchSchemeNotCreatedByLoggedInUser() {
-        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().createdBy(2).build();
-        when(this.schemeRepository.findById(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(testEntity));
-
-        assertThatThrownBy(() -> this.schemeService.patchExistingScheme(SAMPLE_SCHEME_ID, SCHEME_PATCH_DTO_EXAMPLE))
-                .isInstanceOf(AccessDeniedException.class);
-
-    }
-
-    @Test
     void postNewSchemeHappyPathTest() {
         SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
         SchemeEntity testEntityAfterSave = RandomSchemeGenerator.randomSchemeEntity().build();
@@ -272,19 +262,8 @@ class SchemeServiceTest {
     }
 
     @Test
-    void deleteASchemeById_EntityFoundButNotCreatedByLoggedInUser() {
-        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().createdBy(2).build();
-        Integer testSchemeId = testEntity.getId();
-
-        when(this.schemeRepository.findById(testSchemeId)).thenReturn(Optional.of(testEntity));
-
-        assertThatThrownBy(() -> this.schemeService.deleteASchemeById(testSchemeId))
-                .isInstanceOf(AccessDeniedException.class);
-    }
-
-    @Test
     void getSchemesHappyPathTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID))
                 .thenReturn(SCHEME_ENTITY_LIST_EXAMPLE);
         when(this.schemeMapper.schemeEntityListtoDtoList(SCHEME_ENTITY_LIST_EXAMPLE)).thenReturn(SCHEME_DTOS_EXAMPLE);
 
@@ -297,7 +276,7 @@ class SchemeServiceTest {
 
     @Test
     void getSchemesHappyPathNoResultsTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID))
                 .thenReturn(Collections.emptyList());
 
         List<SchemeDTO> response = this.schemeService.getSignedInUsersSchemes();
@@ -307,7 +286,7 @@ class SchemeServiceTest {
 
     @Test
     void getSchemes_UnexpectedError() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID))
                 .thenThrow(new RuntimeException());
 
         assertThatThrownBy(() -> this.schemeService.getSignedInUsersSchemes())
@@ -316,7 +295,7 @@ class SchemeServiceTest {
 
     @Test
     void getPaginatedSchemesHappyPathTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
                 .thenReturn(SCHEME_ENTITY_LIST_EXAMPLE);
         when(this.schemeMapper.schemeEntityListtoDtoList(SCHEME_ENTITY_LIST_EXAMPLE)).thenReturn(SCHEME_DTOS_EXAMPLE);
 
@@ -329,7 +308,7 @@ class SchemeServiceTest {
 
     @Test
     void getPaginatedSchemesHappyPathNoResultsTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
                 .thenReturn(Collections.emptyList());
 
         List<SchemeDTO> response = this.schemeService.getPaginatedSchemes(EXAMPLE_PAGINATION_PROPS);
@@ -339,7 +318,7 @@ class SchemeServiceTest {
 
     @Test
     void getPaginatedSchemes_UnexpectedError() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
                 .thenThrow(new RuntimeException());
 
         assertThatThrownBy(() -> this.schemeService.getPaginatedSchemes(EXAMPLE_PAGINATION_PROPS))

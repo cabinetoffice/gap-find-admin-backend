@@ -61,10 +61,11 @@ public class CheckSchemeOwnershipAspect {
 
     private final Map<String, SchemeIdExtractor> EXTRACTORS = Map.of(
             "schemeId", this::castResponseIdToInteger,
+            "grantSchemeId", this::castResponseIdToInteger,
             "grantAdvertId", this::extractSchemeIdFromAdvert,
             "applicationId", this::extractSchemeIdFromApplication,
             "createGrantAdvertDto", this::extractGrantSchemeIdFromDto,
-            "applicationFormPostDto", this::extractGrantSchemeIdFromDto,
+            "applicationFormPostDTO", this::extractGrantSchemeIdFromDto,
             "applicationFormExistsDto", this::extractGrantSchemeIdFromDto
     );
 
@@ -113,8 +114,22 @@ public class CheckSchemeOwnershipAspect {
     private Integer castResponseIdToInteger(Object value) {
         if (value instanceof Integer) {
             return (Integer) value;
-        } else {
-            throw new IllegalArgumentException("Value is not an instance of Integer: " + value);
+        }
+
+        // In some cases String integers are used in the request
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException | NullPointerException e) {
+            throw new IllegalArgumentException("Value cannot be parsed to an integer: " + value);
+        }
+    }
+
+    private boolean isStringInt(Object value) {
+        try {
+            Integer.parseInt((String) value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 

@@ -16,7 +16,6 @@ import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +23,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +40,6 @@ public class SchemeService {
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
-    @PostAuthorize("returnObject.createdBy == authentication.principal.grantAdminId or hasRole('SUPER_ADMIN')")
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
@@ -135,9 +132,7 @@ public class SchemeService {
 
         try {
             List<SchemeEntity> schemes;
-            //todo - co-auth: refactor query
             schemes = this.schemeRepo.findByGrantAdminsIdOrderByCreatedDateDesc(adminSession.getGrantAdminId());
-//            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId());
             return this.schemeMapper.schemeEntityListtoDtoList(schemes);
         }
         catch (Exception e) {

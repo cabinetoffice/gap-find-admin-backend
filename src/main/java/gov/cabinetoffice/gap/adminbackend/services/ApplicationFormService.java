@@ -146,11 +146,6 @@ public class ApplicationFormService {
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
 
-            if (!adminSession.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-                throw new AccessDeniedException("User " + adminSession.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
-
             ApplicationFormQuestionDTO questionById = applicationForm.getDefinition().getSectionById(sectionId)
                     .getQuestionById(questionId);
 
@@ -169,7 +164,7 @@ public class ApplicationFormService {
                         (QuestionOptionsPatchDTO) questionPatchDTO, questionById);
             }
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
             this.applicationFormRepository.save(applicationForm);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.updatedQuestion, session);
@@ -229,16 +224,10 @@ public class ApplicationFormService {
 
     public String addQuestionToApplicationForm(Integer applicationId, String sectionId,
             ApplicationFormQuestionDTO question, HttpSession session) {
-        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         String questionId = UUID.randomUUID().toString();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
-
-            if (!adminSession.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-                throw new AccessDeniedException("User " + adminSession.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
 
             ApplicationFormQuestionDTO applicationFormQuestionDTO;
             QuestionAbstractPostDTO questionAbstractPostDTO = validatePostQuestion(question);
@@ -257,7 +246,7 @@ public class ApplicationFormService {
 
             applicationForm.getDefinition().getSectionById(sectionId).getQuestions().add(applicationFormQuestionDTO);
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
             this.applicationFormRepository.save(applicationForm);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newQuestion, session);
@@ -300,15 +289,9 @@ public class ApplicationFormService {
     }
 
     public void deleteQuestionFromSection(Integer applicationId, String sectionId, String questionId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
-
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
 
         boolean questionDeleted = applicationForm.getDefinition().getSectionById(sectionId).getQuestions()
                 .removeIf(question -> Objects.equals(question.getQuestionId(), questionId));
@@ -317,41 +300,23 @@ public class ApplicationFormService {
             throw new NotFoundException("Question with id " + questionId + " does not exist");
         }
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
         this.applicationFormRepository.save(applicationForm);
 
     }
 
     public ApplicationFormQuestionDTO retrieveQuestion(Integer applicationId, String sectionId, String questionId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
-
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
 
         return applicationForm.getDefinition().getSectionById(sectionId).getQuestionById(questionId);
 
     }
 
     public void patchApplicationForm(Integer applicationId, ApplicationFormPatchDTO patchDTO, boolean isLambdaCall) {
-        AdminSession session = null;
         ApplicationFormEntity application = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist."));
-
-        //todo: co-auth remove this
-//        if (!isLambdaCall) {
-//            session = HelperUtils.getAdminSessionForAuthenticatedUser();
-//
-//            if (!application.getCreatedBy().equals(session.getGrantAdminId())) {
-//                throw new AccessDeniedException("User " + session.getGrantAdminId()
-//                        + " is unable to access the application form with id " + applicationId);
-//            }
-//        }
 
         if (patchDTO.getApplicationStatus() == ApplicationStatusEnum.PUBLISHED && application.getDefinition()
                 .getSections().stream().anyMatch(section -> section.getQuestions().isEmpty())) {
@@ -364,7 +329,7 @@ public class ApplicationFormService {
                 application.setLastPublished(Instant.now());
             }
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(application, session, isLambdaCall);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(application, isLambdaCall);
 
             this.applicationFormRepository.save(application);
         }
