@@ -40,8 +40,6 @@ public class SchemeService {
 
     private final GrantAdminRepository grantAdminRepository;
 
-    private final GrantAdminRepository grantAdminRepository;
-
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
 
