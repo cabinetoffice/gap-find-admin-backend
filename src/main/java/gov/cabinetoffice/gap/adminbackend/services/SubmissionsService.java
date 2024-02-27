@@ -10,7 +10,6 @@ import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
-import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionSection;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportBatchEntity;
@@ -73,10 +72,9 @@ public class SubmissionsService {
     @Value("${user-service.domain}")
     private String userServiceUrl;
 
-    public SubmissionDto getSubmissionById(final UUID submissionId) {
-        final Submission submission = submissionRepository.findById(submissionId).orElseThrow(() -> new NotFoundException(
+    public Submission getSubmissionById(final UUID submissionId) {
+        return submissionRepository.findById(submissionId).orElseThrow(() -> new NotFoundException(
                 String.format("No Submission with ID %s was found", submissionId)));
-        return submissionMapper.submissionToSubmissionDto(submission);
     }
 
     public ByteArrayOutputStream exportSpotlightChecks(Integer applicationId) {

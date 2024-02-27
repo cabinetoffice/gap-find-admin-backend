@@ -99,19 +99,19 @@ class SubmissionsServiceTest {
         @Test
         void successfullyGetSubmissionById() {
             final Submission submission = Submission.builder().id(submissionId).build();
-            final SubmissionDto expectedResponse = SubmissionDto.builder().submissionId(submissionId).build();
             when(submissionRepository.findById(submissionId)).thenReturn(Optional.ofNullable(submission));
 
-            final SubmissionDto response = submissionsService.getSubmissionById(submissionId);
+            final Submission response = submissionsService.getSubmissionById(submissionId);
 
             verify(submissionRepository).findById(submissionId);
-            assertThat(response).isEqualTo(expectedResponse);
+            assertThat(response).isEqualTo(submission);
         }
 
         @Test
         void throwsNotFoundException() {
-            when(submissionRepository.findById(submissionId)).thenThrow(new NotFoundException());
-            assertThrows(NotFoundException.class, () -> submissionsService.getSubmissionById(submissionId));
+            when(submissionRepository.findById(submissionId)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> submissionsService.getSubmissionById(submissionId),
+                    "No Submission with ID " + submissionId + " was found");
 
         }
 

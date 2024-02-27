@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
-import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
@@ -91,36 +90,6 @@ class SubmissionsControllerTest {
     Resource exampleFile;
 
     private final String LAMBDA_AUTH_HEADER = "topSecretKey";
-
-    @Nested
-    class getSubmissionById {
-        final UUID submissionId = UUID.randomUUID();
-
-        @Test
-        void getSubmissionById_HappyPathTest() throws Exception {
-            final SubmissionDto submissionDto = SubmissionDto.builder()
-                    .submissionId(submissionId)
-                    .build();
-            when(submissionsService.getSubmissionById(submissionId)).thenReturn(submissionDto);
-
-            mockMvc.perform(get("/submissions/" + submissionId))
-                    .andExpect(status().isOk())
-                    .andExpect(content().string(HelperUtils.asJsonStringWithNulls(submissionDto)));
-        }
-
-        @Test
-        void getSubmissionById_NotFoundErrorTest() throws Exception {
-            doThrow(new NotFoundException("Not found")).when(submissionsService).getSubmissionById(submissionId);
-
-            mockMvc.perform(get("/submissions/" + submissionId)).andExpect(status().isNotFound());
-        }
-
-        @Test
-        void getSubmissionById_BadRequestTest() throws Exception {
-            mockMvc.perform(get("/submissions/submissionId")).andExpect(status().isBadRequest());
-        }
-
-    }
 
     @Nested
     class exportSpotlightChecks {
@@ -213,7 +182,7 @@ class SubmissionsControllerTest {
 
         @Test
         void exportAllSubmissions_NoPathVariableTest() throws Exception {
-            mockMvc.perform(post("/submissions/export-all/")).andExpect(status().isMethodNotAllowed());
+            mockMvc.perform(post("/submissions/export-all/")).andExpect(status().isNotFound());
         }
 
     }

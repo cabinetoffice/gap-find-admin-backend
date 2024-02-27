@@ -1,5 +1,7 @@
-package gov.cabinetoffice.gap.adminbackend.dtos.submission;
+package gov.cabinetoffice.gap.adminbackend.dtos.grantExport;
 
+import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionSection;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -7,8 +9,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
+@AllArgsConstructor
 @Builder
-public class SubmissionDto {
+public class FailedSubmissionExportDTO {
 
     private UUID submissionId;
 
@@ -21,4 +24,6 @@ public class SubmissionDto {
     private String applicationName;
 
     private List<SubmissionSection> sections;
+
+    private String attachmentsZipLocation;
 }

@@ -5,12 +5,17 @@ import gov.cabinetoffice.gap.adminbackend.dtos.FailedExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsListDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.FailedSubmissionExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.Submission;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,13 +27,7 @@ import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -41,6 +40,7 @@ public class GrantExportController {
 
     private final GrantExportService exportService;
     private final GrantExportBatchService grantExportBatchService;
+    private final SubmissionsService submissionsService;
 
     @GetMapping("/{exportId}/outstandingCount")
     @ApiResponses(value = {
@@ -110,7 +110,6 @@ public class GrantExportController {
     @LambdasHeaderValidator
     public ResponseEntity<OutstandingExportCountDTO> getRemainingExportsCount(@PathVariable UUID exportId) {
         log.info("Getting remaining exports count for exportId: {}", exportId);
-
         final Long count = exportService.getRemainingExportsCount(exportId);
         log.info("Remaining exports count for exportId: {} is {}", exportId, count);
 
@@ -179,6 +178,32 @@ public class GrantExportController {
             throw e;
         }
 
+    }
+
+    @GetMapping("/{exportId}/submissions/{submissionId}/details")
+    @Operation(
+            summary = "Retrieve a failed grant export by ID.")
+    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returned failed grant export.",
+            content = @Content(mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = Submission.class)))) })
+    public ResponseEntity<FailedSubmissionExportDTO> getFailedSubmissionExportById(@PathVariable UUID exportId,
+                                                                                   @PathVariable UUID submissionId) {
+        try {
+            final Submission submission = submissionsService.getSubmissionById(submissionId);
+            final GrantExportEntity grantExport = exportService.getGrantExportById(exportId, submissionId);
+            final FailedSubmissionExportDTO failedSubmissionExportDTO = FailedSubmissionExportDTO.builder()
+                    .submissionId(submissionId)
+                    .schemeId(submission.getScheme().getId())
+                    .schemeName(submission.getScheme().getName())
+                    .legalName(submission.getApplicant().getOrganisationProfile().getLegalName())
+                    .applicationName(submission.getApplicationName())
+                    .sections(submission.getDefinition().getSections())
+                    .attachmentsZipLocation(grantExport.getLocation())
+                    .build();
+            return ResponseEntity.ok(failedSubmissionExportDTO);
+        } catch (NotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
 }

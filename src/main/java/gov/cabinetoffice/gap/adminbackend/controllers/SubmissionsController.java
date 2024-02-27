@@ -6,7 +6,6 @@ import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
-import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
@@ -47,21 +46,6 @@ public class SubmissionsController {
     private final FileService fileService;
 
     private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
-
-    @GetMapping("/{submissionId}")
-    @Operation(
-            summary = "Retrieve a submission by submission Id.")
-    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returned submission.",
-            content = @Content(mediaType = "application/json",
-                    array = @ArraySchema(schema = @Schema(implementation = SubmissionDto.class)))) })
-    public ResponseEntity<SubmissionDto> getSubmissionById(@PathVariable UUID submissionId) {
-        try {
-            final SubmissionDto submission = submissionsService.getSubmissionById(submissionId);
-            return ResponseEntity.ok(submission);
-        } catch (NotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
 
     @GetMapping(value = "/spotlight-export/{applicationId}", produces = EXPORT_CONTENT_TYPE)
     public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer applicationId) {

@@ -12,12 +12,9 @@ import java.time.ZonedDateTime;
 @Mapper(componentModel = "spring", uses = {CustomGrantExportMapperImpl.class})
 public interface GrantExportMapper {
 
-
-
     @Mapping(target = "exportBatchId", source = "id.exportBatchId")
     @Mapping(target = "submissionId", source = "id.submissionId")
     GrantExportDTO grantExportEntityToGrantExportDTO(GrantExportEntity grantExportEntity);
-
 
     @Mapping(target = "submissionId", source = "id.submissionId")
     @Mapping(target = "zipFileLocation", source = "location")
@@ -25,7 +22,6 @@ public interface GrantExportMapper {
     @Mapping(target ="status", source = "status")
     @Mapping(target = "submittedDate", expression = "java(mapExportedSubmissionSubmittedDate(grantExportEntity))")
     ExportedSubmissionsDto grantExportEntityToExportedSubmissions(GrantExportEntity grantExportEntity);
-
 
     default String mapExportedSubmissionName(GrantExportEntity grantExportEntity) {
         return "";
