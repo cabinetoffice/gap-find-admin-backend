@@ -36,7 +36,7 @@ public class GrantAdmin {
     @ToString.Exclude
     @JsonBackReference
     @Builder.Default
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private List<SchemeEntity> schemes = new ArrayList<>();
 
 }
