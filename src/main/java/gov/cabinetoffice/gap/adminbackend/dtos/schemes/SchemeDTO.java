@@ -25,4 +25,8 @@ public class SchemeDTO {
 
     private Integer createdBy;
 
+    private Instant lastUpdatedDate;
+
+    private String lastUpdatedBy;
+
 }

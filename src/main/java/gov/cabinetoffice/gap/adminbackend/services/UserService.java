@@ -111,6 +111,10 @@ public class UserService {
         return grantAdminRepository.findByGapUserUserSub(sub);
     }
 
+    public Optional<GrantAdmin> getGrantAdminById(final int id) {
+        return grantAdminRepository.findById(id);
+    }
+
     public String getDepartmentGGISId(Integer adminId) {
         final GrantAdmin admin = grantAdminRepository.findById(adminId)
                 .orElseThrow(() -> new NotFoundException("No admin found for id: " + adminId));

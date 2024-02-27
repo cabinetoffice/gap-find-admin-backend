@@ -22,6 +22,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.GrantAdvertException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UserNotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapper;
 import gov.cabinetoffice.gap.adminbackend.models.*;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
@@ -34,20 +35,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import javax.transaction.Transactional;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -74,13 +68,30 @@ public class GrantAdvertService {
 
     private final CDAClient contentfulDeliveryClient;
 
-    private final RestTemplate restTemplate;
-
     private final WebClient.Builder webClientBuilder;
+
+    private final Clock clock;
 
     private final ContentfulConfigProperties contentfulProperties;
 
     private final FeatureFlagsConfigurationProperties featureFlagsProperties;
+
+    public GrantAdvert save(GrantAdvert advert) {
+        Optional.ofNullable(HelperUtils.getAdminSessionForAuthenticatedUser())
+                .ifPresentOrElse(adminSession -> {
+                    final GrantAdmin admin = grantAdminRepository.findByGapUserUserSub(adminSession.getUserSub())
+                            .orElseThrow(() -> new UserNotFoundException("Could not find an admin with sub " + adminSession.getUserSub()));
+
+                    final Instant updatedAt = Instant.now(clock);
+                    advert.setLastUpdated(updatedAt);
+                    advert.setLastUpdatedBy(admin);
+
+                    advert.getScheme().setLastUpdated(updatedAt);
+                    advert.getScheme().setLastUpdatedBy(adminSession.getGrantAdminId());
+                }, () -> log.warn("Admin session was null. Update must have been performed by a lambda."));
+
+        return grantAdvertRepository.save(advert);
+    }
 
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
         final GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
@@ -96,14 +107,12 @@ public class GrantAdvertService {
             final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme)
                     .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
                     .status(GrantAdvertStatus.DRAFT).version(version).build();
-            return this.grantAdvertRepository.save(grantAdvert);
+            return save(grantAdvert);
         }
         final GrantAdvert existingAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).get();
         existingAdvert.setGrantAdvertName(name);
-        existingAdvert.setLastUpdatedBy(grantAdmin);
-        existingAdvert.setLastUpdated(Instant.now());
-        return this.grantAdvertRepository.save(existingAdvert);
 
+        return save(existingAdvert);
     }
 
     /**
@@ -206,8 +215,7 @@ public class GrantAdvertService {
         // update section status
         updateSectionStatus(section);
 
-        grantAdvertRepository.save(grantAdvert);
-
+        save(grantAdvert);
     }
 
     private void addStaticTimeToDateQuestion(GrantAdvertPageResponseValidationDto pagePatchDto) {
@@ -306,7 +314,7 @@ public class GrantAdvertService {
         advert.setContentfulEntryId(contentfulAdvert.getId());
         updateGrantAdvertApplicationDates(advert);
 
-        return grantAdvertRepository.save(advert);
+        return save(advert);
     }
 
     public void unpublishAdvert(UUID advertId, boolean lambdaCall) {
@@ -318,7 +326,7 @@ public class GrantAdvertService {
         advert.setStatus(GrantAdvertStatus.DRAFT);
         advert.setUnpublishedDate(Instant.now());
 
-        this.grantAdvertRepository.save(advert);
+        save(advert);
     }
 
     private CMAEntry createAdvertInContentful(final GrantAdvert grantAdvert) {
@@ -524,7 +532,7 @@ public class GrantAdvertService {
         grantAdvert.setStatus(GrantAdvertStatus.SCHEDULED);
         updateGrantAdvertApplicationDates(grantAdvert);
 
-        grantAdvertRepository.save(grantAdvert);
+        save(grantAdvert);
     }
 
     private void updateGrantAdvertApplicationDates(final GrantAdvert grantAdvert) {
@@ -568,17 +576,15 @@ public class GrantAdvertService {
     public void unscheduleGrantAdvert(final UUID advertId) {
         final GrantAdvert advert = getAdvertById(advertId, false);
         advert.setStatus(GrantAdvertStatus.UNSCHEDULED);
-        grantAdvertRepository.save(advert);
+        save(advert);
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void patchCreatedBy(Integer adminId, Integer schemeId) {
-        Optional<GrantAdvert> advertOptional = this.grantAdvertRepository.findBySchemeId(schemeId);
-        if (advertOptional.isPresent()) {
-            final GrantAdvert advert = advertOptional.get();
-            advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
-            this.grantAdvertRepository.save(advert);
-        }
+        this.grantAdvertRepository.findBySchemeId(schemeId)
+                .ifPresent(advert -> {
+                    advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
+                    save(advert);
+                });
     }
-
 }

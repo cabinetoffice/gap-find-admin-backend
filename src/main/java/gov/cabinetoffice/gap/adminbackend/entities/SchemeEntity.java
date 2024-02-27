@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import gov.cabinetoffice.gap.adminbackend.listeners.SchemeUpdateListener;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@EntityListeners(SchemeUpdateListener.class)
 @Entity
 @Table(name = "grant_scheme")
 @Getter

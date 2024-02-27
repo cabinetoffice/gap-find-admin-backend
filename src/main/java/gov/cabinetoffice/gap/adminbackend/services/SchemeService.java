@@ -22,9 +22,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +65,7 @@ public class SchemeService {
             SchemeEntity entity = this.schemeMapper.schemePostDtoToEntity(newScheme);
             entity.setFunderId(adminSession.getFunderId());
             entity.setCreatedBy(adminSession.getGrantAdminId());
+
             if (featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()) {
                 entity.setVersion(2);
             }
@@ -101,9 +100,6 @@ public class SchemeService {
                 throw new AccessDeniedException(
                         "User " + session.getGrantAdminId() + "is unable to update the scheme with id " + schemeId);
             }
-
-            scheme.setLastUpdated(Instant.now());
-            scheme.setLastUpdatedBy(session.getGrantAdminId());
 
             this.schemeMapper.updateSchemeEntityFromPatchDto(schemePatchDTO, scheme);
             this.schemeRepo.save(scheme);
@@ -145,8 +141,7 @@ public class SchemeService {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
-            List<SchemeEntity> schemes;
-            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId());
+            final List<SchemeEntity> schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId());
             return this.schemeMapper.schemeEntityListtoDtoList(schemes);
         }
         catch (Exception e) {
@@ -183,5 +178,4 @@ public class SchemeService {
         scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
     }
-
 }

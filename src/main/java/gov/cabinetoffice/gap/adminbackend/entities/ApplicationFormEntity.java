@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.entities;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationDefinitionDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
+import gov.cabinetoffice.gap.adminbackend.listeners.ApplicationFormUpdateListener;
 import lombok.*;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.Type;
@@ -10,6 +11,7 @@ import javax.persistence.*;
 import java.time.Instant;
 import java.util.Objects;
 
+@EntityListeners(ApplicationFormUpdateListener.class)
 @Entity
 @Table(name = "grant_application")
 @Getter
