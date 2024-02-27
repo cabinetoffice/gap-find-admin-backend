@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
+import org.springframework.web.reactive.function.BodyInserters;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
@@ -10,14 +11,9 @@ import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Comparator;
 import java.util.List;
@@ -26,11 +22,11 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class SchemeEditorService {
-    private final RestTemplate restTemplate;
     private final SchemeService schemeService;
     private final AwsEncryptionServiceImpl awsEncryptionService;
     private final SchemeRepository schemeRepo;
     private final UserServiceConfig userServiceConfig;
+    private final WebClient.Builder webClientBuilder;
 
     public Boolean doesAdminOwnScheme(Integer schemeId, Integer adminId) {
         return schemeRepo.existsByIdAndGrantAdminsId(schemeId, adminId);
@@ -71,24 +67,17 @@ public class SchemeEditorService {
     private List<String> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
         final String url = userServiceConfig.getDomain() + "/user-emails-from-subs";
 
-        HttpHeaders requestHeaders = new HttpHeaders();
-
-        requestHeaders.add("Cookie", userServiceConfig.getCookieName() + "=" + authHeader);
-
         UserEmailRequestDto requestBody = UserEmailRequestDto.builder().userSubs(userSubs).build();
-
-        HttpEntity<UserEmailRequestDto> httpEntity = new HttpEntity<>(requestBody, requestHeaders);
 
         ParameterizedTypeReference<List<UserEmailResponseDto>> responseType =
                 new ParameterizedTypeReference<>() {};
 
-        ResponseEntity<List<UserEmailResponseDto>> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                httpEntity,
-                responseType
-        );
-        return Objects.requireNonNull(response.getBody()).stream().map((item) ->
+                List<UserEmailResponseDto> response = webClientBuilder.build().post()
+                .uri(url).body(BodyInserters.fromValue(requestBody))
+                .cookie(userServiceConfig.getCookieName(), authHeader).retrieve().bodyToMono(responseType).block();
+
+
+        return Objects.requireNonNull(response).stream().map((item) ->
                 awsEncryptionService.decryptField(item.emailAddress())).toList();
     }
 

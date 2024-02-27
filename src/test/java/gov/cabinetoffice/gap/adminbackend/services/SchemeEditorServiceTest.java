@@ -11,20 +11,17 @@ import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
 import static org.mockito.Mockito.*;
 
 import java.util.*;
@@ -33,13 +30,14 @@ import java.util.*;
 @WithAdminSession
 public class SchemeEditorServiceTest {
     @Mock
-    private RestTemplate restTemplate;
+    private WebClient.Builder webClientBuilder;
 
-    @Mock
-    private UserServiceConfig userServiceConfig;
 
     @Mock
     private SchemeService schemeService;
+
+    @Mock
+    private UserServiceConfig userServiceConfig;
 
     @Mock
     private SchemeRepository schemeRepository;
@@ -54,11 +52,7 @@ public class SchemeEditorServiceTest {
     public void testDoesAdminOwnScheme() {
         Integer schemeId = 1;
         Integer adminId = 1;
-        SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).createdBy(adminId).build();
-        when(schemeService.findSchemeById(schemeId)).thenReturn(schemeEntity);
-        List<SchemeEntity> adminSchemes = new ArrayList<>();
-        adminSchemes.add(schemeEntity);
-        Mockito.when(schemeRepository.findByCreatedBy(adminId)).thenReturn(adminSchemes);
+        Mockito.when(schemeRepository.existsByIdAndGrantAdminsId(schemeId, adminId)).thenReturn(Boolean.TRUE);
 
         boolean result = schemeEditorService.doesAdminOwnScheme(schemeId, adminId);
         Assertions.assertTrue(result);
@@ -68,23 +62,12 @@ public class SchemeEditorServiceTest {
     public void testDoesAdminOwnScheme_returnsFalse() {
         Integer schemeId = 1;
         Integer adminId = 1;
-        SchemeEntity schemeEntity = SchemeEntity.builder().id(schemeId).createdBy(adminId).build();
-        when(schemeService.findSchemeById(schemeId)).thenReturn(schemeEntity);
-        Mockito.when(schemeRepository.findByCreatedBy(adminId)).thenReturn(new ArrayList<>());
+        Mockito.when(schemeRepository.existsByIdAndGrantAdminsId(schemeId, adminId)).thenReturn(Boolean.FALSE);
 
         boolean result = schemeEditorService.doesAdminOwnScheme(schemeId, adminId);
         Assertions.assertFalse(result);
     }
 
-    @Test
-    public void testDoesAdminOwnScheme_SchemeNotFound() {
-        Integer schemeId = 1;
-        Integer adminId = 1;
-        when(schemeService.findSchemeById(schemeId)).thenThrow(new SchemeEntityException("Scheme not found"));
-
-        Assertions.assertThrows(SchemeEntityException.class,
-                () -> schemeEditorService.doesAdminOwnScheme(schemeId, adminId));
-    }
 
     @Test
     void testGetEditorsFromSchemeId_happyPath() {
@@ -92,17 +75,26 @@ public class SchemeEditorServiceTest {
         GrantAdmin grantAdmin2 = GrantAdmin.builder().id(2).gapUser(GapUser.builder().userSub("sub").build()).build();
         List<GrantAdmin> editors = Arrays.asList(grantAdmin1, grantAdmin2);
         SchemeEntity schemeEntity = SchemeEntity.builder().id(1).createdBy(1).grantAdmins(editors).build();
-
+        when(userServiceConfig.getDomain()).thenReturn("domain");
         when(schemeService.findSchemeById(anyInt())).thenReturn(schemeEntity);
 
-        ResponseEntity<List<UserEmailResponseDto>> responseEntity = ResponseEntity.ok(Arrays.asList(
-                UserEmailResponseDto.builder()
-                        .emailAddress("email1".getBytes()).build(),
-                UserEmailResponseDto.builder()
-                        .emailAddress("email2".getBytes()).build()));
-        when(restTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class),
-                any(ParameterizedTypeReference.class)))
-                .thenReturn(responseEntity);
+        final WebClient webClient = mock(WebClient.class);
+        final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.cookie(any(), any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        when(responseSpec.bodyToMono(eq(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {})))
+                .thenReturn(Mono.just(Arrays.asList(
+                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build(),
+                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build())));
 
         when(awsEncryptionService.decryptField(any())).thenReturn("decrypted-email");
 
@@ -130,8 +122,7 @@ public class SchemeEditorServiceTest {
     void testGetEditorsFromSchemeId_ThrowsRestClientException() {
         SchemeEntity schemeEntity = SchemeEntity.builder().id(1).createdBy(1).build();
         when(schemeService.findSchemeById(anyInt())).thenReturn(schemeEntity);
-        when(restTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class),
-                any(ParameterizedTypeReference.class)))
+        when(webClientBuilder.build())
                 .thenThrow(new RestClientException("Test RestClientException"));
 
         Assertions.assertThrows(RestClientException.class, () -> {
@@ -146,15 +137,25 @@ public class SchemeEditorServiceTest {
         List<GrantAdmin> editors = Arrays.asList(grantAdmin1, grantAdmin2);
         SchemeEntity schemeEntity = SchemeEntity.builder().id(1).createdBy(1).grantAdmins(editors).build();
         when(schemeService.findSchemeById(anyInt())).thenReturn(schemeEntity);
-        ResponseEntity<List<UserEmailResponseDto>> responseEntity = ResponseEntity.ok(Arrays.asList(
-                UserEmailResponseDto.builder()
-                        .emailAddress("email1".getBytes()).build(),
-                UserEmailResponseDto.builder()
-                        .emailAddress("email2".getBytes()).build()));
 
-        when(restTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class),
-                any(ParameterizedTypeReference.class)))
-                .thenReturn(responseEntity);
+        final WebClient webClient = mock(WebClient.class);
+        final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.cookie(any(), any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        when(responseSpec.bodyToMono(eq(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {})))
+                .thenReturn(Mono.just(Arrays.asList(
+                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build(),
+                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build())));
+
 
         when(awsEncryptionService.decryptField(any()))
                 .thenThrow(new IllegalStateException("Wrong Encryption Context!"));

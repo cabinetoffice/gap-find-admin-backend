@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEditor.GetSchemeEditorsException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -50,24 +51,6 @@ public class SchemeEditorControllerTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    @Test
-    public void testIsSchemeOwner_UserNotAdmin_ThrowsUnauthorizedException() {
-        when(userServiceConfig.getCookieName()).thenReturn("cookieName");
-        Integer schemeId = 1;
-        AdminSession session = new AdminSession();
-        when(userService.getGrantAdminIdFromSub(session.getUserSub())).thenReturn(Optional.empty());
-
-        SecurityContext securityContext = mock(SecurityContext.class);
-        SecurityContextHolder.setContext(securityContext);
-        Authentication authentication = mock(Authentication.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-
-        AdminSession adminSession = new AdminSession(1, 1, JwtPayload.builder().build());
-        when(authentication.getPrincipal()).thenReturn(adminSession);
-        assertThrows(UnauthorizedException.class, () -> schemeEditorController.isSchemeOwner(schemeId));
-        verify(schemeEditorService, never()).doesAdminOwnScheme(anyInt(), anyInt());
-    }
 
     @Test
     public void testIsSchemeOwner_UserIsAdmin_ReturnsTrue() {
@@ -136,23 +119,6 @@ public class SchemeEditorControllerTest {
     }
 
     @Test
-    public void testGetSchemeEditors_UserIsNotAdmin_ThrowsUnauthorizedException() {
-        Authentication authentication = mock(Authentication.class);
-        when(request.getCookies()).thenReturn(new Cookie[] { new Cookie("cookieName", "cookieValue") });
-        SecurityContext securityContext = mock(SecurityContext.class);
-        SecurityContextHolder.setContext(securityContext);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(userServiceConfig.getCookieName()).thenReturn("cookieName");
-        AdminSession adminSession = new AdminSession(1, 1, JwtPayload.builder().build());
-        when(authentication.getPrincipal()).thenReturn(adminSession);
-        when(userService.getGrantAdminIdFromSub(any())).thenReturn(Optional.empty());
-
-        Assertions.assertThrows(UnauthorizedException.class, () -> {
-            schemeEditorController.getSchemeEditors(1, request);
-        });
-    }
-
-    @Test
     public void testGetSchemeEditors_SchemeEntityException() {
         Authentication authentication = mock(Authentication.class);
         when(request.getCookies()).thenReturn(new Cookie[] { new Cookie("cookieName", "cookieValue") });
@@ -168,7 +134,7 @@ public class SchemeEditorControllerTest {
         when(schemeEditorService.getEditorsFromSchemeId(anyInt(), anyString()))
                 .thenThrow(new SchemeEntityException("Test SchemeEntityException"));
 
-        Assertions.assertThrows(SchemeEntityException.class, () -> {
+        Assertions.assertThrows(GetSchemeEditorsException.class, () -> {
             schemeEditorController.getSchemeEditors(1, request);
         });
     }
@@ -189,7 +155,7 @@ public class SchemeEditorControllerTest {
         when(schemeEditorService.getEditorsFromSchemeId(anyInt(), anyString()))
                 .thenThrow(new RestClientException(""));
 
-        Assertions.assertThrows(RestClientException.class, () -> {
+        Assertions.assertThrows(GetSchemeEditorsException.class, () -> {
             schemeEditorController.getSchemeEditors(1, request);
         });
     }
@@ -210,7 +176,7 @@ public class SchemeEditorControllerTest {
         when(schemeEditorService.getEditorsFromSchemeId(anyInt(), anyString()))
                 .thenThrow(new IllegalStateException(""));
 
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        Assertions.assertThrows(GetSchemeEditorsException.class, () -> {
             schemeEditorController.getSchemeEditors(1, request);
         });
     }

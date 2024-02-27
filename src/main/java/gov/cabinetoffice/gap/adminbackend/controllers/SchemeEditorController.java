@@ -2,16 +2,14 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEditor.GetSchemeEditorsException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEditor.IsOwnerCheckException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeEditorService;
-import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Optional;
 
 @Tag(name = "Scheme Editors", description = "API for handling scheme editors.")
 @RequestMapping("/schemes/{schemeId}/editors")
@@ -39,7 +36,7 @@ public class SchemeEditorController {
             return ResponseEntity.ok().body(schemeEditorService.doesAdminOwnScheme(schemeId, session.getGrantAdminId()));
         } catch(Exception e){
             log.error("Error checking if admin owns scheme", e);
-            throw e;
+            throw new IsOwnerCheckException(e.getMessage());
         }
     }
 
@@ -52,7 +49,7 @@ public class SchemeEditorController {
             return ResponseEntity.ok().body(res);
         } catch (Exception e) {
             log.error("Error getting scheme editors", e);
-            throw e;
+            throw new GetSchemeEditorsException(e.getMessage());
         }
     }
 
