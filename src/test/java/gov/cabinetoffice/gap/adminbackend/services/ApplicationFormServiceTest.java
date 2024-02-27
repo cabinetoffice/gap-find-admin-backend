@@ -31,6 +31,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -353,7 +354,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
-                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO);
+                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, any(HttpSession.class));
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
             ApplicationFormQuestionDTO updatedQuestion = argument.getValue().getDefinition()
@@ -373,7 +374,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_SECOND_APPLICATION_FORM_ENTITY));
 
             ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
-                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_OPTIONS_PATCH_DTO);
+                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_OPTIONS_PATCH_DTO, any(HttpSession.class));
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
             ApplicationFormQuestionDTO updatedQuestion = argument.getValue().getDefinition()
@@ -391,7 +392,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO))
+                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, any(HttpSession.class)))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
@@ -408,7 +409,7 @@ class ApplicationFormServiceTest {
                     .thenCallRealMethod();
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, new ApplicationFormQuestionDTO()))
+                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, new ApplicationFormQuestionDTO(), any(HttpSession.class)))
                             .isInstanceOf(ConstraintViolationException.class);
 
         }
@@ -422,7 +423,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO))
+                    applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, any(HttpSession.class)))
                             .isInstanceOf(AccessDeniedException.class)
                             .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 

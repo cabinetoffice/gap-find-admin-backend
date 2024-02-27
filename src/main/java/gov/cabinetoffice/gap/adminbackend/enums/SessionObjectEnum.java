@@ -5,7 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 
 public enum SessionObjectEnum {
 
-    newScheme(SchemePostDTO.class), newQuestion(QuestionSessionDTO.class);
+    newScheme(SchemePostDTO.class), newQuestion(QuestionSessionDTO.class), updatedQuestion(QuestionSessionDTO.class);
 
     public final Class classType;
 

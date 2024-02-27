@@ -25,6 +25,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,8 @@ public class SchemeService {
 
     private final SessionsService sessionsService;
 
+
+    private final GrantAdminRepository grantAdminRepository;
 
     private final GrantAdminRepository grantAdminRepository;
 
