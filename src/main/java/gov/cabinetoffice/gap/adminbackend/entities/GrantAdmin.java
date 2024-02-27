@@ -2,9 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.entities;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
-import org.apache.http.conn.scheme.Scheme;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -38,6 +36,7 @@ public class GrantAdmin {
     @ToString.Exclude
     @JsonBackReference
     @Builder.Default
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<SchemeEntity> schemes = new ArrayList<>();
 
 }
