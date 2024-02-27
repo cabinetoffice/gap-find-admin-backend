@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import org.hibernate.Hibernate;
@@ -56,14 +57,14 @@ public class SchemeEntity {
     @Column(name = "scheme_contact")
     private String email;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
-    @JoinTable(name = "scheme_editors",
-            joinColumns = {@JoinColumn(name = "grant_scheme_id", referencedColumnName = "grant_scheme_id")},
-            inverseJoinColumns = {@JoinColumn(name = "grant_admin_id", referencedColumnName = "grant_admin_id")}
-            )
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.MERGE, CascadeType.PERSIST })
+    @JoinTable(name = "scheme_editors", joinColumns = {
+            @JoinColumn(name = "grant_scheme_id", referencedColumnName = "grant_scheme_id") }, inverseJoinColumns = {
+                    @JoinColumn(name = "grant_admin_id", referencedColumnName = "grant_admin_id") })
     @ToString.Exclude
     @JsonManagedReference
     @Builder.Default
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private List<GrantAdmin> grantAdmins = new ArrayList<>();
 
     @Override
