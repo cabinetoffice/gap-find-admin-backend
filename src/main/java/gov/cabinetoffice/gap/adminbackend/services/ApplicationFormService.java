@@ -59,7 +59,7 @@ public class ApplicationFormService {
     private final Clock clock;
 
     public ApplicationFormEntity save(ApplicationFormEntity applicationForm) {
-        final ApplicationFormEntity savedApplicationForm = save(applicationForm);
+        final ApplicationFormEntity savedApplicationForm = applicationFormRepository.save(applicationForm);
 
         Optional.ofNullable(HelperUtils.getAdminSessionForAuthenticatedUser())
                 .ifPresentOrElse(adminSession -> {
@@ -123,8 +123,8 @@ public class ApplicationFormService {
         return this.applicationFormMapper.applicationFormFoundViewToDTO(applicationFormsFoundView);
     }
 
-    public ApplicationFormDTO retrieveApplicationFormSummary(Integer applicationId, Boolean withSections,
-            Boolean withQuestions) {
+    public ApplicationFormDTO retrieveApplicationFormSummary(Integer applicationId, boolean withSections,
+            boolean withQuestions) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         if (withSections) {
@@ -307,6 +307,7 @@ public class ApplicationFormService {
         Set<ConstraintViolation<QuestionAbstractPostDTO>> violationsSet;
         QuestionAbstractPostDTO mappedQuestion;
 
+        // TODO what is the point of this switch?
         switch (questionPostDto.getResponseType()) {
             case MultipleSelection, Dropdown, SingleSelection -> {
                 mappedQuestion = this.applicationFormMapper.questionDtoToQuestionOptionsPost(questionPostDto);
@@ -409,7 +410,7 @@ public class ApplicationFormService {
         if (applicationOptional.isPresent()) {
             final ApplicationFormEntity application = applicationOptional.get();
             application.setCreatedBy(adminId);
-            save(application);
+            applicationFormRepository.save(application);
         }
     }
 
