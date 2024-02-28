@@ -2,7 +2,9 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.DecryptedUserEmailResponse;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import org.springframework.web.reactive.function.BodyInserters;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
@@ -40,22 +42,28 @@ public class SchemeEditorService {
         return this.mapEditorListToDto(editors, createdBy, authHeader);
     }
 
-    private String marryEmailFromSub(final List<String> emails, final List<String> userSubs, final GrantAdmin editor) {
-        return emails.get(userSubs.indexOf(editor.getGapUser().getUserSub()));
+    private String getEmailFromUserResponse(final List<DecryptedUserEmailResponse> userResponse,
+            final String editorsSub) {
+        DecryptedUserEmailResponse editorsRow = userResponse.stream()
+                .filter(item -> item.userSub().equals(editorsSub)).findFirst()
+                .orElseThrow(() -> new NotFoundException("Could not find users email using sub: " + editorsSub));
+        return editorsRow.emailAddress();
     }
 
-    private List<SchemeEditorsDTO> mapEditorListToDto(List<GrantAdmin> editors, Integer createdBy, String authHeader){
+    private List<SchemeEditorsDTO> mapEditorListToDto(List<GrantAdmin> editors, Integer createdBy, String authHeader) {
         List<String> userSubs = editors.stream()
                 .map(editor -> editor.getGapUser().getUserSub())
                 .toList();
-        List<String> emails = getEmailsFromUserSubBatch(userSubs, authHeader);
+        List<DecryptedUserEmailResponse> userResponse = getEmailsFromUserSubBatch(userSubs, authHeader);
 
         return editors.stream()
                 .map(editor -> {
-                    String email = marryEmailFromSub(emails, userSubs, editor);
+                    String editorsSub = editor.getGapUser().getUserSub();
+                    String email = getEmailFromUserResponse(userResponse, editorsSub);
                     Integer id = editor.getId();
                     SchemeEditorRoleEnum role = id.equals(createdBy)
-                            ? SchemeEditorRoleEnum.Owner : SchemeEditorRoleEnum.Editor;
+                            ? SchemeEditorRoleEnum.Owner
+                            : SchemeEditorRoleEnum.Editor;
 
                     return SchemeEditorsDTO.builder().id(id).email(email).role(role).build();
                 })
@@ -63,23 +71,23 @@ public class SchemeEditorService {
                 .toList();
     }
 
-
-    private List<String> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
+    private List<DecryptedUserEmailResponse> getEmailsFromUserSubBatch(final List<String> userSubs,
+            final String authHeader) {
         final String url = userServiceConfig.getDomain() + "/user-emails-from-subs";
 
         UserEmailRequestDto requestBody = UserEmailRequestDto.builder().userSubs(userSubs).build();
 
-        ParameterizedTypeReference<List<UserEmailResponseDto>> responseType =
-                new ParameterizedTypeReference<>() {};
+        ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {
+        };
 
-                List<UserEmailResponseDto> response = webClientBuilder.build().post()
+        List<UserEmailResponseDto> response = webClientBuilder.build().post()
                 .uri(url).body(BodyInserters.fromValue(requestBody))
                 .cookie(userServiceConfig.getCookieName(), authHeader).retrieve().bodyToMono(responseType).block();
 
-
-        return Objects.requireNonNull(response).stream().map((item) ->
-                awsEncryptionService.decryptField(item.emailAddress())).toList();
+        return Objects.requireNonNull(response).stream()
+                .map((item) -> DecryptedUserEmailResponse.builder().userSub(item.sub()).emailAddress(
+                        awsEncryptionService.decryptField(item.emailAddress())).build())
+                .toList();
     }
 
 }
-
