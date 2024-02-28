@@ -4,13 +4,22 @@ import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.FailedExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsListDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.FailedSubmissionExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
+import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicantOrganisationProfile;
+import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionDefinition;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.Submission;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportBatchService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
+import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,9 +40,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -55,6 +62,9 @@ public class GrantExportControllerTest {
 
     @MockBean
     private GrantExportBatchService mockGrantExportBatchService;
+
+    @MockBean
+    private SubmissionsService mockSubmissionsService;
 
     @MockBean
     @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
@@ -295,6 +305,48 @@ public class GrantExportControllerTest {
                             .content("\"" + s3ObjectKey + "\"")
                             .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
                     .andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class getFailedSubmissionExportById {
+        final UUID submissionId = UUID.randomUUID();
+
+        @Test
+        void successfullyGetFailedSubmissionExportById() throws Exception {
+            final GrantApplicantOrganisationProfile organisationProfile = GrantApplicantOrganisationProfile.builder().legalName("legalName").build();
+            final Submission submission = Submission.builder()
+                    .id(submissionId)
+                    .scheme(SchemeEntity.builder().id(1).name("schemeName").build())
+                    .applicant(GrantApplicant.builder().organisationProfile(organisationProfile).build())
+                    .applicationName("applicationName")
+                    .definition(SubmissionDefinition.builder().sections(Collections.emptyList()).build())
+                    .build();
+            final GrantExportEntity grantExport = GrantExportEntity.builder().location("location").build();
+            final FailedSubmissionExportDTO failedSubmissionExportDTO = FailedSubmissionExportDTO.builder()
+                    .submissionId(submissionId)
+                    .schemeId(1)
+                    .schemeName("schemeName")
+                    .legalName("legalName")
+                    .applicationName("applicationName")
+                    .sections(Collections.emptyList())
+                    .attachmentsZipLocation("location")
+                    .build();
+
+            when(mockSubmissionsService.getSubmissionById(submissionId)).thenReturn(submission);
+            when(mockGrantExportService.getGrantExportById(mockExportId, submissionId)).thenReturn(grantExport);
+
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/submissions/" + submissionId + "/details"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(HelperUtils.asJsonString(failedSubmissionExportDTO)));
+        }
+
+        @Test
+        void notFoundExceptionThrown() throws Exception {
+            doThrow(new NotFoundException()).when(mockSubmissionsService).getSubmissionById(submissionId);
+            mockMvc.perform(get("/grant-export/" + mockExportId + "/submissions/" + submissionId + "/details"))
+                    .andExpect(status().isNotFound());
         }
 
     }

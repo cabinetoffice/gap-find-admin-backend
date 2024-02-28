@@ -5,7 +5,9 @@ import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsLi
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.CustomGrantExportMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
@@ -27,6 +29,12 @@ public class GrantExportService {
 
     private final GrantExportRepository exportRepository;
     private final CustomGrantExportMapperImpl customGrantExportMapper;
+
+    public GrantExportEntity getGrantExportById(UUID exportId, UUID submissionId) {
+        final GrantExportId id = GrantExportId.builder().exportBatchId(exportId).submissionId(submissionId).build();
+        return exportRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                String.format("No grant export with export ID %s and submission ID %s was found", exportId, submissionId)));
+    }
 
     public Long getOutstandingExportCount(UUID exportId) {
         return exportRepository.countByIdExportBatchIdAndStatusNot(exportId, GrantExportStatus.COMPLETE);
