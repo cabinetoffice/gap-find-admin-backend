@@ -141,21 +141,24 @@ public class ApplicationFormService {
     }
 
     public void patchQuestionValues(Integer applicationId, String sectionId, String questionId,
-            ApplicationFormQuestionDTO questionDto) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+            ApplicationFormQuestionDTO questionDto, HttpSession session) {
+        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
 
-            if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-                throw new AccessDeniedException("User " + session.getGrantAdminId()
+            if (!adminSession.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
+                throw new AccessDeniedException("User " + adminSession.getGrantAdminId()
                         + " is unable to access the application form with id " + applicationId);
             }
 
             ApplicationFormQuestionDTO questionById = applicationForm.getDefinition().getSectionById(sectionId)
                     .getQuestionById(questionId);
 
-            QuestionAbstractPatchDTO questionPatchDTO = validatePatchQuestion(questionDto,
-                    questionById.getResponseType());
+            ResponseTypeEnum responseType = Optional
+                    .ofNullable(questionDto.getResponseType())
+                    .orElse(questionById.getResponseType());
+
+            QuestionAbstractPatchDTO questionPatchDTO = validatePatchQuestion(questionDto, responseType);
 
             if (questionPatchDTO.getClass() == QuestionGenericPatchDTO.class) {
                 this.applicationFormMapper.updateGenericQuestionPatchToQuestionDto(
@@ -166,9 +169,10 @@ public class ApplicationFormService {
                         (QuestionOptionsPatchDTO) questionPatchDTO, questionById);
             }
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
 
             this.applicationFormRepository.save(applicationForm);
+            this.sessionsService.deleteObjectFromSession(SessionObjectEnum.updatedQuestion, session);
         }, () -> {
             throw new NotFoundException("Application with id " + applicationId + " does not exist");
         });
@@ -197,8 +201,8 @@ public class ApplicationFormService {
         else {
             return mappedQuestion;
         }
-
     }
+
     // TODO GAP-2429: Refactor validation of validation Map to use a DTO with proper validation annotations
     private void validateMaxWordsValidationField(final ApplicationFormQuestionDTO questionPatchDto, final ResponseTypeEnum responseType) {
         if (responseType == ResponseTypeEnum.LongAnswer) {
