@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -34,11 +35,11 @@ public class SchemeService {
 
     private final SessionsService sessionsService;
 
-    private final UserService userService;
 
     private final GrantAdminRepository grantAdminRepository;
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
+
 
     @PostAuthorize("returnObject.createdBy == authentication.principal.grantAdminId or hasRole('SUPER_ADMIN')")
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
@@ -168,12 +169,16 @@ public class SchemeService {
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }
 
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(GrantAdmin grantAdmin, Integer schemeId) {
-        SchemeEntity scheme = this.schemeRepo.findById(schemeId)
+    public SchemeEntity findSchemeById(Integer schemeId) {
+       return this.schemeRepo.findById(schemeId)
                 .orElseThrow(() -> new SchemeEntityException(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: "
                                 + schemeId));
+    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void patchCreatedBy(GrantAdmin grantAdmin, Integer schemeId) {
+        SchemeEntity scheme = this.findSchemeById(schemeId);
         scheme.setCreatedBy(grantAdmin.getId());
         scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
