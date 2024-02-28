@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.application.questions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import lombok.Data;
 
 import javax.validation.constraints.Size;
@@ -32,6 +33,8 @@ public abstract class QuestionAbstractPatchDTO {
     @Size(min = 1, message = "Question suffix can not be blank")
     @Size(max = 255, message = "Question suffix can not be greater than 255 characters")
     private String questionSuffix;
+
+    private ResponseTypeEnum responseType;
 
     private Map<String, Object> validation;
 

@@ -10,6 +10,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -51,13 +52,13 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestionHappyPathTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         applicationFormQuestionDTO.setDisplayText("New display text");
-        doNothing().when(this.applicationFormService).patchQuestionValues(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
-                SAMPLE_QUESTION_ID, applicationFormQuestionDTO);
+        doNothing().when(this.applicationFormService).patchQuestionValues(eq(SAMPLE_APPLICATION_ID), eq(SAMPLE_SECTION_ID),
+                eq(SAMPLE_QUESTION_ID), eq(applicationFormQuestionDTO), any(HttpSession.class));
 
-        this.mockMvc
-                .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
-                        + "/questions/" + SAMPLE_QUESTION_ID).contentType(MediaType.APPLICATION_JSON)
-                                .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
+        this.mockMvc.perform(
+                patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/questions/" + SAMPLE_QUESTION_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(HelperUtils.asJsonString(applicationFormQuestionDTO)))
                 .andExpect(status().isOk());
 
         verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
@@ -77,7 +78,7 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestionGenericErrorTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         doThrow(new ApplicationFormException("Error message")).when(this.applicationFormService).patchQuestionValues(
-                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO);
+                eq(SAMPLE_APPLICATION_ID), eq(SAMPLE_SECTION_ID), eq(SAMPLE_QUESTION_ID), eq(applicationFormQuestionDTO), any(HttpSession.class));
 
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
@@ -93,7 +94,7 @@ class ApplicationFormQuestionsControllerTest {
     void updateQuestion_AccessDeniedTest() throws Exception {
         ApplicationFormQuestionDTO applicationFormQuestionDTO = new ApplicationFormQuestionDTO();
         doThrow(new AccessDeniedException("Error message")).when(this.applicationFormService).patchQuestionValues(
-                SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, applicationFormQuestionDTO);
+                eq(SAMPLE_APPLICATION_ID), eq(SAMPLE_SECTION_ID), eq(SAMPLE_QUESTION_ID), eq(applicationFormQuestionDTO), any(HttpSession.class));
 
         this.mockMvc
                 .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
@@ -312,6 +313,43 @@ class ApplicationFormQuestionsControllerTest {
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
 
         verifyNoInteractions(eventLogService);
+    }
+
+    @Nested
+    @WithAdminSession
+    class updateSectionOrder {
+
+        @Test
+        void updateSectionOrderHappyPathTest() throws Exception {
+
+            doNothing().when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
+                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1);
+
+            ApplicationFormQuestionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        void updateSectionOrderNoIncrement() throws Exception {
+
+            ApplicationFormQuestionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void updateSectionOrder_AccessDeniedTest() throws Exception {
+
+            doThrow(new AccessDeniedException("Error message"))
+                    .when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
+                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1);
+
+            ApplicationFormQuestionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))
+                    .andExpect(status().isForbidden()).andExpect(content().string(""));
+        }
+
     }
 
 }

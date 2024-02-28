@@ -49,9 +49,9 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")) })
     public ResponseEntity<Void> patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
-            @RequestBody @NotNull ApplicationFormQuestionDTO question) {
+            @RequestBody @NotNull ApplicationFormQuestionDTO question, HttpSession session) {
         try {
-            this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question);
+            this.applicationFormService.patchQuestionValues(applicationId, sectionId, questionId, question, session);
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
@@ -152,6 +152,32 @@ public class ApplicationFormQuestionsController {
         }
         catch (AccessDeniedException ade) {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @PatchMapping("/{questionId}/order/{increment}")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Question order updated successfully.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to update question.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "No question found with given ids.",
+                    content = @Content(mediaType = "application/json")) })
+    public ResponseEntity<String> updateSectionOrder(final HttpServletRequest request,
+                                                     final @PathVariable @NotBlank Integer applicationId,
+                                                     final @PathVariable @NotBlank String sectionId,
+                                                     final @PathVariable @NotBlank String questionId,
+                                                     final @PathVariable @NotBlank Integer increment) {
+        try {
+            this.applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment);
+            logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
+            return ResponseEntity.ok().build();
+        }
+        catch (NotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+        catch (AccessDeniedException ade) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 

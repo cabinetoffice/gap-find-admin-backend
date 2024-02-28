@@ -1,7 +1,11 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
+import gov.cabinetoffice.gap.adminbackend.dtos.FailedExportCountDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.OutstandingExportCountDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
+import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.GrantExportService;
@@ -18,6 +22,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -50,12 +57,12 @@ public class GrantExportControllerTest {
     @SpyBean
     private ValidationErrorMapperImpl validationErrorMapper;
 
+    private final UUID mockExportId = UUID.randomUUID();
+
     @Nested
     class getOutstandingExportsCount {
-
         @Test
         void successfullyGetOutstandingExportsCount() throws Exception {
-            final UUID mockExportId = UUID.randomUUID();
             final Long mockCount = 10L;
             final OutstandingExportCountDTO expectedResponse = new OutstandingExportCountDTO(mockCount);
 
@@ -73,7 +80,6 @@ public class GrantExportControllerTest {
 
         @Test
         void unexpectedErrorOccurred() throws Exception {
-            final UUID mockExportId = UUID.randomUUID();
             final Long mockCount = 10L;
             final OutstandingExportCountDTO expectedResponse = new OutstandingExportCountDTO(mockCount);
 
@@ -85,4 +91,102 @@ public class GrantExportControllerTest {
 
     }
 
+    @Nested
+    class getCompletedExportRecordsByBatchId {
+        @Test
+        void successfullyGetsCompletesExportRecords() throws Exception {
+            final UUID submissionId = UUID.randomUUID();
+            final List<GrantExportDTO> mockGrantExportDtoList = Collections.singletonList(GrantExportDTO.builder()
+                    .exportBatchId(mockExportId)
+                    .submissionId(submissionId)
+                    .applicationId(1)
+                    .status(GrantExportStatus.COMPLETE)
+                    .created(Instant.now())
+                    .createdBy(1)
+                    .lastUpdated(Instant.now())
+                    .location("location")
+                    .emailAddress("test-email@gmail.com").build());
+            final GrantExportListDTO mockGrantExportList = GrantExportListDTO.builder()
+                    .exportBatchId(mockExportId)
+                    .grantExports(mockGrantExportDtoList)
+                    .build();
+
+            when(mockGrantExportService.getGrantExportsByIdAndStatus(mockExportId, GrantExportStatus.COMPLETE))
+                    .thenReturn(mockGrantExportList);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/completed").header(HttpHeaders.AUTHORIZATION,
+                            LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(content().string(HelperUtils.asJsonString(mockGrantExportList)));
+        }
+
+        @Test
+        void exceptionThrown() throws Exception {
+            when(mockGrantExportService.getGrantExportsByIdAndStatus(mockExportId, GrantExportStatus.COMPLETE))
+                    .thenThrow(RuntimeException.class);
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/completed")
+                            .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER))
+                    .andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class getFailedExportsCount {
+        final UUID mockExportId = UUID.randomUUID();
+        final Long mockCount = 2L;
+        final FailedExportCountDTO expectedResponse = new FailedExportCountDTO(mockCount);
+
+        @Test
+        void successfullyGetFailedExportsCount() throws Exception {
+            when(mockGrantExportService.getFailedExportsCount(any())).thenReturn(mockCount);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount").header(HttpHeaders.AUTHORIZATION,
+                            LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(content().string(HelperUtils.asJsonString(expectedResponse)));
+        }
+
+        @Test
+        void badRequest_IncorrectPathVariables() throws Exception {
+            mockMvc.perform(get("/export-batch/this_isnt_a_uuid/failedCount")).andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void unexpectedErrorOccurred() throws Exception {
+            when(mockGrantExportService.getFailedExportsCount(any())).thenThrow(RuntimeException.class);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/failedCount").header(HttpHeaders.AUTHORIZATION,
+                    LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
+        }
+
+    }
+
+    @Nested
+    class getRemainingExportsCount {
+
+        final UUID mockExportId = UUID.randomUUID();
+        final Long mockCount = 10L;
+        final OutstandingExportCountDTO expectedResponse = new OutstandingExportCountDTO(mockCount);
+        @Test
+        void successfullyGetRemainingExportsCount() throws Exception {
+            when(mockGrantExportService.getRemainingExportsCount(any())).thenReturn(mockCount);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/remainingCount").header(HttpHeaders.AUTHORIZATION,
+                            LAMBDA_AUTH_HEADER)).andExpect(status().isOk())
+                    .andExpect(content().string(HelperUtils.asJsonString(expectedResponse)));
+        }
+
+        @Test
+        void badRequest_IncorrectPathVariables() throws Exception {
+            mockMvc.perform(get("/export-batch/this_isnt_a_uuid/remainingCount")).andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void unexpectedErrorOccurred() throws Exception {
+            when(mockGrantExportService.getRemainingExportsCount(any())).thenThrow(RuntimeException.class);
+
+            mockMvc.perform(get("/export-batch/" + mockExportId + "/remainingCount").header(HttpHeaders.AUTHORIZATION,
+                    LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
+        }
+
+    }
 }

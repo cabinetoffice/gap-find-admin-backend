@@ -2,16 +2,13 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPostDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundView;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.QuestionGenericPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapperImpl;
@@ -34,16 +31,11 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY;
 import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION;
@@ -362,7 +354,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
 
             ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
-                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO);
+                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, any(HttpSession.class));
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
             ApplicationFormQuestionDTO updatedQuestion = argument.getValue().getDefinition()
@@ -382,7 +374,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_SECOND_APPLICATION_FORM_ENTITY));
 
             ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
-                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_OPTIONS_PATCH_DTO);
+                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_OPTIONS_PATCH_DTO, any(HttpSession.class));
 
             Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
             ApplicationFormQuestionDTO updatedQuestion = argument.getValue().getDefinition()
@@ -396,11 +388,12 @@ class ApplicationFormServiceTest {
         @Test
         void patchQuestionValuesApplicationNotFoundPathTest() {
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO))
+                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, any(HttpSession.class)))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
@@ -417,7 +410,7 @@ class ApplicationFormServiceTest {
                     .thenCallRealMethod();
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, new ApplicationFormQuestionDTO()))
+                    SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, new ApplicationFormQuestionDTO(), any(HttpSession.class)))
                             .isInstanceOf(ConstraintViolationException.class);
 
         }
@@ -431,7 +424,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO))
+                    applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, any(HttpSession.class)))
                             .isInstanceOf(AccessDeniedException.class)
                             .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
@@ -762,7 +755,8 @@ class ApplicationFormServiceTest {
             final ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity()
                     .applicationStatus(ApplicationStatusEnum.PUBLISHED).build();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(patchedApplicationFormEntity))
                     .thenReturn(patchedApplicationFormEntity);
@@ -770,7 +764,7 @@ class ApplicationFormServiceTest {
             ApplicationFormServiceTest.this.applicationFormService.patchApplicationForm(applicationId,
                     SAMPLE_PATCH_APPLICATION_DTO, false);
 
-            verify(ApplicationFormServiceTest.this.applicationFormRepository).findById(applicationId);
+            verify(ApplicationFormServiceTest.this.applicationFormRepository).findByIdWithNoOwnershipCheck(applicationId);
             verify(ApplicationFormServiceTest.this.applicationFormMapper)
                     .updateApplicationEntityFromPatchDto(SAMPLE_PATCH_APPLICATION_DTO, testApplicationFormEntity);
             verify(ApplicationFormServiceTest.this.applicationFormRepository).save(patchedApplicationFormEntity);
@@ -798,7 +792,8 @@ class ApplicationFormServiceTest {
             final ApplicationFormEntity patchedApplicationFormEntity = randomApplicationFormEntity()
                     .applicationStatus(ApplicationStatusEnum.PUBLISHED).build();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(patchedApplicationFormEntity))
                     .thenThrow(new RuntimeException());
@@ -814,8 +809,8 @@ class ApplicationFormServiceTest {
             ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationEntity.getGrantApplicationId();
 
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
+                            .findByIdWithNoOwnershipCheck(applicationId)).thenReturn(Optional.of(testApplicationEntity));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
                     .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
@@ -870,5 +865,84 @@ class ApplicationFormServiceTest {
 
         verify(applicationFormRepository, never()).save(any());
     }
+
+
+    @Nested
+    class updateQuestionOrder {
+
+        @Test
+        void updateQuestionOrderSuccessful() {
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(
+                    List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").questions(
+                            new ArrayList<>(List.of(
+                                    ApplicationFormQuestionDTO.builder().questionId("Question1").build(),
+                                    ApplicationFormQuestionDTO.builder().questionId("Question2").build(),
+                                    ApplicationFormQuestionDTO.builder().questionId("Question3").build(),
+                                    ApplicationFormQuestionDTO.builder().questionId("Question4").build()
+                            ))
+                    ).build())
+            );
+            testApplicationFormEntity.getDefinition().setSections(sections);
+
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(0).getSectionId();
+            final String questionId = testApplicationFormEntity.getDefinition().getSections().get(0).getQuestions().get(1).getQuestionId();
+            final Integer increment = 1;
+
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            ApplicationFormServiceTest.this.applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment);
+
+            Mockito.verify(ApplicationFormServiceTest.this.applicationFormRepository).save(argument.capture());
+        }
+
+        @Test
+        void updateSectionOrderOutsideOfRange() {
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+            List<ApplicationFormSectionDTO> sections = new ArrayList<>(
+                    List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").questions(
+                            new ArrayList<>(List.of(
+                                    ApplicationFormQuestionDTO.builder().questionId("Question1").build(),
+                                    ApplicationFormQuestionDTO.builder().questionId("Question2").build(),
+                                    ApplicationFormQuestionDTO.builder().questionId("Question3").build(),
+                                    ApplicationFormQuestionDTO.builder().questionId("Question4").build()
+                            ))
+                    ).build())
+            );
+            testApplicationFormEntity.getDefinition().setSections(sections);
+
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = testApplicationFormEntity.getDefinition().getSections().get(0).getSectionId();
+            final String questionId = testApplicationFormEntity.getDefinition().getSections().get(0).getQuestions().get(0).getQuestionId();
+            final Integer increment = -1;
+
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment))
+                    .isInstanceOf(FieldViolationException.class).hasMessage("Question is already at the top");
+        }
+
+        @Test
+        void updateSectionOrderUnauthorised() {
+            final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().createdBy(2).build();
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final String sectionId = "test-section-id";
+            final String questionId = "test-question-id";
+            final Integer increment = 1;
+
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .updateQuestionOrder(applicationId, sectionId, questionId, increment)).isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + applicationId
+                            + " does not exist or insufficient permissions");
+
+        }
+
+    }
+
 
 }

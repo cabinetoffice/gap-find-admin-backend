@@ -1,0 +1,2 @@
+UPDATE public.gap_definition SET definition ['sections'][0]['pages'][2]['questions'][0]['hintText'] = '"Enter the full name of your organisation. \n\nFor example, ‘Department for Work and Pensions’ not ‘DWP’."'
+WHERE gap_definition_id  = 1;
