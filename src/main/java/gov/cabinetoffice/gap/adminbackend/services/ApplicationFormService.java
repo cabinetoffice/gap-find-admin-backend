@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.TemplateApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -15,6 +16,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -30,10 +32,12 @@ import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 
 import static java.lang.Integer.parseInt;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -44,11 +48,32 @@ public class ApplicationFormService {
 
     private final TemplateApplicationFormRepository templateApplicationFormRepository;
 
+    private final SchemeRepository schemeRepository;
+
     private final ApplicationFormMapper applicationFormMapper;
 
     private final SessionsService sessionsService;
 
     private final Validator validator;
+
+    private final Clock clock;
+
+    public ApplicationFormEntity save(ApplicationFormEntity applicationForm) {
+        final ApplicationFormEntity savedApplicationForm = save(applicationForm);
+
+        Optional.ofNullable(HelperUtils.getAdminSessionForAuthenticatedUser())
+                .ifPresentOrElse(adminSession -> {
+                    final SchemeEntity grantScheme = schemeRepository.findById(applicationForm.getGrantSchemeId())
+                            .orElseThrow(() -> new EntityNotFoundException("Could not find grant scheme with ID" + applicationForm.getGrantSchemeId()));
+
+                    grantScheme.setLastUpdated(Instant.now(clock));
+                    grantScheme.setLastUpdatedBy(adminSession.getGrantAdminId());
+
+                    this.schemeRepository.save(grantScheme);
+                }, () -> log.warn("Admin session was null. Update must have been performed by a lambda."));
+
+        return savedApplicationForm;
+    }
 
     /**
      * This method is responsible for saving basic details about an application form to
@@ -64,12 +89,16 @@ public class ApplicationFormService {
                     .orElseThrow(() -> new ApplicationFormException("Could not retrieve template application form"));
 
             final ApplicationFormEntity newFormEntity = ApplicationFormEntity.createFromTemplate(
-                    applicationFormDTO.getGrantSchemeId(), applicationFormDTO.getApplicationName(),
-                    session.getGrantAdminId(), formTemplate.getDefinition(), parseInt(scheme.getVersion()));
+                    applicationFormDTO.getGrantSchemeId(),
+                    applicationFormDTO.getApplicationName(),
+                    session.getGrantAdminId(),
+                    formTemplate.getDefinition(),
+                    parseInt(scheme.getVersion())
+            );
 
             newFormEntity.setCreatedBy(session.getGrantAdminId());
 
-            final ApplicationFormEntity save = this.applicationFormRepository.save(newFormEntity);
+            final ApplicationFormEntity save = save(newFormEntity);
             return new GenericPostResponseDTO(save.getGrantApplicationId());
         }
         catch (ApplicationFormException e) {
@@ -171,7 +200,7 @@ public class ApplicationFormService {
 
             ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
 
-            this.applicationFormRepository.save(applicationForm);
+            save(applicationForm);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.updatedQuestion, session);
         }, () -> {
             throw new NotFoundException("Application with id " + applicationId + " does not exist");
@@ -259,7 +288,7 @@ public class ApplicationFormService {
 
             ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
 
-            this.applicationFormRepository.save(applicationForm);
+            save(applicationForm);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newQuestion, session);
         }, () -> {
             throw new NotFoundException("Application with id " + applicationId + " does not exist");
@@ -319,8 +348,7 @@ public class ApplicationFormService {
 
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
 
-        this.applicationFormRepository.save(applicationForm);
-
+        save(applicationForm);
     }
 
     public ApplicationFormQuestionDTO retrieveQuestion(Integer applicationId, String sectionId, String questionId) {
@@ -365,7 +393,7 @@ public class ApplicationFormService {
 
             ApplicationFormUtils.updateAuditDetailsAfterFormChange(application, session, isLambdaCall);
 
-            this.applicationFormRepository.save(application);
+            save(application);
         }
         catch (Exception e) {
             throw new ApplicationFormException("Error occurred when patching application with id of " + applicationId,
@@ -381,7 +409,7 @@ public class ApplicationFormService {
         if (applicationOptional.isPresent()) {
             final ApplicationFormEntity application = applicationOptional.get();
             application.setCreatedBy(adminId);
-            this.applicationFormRepository.save(application);
+            save(application);
         }
     }
 
@@ -409,6 +437,6 @@ public class ApplicationFormService {
         questions.add(newSectionIndex, question);
 
         applicationForm.getDefinition().setSections(sections);
-        this.applicationFormRepository.save(applicationForm);
+        save(applicationForm);
     }
 }
