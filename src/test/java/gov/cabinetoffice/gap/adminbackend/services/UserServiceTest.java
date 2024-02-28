@@ -10,6 +10,8 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -209,4 +211,22 @@ class UserServiceTest {
         assert (grantAdminId.getFunder().getId() == 1);
     }
 
+    @Test
+    void getGrantAdminById_Success() {
+        final Integer userId = 1;
+        final GrantAdmin admin = GrantAdmin.builder()
+                .id(userId)
+                .build();
+
+        when(grantAdminRepository.findById(userId))
+                .thenReturn(Optional.of(admin));
+
+        final Optional<GrantAdmin> result = userService.getGrantAdminById(userId);
+
+        verify(grantAdminRepository).findById(userId);
+        result.ifPresentOrElse(
+                grantAdmin -> assertThat(grantAdmin).isEqualTo(admin),
+                () -> fail("Grant Admin not present, something is broken")
+        );
+    }
 }

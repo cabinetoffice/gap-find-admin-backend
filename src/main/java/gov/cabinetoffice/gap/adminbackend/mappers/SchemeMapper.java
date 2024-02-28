@@ -55,7 +55,7 @@ public abstract class SchemeMapper {
                     final String sub = admin.getGapUser().getUserSub();
                     return "thisNeedsReplaced@email.com"; // TODO go to user service and get email from sub after John commits his changes
                 })
-                .get();
+                .orElse("-"); // Should literally never end up in here but would rather display a blank value than throw an error
         final Instant lastUpdatedDate = isLastUpdatedBySet ? schemeEntity.getLastUpdated() : schemeEntity.getCreatedDate();
 
         schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
