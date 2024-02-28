@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditor.SchemeEditorPostDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEditor.GetSchemeEditorsException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEditor.IsOwnerCheckException;
@@ -11,12 +12,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.util.List;
 
 @Tag(name = "Scheme Editors", description = "API for handling scheme editors.")
@@ -51,6 +50,13 @@ public class SchemeEditorController {
             log.error("Error getting scheme editors", e);
             throw new GetSchemeEditorsException(e.getMessage());
         }
+    }
+
+    @PostMapping()
+    public ResponseEntity<String> addEditorToScheme(@PathVariable final Integer schemeId, @RequestBody @Valid final SchemeEditorPostDTO newEditorDto, final HttpServletRequest request) {
+        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
+        schemeEditorService.addEditorToScheme(schemeId, newEditorDto.getEditorEmailAddress(), jwt);
+        return ResponseEntity.ok("Editor added to scheme successfully");
     }
 
 }

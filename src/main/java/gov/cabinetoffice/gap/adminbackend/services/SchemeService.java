@@ -7,14 +7,12 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
-import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,7 +24,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +35,6 @@ public class SchemeService {
 
     private final SessionsService sessionsService;
 
-
-    private final GrantAdminRepository grantAdminRepository;
 
     private final GrantAdminRepository grantAdminRepository;
 
@@ -191,31 +186,6 @@ public class SchemeService {
         scheme.setCreatedBy(grantAdmin.getId());
         scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
-    }
-
-    public SchemeEntity addEditorToScheme(Integer schemeId, String editorEmailAddress, String jwt) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-        SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
-        List<GrantAdmin> existingEditors = scheme.getGrantAdmins();
-        GrantAdmin editorToAdd;
-        try {
-            editorToAdd = userService.getGrantAdminIdFromUserServiceEmail(editorEmailAddress, jwt);
-        } catch (Exception e) {
-            throw new FieldViolationException("editorEmailAddress", "This account does not have an 'Administrator' account.");
-        }
-
-        if (existingEditors.stream().anyMatch(editor -> editor.getId().equals(editorToAdd.getId()))) {
-            throw new FieldViolationException("editorEmailAddress", "This email address is already an editor for this scheme");
-        }
-
-        if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
-            throw new AccessDeniedException(
-                    "You are unable to add an editor to the scheme with id " + schemeId);
-        }
-
-        scheme.addAdmin(editorToAdd);
-        this.schemeRepo.save(scheme);
-        return scheme;
     }
 
 }

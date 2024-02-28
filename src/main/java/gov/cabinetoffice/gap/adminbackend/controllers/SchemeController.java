@@ -262,10 +262,4 @@ public class SchemeController {
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping("/{schemeId}/editors")
-    public ResponseEntity<String> addEditorToScheme(@PathVariable final Integer schemeId, @RequestBody @Valid final SchemeEditorPostDTO newEditorDto, final HttpServletRequest request) {
-        final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-        schemeService.addEditorToScheme(schemeId, newEditorDto.getEditorEmailAddress(), jwt);
-        return ResponseEntity.ok("Editor added to scheme successfully");
-    }
 }

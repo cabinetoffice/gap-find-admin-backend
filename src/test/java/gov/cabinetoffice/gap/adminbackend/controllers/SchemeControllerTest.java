@@ -439,29 +439,4 @@ class SchemeControllerTest {
                 .andExpect(content().string("{\"error\":{\"message\":\"\"}}"));
     }
 
-    @Test
-    void addEditorToScheme_HappyPath() throws Exception {
-        SchemeEditorPostDTO schemeEditorPostDTO = SchemeEditorPostDTO.builder().editorEmailAddress("test@test.gov").build();
-        when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
-        when(schemeService.addEditorToScheme(1, "test@test.gov", "jwt")).thenReturn(SCHEME_ENTITY_EXAMPLE);
-            mockMvc.perform(post("/schemes/1/editors")
-                    .content(HelperUtils.asJsonString(schemeEditorPostDTO))
-                    .cookie(new Cookie("user-service-token", "jwt"))
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk());
-
-    }
-
-    @Test
-    void addEditorToScheme_isBadRequestWhenServiceMethodThrows() throws Exception {
-        SchemeEditorPostDTO schemeEditorPostDTO = SchemeEditorPostDTO.builder().editorEmailAddress("test@test.gov").build();
-        when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
-        when(schemeService.addEditorToScheme(1, "test@test.gov", "jwt")).thenThrow(new FieldViolationException("editorEmailAddress", "editorEmailAddress is already an editor of this scheme"));
-        mockMvc.perform(post("/schemes/1/editors")
-                .content(HelperUtils.asJsonString(schemeEditorPostDTO))
-                .cookie(new Cookie("user-service-token", "jwt"))
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
-    }
-
 }
