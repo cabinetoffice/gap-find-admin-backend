@@ -37,6 +37,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -77,8 +79,10 @@ public class GrantAdvertService {
     private final FeatureFlagsConfigurationProperties featureFlagsProperties;
 
     public GrantAdvert save(GrantAdvert advert) {
-        Optional.ofNullable(HelperUtils.getAdminSessionForAuthenticatedUser())
-                .ifPresentOrElse(adminSession -> {
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional.ofNullable(auth)
+                .ifPresentOrElse(authentication -> {
+                    final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
                     final GrantAdmin admin = grantAdminRepository.findByGapUserUserSub(adminSession.getUserSub())
                             .orElseThrow(() -> new UserNotFoundException("Could not find an admin with sub " + adminSession.getUserSub()));
 

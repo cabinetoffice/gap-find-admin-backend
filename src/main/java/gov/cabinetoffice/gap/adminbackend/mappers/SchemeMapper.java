@@ -1,18 +1,27 @@
 package gov.cabinetoffice.gap.adminbackend.mappers;
 
+import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
+import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @Primary
@@ -20,11 +29,37 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public abstract class SchemeMapper {
 
+    public static final String EMPTY_EMAIL_VALUE = "-";
+
     private UserService userService;
+    private AwsEncryptionServiceImpl encryptionService;
+    private LambdaSecretConfigProperties lambdaSecretConfigProperties;
+    private UserServiceConfig userServiceConfig;
+    private WebClient.Builder webClientBuilder;
 
     @Autowired
     public final void setUserService(final UserService userService) {
         this.userService = userService;
+    }
+
+    @Autowired
+    public final void setEncryptionService(AwsEncryptionServiceImpl encryptionService) {
+        this.encryptionService = encryptionService;
+    }
+
+    @Autowired
+    public final void setWebClientBuilder(WebClient.Builder webClientBuilder) {
+        this.webClientBuilder = webClientBuilder;
+    }
+
+    @Autowired
+    public final void setLambdaSecretConfigProperties(LambdaSecretConfigProperties lambdaSecretConfigProperties) {
+        this.lambdaSecretConfigProperties = lambdaSecretConfigProperties;
+    }
+
+    @Autowired
+    public final void setUserServiceConfig(UserServiceConfig userServiceConfig) {
+        this.userServiceConfig = userServiceConfig;
     }
 
     public SchemeDTO schemeEntityToDto(SchemeEntity schemeEntity) {
@@ -53,15 +88,39 @@ public abstract class SchemeMapper {
         final String lastUpdatedByEmail = userService.getGrantAdminById(lastUpdatedBy)
                 .map(admin -> {
                     final String sub = admin.getGapUser().getUserSub();
-                    return "thisNeedsReplaced@email.com"; // TODO go to user service and get email from sub after John commits his changes
+                    return getEmailAddressForSub(sub);
                 })
-                .orElse("-"); // Should literally never end up in here but would rather display a blank value than throw an error
+                .orElse(EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
         final Instant lastUpdatedDate = isLastUpdatedBySet ? schemeEntity.getLastUpdated() : schemeEntity.getCreatedDate();
+
+        System.out.println("last updated by: " + lastUpdatedByEmail);
+        System.out.println("last updated on: " + lastUpdatedDate);
 
         schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
         schemeDTO.lastUpdatedDate(lastUpdatedDate);
 
         return schemeDTO.build();
+    }
+
+    private String getEmailAddressForSub(final String sub) {
+        final String url = userServiceConfig.getDomain() + "/users/emails";
+        final ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {};
+
+        final List<UserEmailResponseDto> response = webClientBuilder.build()
+                .post()
+                .uri(url)
+                .body(BodyInserters.fromValue(List.of(sub)))
+                .header("Authorization", lambdaSecretConfigProperties.getSecret())
+                .retrieve()
+                .bodyToMono(responseType)
+                .block();
+
+        return Optional.ofNullable(response)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(userEmailDto -> encryptionService.decryptField(userEmailDto.emailAddress()))
+                .findFirst()
+                .orElse(EMPTY_EMAIL_VALUE);
     }
 
     public abstract List<SchemeDTO> schemeEntityListtoDtoList(List<SchemeEntity> schemeEntityList);
