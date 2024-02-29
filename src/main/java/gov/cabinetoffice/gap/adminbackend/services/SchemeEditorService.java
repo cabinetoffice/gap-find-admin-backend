@@ -96,14 +96,13 @@ public class SchemeEditorService {
                 .toList();
     }
 
-    public SchemeEntity addEditorToScheme(Integer schemeId, String editorEmailAddress, String jwt) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+    public SchemeEntity addEditorToScheme(final Integer schemeId, final String editorEmailAddress, final String jwt) {
         SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
         List<GrantAdmin> existingEditors = scheme.getGrantAdmins();
         GrantAdmin editorToAdd;
         try {
             editorToAdd = userService.getGrantAdminIdFromUserServiceEmail(editorEmailAddress, jwt);
-        } catch (Exception e) {
+        } catch (NotFoundException e) {
             throw new FieldViolationException("editorEmailAddress", "This account does not have an 'Administrator' account.");
         }
 
@@ -111,14 +110,8 @@ public class SchemeEditorService {
             throw new FieldViolationException("editorEmailAddress", "This email address is already an editor for this scheme");
         }
 
-        if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
-            throw new AccessDeniedException(
-                    "You are unable to add an editor to the scheme with id " + schemeId);
-        }
-
         scheme.addAdmin(editorToAdd);
-        this.schemeRepo.save(scheme);
-        return scheme;
+        return this.schemeRepo.save(scheme);
     }
 
 }
