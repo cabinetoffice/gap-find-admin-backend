@@ -39,7 +39,7 @@ public class SchemeEditorController {
         }
     }
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<List<SchemeEditorsDTO>> getSchemeEditors(@PathVariable final Integer schemeId,
                                                                    final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
@@ -52,7 +52,7 @@ public class SchemeEditorController {
         }
     }
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<String> addEditorToScheme(@PathVariable final Integer schemeId, @RequestBody @Valid final SchemeEditorPostDTO newEditorDto, final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
         schemeEditorService.addEditorToScheme(schemeId, newEditorDto.getEditorEmailAddress(), jwt);
