@@ -93,9 +93,6 @@ public abstract class SchemeMapper {
                 .orElse(EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
         final Instant lastUpdatedDate = isLastUpdatedBySet ? schemeEntity.getLastUpdated() : schemeEntity.getCreatedDate();
 
-        System.out.println("last updated by: " + lastUpdatedByEmail);
-        System.out.println("last updated on: " + lastUpdatedDate);
-
         schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
         schemeDTO.lastUpdatedDate(lastUpdatedDate);
 
