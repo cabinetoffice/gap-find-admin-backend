@@ -14,7 +14,7 @@ import javax.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
-@EntityListeners({AuditingEntityListener.class})
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @ToString

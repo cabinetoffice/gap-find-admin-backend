@@ -1,21 +1,32 @@
 package gov.cabinetoffice.gap.adminbackend.mappers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
+import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
+import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.Mock;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -74,12 +85,29 @@ class SchemeMapperTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private AwsEncryptionServiceImpl encryptionService;
+
+    @Mock
+    private LambdaSecretConfigProperties lambdaSecretConfigProperties;
+
+    @Mock
+    private UserServiceConfig userServiceConfig;
+
+    @Mock
+    private WebClient.Builder webClientBuilder;
+
     private TestSchemeMapperImpl schemeMapper;
 
     @BeforeEach
     void setup() {
         schemeMapper = new TestSchemeMapperImpl();
+
         schemeMapper.setUserService(userService);
+        schemeMapper.setUserServiceConfig(userServiceConfig);
+        schemeMapper.setEncryptionService(encryptionService);
+        schemeMapper.setLambdaSecretConfigProperties(lambdaSecretConfigProperties);
+        schemeMapper.setWebClientBuilder(webClientBuilder);
     }
 
     @Test
@@ -106,10 +134,42 @@ class SchemeMapperTest {
                 .gapUser(user)
                 .build();
 
-        final String updatedBy = "thisNeedsReplaced@email.com"; // TODO change this to be a when...thenreturn once the call to user service is implemented
+        final String updatedBy = "thisNeedsReplaced@email.com";
+        final byte[] encryptedEmail = updatedBy.getBytes();
 
-        when(userService.getGrantAdminById(createdBy))
+        final WebClient webClient = mock(WebClient.class);
+        final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        when(responseSpec.bodyToMono(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {}))
+                .thenReturn(
+                        Mono.just(
+                                Arrays.asList(UserEmailResponseDto.builder()
+                                        .emailAddress(encryptedEmail)
+                                        .build()
+                                )
+                        )
+                );
+
+        when(userService.getGrantAdminById(grantAdminId))
                 .thenReturn(Optional.of(grantAdmin));
+
+        when(encryptionService.decryptField(encryptedEmail))
+                .thenReturn(updatedBy);
+
+        when(userServiceConfig.getDomain())
+                .thenReturn("https://user-service-domain");
+
+        when(lambdaSecretConfigProperties.getSecret())
+                .thenReturn("secret");
 
         // make sure we will end up going down the null "updated by" path
         assertThat(scheme.getLastUpdatedBy()).isNull();
@@ -149,10 +209,42 @@ class SchemeMapperTest {
                 .gapUser(user)
                 .build();
 
-        final String updatedBy = "thisNeedsReplaced@email.com"; // TODO change this to be a when...thenreturn once the call to user service is implemented
+        final String updatedBy = "thisNeedsReplaced@email.com";
+        final byte[] encryptedEmail = updatedBy.getBytes();
+
+        final WebClient webClient = mock(WebClient.class);
+        final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        when(responseSpec.bodyToMono(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {}))
+                .thenReturn(
+                        Mono.just(
+                                Arrays.asList(UserEmailResponseDto.builder()
+                                        .emailAddress(encryptedEmail)
+                                        .build()
+                                )
+                        )
+                );
 
         when(userService.getGrantAdminById(grantAdminId))
                 .thenReturn(Optional.of(grantAdmin));
+
+        when(encryptionService.decryptField(encryptedEmail))
+                .thenReturn(updatedBy);
+
+        when(userServiceConfig.getDomain())
+                .thenReturn("https://user-service-domain");
+
+        when(lambdaSecretConfigProperties.getSecret())
+                .thenReturn("secret");
 
         // make sure we won't end up going down the null "updated by" path
         assertThat(scheme.getLastUpdatedBy()).isNotNull();

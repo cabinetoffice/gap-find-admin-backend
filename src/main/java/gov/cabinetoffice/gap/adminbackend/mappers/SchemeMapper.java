@@ -107,7 +107,7 @@ public abstract class SchemeMapper {
                 .post()
                 .uri(url)
                 .body(BodyInserters.fromValue(List.of(sub)))
-                .header("Authorization", lambdaSecretConfigProperties.getSecret())
+                .headers(h -> h.set("Authorization", lambdaSecretConfigProperties.getSecret()))
                 .retrieve()
                 .bodyToMono(responseType)
                 .block();
