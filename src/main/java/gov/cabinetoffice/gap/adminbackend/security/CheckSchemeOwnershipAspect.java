@@ -1,6 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.security;
 
-import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormNoSections;
+import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
@@ -44,13 +44,13 @@ public class CheckSchemeOwnershipAspect {
         Map<String, Object> methodArgumentsMap = getMethodArguments(joinPoint);
         Integer schemeId = fetchSchemeIdFromMethodArgs(methodArgumentsMap);
 
-        SchemeEntity scheme = schemeRepository.findById(schemeId).orElseThrow();
+        SchemeEntity scheme = schemeRepository.findById(schemeId).orElseThrow(NotFoundException::new);
 
         boolean isSchemeEditor = scheme.getGrantAdmins().stream().anyMatch(grantAdmin -> grantAdmin.getId()
                 .equals(session.getGrantAdminId()));
 
         if (!isSchemeEditor) {
-            throw new AccessDeniedException(String.format("User with sub %s does not have access to scheme with id %s",
+            throw new AccessDeniedException(String.format("User with id %s does not have access to scheme with id %s",
                     session.getGrantAdminId(), schemeId));
         }
     }
@@ -59,46 +59,46 @@ public class CheckSchemeOwnershipAspect {
         Integer extractSchemeId(Object obj);
     }
 
-    private final Map<String, SchemeIdExtractor> EXTRACTORS = Map.of(
+    private final Map<String, SchemeIdExtractor> schemeIdExtractors = Map.of(
             "schemeId", this::castResponseIdToInteger,
             "grantSchemeId", this::castResponseIdToInteger,
             "grantAdvertId", this::extractSchemeIdFromAdvert,
             "applicationId", this::extractSchemeIdFromApplication,
             "createGrantAdvertDto", this::extractGrantSchemeIdFromDto,
             "applicationFormPostDTO", this::extractGrantSchemeIdFromDto,
-            "applicationFormExistsDto", this::extractGrantSchemeIdFromDto
+            "applicationFormExistsDTO", this::extractGrantSchemeIdFromDto
     );
 
 
     private Integer fetchSchemeIdFromMethodArgs(Map<String, Object> methodArgs) {
-        for (String key : methodArgs.keySet()) {
-            if (EXTRACTORS.containsKey(key)) {
-                return EXTRACTORS.get(key).extractSchemeId(methodArgs.get(key));
+        for (Map.Entry<String,Object> entry : methodArgs.entrySet()) {
+            if (schemeIdExtractors.containsKey(entry.getKey())) {
+                return schemeIdExtractors.get(entry.getKey()).extractSchemeId(methodArgs.get(entry.getKey()));
             }
         }
         throw new IllegalArgumentException("Unable to retrieve scheme Id from request " + methodArgs.keySet());
     }
 
-    public Integer extractSchemeIdFromAdvert(Object id) {
+    public Integer extractSchemeIdFromAdvert(Object value) {
 
-        if (id instanceof UUID) {
-            GrantAdvert advert = grantAdvertRepository.findById((UUID) id).orElseThrow(NotFoundException::new);
+        if (value instanceof UUID id) {
+            GrantAdvert advert = grantAdvertRepository.findById(id).orElseThrow(NotFoundException::new);
             return advert.getScheme().getId();
         } else {
             throw new IllegalArgumentException("Unable to extract grantSchemeId from Advert: " +
-                    "value is not an instance of UUID " + id);
+                    "value is not an instance of UUID " + value);
         }
     }
 
-    public Integer extractSchemeIdFromApplication(Object id) {
+    public Integer extractSchemeIdFromApplication(Object value) {
 
-        if (id instanceof Integer) {
-            ApplicationFormNoSections application = applicationFormRepository
-                    .findByGrantApplicationId((Integer) id).orElseThrow(NotFoundException::new);
+        if (value instanceof Integer id) {
+            ApplicationFormEntity application = applicationFormRepository
+                    .findById(id).orElseThrow(NotFoundException::new);
             return application.getGrantSchemeId();
         } else {
             throw new IllegalArgumentException("Unable to extract grantSchemeId from Application: " +
-                    "value is not an instance of Integer " + id);
+                    "value is not an instance of Integer " + value);
         }
     }
 
@@ -112,8 +112,8 @@ public class CheckSchemeOwnershipAspect {
     }
 
     private Integer castResponseIdToInteger(Object value) {
-        if (value instanceof Integer) {
-            return (Integer) value;
+        if (value instanceof Integer id) {
+            return id;
         }
 
         // In some cases String integers are used in the request
@@ -121,15 +121,6 @@ public class CheckSchemeOwnershipAspect {
             return Integer.parseInt(value.toString());
         } catch (NumberFormatException | NullPointerException e) {
             throw new IllegalArgumentException("Value cannot be parsed to an integer: " + value);
-        }
-    }
-
-    private boolean isStringInt(Object value) {
-        try {
-            Integer.parseInt((String) value);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
         }
     }
 

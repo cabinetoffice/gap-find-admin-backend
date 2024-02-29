@@ -266,11 +266,11 @@ class GrantAdvertServiceTest {
             final UUID advertId = UUID.randomUUID();
             final Integer adminId = 1;
 
-            when(grantAdvertRepository.deleteByIdAndCreatedById(advertId, adminId)).thenReturn(1L);
+            when(grantAdvertRepository.deleteByIdAndSchemeEditor(advertId, adminId)).thenReturn(1);
 
             grantAdvertService.deleteGrantAdvert(advertId);
 
-            verify(grantAdvertRepository).deleteByIdAndCreatedById(advertId, adminId);
+            verify(grantAdvertRepository).deleteByIdAndSchemeEditor(advertId, adminId);
         }
 
         @Test

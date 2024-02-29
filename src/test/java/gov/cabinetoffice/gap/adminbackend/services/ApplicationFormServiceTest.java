@@ -187,7 +187,7 @@ class ApplicationFormServiceTest {
             ApplicationFormsFoundDTO applicationFormFoundDTO = randomApplicationFormFound().build();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
-                    .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
+                    .findMatchingApplicationForm(null, null, this.schemeId))
                     .thenReturn(applicationFoundViewList);
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
                     .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
@@ -198,7 +198,7 @@ class ApplicationFormServiceTest {
         @Test
         void noApplicationFormFoundInRepository() {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
-                    .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
+                    .findMatchingApplicationForm(null, null, this.schemeId))
                     .thenReturn(Collections.emptyList());
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
                     .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
@@ -217,7 +217,7 @@ class ApplicationFormServiceTest {
                     .submissionCount(1).build();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
-                    .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
+                    .findMatchingApplicationForm(null, null, this.schemeId))
                     .thenReturn(applicationFoundViewList);
 
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
@@ -266,20 +266,6 @@ class ApplicationFormServiceTest {
             applicationFormDTO.getSections().forEach(section -> assertThat(section.getQuestions() == null));
         }
 
-        @Test
-        void retrieveApplicationFormSummary_AccessDenied() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveApplicationFormSummary(applicationId, true, true))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
-        }
-
     }
 
     @Nested
@@ -313,20 +299,6 @@ class ApplicationFormServiceTest {
                     () -> ApplicationFormServiceTest.this.applicationFormService.deleteApplicationForm(applicationId))
                             .hasMessage("No application found with id " + applicationId)
                             .isInstanceOf(EntityNotFoundException.class);
-        }
-
-        @Test
-        void deleteApplicationFormInsufficientPermissionsToDeleteThisApplication() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(
-                    () -> ApplicationFormServiceTest.this.applicationFormService.deleteApplicationForm(applicationId))
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId)
-                            .isInstanceOf(AccessDeniedException.class);
         }
 
     }

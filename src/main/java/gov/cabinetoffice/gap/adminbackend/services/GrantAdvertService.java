@@ -262,8 +262,7 @@ public class GrantAdvertService {
     public void deleteGrantAdvert(UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        // todo: co-auth - refactor this query
-        Long deletedCount = grantAdvertRepository.deleteByIdAndCreatedById(grantAdvertId, session.getGrantAdminId());
+        int deletedCount = grantAdvertRepository.deleteByIdAndSchemeEditor(grantAdvertId, session.getGrantAdminId());
 
         if (deletedCount == 0)
             throw new NotFoundException("Grant Advert not found with id of " + grantAdvertId);

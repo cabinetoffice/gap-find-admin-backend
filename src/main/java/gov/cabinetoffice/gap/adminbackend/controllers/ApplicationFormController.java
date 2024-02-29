@@ -81,6 +81,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No Application form found",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<List<ApplicationFormsFoundDTO>> checkApplicationFormsExists(
             @Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
         List<ApplicationFormsFoundDTO> foundApplicationForms = this.applicationFormService
@@ -104,6 +105,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> getApplicationFormSummary(@PathVariable @NotNull Integer applicationId,
             @RequestParam(defaultValue = "true") Boolean withSections,
             @RequestParam(defaultValue = "true") Boolean withQuestions) {
