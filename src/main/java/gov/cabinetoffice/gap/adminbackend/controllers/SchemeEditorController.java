@@ -11,10 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -51,6 +48,12 @@ public class SchemeEditorController {
             log.error("Error getting scheme editors", e);
             throw new GetSchemeEditorsException(e.getMessage());
         }
+    }
+
+    @DeleteMapping(value = "/{editorId}")
+    public ResponseEntity<String> deleteSchemeEditor(@PathVariable Integer schemeId, @PathVariable Integer editorId) {
+        schemeEditorService.deleteEditor(schemeId, editorId);
+        return ResponseEntity.ok().build();
     }
 
 }

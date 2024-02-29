@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.DecryptedUserEmailResponse;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import org.springframework.web.reactive.function.BodyInserters;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
@@ -24,9 +25,11 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class SchemeEditorService {
+
     private final SchemeService schemeService;
     private final AwsEncryptionServiceImpl awsEncryptionService;
     private final SchemeRepository schemeRepo;
+    private final GrantAdminRepository grantAdminRepository;
     private final UserServiceConfig userServiceConfig;
     private final WebClient.Builder webClientBuilder;
 
@@ -71,14 +74,12 @@ public class SchemeEditorService {
                 .toList();
     }
 
-    private List<DecryptedUserEmailResponse> getEmailsFromUserSubBatch(final List<String> userSubs,
-            final String authHeader) {
+    private List<DecryptedUserEmailResponse> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
         final String url = userServiceConfig.getDomain() + "/user-emails-from-subs";
 
         UserEmailRequestDto requestBody = UserEmailRequestDto.builder().userSubs(userSubs).build();
 
-        ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {
-        };
+        ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {};
 
         List<UserEmailResponseDto> response = webClientBuilder.build().post()
                 .uri(url).body(BodyInserters.fromValue(requestBody))
@@ -90,4 +91,17 @@ public class SchemeEditorService {
                 .toList();
     }
 
+    public void deleteEditor(final Integer schemeId, final Integer editorId) {
+        final SchemeEntity scheme = schemeRepo.findById(schemeId)
+                .orElseThrow(() -> new NotFoundException("Delete scheme editor: Scheme not found"));
+
+        if (scheme.getCreatedBy().equals(editorId))
+            throw new NotFoundException("Delete scheme editor: Cannot delete scheme creator");
+
+        final GrantAdmin grantAdmin = grantAdminRepository.findById(editorId)
+                .orElseThrow(() -> new NotFoundException("Delete scheme editor: Grant Admin with editor access not found for this scheme"));
+
+        scheme.removeAdmin(grantAdmin);
+        schemeRepo.save(scheme);
+    }
 }
