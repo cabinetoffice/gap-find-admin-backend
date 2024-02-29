@@ -15,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -139,5 +141,4 @@ public class UserService {
 
         }
     }
-
 }
