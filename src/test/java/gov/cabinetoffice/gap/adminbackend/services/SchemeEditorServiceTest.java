@@ -71,8 +71,8 @@ public class SchemeEditorServiceTest {
 
     @Test
     void testGetEditorsFromSchemeId_happyPath() {
-        GrantAdmin grantAdmin1 = GrantAdmin.builder().id(1).gapUser(GapUser.builder().userSub("sub").build()).build();
-        GrantAdmin grantAdmin2 = GrantAdmin.builder().id(2).gapUser(GapUser.builder().userSub("sub").build()).build();
+        GrantAdmin grantAdmin1 = GrantAdmin.builder().id(1).gapUser(GapUser.builder().userSub("sub1").build()).build();
+        GrantAdmin grantAdmin2 = GrantAdmin.builder().id(2).gapUser(GapUser.builder().userSub("sub2").build()).build();
         List<GrantAdmin> editors = Arrays.asList(grantAdmin1, grantAdmin2);
         SchemeEntity schemeEntity = SchemeEntity.builder().id(1).createdBy(1).grantAdmins(editors).build();
         when(userServiceConfig.getDomain()).thenReturn("domain");
@@ -93,8 +93,8 @@ public class SchemeEditorServiceTest {
 
         when(responseSpec.bodyToMono(eq(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {})))
                 .thenReturn(Mono.just(Arrays.asList(
-                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build(),
-                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build())));
+                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).sub("sub1").build(),
+                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).sub("sub2").build())));
 
         when(awsEncryptionService.decryptField(any())).thenReturn("decrypted-email");
 
