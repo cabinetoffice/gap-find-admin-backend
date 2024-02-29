@@ -148,6 +148,7 @@ class SchemeMapperTest {
         when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(requestHeadersSpec.headers(any())).thenReturn(requestHeadersSpec);
 
         when(responseSpec.bodyToMono(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {}))
                 .thenReturn(
@@ -159,7 +160,7 @@ class SchemeMapperTest {
                         )
                 );
 
-        when(userService.getGrantAdminById(grantAdminId))
+        when(userService.getGrantAdminById(createdBy))
                 .thenReturn(Optional.of(grantAdmin));
 
         when(encryptionService.decryptField(encryptedEmail))
@@ -223,6 +224,7 @@ class SchemeMapperTest {
         when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(requestHeadersSpec.headers(any())).thenReturn(requestHeadersSpec);
 
         when(responseSpec.bodyToMono(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {}))
                 .thenReturn(
