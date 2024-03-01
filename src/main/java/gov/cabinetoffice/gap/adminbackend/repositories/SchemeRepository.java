@@ -13,6 +13,7 @@ import java.util.List;
 public interface SchemeRepository extends JpaRepository<SchemeEntity, Integer> {
 
     List<SchemeEntity> findByGrantAdminsIdOrderByCreatedDateDesc(Integer grantAdminId, Pageable pageable);
+
     List<SchemeEntity> findByGrantAdminsIdOrderByCreatedDateDesc(Integer grantAdminId);
 
     @Query("select s from SchemeEntity s where s.createdBy = ?1")
