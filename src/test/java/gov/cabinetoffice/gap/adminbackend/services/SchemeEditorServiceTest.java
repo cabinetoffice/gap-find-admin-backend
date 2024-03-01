@@ -8,9 +8,9 @@ import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
@@ -31,9 +31,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import javax.persistence.EntityNotFoundException;
-
-import static org.mockito.Mockito.*;
-
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
