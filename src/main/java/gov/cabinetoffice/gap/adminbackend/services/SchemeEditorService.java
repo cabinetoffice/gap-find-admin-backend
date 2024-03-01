@@ -34,7 +34,7 @@ public class SchemeEditorService {
     private final WebClient.Builder webClientBuilder;
 
     public Boolean doesAdminOwnScheme(Integer schemeId, Integer adminId) {
-        return schemeRepo.existsByIdAndGrantAdminsId(schemeId, adminId);
+        return schemeRepo.existsByIdAndCreatedBy(schemeId, adminId);
     }
 
     public List<SchemeEditorsDTO> getEditorsFromSchemeId(Integer schemeId, String authHeader) {

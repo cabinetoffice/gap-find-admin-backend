@@ -63,7 +63,7 @@ public class SchemeEditorServiceTest {
     public void testDoesAdminOwnScheme() {
         Integer schemeId = 1;
         Integer adminId = 1;
-        Mockito.when(schemeRepository.existsByIdAndGrantAdminsId(schemeId, adminId)).thenReturn(Boolean.TRUE);
+        Mockito.when(schemeRepository.existsByIdAndCreatedBy(schemeId, adminId)).thenReturn(Boolean.TRUE);
 
         boolean result = schemeEditorService.doesAdminOwnScheme(schemeId, adminId);
         Assertions.assertTrue(result);
@@ -73,7 +73,7 @@ public class SchemeEditorServiceTest {
     public void testDoesAdminOwnScheme_returnsFalse() {
         Integer schemeId = 1;
         Integer adminId = 1;
-        Mockito.when(schemeRepository.existsByIdAndGrantAdminsId(schemeId, adminId)).thenReturn(Boolean.FALSE);
+        Mockito.when(schemeRepository.existsByIdAndCreatedBy(schemeId, adminId)).thenReturn(Boolean.FALSE);
 
         boolean result = schemeEditorService.doesAdminOwnScheme(schemeId, adminId);
         Assertions.assertFalse(result);

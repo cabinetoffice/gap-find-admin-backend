@@ -13,12 +13,14 @@ import java.util.List;
 public interface SchemeRepository extends JpaRepository<SchemeEntity, Integer> {
 
     List<SchemeEntity> findByGrantAdminsIdOrderByCreatedDateDesc(Integer grantAdminId, Pageable pageable);
+
     List<SchemeEntity> findByGrantAdminsIdOrderByCreatedDateDesc(Integer grantAdminId);
 
     @Query("select s from SchemeEntity s where s.createdBy = ?1")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     List<SchemeEntity> findByCreatedBy(Integer createdBy);
 
-    boolean existsByIdAndGrantAdminsId(Integer schemeId, Integer grantAdminId);
+    @PreAuthorize("hasRole('ADMIN')")
+    boolean existsByIdAndCreatedBy(Integer schemeId, Integer grantAdminId);
 
 }
