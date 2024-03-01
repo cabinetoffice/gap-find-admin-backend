@@ -496,24 +496,6 @@ class ApplicationFormServiceTest {
                     .isInstanceOf(ConstraintViolationException.class)
                     .hasMessage("options[2].<list element>: Enter an option");
         }
-
-        @Test
-        void addNewQuestionValues_AccessDeniedTest() {
-            final HttpSession session = new MockHttpSession();
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(
-                    () -> ApplicationFormServiceTest.this.applicationFormService.addQuestionToApplicationForm(
-                            applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_GENERIC_POST_DTO, session))
-                                    .isInstanceOf(AccessDeniedException.class).hasMessage(
-                                            "User 1 is unable to access the application form with id " + applicationId);
-
-        }
-
     }
 
     @Nested

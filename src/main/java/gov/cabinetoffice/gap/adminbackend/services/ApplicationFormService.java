@@ -225,17 +225,10 @@ public class ApplicationFormService {
 
     public String addQuestionToApplicationForm(Integer applicationId, String sectionId,
             ApplicationFormQuestionDTO question, HttpSession session) {
-        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         String questionId = UUID.randomUUID().toString();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
-
-            if (!adminSession.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-                throw new AccessDeniedException("User " + adminSession.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
-
             ApplicationFormQuestionDTO applicationFormQuestionDTO;
             QuestionAbstractPostDTO questionAbstractPostDTO = validatePostQuestion(question);
             if (questionAbstractPostDTO.getClass() == QuestionOptionsPostDTO.class) {
