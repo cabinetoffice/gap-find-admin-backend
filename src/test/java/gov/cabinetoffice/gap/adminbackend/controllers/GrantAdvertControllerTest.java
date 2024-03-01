@@ -3,10 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.contentful.java.cma.model.CMAHttpException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
@@ -459,11 +456,14 @@ class GrantAdvertControllerTest {
         @Test
         void getAdvertPublishingInformation_GrantAdvertPublishingInformationReturned() throws Exception {
             String contentfulSlug = "dummy-contentful-slug";
-            GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponseDTO = GetGrantAdvertPublishingInformationResponseDTO
+            GetGrantAdvertPublishingInformationResponseDTO publishingInfo = GetGrantAdvertPublishingInformationResponseDTO
                     .builder().grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus)
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
                     .closingDate(closingDate).openingDate(openingDate).build();
+
+            FullGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponseDTO = FullGrantAdvertPublishingInformationResponseDTO.builder().publishingInfo(
+                    publishingInfo).lastUpdatedByEmail("some-email").build();
 
             when(grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(grantSchemeId))
                     .thenReturn(grantAdvertPublishingInformationResponseDTO);

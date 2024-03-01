@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
@@ -16,6 +17,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.ParameterizedTypeReference;
@@ -43,7 +45,6 @@ public class UserService {
 
     public static final String EMPTY_EMAIL_VALUE = "-";
 
-    private final AwsEncryptionServiceImpl encryptionService;
     private final GapUserRepository gapUserRepository;
 
     private final GrantAdminRepository grantAdminRepository;
@@ -54,13 +55,15 @@ public class UserService {
 
     private final UserServiceConfig userServiceConfig;
 
-    private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
-
     private final RestTemplate restTemplate;
 
     private final WebClient.Builder webClientBuilder;
 
     private final UserServiceClient userServiceClient;
+
+    private final AwsEncryptionServiceImpl encryptionService;
+
+    private LambdaSecretConfigProperties lambdaSecretConfigProperties;
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -113,8 +116,7 @@ public class UserService {
             return grantAdminRepository.findByGapUserUserSub(response.sub()).orElseThrow(() -> new NotFoundException(
                     "No grant admin found for email: " + email));
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new NotFoundException(
                     "Something went wrong while retrieving grant admin for email: "
                             + email,
@@ -150,8 +152,7 @@ public class UserService {
             log.info("Created new funding organisation: {}", newFundingOrg);
             log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());
 
-        }
-        else {
+        } else {
             grantAdmin.setFunder(fundingOrganisation.get());
             grantAdminRepository.save(grantAdmin);
             log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());
@@ -161,7 +162,8 @@ public class UserService {
 
     public String getEmailAddressForSub(final String sub) {
         final String url = userServiceConfig.getDomain() + "/users/emails";
-        final ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {};
+        final ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {
+        };
 
         final List<UserEmailResponseDto> response = webClientBuilder.build()
                 .post()

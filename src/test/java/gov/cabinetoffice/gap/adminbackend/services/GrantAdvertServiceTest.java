@@ -9,10 +9,7 @@ import com.contentful.java.cma.model.CMAEntry;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
@@ -43,6 +40,7 @@ import static org.mockito.Mockito.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.time.*;
@@ -94,6 +92,9 @@ class GrantAdvertServiceTest {
 
     @Mock
     private Clock clock;
+
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     @Spy
@@ -1120,23 +1121,40 @@ class GrantAdvertServiceTest {
         @Test
         void getGrantAdvertPublishingInformationBySchemeId_HappyPath() {
 
+            String testEmailAddress = "Test-email@grants.com";
+
             GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
 
             when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
 
-            GetGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
+            when(userService.getEmailAddressForSub(any())).thenReturn(testEmailAddress);
+
+            FullGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID);
 
-            assertThat(actualOutput.getGrantAdvertId()).isEqualTo(grantAdvert.getId());
-            assertThat(actualOutput.getGrantAdvertStatus()).isEqualTo(grantAdvert.getStatus());
-            assertThat(actualOutput.getContentfulSlug()).isEqualTo(grantAdvert.getContentfulSlug());
-            assertThat(actualOutput.getFirstPublishedDate()).isEqualTo(grantAdvert.getFirstPublishedDate());
-            assertThat(actualOutput.getClosingDate()).isEqualTo(grantAdvert.getClosingDate());
-            assertThat(actualOutput.getOpeningDate()).isEqualTo(grantAdvert.getOpeningDate());
-            assertThat(actualOutput.getUnpublishedDate()).isEqualTo(grantAdvert.getUnpublishedDate());
-            assertThat(actualOutput.getLastPublishedDate()).isEqualTo(grantAdvert.getLastPublishedDate());
+            assertThat(actualOutput.publishingInfo().getGrantAdvertId()).isEqualTo(grantAdvert.getId());
+            assertThat(actualOutput.publishingInfo().getGrantAdvertStatus()).isEqualTo(grantAdvert.getStatus());
+            assertThat(actualOutput.publishingInfo().getContentfulSlug()).isEqualTo(grantAdvert.getContentfulSlug());
+            assertThat(actualOutput.publishingInfo().getFirstPublishedDate()).isEqualTo(grantAdvert.getFirstPublishedDate());
+            assertThat(actualOutput.publishingInfo().getClosingDate()).isEqualTo(grantAdvert.getClosingDate());
+            assertThat(actualOutput.publishingInfo().getOpeningDate()).isEqualTo(grantAdvert.getOpeningDate());
+            assertThat(actualOutput.publishingInfo().getUnpublishedDate()).isEqualTo(grantAdvert.getUnpublishedDate());
+            assertThat(actualOutput.publishingInfo().getLastPublishedDate()).isEqualTo(grantAdvert.getLastPublishedDate());
+            assertThat(actualOutput.lastUpdatedByEmail()).isEqualTo(testEmailAddress);
 
             verify(grantAdvertMapper).grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
+        }
+
+        @Test
+        void getGrantAdvertPublishingInformationBySchemeId_WebClientResponseException() {
+            GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
+
+            when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
+
+            doThrow(WebClientResponseException.class).when(userService).getEmailAddressForSub(any());
+
+           assertThrows(WebClientResponseException.class,
+                    () -> grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID));
         }
 
         @Test
