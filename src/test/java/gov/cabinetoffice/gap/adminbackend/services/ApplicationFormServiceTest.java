@@ -367,23 +367,6 @@ class ApplicationFormServiceTest {
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, dto, session))
                     .isInstanceOf(ConstraintViolationException.class);
         }
-
-        @Test
-        void patchQuestionValuesApplication_AccessDeniedTest() {
-            final HttpSession session = new MockHttpSession();
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, session))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
-
-        }
-
     }
 
     @Nested

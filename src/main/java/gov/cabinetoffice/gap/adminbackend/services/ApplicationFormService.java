@@ -92,7 +92,7 @@ public class ApplicationFormService {
 
             newFormEntity.setCreatedBy(session.getGrantAdminId());
 
-            final ApplicationFormEntity save = this.applicationFormRepository.save(newFormEntity);
+            final ApplicationFormEntity save = save(newFormEntity);
             return new GenericPostResponseDTO(save.getGrantApplicationId());
         }
         catch (ApplicationFormException e) {
