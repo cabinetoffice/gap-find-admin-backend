@@ -45,9 +45,7 @@ public abstract class SchemeMapper {
         schemeDTO.createdDate( schemeEntity.getCreatedDate() );
         schemeDTO.createdBy( schemeEntity.getCreatedBy() );
 
-        // Slightly strange logic here but if "last updated by" is null then we want to return "created by" instead.
-        // Considering the above, it doesn't make sense to potentially return mismatched updaters/update dates
-        // SO, if last updated by is not null then return this pair of values, otherwise return created by and created date
+        // if last updated is null then return created date + created by.
         setLastUpdatedByValues(schemeEntity, schemeDTO);
 
         return schemeDTO.build();

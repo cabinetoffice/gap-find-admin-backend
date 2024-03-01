@@ -18,17 +18,19 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
+import javax.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -167,6 +169,10 @@ public class UserService {
                 .body(BodyInserters.fromValue(List.of(sub)))
                 .headers(h -> h.set("Authorization", lambdaSecretConfigProperties.getSecret()))
                 .retrieve()
+                .onStatus(HttpStatus::isError, clientResponse -> {
+                    log.error("Unable to get email address for user with sub {}, HTTP status code {}", sub, clientResponse.statusCode());
+                    return Mono.empty();
+                })
                 .bodyToMono(responseType)
                 .block();
 

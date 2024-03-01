@@ -27,11 +27,7 @@ import java.util.Optional;
 @WithAdminSession
 class SchemeMapperTest {
 
-    /*
-        This looks a bit odd, but we need to implement the abstract class somewhere to have access
-        to the method we want to unit test because it exists on the super class which can't be
-        instantiated.
-     */
+    // Need to implement the abstract class somewhere to test the manually overriden method schemeEntityToDto
     class TestSchemeMapperImpl extends SchemeMapper {
 
         @Override
@@ -86,9 +82,6 @@ class SchemeMapperTest {
 
     @Mock
     private UserServiceConfig userServiceConfig;
-
-    @Mock
-    private WebClient.Builder webClientBuilder;
 
     private TestSchemeMapperImpl schemeMapper;
 

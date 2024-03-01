@@ -162,7 +162,7 @@ class UserServiceTest {
     }
 
     @Test
-    public void testVerifyAdminRolesValid() {
+    void testVerifyAdminRolesValid() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
         String url = "http://example.com/v2/validateSessionsRoles";
@@ -177,7 +177,7 @@ class UserServiceTest {
     }
 
     @Test
-    public void testVerifyAdminRolesWhenUnauthorizedResponse() {
+    void testVerifyAdminRolesWhenUnauthorizedResponse() {
         String emailAddress = "admin@example.com";
         String roles = "[FIND, APPLY, ADMIN]";
         String url = "http://example.com/v2/validateSessionsRoles";
@@ -192,7 +192,7 @@ class UserServiceTest {
     }
 
     @Test
-    public void getGrantAdminIdFromEmailReturnsAValidGrantAdminId() {
+    void getGrantAdminIdFromEmailReturnsAValidGrantAdminId() {
         String email = "test@test.com";
         UserV2DTO response = UserV2DTO.builder().sub("1").emailAddress(email).build();
 
@@ -257,6 +257,7 @@ class UserServiceTest {
         when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(requestHeadersSpec.headers(any())).thenReturn(requestHeadersSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
 
         when(responseSpec.bodyToMono(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {}))
                 .thenReturn(
