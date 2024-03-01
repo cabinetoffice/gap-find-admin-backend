@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.DecryptedUserEmailResponse;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import org.springframework.web.reactive.function.BodyInserters;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
@@ -17,6 +18,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +28,7 @@ import java.util.Objects;
 public class SchemeEditorService {
     private final SchemeService schemeService;
     private final AwsEncryptionServiceImpl awsEncryptionService;
+    private final UserService userService;
     private final SchemeRepository schemeRepo;
     private final UserServiceConfig userServiceConfig;
     private final WebClient.Builder webClientBuilder;
@@ -88,6 +91,24 @@ public class SchemeEditorService {
                 .map((item) -> DecryptedUserEmailResponse.builder().userSub(item.sub()).emailAddress(
                         awsEncryptionService.decryptField(item.emailAddress())).build())
                 .toList();
+    }
+
+    public SchemeEntity addEditorToScheme(final Integer schemeId, final String editorEmailAddress, final String jwt) {
+        SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
+        List<GrantAdmin> existingEditors = scheme.getGrantAdmins();
+        GrantAdmin editorToAdd;
+        try {
+            editorToAdd = userService.getGrantAdminIdFromUserServiceEmail(editorEmailAddress, jwt);
+        } catch (NotFoundException e) {
+            throw new FieldViolationException("editorEmailAddress", "This account does not have an 'Administrator' account.");
+        }
+
+        if (existingEditors.stream().anyMatch(editor -> editor.getId().equals(editorToAdd.getId()))) {
+            throw new FieldViolationException("editorEmailAddress", "This email address is already an editor for this scheme");
+        }
+
+        scheme.addAdmin(editorToAdd);
+        return this.schemeRepo.save(scheme);
     }
 
 }

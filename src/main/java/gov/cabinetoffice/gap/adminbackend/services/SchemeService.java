@@ -13,7 +13,6 @@ import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -25,7 +24,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

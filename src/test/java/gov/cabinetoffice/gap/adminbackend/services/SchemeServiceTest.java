@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
@@ -46,6 +47,9 @@ class SchemeServiceTest {
 
     @Mock
     private SessionsService sessionsService;
+
+    @Mock
+    private UserService userService;
 
     @Mock
     private SchemeRepository schemeRepository;
@@ -387,5 +391,4 @@ class SchemeServiceTest {
                 .isInstanceOf(SchemeEntityException.class).hasMessage(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: 1");
     }
-
 }
