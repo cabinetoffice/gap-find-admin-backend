@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.DecryptedUserEmailResponse;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -96,7 +97,7 @@ public class SchemeEditorService {
                 .orElseThrow(() -> new NotFoundException("Delete scheme editor: Scheme not found"));
 
         if (scheme.getCreatedBy().equals(editorId))
-            throw new NotFoundException("Delete scheme editor: Cannot delete scheme creator");
+            throw new ForbiddenException("Delete scheme editor: Cannot delete scheme creator");
 
         final GrantAdmin grantAdmin = grantAdminRepository.findById(editorId)
                 .orElseThrow(() -> new NotFoundException("Delete scheme editor: Grant Admin with editor access not found for this scheme"));
