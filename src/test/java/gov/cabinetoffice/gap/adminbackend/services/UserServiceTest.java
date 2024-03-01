@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.GrantApplicant;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
@@ -10,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
+import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Nested;
@@ -18,12 +20,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,6 +59,9 @@ class UserServiceTest {
 
     @Mock
     private GrantAdminRepository grantAdminRepository;
+
+    @Mock
+    private AwsEncryptionServiceImpl encryptionService;
 
     private final String oneLoginSub = "oneLoginSub";
 
@@ -208,7 +216,8 @@ class UserServiceTest {
                 Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
 
         GrantAdmin grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
-        assert (grantAdminId.getFunder().getId() == 1);
+
+        assertThat(grantAdminId.getFunder().getId()).isEqualTo(1);
     }
 
     @Test
@@ -228,5 +237,43 @@ class UserServiceTest {
                 grantAdmin -> assertThat(grantAdmin).isEqualTo(admin),
                 () -> fail("Grant Admin not present, something is broken")
         );
+    }
+
+    @Test
+    void getEmailAddressForSub_Success() {
+        final String userSub = "56743-12345-66543-1111";
+        final byte[] encryptedEmail = "an-encrypted-email".getBytes();
+        final String decryptedEmail = "an-encrypted-email";
+
+        final WebClient webClient = mock(WebClient.class);
+        final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(requestHeadersSpec.headers(any())).thenReturn(requestHeadersSpec);
+
+        when(responseSpec.bodyToMono(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {}))
+                .thenReturn(
+                        Mono.just(
+                                Arrays.asList(UserEmailResponseDto.builder()
+                                        .emailAddress(encryptedEmail)
+                                        .build()
+                                )
+                        )
+                );
+
+        when(encryptionService.decryptField(encryptedEmail))
+                .thenReturn(decryptedEmail);
+
+        final String emailAddress = userService.getEmailAddressForSub(userSub);
+
+        verify(encryptionService).decryptField(encryptedEmail);
+        assertThat(emailAddress).isEqualTo(decryptedEmail);
     }
 }
