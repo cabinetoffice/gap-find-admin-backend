@@ -29,19 +29,14 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.CurrencyFormatter;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import javax.transaction.Transactional;
 import java.time.Instant;
@@ -50,6 +45,8 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -85,10 +82,6 @@ public class GrantAdvertService {
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
         final GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
         final SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
-        if (!scheme.getFunderId().equals(grantAdmin.getFunder().getId())) {
-            throw new AccessDeniedException(
-                    "User " + grantAdminId + " is unable to access scheme with id " + scheme.getId());
-        }
         final Integer version = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
         final boolean doesAdvertExist = grantAdvertRepository.findBySchemeId(grantSchemeId).isPresent();
 
@@ -110,18 +103,10 @@ public class GrantAdvertService {
      * This method includes access control check, only allowing admins to view their own
      * adverts
      */
-    public GrantAdvert getAdvertById(UUID advertId, boolean lambdaCall) {
+    public GrantAdvert getAdvertById(UUID advertId) {
 
         GrantAdvert advert = grantAdvertRepository.findById(advertId)
                 .orElseThrow(() -> new NotFoundException("Advert with id " + advertId + " not found"));
-
-        if (!lambdaCall) {
-            final AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-            if (!advert.getCreatedBy().getId().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + " is unable to access advert with id " + advert.getId());
-            }
-        }
 
         log.debug("Advert with id {} found", advertId);
         return advert;
@@ -129,7 +114,7 @@ public class GrantAdvertService {
 
     public GetGrantAdvertPageResponseDTO getAdvertBuilderPageData(UUID grantAdvertId, String sectionId, String pageId) {
 
-        GrantAdvert grantAdvert = getAdvertById(grantAdvertId, false);
+        GrantAdvert grantAdvert = getAdvertById(grantAdvertId);
 
         GetGrantAdvertPageResponseDTO viewResponse = new GetGrantAdvertPageResponseDTO();
 
@@ -277,15 +262,15 @@ public class GrantAdvertService {
     public void deleteGrantAdvert(UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        Long deletedCount = grantAdvertRepository.deleteByIdAndCreatedById(grantAdvertId, session.getGrantAdminId());
+        int deletedCount = grantAdvertRepository.deleteByIdAndSchemeEditor(grantAdvertId, session.getGrantAdminId());
 
         if (deletedCount == 0)
             throw new NotFoundException("Grant Advert not found with id of " + grantAdvertId);
     }
 
     @Transactional
-    public GrantAdvert publishAdvert(UUID advertId, boolean lambdaCall) {
-        final GrantAdvert advert = getAdvertById(advertId, lambdaCall);
+    public GrantAdvert publishAdvert(UUID advertId) {
+        final GrantAdvert advert = getAdvertById(advertId);
 
         final CMAEntry contentfulAdvert;
 
@@ -309,8 +294,8 @@ public class GrantAdvertService {
         return grantAdvertRepository.save(advert);
     }
 
-    public void unpublishAdvert(UUID advertId, boolean lambdaCall) {
-        final GrantAdvert advert = this.getAdvertById(advertId, lambdaCall);
+    public void unpublishAdvert(UUID advertId) {
+        final GrantAdvert advert = this.getAdvertById(advertId);
 
         final CMAEntry contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId());
 
@@ -519,7 +504,7 @@ public class GrantAdvertService {
     }
 
     public void scheduleGrantAdvert(final UUID grantAdvertId) {
-        GrantAdvert grantAdvert = getAdvertById(grantAdvertId, false);
+        GrantAdvert grantAdvert = getAdvertById(grantAdvertId);
 
         grantAdvert.setStatus(GrantAdvertStatus.SCHEDULED);
         updateGrantAdvertApplicationDates(grantAdvert);
@@ -566,7 +551,7 @@ public class GrantAdvertService {
     }
 
     public void unscheduleGrantAdvert(final UUID advertId) {
-        final GrantAdvert advert = getAdvertById(advertId, false);
+        final GrantAdvert advert = getAdvertById(advertId);
         advert.setStatus(GrantAdvertStatus.UNSCHEDULED);
         grantAdvertRepository.save(advert);
     }

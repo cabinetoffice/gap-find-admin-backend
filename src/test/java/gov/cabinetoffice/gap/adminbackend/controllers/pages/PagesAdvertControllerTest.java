@@ -223,7 +223,7 @@ class PagesAdvertControllerTest {
             expectedDto.setSections(List.of(sectionDTO));
             expectedDto.setStatus(GrantAdvertStatus.DRAFT);
 
-            when(pagesAdvertService.buildSummaryPageContent(schemeId, grantAdvertId)).thenReturn(expectedDto);
+            when(pagesAdvertService.buildSummaryPageContent(grantAdvertId)).thenReturn(expectedDto);
 
             mockMvc.perform(get(endpoint).params(params)).andExpect(status().isOk())
                     .andExpect(content().json(HelperUtils.asJsonString(expectedDto)));
@@ -243,7 +243,7 @@ class PagesAdvertControllerTest {
             params.add("schemeId", schemeId);
             params.add("advertId", grantAdvertId.toString());
 
-            when(pagesAdvertService.buildSummaryPageContent(schemeId, grantAdvertId))
+            when(pagesAdvertService.buildSummaryPageContent(grantAdvertId))
                     .thenThrow(new AccessDeniedException("Access Denied"));
 
             mockMvc.perform(get(endpoint).params(params)).andExpect(status().isForbidden());
@@ -255,7 +255,7 @@ class PagesAdvertControllerTest {
             params.add("schemeId", schemeId);
             params.add("advertId", grantAdvertId.toString());
 
-            when(pagesAdvertService.buildSummaryPageContent(schemeId, grantAdvertId))
+            when(pagesAdvertService.buildSummaryPageContent(grantAdvertId))
                     .thenThrow(new NotFoundException());
 
             mockMvc.perform(get(endpoint).params(params)).andExpect(status().isNotFound());

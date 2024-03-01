@@ -40,7 +40,6 @@ public class ApplicationFormSectionService {
     }
 
     public String addSectionToApplicationForm(Integer applicationId, PostSectionDTO sectionDTO) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
@@ -50,7 +49,7 @@ public class ApplicationFormSectionService {
 
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
         verifyUniqueSectionName(applicationForm, newSection.getSectionTitle());
 
@@ -62,7 +61,6 @@ public class ApplicationFormSectionService {
     }
 
     public void deleteSectionFromApplication(Integer applicationId, String sectionId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
@@ -74,7 +72,7 @@ public class ApplicationFormSectionService {
             throw new NotFoundException("Section with id " + sectionId + " does not exist");
         }
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
         this.applicationFormRepository.save(applicationForm);
 
@@ -82,21 +80,19 @@ public class ApplicationFormSectionService {
 
     public void updateSectionStatus(final Integer applicationId, final String sectionId,
             final SectionStatusEnum newStatus) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         applicationForm.getDefinition().getSectionById(sectionId).setSectionStatus(newStatus);
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
         this.applicationFormRepository.save(applicationForm);
     }
 
     public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title) {
 
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
 
@@ -105,7 +101,7 @@ public class ApplicationFormSectionService {
         verifyUniqueSectionName(applicationForm, title);
 
         applicationDefinition.getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         this.applicationFormRepository.save(applicationForm);
     }
 

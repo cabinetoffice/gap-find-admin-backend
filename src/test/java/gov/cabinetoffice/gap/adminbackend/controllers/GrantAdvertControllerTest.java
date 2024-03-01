@@ -234,7 +234,7 @@ class GrantAdvertControllerTest {
         @Test
         @WithAdminSession
         void publishesAndReturnsExpectedResponse() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenReturn(grantAdvert);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenReturn(grantAdvert);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish").contentType(MediaType.APPLICATION_JSON)
                     .content(HelperUtils.asJsonStringWithNulls(grantAdvert))).andExpect(status().isOk());
 
@@ -246,7 +246,7 @@ class GrantAdvertControllerTest {
         @Test
         @WithAdminSession
         void publishAndReturnsNotFound() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(NotFoundException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(NotFoundException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish")).andExpect(status().isNotFound());
 
         }
@@ -254,14 +254,14 @@ class GrantAdvertControllerTest {
         @Test
         @WithAdminSession
         void publishAndReturnsNotEnoughPermissions() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(AccessDeniedException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(AccessDeniedException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish")).andExpect(status().isForbidden());
 
         }
 
         @Test
         void publishAndReturnsUnexpectedServiceError() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(RuntimeException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(RuntimeException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish"))
                     .andExpect(status().isInternalServerError());
 
@@ -281,7 +281,7 @@ class GrantAdvertControllerTest {
 
         @Test
         void internalServerError_ReturnsContentfulException() throws Exception {
-            doThrow(CMAHttpException.class).when(grantAdvertService).unpublishAdvert(grantAdvertId, false);
+            doThrow(CMAHttpException.class).when(grantAdvertService).unpublishAdvert(grantAdvertId);
 
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/unpublish"))
                     .andExpect(status().isInternalServerError());
@@ -299,7 +299,7 @@ class GrantAdvertControllerTest {
             final UUID grantAdvertId = UUID.randomUUID();
             final GrantAdvert grantAdvert = randomGrantAdvertEntity().id(grantAdvertId).build();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenReturn(grantAdvert);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenReturn(grantAdvert);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/unpublish")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk());
@@ -315,7 +315,7 @@ class GrantAdvertControllerTest {
         void unpublishGrantAdvertLambda_unexpectedError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            doThrow(new RuntimeException()).when(grantAdvertService).unpublishAdvert(grantAdvertId, true);
+            doThrow(new RuntimeException()).when(grantAdvertService).unpublishAdvert(grantAdvertId);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/unpublish")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
@@ -325,7 +325,7 @@ class GrantAdvertControllerTest {
         void unpublishGrantAdvertLambda_notFoundError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            doThrow(new NotFoundException()).when(grantAdvertService).unpublishAdvert(grantAdvertId, true);
+            doThrow(new NotFoundException()).when(grantAdvertService).unpublishAdvert(grantAdvertId);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/unpublish")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isNotFound());
@@ -343,7 +343,7 @@ class GrantAdvertControllerTest {
             final UUID grantAdvertId = UUID.randomUUID();
             final GrantAdvert grantAdvert = randomGrantAdvertEntity().id(grantAdvertId).build();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenReturn(grantAdvert);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenReturn(grantAdvert);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/publish").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isOk());
@@ -359,7 +359,7 @@ class GrantAdvertControllerTest {
         void publishGrantAdvertLambda_unexpectedError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenThrow(RuntimeException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(RuntimeException.class);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/publish").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
@@ -369,7 +369,7 @@ class GrantAdvertControllerTest {
         void publishGrantAdvertLambda_notFoundError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenThrow(NotFoundException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(NotFoundException.class);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/publish").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isNotFound());

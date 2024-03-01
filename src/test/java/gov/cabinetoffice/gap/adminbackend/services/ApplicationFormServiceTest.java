@@ -187,7 +187,7 @@ class ApplicationFormServiceTest {
             ApplicationFormsFoundDTO applicationFormFoundDTO = randomApplicationFormFound().build();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
-                    .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
+                    .findMatchingApplicationForm(null, null, this.schemeId))
                     .thenReturn(applicationFoundViewList);
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
                     .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
@@ -198,7 +198,7 @@ class ApplicationFormServiceTest {
         @Test
         void noApplicationFormFoundInRepository() {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
-                    .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
+                    .findMatchingApplicationForm(null, null, this.schemeId))
                     .thenReturn(Collections.emptyList());
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
                     .getMatchingApplicationFormsIds(SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP);
@@ -217,7 +217,7 @@ class ApplicationFormServiceTest {
                     .submissionCount(1).build();
 
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository
-                    .findMatchingApplicationForm(this.grantAdminId, null, null, this.schemeId))
+                    .findMatchingApplicationForm(null, null, this.schemeId))
                     .thenReturn(applicationFoundViewList);
 
             List<ApplicationFormsFoundDTO> response = ApplicationFormServiceTest.this.applicationFormService
@@ -266,20 +266,6 @@ class ApplicationFormServiceTest {
             applicationFormDTO.getSections().forEach(section -> assertThat(section.getQuestions() == null));
         }
 
-        @Test
-        void retrieveApplicationFormSummary_AccessDenied() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveApplicationFormSummary(applicationId, true, true))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
-        }
-
     }
 
     @Nested
@@ -315,20 +301,6 @@ class ApplicationFormServiceTest {
                             .isInstanceOf(EntityNotFoundException.class);
         }
 
-        @Test
-        void deleteApplicationFormInsufficientPermissionsToDeleteThisApplication() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(
-                    () -> ApplicationFormServiceTest.this.applicationFormService.deleteApplicationForm(applicationId))
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId)
-                            .isInstanceOf(AccessDeniedException.class);
-        }
-
     }
 
     @Nested
@@ -362,7 +334,7 @@ class ApplicationFormServiceTest {
 
             assertThat(updatedQuestion.getFieldTitle()).isEqualTo(SAMPLE_UPDATED_FIELD_TITLE);
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), eq(false)));
 
         }
 
@@ -382,7 +354,7 @@ class ApplicationFormServiceTest {
 
             assertThat(updatedQuestion.getOptions()).isEqualTo(SAMPLE_UPDATED_OPTIONS);
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), eq(false)));
         }
 
         @Test
@@ -411,21 +383,6 @@ class ApplicationFormServiceTest {
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, new ApplicationFormQuestionDTO(), any(HttpSession.class)))
                             .isInstanceOf(ConstraintViolationException.class);
-
-        }
-
-        @Test
-        void patchQuestionValuesApplication_AccessDeniedTest() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.patchQuestionValues(
-                    applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_GENERIC_PATCH_DTO, any(HttpSession.class)))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
         }
 
@@ -469,7 +426,7 @@ class ApplicationFormServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), eq(false)));
 
         }
 
@@ -497,7 +454,7 @@ class ApplicationFormServiceTest {
                 fail("Returned id was was not a UUID");
             }
 
-            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
+            this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), eq(false)));
         }
 
         @Test
@@ -555,22 +512,6 @@ class ApplicationFormServiceTest {
                                     .hasMessage("options[2].<list element>: Enter an option");
         }
 
-        @Test
-        void addNewQuestionValues_AccessDeniedTest() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(
-                    () -> ApplicationFormServiceTest.this.applicationFormService.addQuestionToApplicationForm(
-                            applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_GENERIC_POST_DTO, new MockHttpSession()))
-                                    .isInstanceOf(AccessDeniedException.class).hasMessage(
-                                            "User 1 is unable to access the application form with id " + applicationId);
-
-        }
-
     }
 
     @Nested
@@ -603,7 +544,7 @@ class ApplicationFormServiceTest {
 
             assertThat(sectionExists).isFalse();
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), eq(false)));
             utilMock.close();
         }
 
@@ -645,23 +586,6 @@ class ApplicationFormServiceTest {
                     .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, incorrectId))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Question with id " + incorrectId + " does not exist");
-
-        }
-
-        @Test
-        void deleteQuestionQuestion_AccessDenied() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-            String sectionId = "test-section-id";
-            String questionId = "test-question-id";
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(applicationId, sectionId, questionId))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
 
         }
 
@@ -723,22 +647,6 @@ class ApplicationFormServiceTest {
 
         }
 
-        @Test
-        void getQuestion_AccessDeniedTest() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-            String sectionId = "test-section-id";
-            String questionId = "test-question-id";
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .retrieveQuestion(applicationId, sectionId, questionId)).isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
-
-        }
-
     }
 
     @Nested
@@ -767,7 +675,7 @@ class ApplicationFormServiceTest {
                     .updateApplicationEntityFromPatchDto(SAMPLE_PATCH_APPLICATION_DTO, testApplicationFormEntity);
             verify(ApplicationFormServiceTest.this.applicationFormRepository).save(patchedApplicationFormEntity);
 
-            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), any(), eq(false)));
+            utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), eq(false)));
             utilMock.close();
 
         }
@@ -799,20 +707,6 @@ class ApplicationFormServiceTest {
                     .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
                             .isInstanceOf(ApplicationFormException.class)
                             .hasMessage("Error occurred when patching application with id of " + applicationId);
-        }
-
-        @Test
-        void attemptingToPatchApplicationForm_AccessDenied() {
-            ApplicationFormEntity testApplicationEntity = randomApplicationFormEntity().createdBy(2).build();
-            Integer applicationId = testApplicationEntity.getGrantApplicationId();
-
-            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
-                    .thenReturn(Optional.of(testApplicationEntity));
-
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .patchApplicationForm(applicationId, SAMPLE_PATCH_APPLICATION_DTO, false))
-                            .isInstanceOf(AccessDeniedException.class)
-                            .hasMessage("User 1 is unable to access the application form with id " + applicationId);
         }
 
     }

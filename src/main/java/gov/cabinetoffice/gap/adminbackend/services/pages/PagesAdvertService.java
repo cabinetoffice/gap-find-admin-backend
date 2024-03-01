@@ -42,7 +42,7 @@ public class PagesAdvertService {
         final List<AdvertSectionOverviewPageSectionDto> dtoSectionsList = new ArrayList<>();
         final List<AdvertDefinitionSection> statelessSections = definition.getSections();
 
-        GrantAdvert grantAdvert = grantAdvertService.getAdvertById(advertId, false);
+        GrantAdvert grantAdvert = grantAdvertService.getAdvertById(advertId);
 
         final List<GrantAdvertSectionResponse> sectionsWithStatus = grantAdvert.getResponse() != null
                 ? grantAdvert.getResponse().getSections() : new ArrayList<>();
@@ -66,10 +66,10 @@ public class PagesAdvertService {
         return response;
     }
 
-    public AdvertSummaryPageDTO buildSummaryPageContent(String schemeId, UUID advertId) {
+    public AdvertSummaryPageDTO buildSummaryPageContent(UUID advertId) {
 
         final AdvertSummaryPageDTO advertSummaryPageDTO = new AdvertSummaryPageDTO();
-        final GrantAdvert grantAdvert = grantAdvertService.getAdvertById(advertId, false);
+        final GrantAdvert grantAdvert = grantAdvertService.getAdvertById(advertId);
         final List<AdvertDefinitionSection> advertDefinitionSections = definition.getSections();
 
         advertSummaryPageDTO.setId(grantAdvert.getId());
@@ -178,7 +178,7 @@ public class PagesAdvertService {
 
     public AdvertPreviewPageDto buildAdvertPreview(UUID grantAdvertId) {
 
-        final GrantAdvert grantAdvert = grantAdvertService.getAdvertById(grantAdvertId, false);
+        final GrantAdvert grantAdvert = grantAdvertService.getAdvertById(grantAdvertId);
         final GrantAdvertResponse response = grantAdvert.getResponse();
 
         // quick check, if the response is null, immediately return with just advert name

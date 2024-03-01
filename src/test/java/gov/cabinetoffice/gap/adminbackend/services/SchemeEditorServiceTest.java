@@ -10,10 +10,13 @@ import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
+import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,6 +30,10 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import javax.persistence.EntityNotFoundException;
+
+import static org.mockito.Mockito.*;
+
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +45,6 @@ public class SchemeEditorServiceTest {
     @Mock
     private WebClient.Builder webClientBuilder;
 
-
     @Mock
     private SchemeService schemeService;
 
@@ -47,6 +53,9 @@ public class SchemeEditorServiceTest {
 
     @Mock
     private SchemeRepository schemeRepository;
+
+    @Mock
+    private UserService userService;
 
     @Mock
     private GrantAdminRepository grantAdminRepository;
@@ -61,7 +70,7 @@ public class SchemeEditorServiceTest {
     public void testDoesAdminOwnScheme() {
         Integer schemeId = 1;
         Integer adminId = 1;
-        Mockito.when(schemeRepository.existsByIdAndGrantAdminsId(schemeId, adminId)).thenReturn(Boolean.TRUE);
+        Mockito.when(schemeRepository.existsByIdAndCreatedBy(schemeId, adminId)).thenReturn(Boolean.TRUE);
 
         boolean result = schemeEditorService.doesAdminOwnScheme(schemeId, adminId);
         Assertions.assertTrue(result);
@@ -71,7 +80,7 @@ public class SchemeEditorServiceTest {
     public void testDoesAdminOwnScheme_returnsFalse() {
         Integer schemeId = 1;
         Integer adminId = 1;
-        Mockito.when(schemeRepository.existsByIdAndGrantAdminsId(schemeId, adminId)).thenReturn(Boolean.FALSE);
+        Mockito.when(schemeRepository.existsByIdAndCreatedBy(schemeId, adminId)).thenReturn(Boolean.FALSE);
 
         boolean result = schemeEditorService.doesAdminOwnScheme(schemeId, adminId);
         Assertions.assertFalse(result);
@@ -173,6 +182,55 @@ public class SchemeEditorServiceTest {
             schemeEditorService.getEditorsFromSchemeId(1, "authHeader");
         });
     }
+
+    @Test
+    void addEditorToSchemeReturnsSchemeWithGrantAdmin() {
+        final SchemeEntity testScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        final GrantAdmin testAdmin = GrantAdmin.builder().id(1).build();
+        final SchemeEntity patchedScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        patchedScheme.addAdmin(testAdmin);
+
+        Mockito.when(SchemeEditorServiceTest.this.userService.getGrantAdminIdFromUserServiceEmail("test@test.gov", "jwt"))
+                .thenReturn(testAdmin);
+        Mockito.when(SchemeEditorServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
+        Mockito.when(SchemeEditorServiceTest.this.grantAdminRepository.findById(1)).thenReturn(Optional.of(testAdmin));
+        Mockito.when(SchemeEditorServiceTest.this.schemeRepository.save(testScheme)).thenReturn(patchedScheme);
+
+        SchemeEditorServiceTest.this.schemeEditorService.addEditorToScheme(1, "test@test.gov", "jwt");
+        AssertionsForClassTypes.assertThat(patchedScheme.getGrantAdmins().contains(testAdmin)).isTrue();
+
+    }
+
+    @Test
+    void addEditorToSchemeThrowsAnErrorIfSchemeIsNotPresent() {
+        Mockito.when(SchemeEditorServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.empty());
+
+        AssertionsForClassTypes.assertThatThrownBy(
+                        () -> SchemeEditorServiceTest.this.schemeEditorService.addEditorToScheme(1, "test@test.gov", "jwt"))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    void addEditorToSchemeThrowsAnErrorIfGrantAdminIsNotPresent() {
+        final SchemeEntity testScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        Mockito.when(SchemeEditorServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
+        Mockito.when(SchemeEditorServiceTest.this.userService.getGrantAdminIdFromUserServiceEmail("test@test.gov", "jwt"))
+                .thenThrow(new EntityNotFoundException());
+    }
+
+    @Test
+    void addEditorThrowsAnErrorIfGrantAdminIsAlreadyAnEditor() {
+        final SchemeEntity testScheme = RandomSchemeGenerator.randomSchemeEntity().build();
+        final GrantAdmin testAdmin = GrantAdmin.builder().id(1).build();
+        testScheme.addAdmin(testAdmin);
+        Mockito.when(SchemeEditorServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
+        Mockito.when(SchemeEditorServiceTest.this.userService.getGrantAdminIdFromUserServiceEmail("test@test.gov", "jwt"))
+                .thenReturn(testAdmin);
+        AssertionsForClassTypes.assertThatThrownBy(
+                        () -> SchemeEditorServiceTest.this.schemeEditorService.addEditorToScheme(1, "test@test.gov", "jwt"))
+                .isInstanceOf(FieldViolationException.class);
+    }
+
 
     @Nested
     class DeleteEditor {
