@@ -9,6 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormSectionService;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -51,6 +52,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No section found with provided ids.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<ApplicationFormSectionDTO> getApplicationFormSectionById(@PathVariable Integer applicationId,
             @PathVariable String sectionId, @RequestParam(defaultValue = "true") Boolean withQuestions) {
 
@@ -82,6 +84,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity postNewSection(final HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @RequestBody @Validated PostSectionDTO sectionDTO) {
         try {
@@ -110,6 +113,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity deleteSection(final HttpServletRequest request, @PathVariable Integer applicationId,
             @PathVariable String sectionId) {
         try {
@@ -143,6 +147,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity updateSectionStatus(final HttpServletRequest request,
             final @PathVariable Integer applicationId, final @PathVariable String sectionId,
             final @RequestBody SectionStatusEnum newStatus) {
@@ -168,6 +173,7 @@ public class ApplicationFormSectionsController {
     }
 
     @PatchMapping("/{sectionId}/title")
+    @CheckSchemeOwnership
     public ResponseEntity<Void> updateSectionTitle(final HttpServletRequest request,
             final @PathVariable Integer applicationId, final @PathVariable String sectionId,
             final @RequestBody @Validated PostSectionDTO sectionDTO) {
@@ -189,6 +195,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<String> updateSectionOrder(final HttpServletRequest request,
             final @PathVariable Integer applicationId,
             final @RequestBody ApplicationSectionOrderPatchDto sectionOrderPatchDto) {

@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageRes
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertPreviewPageDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertSectionOverviewPageDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.pages.AdvertSummaryPageDTO;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.pages.PagesAdvertService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +42,7 @@ public class PagesAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access the scheme needed.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<AdvertSectionOverviewPageDTO> getSectionOverviewContent(
             @RequestParam @NotNull final String schemeId, @RequestParam @NotNull final UUID advertId) {
         log.info("Creating page content for section-overview");
@@ -62,6 +64,7 @@ public class PagesAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Unable to find grant advert with id provided",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<GetGrantAdvertPageResponseDTO> getQuestionsResponsePage(@PathVariable UUID grantAdvertId,
             @RequestParam String advertSectionId, @RequestParam String advertPageId) {
 
@@ -81,10 +84,11 @@ public class PagesAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access the scheme needed.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<AdvertSummaryPageDTO> getSummaryContent(@RequestParam @NotNull final String schemeId,
             @RequestParam @NotNull final UUID advertId) {
         log.info("Creating page content for advert summary");
-        final AdvertSummaryPageDTO response = pagesAdvertService.buildSummaryPageContent(schemeId, advertId);
+        final AdvertSummaryPageDTO response = pagesAdvertService.buildSummaryPageContent(advertId);
         return ResponseEntity.ok().body(response);
     }
 
@@ -101,6 +105,7 @@ public class PagesAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Unable to find grant advert with id provided",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<AdvertPreviewPageDto> getAdvertPreview(@PathVariable UUID grantAdvertId) {
         AdvertPreviewPageDto advertPreviewPageDto = pagesAdvertService.buildAdvertPreview(grantAdvertId);
         return ResponseEntity.ok(advertPreviewPageDto);

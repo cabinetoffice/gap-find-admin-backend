@@ -201,30 +201,6 @@ class GrantAdvertServiceTest {
         }
 
         @Test
-        void create_notAuthorised() {
-            final String instantExpected = "2014-12-22T10:15:30Z";
-            final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
-            final Instant instant = Instant.now(clock);
-            final UUID id = UUID.randomUUID();
-            final int grantAdminId = 1;
-            final int grantSchemeId = 1;
-            final String name = "Test Grant Advert";
-            final GrantAdmin grantAdmin = GrantAdmin.builder().id(grantAdminId)
-                    .funder(FundingOrganisation.builder().id(1).build()).build();
-            final SchemeEntity grantScheme = SchemeEntity.builder().id(grantSchemeId).funderId(2).build();
-
-            try (MockedStatic<Instant> mockedStatic = mockStatic(Instant.class)) {
-                mockedStatic.when(Instant::now).thenReturn(instant);
-                when(grantAdminRepository.findById(grantAdminId)).thenReturn(Optional.of(grantAdmin));
-                when(schemeRepository.findById(grantSchemeId)).thenReturn(Optional.of(grantScheme));
-
-                assertThrows(AccessDeniedException.class,
-                        () -> grantAdvertService.create(grantSchemeId, grantAdminId, name));
-            }
-
-        }
-
-        @Test
         void getById_Success() {
             final String instantExpected = "2014-12-22T10:15:30Z";
             final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
@@ -245,7 +221,7 @@ class GrantAdvertServiceTest {
 
                 when(grantAdvertRepository.findById(id)).thenReturn(Optional.ofNullable(expectedAdvert));
 
-                GrantAdvert response = grantAdvertService.getAdvertById(id, false);
+                GrantAdvert response = grantAdvertService.getAdvertById(id);
 
                 assertThat(response).isEqualTo(expectedAdvert);
             }
@@ -261,22 +237,7 @@ class GrantAdvertServiceTest {
             final UUID id = UUID.randomUUID();
             when(grantAdvertRepository.findById(id)).thenThrow(new NotFoundException("error"));
 
-            assertThrows(NotFoundException.class, () -> grantAdvertService.getAdvertById(id, false));
-        }
-
-        @Test
-        void getById_ThrowAccessDeniedException() {
-            final int grantAdminId = 2;
-            final UUID id = UUID.randomUUID();
-            final int grantSchemeId = 1;
-            final GrantAdmin grantAdmin = GrantAdmin.builder().id(grantAdminId)
-                    .funder(FundingOrganisation.builder().id(1).build()).build();
-            final SchemeEntity grantScheme = SchemeEntity.builder().id(grantSchemeId).funderId(1).build();
-            final GrantAdvert advert = GrantAdvert.builder().id(id).scheme(grantScheme).createdBy(grantAdmin).build();
-
-            when(grantAdvertRepository.findById(id)).thenReturn(Optional.ofNullable(advert));
-
-            assertThrows(AccessDeniedException.class, () -> grantAdvertService.getAdvertById(id, false));
+            assertThrows(NotFoundException.class, () -> grantAdvertService.getAdvertById(id));
         }
 
     }
@@ -290,11 +251,11 @@ class GrantAdvertServiceTest {
             final UUID advertId = UUID.randomUUID();
             final Integer adminId = 1;
 
-            when(grantAdvertRepository.deleteByIdAndCreatedById(advertId, adminId)).thenReturn(1L);
+            when(grantAdvertRepository.deleteByIdAndSchemeEditor(advertId, adminId)).thenReturn(1);
 
             grantAdvertService.deleteGrantAdvert(advertId);
 
-            verify(grantAdvertRepository).deleteByIdAndCreatedById(advertId, adminId);
+            verify(grantAdvertRepository).deleteByIdAndSchemeEditor(advertId, adminId);
         }
 
         @Test
@@ -858,7 +819,7 @@ class GrantAdvertServiceTest {
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
-            grantAdvertService.publishAdvert(grantAdvertId, false);
+            grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
 
@@ -931,7 +892,7 @@ class GrantAdvertServiceTest {
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
-            grantAdvertService.publishAdvert(grantAdvertId, false);
+            grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
 
@@ -955,27 +916,6 @@ class GrantAdvertServiceTest {
 
             // verify that we've published
             verify(contentfulEntries).publish(publishedContentfulAdvert);
-        }
-
-        @Test
-        @WithAdminSession
-        void publishAdvert_AccessDenied() {
-            UUID grantAdvertId = UUID.randomUUID();
-            final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(grantAdvertId).scheme(scheme).version(1)
-                    .created(Instant.now()).createdBy(new GrantAdmin(2, null, null, new ArrayList<>())).lastUpdated(Instant.now())
-                    .lastUpdatedBy(new GrantAdmin(2, null, null, new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
-                    .contentfulEntryId("entry-id").contentfulSlug("contentful-slug")
-                    .grantAdvertName("Grant Advert Name").response(response).grantAdvertName("Homelessness Grant")
-                    .build();
-
-            when(advertDefinition.getSections()).thenReturn(definition.getSections());
-
-            when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(mockGrantAdvert));
-
-            assertThatThrownBy(() -> grantAdvertService.publishAdvert(grantAdvertId, false))
-                    .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage("User 1 is unable to access advert with id " + grantAdvertId);
-
         }
 
         @Test
@@ -1024,7 +964,7 @@ class GrantAdvertServiceTest {
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
-            grantAdvertService.publishAdvert(grantAdvertId, true);
+            grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
 
@@ -1090,7 +1030,7 @@ class GrantAdvertServiceTest {
             // maybe overkill to check this here but ensures we can be sure the state has changed
             assertThat(grantAdvert.getUnpublishedDate()).isNull();
 
-            grantAdvertService.unpublishAdvert(grantAdvertId, false);
+            grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
@@ -1117,7 +1057,7 @@ class GrantAdvertServiceTest {
             // maybe overkill to check this here but ensures we can be sure the state has changed
             assertThat(grantAdvert.getUnpublishedDate()).isNull();
 
-            grantAdvertService.unpublishAdvert(grantAdvertId, true);
+            grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
@@ -1284,19 +1224,6 @@ class GrantAdvertServiceTest {
         }
 
         @Test
-        void scheduleGrantAdvert_AccessDenied() {
-            final GrantAdvert scheduledGrantAdvert = GrantAdvert.builder().id(grantAdvertId).response(response)
-                    .status(GrantAdvertStatus.DRAFT).grantAdvertName("Schedule Test Advert")
-                    .createdBy(new GrantAdmin(2, null, null, new ArrayList<>())).build();
-
-            when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(scheduledGrantAdvert));
-
-            assertThatThrownBy(() -> grantAdvertService.scheduleGrantAdvert(grantAdvertId))
-                    .isInstanceOf(AccessDeniedException.class);
-
-        }
-
-        @Test
         void scheduleGrantAdvert_NotFound() {
             when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.empty());
 
@@ -1337,18 +1264,6 @@ class GrantAdvertServiceTest {
             GrantAdvert savedAdvert = grantAdvertArgumentCaptor.getValue();
 
             assertThat(savedAdvert.getStatus()).isEqualTo(GrantAdvertStatus.UNSCHEDULED);
-        }
-
-        @Test
-        void scheduleGrantAdvert_AccessDenied() {
-            final GrantAdvert scheduledGrantAdvert = GrantAdvert.builder().id(grantAdvertId).response(response)
-                    .status(GrantAdvertStatus.SCHEDULED).grantAdvertName("Schedule Test Advert")
-                    .createdBy(new GrantAdmin(2, null, null, new ArrayList<>())).build();
-
-            when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(scheduledGrantAdvert));
-
-            assertThatThrownBy(() -> grantAdvertService.unscheduleGrantAdvert(grantAdvertId))
-                    .isInstanceOf(AccessDeniedException.class);
         }
 
         @Test

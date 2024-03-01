@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuesti
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -47,6 +48,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No question found with id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> patchQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId,
             @RequestBody @NotNull ApplicationFormQuestionDTO question, HttpSession session) {
@@ -77,6 +79,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<GenericPostResponseDTO> postNewQuestion(HttpServletRequest request,
             @PathVariable @NotNull Integer applicationId, @PathVariable @NotBlank String sectionId,
             @RequestBody @NotNull ApplicationFormQuestionDTO question, HttpSession session) {
@@ -107,6 +110,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> deleteQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
@@ -139,6 +143,7 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "404",
                     description = "No application, section, or question found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<ApplicationFormQuestionDTO> getQuestion(@PathVariable @NotNull Integer applicationId,
             @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
         try {
@@ -163,6 +168,7 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No question found with given ids.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<String> updateSectionOrder(final HttpServletRequest request,
                                                      final @PathVariable @NotBlank Integer applicationId,
                                                      final @PathVariable @NotBlank String sectionId,

@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.InvalidEventException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -58,6 +59,7 @@ public class ApplicationFormController {
                             schema = @Schema(implementation = GenericPostResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")), })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> postApplicationForm(HttpServletRequest request,
             @RequestBody @Valid ApplicationFormPostDTO applicationFormPostDTO) {
         final SchemeDTO scheme = schemeService.getSchemeBySchemeId(applicationFormPostDTO.getGrantSchemeId());
@@ -79,6 +81,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No Application form found",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<List<ApplicationFormsFoundDTO>> checkApplicationFormsExists(
             @Valid ApplicationFormExistsDTO applicationFormExistsDTO) {
         List<ApplicationFormsFoundDTO> foundApplicationForms = this.applicationFormService
@@ -102,6 +105,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> getApplicationFormSummary(@PathVariable @NotNull Integer applicationId,
             @RequestParam(defaultValue = "true") Boolean withSections,
             @RequestParam(defaultValue = "true") Boolean withQuestions) {
@@ -129,6 +133,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
+    @CheckSchemeOwnership
     public ResponseEntity<Void> deleteApplicationForm(@PathVariable @NotNull Integer applicationId) {
         try {
             this.applicationFormService.deleteApplicationForm(applicationId);
@@ -159,7 +164,7 @@ public class ApplicationFormController {
     public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(@PathVariable @NotNull UUID grantAdvertId) {
         try {
 
-            Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId, true).getScheme().getId();
+            Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId).getScheme().getId();
             Optional<ApplicationFormEntity> applicationForm = applicationFormService
                     .getOptionalApplicationFromSchemeId(schemeId);
             if (applicationForm.isEmpty()) {
@@ -197,6 +202,7 @@ public class ApplicationFormController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<GenericErrorDTO> updateApplicationForm(HttpServletRequest request,
             @PathVariable @NotNull Integer applicationId,
             @Valid @RequestBody ApplicationFormPatchDTO applicationFormPatchDTO) {

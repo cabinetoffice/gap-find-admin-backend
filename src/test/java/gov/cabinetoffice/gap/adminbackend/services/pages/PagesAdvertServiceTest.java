@@ -65,7 +65,7 @@ class PagesAdvertServiceTest {
     void buildSectionOverviewPageContent__success() {
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
         when(this.advertDefinition.getSections()).thenReturn(ADVERT_DEFINITION.getSections());
-        when(this.grantAdvertService.getAdvertById(ADVERT_ID, false)).thenReturn(GRANT_ADVERT);
+        when(this.grantAdvertService.getAdvertById(ADVERT_ID)).thenReturn(GRANT_ADVERT);
 
         AdvertSectionOverviewPageDTO result = serviceUnderTest
                 .buildSectionOverviewPageContent(String.valueOf(SAMPLE_SCHEME_ID), ADVERT_ID);
@@ -77,7 +77,7 @@ class PagesAdvertServiceTest {
     void buildSectionOverviewPageContent__IsPublishDisableFalse() {
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
         when(this.advertDefinition.getSections()).thenReturn(ADVERT_DEFINITION.getSections());
-        when(this.grantAdvertService.getAdvertById(ADVERT_ID, false)).thenReturn(GRANT_ADVERT_SECTION_COMPLETED);
+        when(this.grantAdvertService.getAdvertById(ADVERT_ID)).thenReturn(GRANT_ADVERT_SECTION_COMPLETED);
 
         AdvertSectionOverviewPageDTO result = serviceUnderTest
                 .buildSectionOverviewPageContent(String.valueOf(SAMPLE_SCHEME_ID), ADVERT_ID);
@@ -89,7 +89,7 @@ class PagesAdvertServiceTest {
     void buildSectionOverviewPageContent__GrantAdvertGetByIdReturnEmpty() {
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
         when(this.advertDefinition.getSections()).thenReturn(ADVERT_DEFINITION.getSections());
-        when(this.grantAdvertService.getAdvertById(ADVERT_ID, false))
+        when(this.grantAdvertService.getAdvertById(ADVERT_ID))
                 .thenThrow(new NotFoundException("Advert with id " + ADVERT_ID + " not found"));
 
         assertThatThrownBy(
@@ -102,7 +102,7 @@ class PagesAdvertServiceTest {
     void buildSectionOverviewPageContent__BeanException() {
         when(this.advertDefinition.getSections()).thenThrow(new BeanCreationException("error"));
         when(this.schemeService.getSchemeBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(SCHEME_DTO_EXAMPLE);
-        when(this.grantAdvertService.getAdvertById(ADVERT_ID, false)).thenReturn(GRANT_ADVERT);
+        when(this.grantAdvertService.getAdvertById(ADVERT_ID)).thenReturn(GRANT_ADVERT);
 
         assertThrows(BeanCreationException.class,
                 () -> serviceUnderTest.buildSectionOverviewPageContent("1", ADVERT_ID));
@@ -124,9 +124,9 @@ class PagesAdvertServiceTest {
 
             when(advertDefinition.getSections())
                     .thenReturn(Arrays.asList(advertDefinitionSection1, advertDefinitionSection2));
-            when(grantAdvertService.getAdvertById(grantAdvertId, false)).thenReturn(grantAdvert);
+            when(grantAdvertService.getAdvertById(grantAdvertId)).thenReturn(grantAdvert);
 
-            AdvertSummaryPageDTO result = serviceUnderTest.buildSummaryPageContent(grantSchemeId, grantAdvertId);
+            AdvertSummaryPageDTO result = serviceUnderTest.buildSummaryPageContent(grantAdvertId);
 
             assertEquals(expectedDto, result);
         }
@@ -144,9 +144,9 @@ class PagesAdvertServiceTest {
 
             when(advertDefinition.getSections())
                     .thenReturn(Arrays.asList(advertDefinitionSection1, advertDefinitionSection2));
-            when(grantAdvertService.getAdvertById(grantAdvertId, false)).thenReturn(grantAdvert);
+            when(grantAdvertService.getAdvertById(grantAdvertId)).thenReturn(grantAdvert);
 
-            AdvertSummaryPageDTO result = serviceUnderTest.buildSummaryPageContent(grantSchemeId, grantAdvertId);
+            AdvertSummaryPageDTO result = serviceUnderTest.buildSummaryPageContent(grantAdvertId);
 
             assertEquals(expectedDto, result);
 
@@ -242,7 +242,7 @@ class PagesAdvertServiceTest {
             GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(grantAdvertName).id(grantAdvertId)
                     .response(response).build();
 
-            when(grantAdvertService.getAdvertById(grantAdvertId, false)).thenReturn(grantAdvert);
+            when(grantAdvertService.getAdvertById(grantAdvertId)).thenReturn(grantAdvert);
 
             AdvertPreviewPageDto advertPreviewPageDto = serviceUnderTest.buildAdvertPreview(grantAdvertId);
 
@@ -268,7 +268,7 @@ class PagesAdvertServiceTest {
         void buildAdvertPreview_SuccessEmptyAdvert() {
             GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(grantAdvertName).id(grantAdvertId).build();
 
-            when(grantAdvertService.getAdvertById(grantAdvertId, false)).thenReturn(grantAdvert);
+            when(grantAdvertService.getAdvertById(grantAdvertId)).thenReturn(grantAdvert);
 
             AdvertPreviewPageDto advertPreviewPageDto = serviceUnderTest.buildAdvertPreview(grantAdvertId);
 
@@ -297,7 +297,7 @@ class PagesAdvertServiceTest {
             GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(grantAdvertName).id(grantAdvertId)
                     .response(response).build();
 
-            when(grantAdvertService.getAdvertById(grantAdvertId, false)).thenReturn(grantAdvert);
+            when(grantAdvertService.getAdvertById(grantAdvertId)).thenReturn(grantAdvert);
 
             AdvertPreviewPageDto advertPreviewPageDto = serviceUnderTest.buildAdvertPreview(grantAdvertId);
 
@@ -321,7 +321,7 @@ class PagesAdvertServiceTest {
         @Test
         void buildAdvertPreview_AdvertNotFound() {
 
-            when(grantAdvertService.getAdvertById(grantAdvertId, false)).thenThrow(NotFoundException.class);
+            when(grantAdvertService.getAdvertById(grantAdvertId)).thenThrow(NotFoundException.class);
 
             assertThatThrownBy(() -> serviceUnderTest.buildAdvertPreview(grantAdvertId))
                     .isInstanceOf(NotFoundException.class);
