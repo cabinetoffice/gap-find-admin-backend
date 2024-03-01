@@ -19,6 +19,6 @@ public interface SchemeRepository extends JpaRepository<SchemeEntity, Integer> {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     List<SchemeEntity> findByCreatedBy(Integer createdBy);
 
-    boolean existsByIdAndGrantAdminsId(Integer schemeId, Integer grantAdminId);
+    boolean existsByIdAndCreatedBy(Integer schemeId, Integer grantAdminId);
 
 }
