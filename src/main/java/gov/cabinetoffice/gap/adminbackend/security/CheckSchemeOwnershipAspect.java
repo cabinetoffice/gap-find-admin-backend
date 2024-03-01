@@ -20,9 +20,10 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Aspect
 @Component
@@ -129,12 +130,9 @@ public class CheckSchemeOwnershipAspect {
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         String[] parameterNames = methodSignature.getParameterNames();
 
-        Map<String, Object> argumentsMap = new HashMap<>();
-        int i = 0;
-        for (String parameterName : parameterNames) {
-            argumentsMap.put(parameterName, methodArgs[i++]);
-        }
-        return argumentsMap;
+        return IntStream.range(0, parameterNames.length)
+                .boxed()
+                .collect(Collectors.toMap(i -> parameterNames[i], i -> methodArgs[i]));
     }
 
 }

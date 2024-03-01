@@ -78,6 +78,7 @@ public class SpotlightSubmissionController {
     }
 
     @GetMapping(value = "/scheme/{schemeId}/due-diligence-data")
+    @CheckSchemeOwnership
     public ResponseEntity<GetSpotlightSubmissionDataBySchemeIdDto> getSpotlightSubmissionDataBySchemeId(
             @PathVariable Integer schemeId) {
         log.info("Getting spotlight submission data for scheme {}", schemeId);

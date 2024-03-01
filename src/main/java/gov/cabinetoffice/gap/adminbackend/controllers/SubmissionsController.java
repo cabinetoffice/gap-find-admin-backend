@@ -88,6 +88,7 @@ public class SubmissionsController {
     }
 
     @PostMapping("/export-all/{applicationId}")
+    @CheckSchemeOwnership
     public ResponseEntity exportAllSubmissions(@PathVariable Integer applicationId) {
         submissionsService.triggerSubmissionsExport(applicationId);
 
@@ -95,6 +96,7 @@ public class SubmissionsController {
     }
 
     @GetMapping("/status/{applicationId}")
+    @CheckSchemeOwnership
     public ResponseEntity getExportStatus(@PathVariable Integer applicationId) {
         final GrantExportStatus status = submissionsService.getExportStatus(applicationId);
         return new ResponseEntity<>(status.toString(), HttpStatus.OK);
