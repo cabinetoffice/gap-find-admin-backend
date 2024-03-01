@@ -23,6 +23,7 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
 
     private static final String ESSENTIAL_SECTION_ID = "ESSENTIAL";
     private static final String APPLICANT_ORG_NAME = "APPLICANT_ORG_NAME";
+    private static final String ORGANISATION_DETAILS_SECTION_ID = "ORGANISATION_DETAILS";
     private final SubmissionRepository submissionRepository;
 
     @Override
@@ -73,9 +74,10 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
             log.error("Submission not found for id: {}", submissionId);
             return submissionId.toString();
         }
+        final int schemeVersion = submission.get().getScheme().getVersion();
         return submission.get()
                 .getDefinition()
-                .getSectionById(ESSENTIAL_SECTION_ID)
+                .getSectionById( schemeVersion > 1 ? ORGANISATION_DETAILS_SECTION_ID : ESSENTIAL_SECTION_ID )
                 .getQuestionById(APPLICANT_ORG_NAME)
                 .getResponse();
     }

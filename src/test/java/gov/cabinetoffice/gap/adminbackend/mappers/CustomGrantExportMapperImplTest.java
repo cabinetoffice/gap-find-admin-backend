@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionQuestion;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionQuestionValidation;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionSection;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.Submission;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
@@ -73,8 +74,10 @@ class CustomGrantExportMapperImplTest {
     final SubmissionDefinition submissionDefinition = SubmissionDefinition.builder()
         .sections(List.of(ESSENTIAL_SECTION_SUBMISSION))
         .build();
+    final SchemeEntity scheme = SchemeEntity.builder().version(1).build();
     final Submission submission = Submission.builder()
         .id(submissionId)
+        .scheme(scheme)
         .status(SubmissionStatus.SUBMITTED)
         .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
         .definition(submissionDefinition)
