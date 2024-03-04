@@ -63,7 +63,7 @@ public class UserService {
 
     private final AwsEncryptionServiceImpl encryptionService;
 
-    private LambdaSecretConfigProperties lambdaSecretConfigProperties;
+    private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
