@@ -33,8 +33,7 @@ import java.util.Optional;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.SCHEME_ENTITY_EXAMPLE;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -203,4 +202,9 @@ public class SchemeEditorControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void succeeds() throws Exception {
+        mockMvc.perform(delete("/schemes/1/editors/2")).andExpect(status().isOk());
+        verify(schemeEditorService).deleteEditor(1, 2);
+    }
 }

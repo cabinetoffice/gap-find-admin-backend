@@ -89,4 +89,8 @@ public class SchemeEntity {
     public void addAdmin(final GrantAdmin admin) {
         this.grantAdmins.add(admin);
     }
+
+    public void removeAdmin(final GrantAdmin admin) {
+        this.grantAdmins.remove(admin);
+    }
 }
