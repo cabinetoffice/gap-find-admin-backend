@@ -1129,18 +1129,18 @@ class GrantAdvertServiceTest {
 
             when(userService.getEmailAddressForSub(any())).thenReturn(testEmailAddress);
 
-            FullGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
+            GetGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID);
 
-            assertThat(actualOutput.publishingInfo().getGrantAdvertId()).isEqualTo(grantAdvert.getId());
-            assertThat(actualOutput.publishingInfo().getGrantAdvertStatus()).isEqualTo(grantAdvert.getStatus());
-            assertThat(actualOutput.publishingInfo().getContentfulSlug()).isEqualTo(grantAdvert.getContentfulSlug());
-            assertThat(actualOutput.publishingInfo().getFirstPublishedDate()).isEqualTo(grantAdvert.getFirstPublishedDate());
-            assertThat(actualOutput.publishingInfo().getClosingDate()).isEqualTo(grantAdvert.getClosingDate());
-            assertThat(actualOutput.publishingInfo().getOpeningDate()).isEqualTo(grantAdvert.getOpeningDate());
-            assertThat(actualOutput.publishingInfo().getUnpublishedDate()).isEqualTo(grantAdvert.getUnpublishedDate());
-            assertThat(actualOutput.publishingInfo().getLastPublishedDate()).isEqualTo(grantAdvert.getLastPublishedDate());
-            assertThat(actualOutput.lastUpdatedByEmail()).isEqualTo(testEmailAddress);
+            assertThat(actualOutput.getGrantAdvertId()).isEqualTo(grantAdvert.getId());
+            assertThat(actualOutput.getGrantAdvertStatus()).isEqualTo(grantAdvert.getStatus());
+            assertThat(actualOutput.getContentfulSlug()).isEqualTo(grantAdvert.getContentfulSlug());
+            assertThat(actualOutput.getFirstPublishedDate()).isEqualTo(grantAdvert.getFirstPublishedDate());
+            assertThat(actualOutput.getClosingDate()).isEqualTo(grantAdvert.getClosingDate());
+            assertThat(actualOutput.getOpeningDate()).isEqualTo(grantAdvert.getOpeningDate());
+            assertThat(actualOutput.getUnpublishedDate()).isEqualTo(grantAdvert.getUnpublishedDate());
+            assertThat(actualOutput.getLastPublishedDate()).isEqualTo(grantAdvert.getLastPublishedDate());
+            assertThat(actualOutput.getLastUpdatedByEmail()).isEqualTo(testEmailAddress);
 
             verify(grantAdvertMapper).grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
         }

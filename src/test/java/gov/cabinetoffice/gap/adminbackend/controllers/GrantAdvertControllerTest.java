@@ -8,8 +8,6 @@ import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapperImpl;
-import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertPageResponse;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertQuestionResponse;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
@@ -66,11 +64,7 @@ class GrantAdvertControllerTest {
     @MockBean
     private GrantAdvertService grantAdvertService;
 
-    @SpyBean
-    private GrantAdvertMapperImpl grantAdvertMapper;
 
-    @SpyBean
-    private ValidationErrorMapperImpl validationErrorMapper;
 
     @MockBean
     private EventLogService eventLogService;
@@ -462,15 +456,14 @@ class GrantAdvertControllerTest {
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
                     .closingDate(closingDate).openingDate(openingDate).build();
 
-            FullGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponseDTO = FullGrantAdvertPublishingInformationResponseDTO.builder().publishingInfo(
-                    publishingInfo).lastUpdatedByEmail("some-email").build();
+
 
             when(grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(grantSchemeId))
-                    .thenReturn(grantAdvertPublishingInformationResponseDTO);
+                    .thenReturn(publishingInfo);
 
             mockMvc.perform(get("/grant-advert/publish-information").param("grantSchemeId", grantSchemeId.toString()))
                     .andExpect(status().isOk())
-                    .andExpect(content().string(HelperUtils.asJsonString(grantAdvertPublishingInformationResponseDTO)))
+                    .andExpect(content().string(HelperUtils.asJsonString(publishingInfo)))
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON));
         }
 
