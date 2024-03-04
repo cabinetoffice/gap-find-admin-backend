@@ -4,20 +4,22 @@ import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.DecryptedUserEmailResponse;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
-import org.springframework.web.reactive.function.BodyInserters;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
+import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.persistence.EntityNotFoundException;
@@ -97,6 +99,11 @@ public class SchemeEditorService {
 
     public SchemeEntity addEditorToScheme(final Integer schemeId, final String editorEmailAddress, final String jwt) {
         SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
+
+        final AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+        if (!session.getGrantAdminId().equals(scheme.getCreatedBy()))
+            throw new ForbiddenException("Add editor: Only the scheme creator can add editors");
+
         List<GrantAdmin> existingEditors = scheme.getGrantAdmins();
         GrantAdmin editorToAdd;
         try {
@@ -117,11 +124,15 @@ public class SchemeEditorService {
         final SchemeEntity scheme = schemeRepo.findById(schemeId)
                 .orElseThrow(() -> new NotFoundException("Delete scheme editor: Scheme not found"));
 
+        final AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+        if (!session.getGrantAdminId().equals(scheme.getCreatedBy()))
+            throw new ForbiddenException("Delete scheme editor: Only the scheme creator can delete editors");
+
         if (scheme.getCreatedBy().equals(editorId))
             throw new ForbiddenException("Delete scheme editor: Cannot delete scheme creator");
 
         final GrantAdmin grantAdmin = grantAdminRepository.findById(editorId)
-                .orElseThrow(() -> new NotFoundException("Delete scheme editor: Grant Admin with editor access not found for this scheme"));
+                .orElseThrow(() -> new NotFoundException("Delete scheme editor: Grant Admin not found for this scheme"));
 
         scheme.removeAdmin(grantAdmin);
         schemeRepo.save(scheme);
