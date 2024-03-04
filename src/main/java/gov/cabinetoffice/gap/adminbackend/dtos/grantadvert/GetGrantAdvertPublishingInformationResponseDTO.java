@@ -34,4 +34,6 @@ public class GetGrantAdvertPublishingInformationResponseDTO {
 
     private String lastUpdatedByEmail;
 
+    private Instant lastUpdated;
+
 }
