@@ -93,6 +93,30 @@ class SubmissionsServiceTest {
             "9-10 St Andrew Square", "Edinburgh", "EH2 2AF", "500", "12738494", "Yes", "");
 
     @Nested
+    class GetSubmissionById {
+        final UUID submissionId = UUID.randomUUID();
+
+        @Test
+        void successfullyGetSubmissionById() {
+            final Submission submission = Submission.builder().id(submissionId).build();
+            when(submissionRepository.findById(submissionId)).thenReturn(Optional.ofNullable(submission));
+
+            final Submission response = submissionsService.getSubmissionById(submissionId);
+
+            verify(submissionRepository).findById(submissionId);
+            assertThat(response).isEqualTo(submission);
+        }
+
+        @Test
+        void throwsNotFoundException() {
+            when(submissionRepository.findById(submissionId)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> submissionsService.getSubmissionById(submissionId),
+                    "No Submission with ID " + submissionId + " was found");
+
+        }
+
+    }
+    @Nested
     class ExportSpotlightChecksTests {
 
         @Test

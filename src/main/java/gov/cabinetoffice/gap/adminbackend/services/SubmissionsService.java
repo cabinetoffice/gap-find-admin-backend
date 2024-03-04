@@ -72,6 +72,11 @@ public class SubmissionsService {
     @Value("${user-service.domain}")
     private String userServiceUrl;
 
+    public Submission getSubmissionById(final UUID submissionId) {
+        return submissionRepository.findById(submissionId).orElseThrow(() -> new NotFoundException(
+                String.format("No Submission with ID %s was found", submissionId)));
+    }
+
     public ByteArrayOutputStream exportSpotlightChecks(Integer applicationId) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
