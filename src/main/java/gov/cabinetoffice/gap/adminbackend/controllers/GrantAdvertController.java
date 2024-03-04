@@ -149,7 +149,7 @@ public class GrantAdvertController {
     @ApiResponses(value = { @ApiResponse(responseCode = "200",
                 description = "Successfully fetched the publishing information of grant advert for query params provided",
                 content = @Content(mediaType = "application/json",
-                        schema = @Schema(implementation = FullGrantAdvertPublishingInformationResponseDTO.class))),
+                        schema = @Schema(implementation = GetGrantAdvertPublishingInformationResponseDTO.class))),
                 @ApiResponse(responseCode = "403", description = "Insufficient permissions to fetch this grant advert",
                         content = @Content(mediaType = "application/json")),
                 @ApiResponse(responseCode = "404", description = "No grant advert found for scheme id provided",
@@ -158,7 +158,7 @@ public class GrantAdvertController {
                         content = @Content(mediaType = "application/json")) })
 
     public ResponseEntity getPublishInformation(@RequestParam @NotNull final Integer grantSchemeId) {
-            FullGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponse = this.grantAdvertService
+        GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponse = this.grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(grantSchemeId);
 
             return ResponseEntity.ok(grantAdvertPublishingInformationResponse);

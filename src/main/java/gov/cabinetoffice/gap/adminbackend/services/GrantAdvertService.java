@@ -502,7 +502,7 @@ public class GrantAdvertService {
         return LocalDateTime.parse(dateStr, formatter).toString();
     }
 
-    public FullGrantAdvertPublishingInformationResponseDTO getGrantAdvertPublishingInformationBySchemeId(
+    public GetGrantAdvertPublishingInformationResponseDTO getGrantAdvertPublishingInformationBySchemeId(
             Integer grantSchemeId) {
         GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
@@ -514,8 +514,9 @@ public class GrantAdvertService {
 
         String emailAddress = userService.getEmailAddressForSub(adminSub);
 
-        return FullGrantAdvertPublishingInformationResponseDTO.builder()
-                .publishingInfo(publishingInfo).lastUpdatedByEmail(emailAddress).build();
+        publishingInfo.setLastUpdatedByEmail(emailAddress);
+
+        return publishingInfo;
     }
 
     public GetGrantAdvertStatusResponseDTO getGrantAdvertStatusBySchemeId(Integer grantSchemeId) {
