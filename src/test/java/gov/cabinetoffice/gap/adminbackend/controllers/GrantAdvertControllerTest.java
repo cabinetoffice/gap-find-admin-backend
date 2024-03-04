@@ -8,6 +8,8 @@ import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertPageResponse;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertQuestionResponse;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
@@ -64,7 +66,11 @@ class GrantAdvertControllerTest {
     @MockBean
     private GrantAdvertService grantAdvertService;
 
+    @SpyBean
+    private GrantAdvertMapperImpl grantAdvertMapper;
 
+    @SpyBean
+    private ValidationErrorMapperImpl validationErrorMapper;
 
     @MockBean
     private EventLogService eventLogService;
