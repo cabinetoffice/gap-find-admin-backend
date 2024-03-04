@@ -156,7 +156,7 @@ public class GrantAdvertController {
                         content = @Content(mediaType = "application/json")),
                 @ApiResponse(responseCode = "400", description = "Bad request body",
                         content = @Content(mediaType = "application/json")) })
-
+    @CheckSchemeOwnership
     public ResponseEntity getPublishInformation(@RequestParam @NotNull final Integer grantSchemeId) {
         GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponse = this.grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(grantSchemeId);
