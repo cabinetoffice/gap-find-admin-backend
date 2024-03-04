@@ -9,10 +9,7 @@ import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
@@ -70,6 +67,8 @@ public class GrantAdvertService {
     private final CMAClient contentfulManagementClient;
 
     private final CDAClient contentfulDeliveryClient;
+
+    private final UserService userService;
 
     private final WebClient.Builder webClientBuilder;
 
@@ -508,7 +507,16 @@ public class GrantAdvertService {
         GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
-        return this.grantAdvertMapper.grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
+        GetGrantAdvertPublishingInformationResponseDTO publishingInfo = this.grantAdvertMapper
+                .grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
+
+        String adminSub = grantAdvert.getLastUpdatedBy().getGapUser().getUserSub();
+
+        String emailAddress = userService.getEmailAddressForSub(adminSub);
+
+        publishingInfo.setLastUpdatedByEmail(emailAddress);
+
+        return publishingInfo;
     }
 
     public GetGrantAdvertStatusResponseDTO getGrantAdvertStatusBySchemeId(Integer grantSchemeId) {

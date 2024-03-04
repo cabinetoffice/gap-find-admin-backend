@@ -3,10 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.contentful.java.cma.model.CMAHttpException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
@@ -18,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertQuestionResponse;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -80,6 +78,9 @@ class GrantAdvertControllerTest {
 
     @MockBean
     private Validator validator;
+    
+    @MockBean
+    private UserService userService;
 
     @MockBean
     @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
@@ -135,6 +136,7 @@ class GrantAdvertControllerTest {
         String questionId = "grantShortDescription";
 
         String expectedResponse = "This is a description";
+
 
         GrantAdvertPageResponse samplePage = GrantAdvertPageResponse.builder()
                 .status(GrantAdvertPageResponseStatus.IN_PROGRESS)
@@ -459,18 +461,24 @@ class GrantAdvertControllerTest {
         @Test
         void getAdvertPublishingInformation_GrantAdvertPublishingInformationReturned() throws Exception {
             String contentfulSlug = "dummy-contentful-slug";
-            GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponseDTO = GetGrantAdvertPublishingInformationResponseDTO
+            GetGrantAdvertPublishingInformationResponseDTO publishingInfo = GetGrantAdvertPublishingInformationResponseDTO
                     .builder().grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus)
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
+                    .lastUpdatedByEmail("an-email")
+                    .lastUpdated(lastPublishedDate)
                     .closingDate(closingDate).openingDate(openingDate).build();
 
+
+            when(userService.getEmailAddressForSub(any())).thenReturn("an-email");
+
+
             when(grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(grantSchemeId))
-                    .thenReturn(grantAdvertPublishingInformationResponseDTO);
+                    .thenReturn(publishingInfo);
 
             mockMvc.perform(get("/grant-advert/publish-information").param("grantSchemeId", grantSchemeId.toString()))
                     .andExpect(status().isOk())
-                    .andExpect(content().string(HelperUtils.asJsonString(grantAdvertPublishingInformationResponseDTO)))
+                    .andExpect(content().string(HelperUtils.asJsonString(publishingInfo)))
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON));
         }
 
