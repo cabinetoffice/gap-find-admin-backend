@@ -1,10 +1,12 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
+import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
@@ -13,17 +15,23 @@ import gov.cabinetoffice.gap.adminbackend.repositories.FundingOrganisationReposi
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
+import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
+import javax.servlet.http.HttpSession;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +41,9 @@ import java.util.UUID;
 @Log4j2
 public class UserService {
 
+    public static final String EMPTY_EMAIL_VALUE = "-";
+
+    private final AwsEncryptionServiceImpl encryptionService;
     private final GapUserRepository gapUserRepository;
 
     private final GrantAdminRepository grantAdminRepository;
@@ -42,6 +53,8 @@ public class UserService {
     private final FundingOrganisationRepository fundingOrganisationRepository;
 
     private final UserServiceConfig userServiceConfig;
+
+    private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
 
     private final RestTemplate restTemplate;
 
@@ -113,6 +126,10 @@ public class UserService {
         return grantAdminRepository.findByGapUserUserSub(sub);
     }
 
+    public Optional<GrantAdmin> getGrantAdminById(final int id) {
+        return grantAdminRepository.findById(id);
+    }
+
     public String getDepartmentGGISId(Integer adminId) {
         final GrantAdmin admin = grantAdminRepository.findById(adminId)
                 .orElseThrow(() -> new NotFoundException("No admin found for id: " + adminId));
@@ -140,5 +157,30 @@ public class UserService {
             log.info("Updated user's funding organisation: {}", grantAdmin.getGapUser());
 
         }
+    }
+
+    public String getEmailAddressForSub(final String sub) {
+        final String url = userServiceConfig.getDomain() + "/users/emails";
+        final ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {};
+
+        final List<UserEmailResponseDto> response = webClientBuilder.build()
+                .post()
+                .uri(url)
+                .body(BodyInserters.fromValue(List.of(sub)))
+                .headers(h -> h.set("Authorization", lambdaSecretConfigProperties.getSecret()))
+                .retrieve()
+                .onStatus(HttpStatus::isError, clientResponse -> {
+                    log.error("Unable to get email address for user with sub {}, HTTP status code {}", sub, clientResponse.statusCode());
+                    return Mono.empty();
+                })
+                .bodyToMono(responseType)
+                .block();
+
+        return Optional.ofNullable(response)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(userEmailDto -> encryptionService.decryptField(userEmailDto.emailAddress()))
+                .findFirst()
+                .orElse(EMPTY_EMAIL_VALUE);
     }
 }

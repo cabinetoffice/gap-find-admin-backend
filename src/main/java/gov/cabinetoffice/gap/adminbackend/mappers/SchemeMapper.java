@@ -4,37 +4,87 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.List;
 
+@Component
+@Primary
+@Slf4j
 @Mapper(componentModel = "spring")
-public interface SchemeMapper {
+public abstract class SchemeMapper {
 
-    @Mapping(target = "schemeId", source = "id")
-    @Mapping(target = "ggisReference", source = "ggisIdentifier")
-    @Mapping(target = "contactEmail", source = "email")
-    SchemeDTO schemeEntityToDto(SchemeEntity schemeEntity);
+    private UserService userService;
 
-    List<SchemeDTO> schemeEntityListtoDtoList(List<SchemeEntity> schemeEntityList);
+    @Autowired
+    public final void setUserService(final UserService userService) {
+        this.userService = userService;
+    }
 
-    SchemeEntity schemeDtoToEntity(SchemeDTO schemeDto);
+    public SchemeDTO schemeEntityToDto(SchemeEntity schemeEntity) {
+        if ( schemeEntity == null ) {
+            return null;
+        }
 
-    List<SchemeEntity> schemeDtoListToEntityList(List<SchemeDTO> schemeDto);
+        SchemeDTO.SchemeDTOBuilder schemeDTO = SchemeDTO.builder();
+
+        schemeDTO.schemeId( schemeEntity.getId() );
+        schemeDTO.ggisReference( schemeEntity.getGgisIdentifier() );
+        schemeDTO.contactEmail( schemeEntity.getEmail() );
+        schemeDTO.funderId( schemeEntity.getFunderId() );
+        schemeDTO.name( schemeEntity.getName() );
+        if ( schemeEntity.getVersion() != null ) {
+            schemeDTO.version( String.valueOf( schemeEntity.getVersion() ) );
+        }
+        schemeDTO.createdDate( schemeEntity.getCreatedDate() );
+        schemeDTO.createdBy( schemeEntity.getCreatedBy() );
+
+        // if last updated is null then return created date + created by.
+        setLastUpdatedByValues(schemeEntity, schemeDTO);
+
+        return schemeDTO.build();
+    }
+
+    private void setLastUpdatedByValues(SchemeEntity schemeEntity, SchemeDTO.SchemeDTOBuilder schemeDTO) {
+        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null;
+        final int lastUpdatedBy  = isLastUpdatedBySet ? schemeEntity.getLastUpdatedBy() : schemeEntity.getCreatedBy();
+        final String lastUpdatedByEmail = userService.getGrantAdminById(lastUpdatedBy)
+                .map(admin -> {
+                    final String sub = admin.getGapUser().getUserSub();
+                    return userService.getEmailAddressForSub(sub);
+                })
+                .orElse(UserService.EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
+        final Instant lastUpdatedDate = isLastUpdatedBySet ? schemeEntity.getLastUpdated() : schemeEntity.getCreatedDate();
+
+        schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
+        schemeDTO.lastUpdatedDate(lastUpdatedDate);
+    }
+
+    public abstract List<SchemeDTO> schemeEntityListtoDtoList(List<SchemeEntity> schemeEntityList);
+
+    public abstract SchemeEntity schemeDtoToEntity(SchemeDTO schemeDto);
+
+    public abstract List<SchemeEntity> schemeDtoListToEntityList(List<SchemeDTO> schemeDto);
 
     @Mapping(target = "ggisIdentifier", source = "ggisReference")
     @Mapping(target = "email", source = "contactEmail")
-    SchemeEntity schemePostDtoToEntity(SchemePostDTO schemePostDto);
+    public abstract SchemeEntity schemePostDtoToEntity(SchemePostDTO schemePostDto);
 
-    List<SchemeEntity> schemePostDtoListToEntityList(List<SchemePostDTO> schemePostDtoList);
+    public abstract List<SchemeEntity> schemePostDtoListToEntityList(List<SchemePostDTO> schemePostDtoList);
 
-    SchemePostDTO schemeEntityToPostDto(SchemeEntity schemeEntity);
+    public abstract SchemePostDTO schemeEntityToPostDto(SchemeEntity schemeEntity);
 
-    List<SchemePostDTO> schemeEntityListToPostDtoList(List<SchemeEntity> schemeEntityList);
+    public abstract  List<SchemePostDTO> schemeEntityListToPostDtoList(List<SchemeEntity> schemeEntityList);
 
     @Mapping(target = "ggisIdentifier", source = "ggisReference")
     @Mapping(target = "email", source = "contactEmail")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateSchemeEntityFromPatchDto(SchemePatchDTO schemePatchDto, @MappingTarget SchemeEntity schemeEntity);
+    public abstract void updateSchemeEntityFromPatchDto(SchemePatchDTO schemePatchDto, @MappingTarget SchemeEntity schemeEntity);
 
 }
