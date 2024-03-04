@@ -466,6 +466,7 @@ class GrantAdvertControllerTest {
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
                     .lastUpdatedByEmail("an-email")
+                    .lastUpdated(lastPublishedDate)
                     .closingDate(closingDate).openingDate(openingDate).build();
 
 
