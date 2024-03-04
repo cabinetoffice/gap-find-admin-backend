@@ -15,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertQuestionResponse;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,9 @@ class GrantAdvertControllerTest {
 
     @MockBean
     private Validator validator;
+    
+    @MockBean
+    private UserService userService;
 
     @MockBean
     @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
@@ -132,6 +136,7 @@ class GrantAdvertControllerTest {
         String questionId = "grantShortDescription";
 
         String expectedResponse = "This is a description";
+
 
         GrantAdvertPageResponse samplePage = GrantAdvertPageResponse.builder()
                 .status(GrantAdvertPageResponseStatus.IN_PROGRESS)
@@ -460,8 +465,11 @@ class GrantAdvertControllerTest {
                     .builder().grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus)
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
+                    .lastUpdatedByEmail("an-email")
                     .closingDate(closingDate).openingDate(openingDate).build();
 
+
+            when(userService.getEmailAddressForSub(any())).thenReturn("an-email");
 
 
             when(grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(grantSchemeId))
