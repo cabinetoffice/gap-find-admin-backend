@@ -22,6 +22,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAttachmentRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
@@ -65,6 +66,8 @@ public class SubmissionsService {
     private final ZipService zipService;
 
     private final GrantExportBatchRepository grantExportBatchRepository;
+
+    private final GrantAttachmentRepository grantAttachmentRepository;
 
     @Value("${cloud.aws.sqs.submissions-export-queue}")
     private String submissionsExportQueue;
@@ -238,10 +241,13 @@ public class SubmissionsService {
                 .orElseThrow(NotFoundException::new);
         final String userId = submission.getApplicant().getUserId();
         final String email = getEmailFromUserId(userId, authHeader);
+        final boolean hasAttachments = grantAttachmentRepository.existsBySubmissionId(submissionId);
+
 
         final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper
                 .submissionToLambdaSubmissionDefinition(submission);
         lambdaSubmissionDefinition.setEmail(email);
+        lambdaSubmissionDefinition.setHasAttachments(hasAttachments);
         return lambdaSubmissionDefinition;
     }
 
