@@ -373,8 +373,9 @@ class SubmissionsServiceTest {
 
         @Test
         void happyPath_throwsNoException() {
+            SchemeEntity scheme = SchemeEntity.builder().id(1).build();
             List<Submission> submissions = Collections
-                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).build());
+                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).scheme(scheme).build());
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
                     .thenReturn(submissions);
 
@@ -408,8 +409,9 @@ class SubmissionsServiceTest {
 
         @Test
         void sqsMessageFailure_throwsException() {
+            SchemeEntity scheme = SchemeEntity.builder().id(1).build();
             List<Submission> submissions = Collections
-                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).build());
+                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).scheme(scheme).build());
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
                     .thenReturn(submissions);
             when(amazonSQS.sendMessageBatch(any())).thenThrow(new AmazonSQSException("Cannot send messages"));
