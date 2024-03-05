@@ -19,6 +19,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAttachmentRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
@@ -60,6 +61,9 @@ class SubmissionsServiceTest {
 
     @Mock
     private SubmissionRepository submissionRepository;
+
+    @Mock
+    private GrantAttachmentRepository grantAttachmentRepository;
 
     @Mock
     private AmazonSQS amazonSQS;
