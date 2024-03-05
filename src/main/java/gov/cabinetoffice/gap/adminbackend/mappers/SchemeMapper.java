@@ -52,18 +52,19 @@ public abstract class SchemeMapper {
     }
 
     private void setLastUpdatedByValues(SchemeEntity schemeEntity, SchemeDTO.SchemeDTOBuilder schemeDTO) {
-        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null;
-        final int lastUpdatedBy  = isLastUpdatedBySet ? schemeEntity.getLastUpdatedBy() : schemeEntity.getCreatedBy();
-        final String lastUpdatedByEmail = userService.getGrantAdminById(lastUpdatedBy)
-                .map(admin -> {
-                    final String sub = admin.getGapUser().getUserSub();
-                    return userService.getEmailAddressForSub(sub);
-                })
-                .orElse(UserService.EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
-        final Instant lastUpdatedDate = isLastUpdatedBySet ? schemeEntity.getLastUpdated() : schemeEntity.getCreatedDate();
-
-        schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
-        schemeDTO.lastUpdatedDate(lastUpdatedDate);
+        return;
+//        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null;
+//        final int lastUpdatedBy  = isLastUpdatedBySet ? schemeEntity.getLastUpdatedBy() : schemeEntity.getCreatedBy();
+//        final String lastUpdatedByEmail = userService.getGrantAdminById(lastUpdatedBy)
+//                .map(admin -> {
+//                    final String sub = admin.getGapUser().getUserSub();
+//                    return userService.getEmailAddressForSub(sub);
+//                })
+//                .orElse(UserService.EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
+//        final Instant lastUpdatedDate = isLastUpdatedBySet ? schemeEntity.getLastUpdated() : schemeEntity.getCreatedDate();
+//
+//        schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
+//        schemeDTO.lastUpdatedDate(lastUpdatedDate);
     }
 
     public abstract List<SchemeDTO> schemeEntityListtoDtoList(List<SchemeEntity> schemeEntityList);

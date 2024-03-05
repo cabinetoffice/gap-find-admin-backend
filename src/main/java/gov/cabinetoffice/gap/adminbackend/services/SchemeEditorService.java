@@ -44,11 +44,14 @@ public class SchemeEditorService {
     }
 
     public List<SchemeEditorsDTO> getEditorsFromSchemeId(Integer schemeId, String authHeader) {
-        SchemeEntity scheme = schemeService.findSchemeById(schemeId);
-        List<GrantAdmin> editors = scheme.getGrantAdmins();
-        Integer createdBy = scheme.getCreatedBy();
-
-        return this.mapEditorListToDto(editors, createdBy, authHeader);
+        SchemeEditorsDTO dto = SchemeEditorsDTO.builder().id(1).role(SchemeEditorRoleEnum.Owner).email("paul.lawlor@and.digital").build();
+        SchemeEditorsDTO dto2 = SchemeEditorsDTO.builder().id(2).role(SchemeEditorRoleEnum.Editor).email("paul.lawlor+2@and.digital").build();
+        return List.of(dto, dto2);
+//        SchemeEntity scheme = schemeService.findSchemeById(schemeId);
+//        List<GrantAdmin> editors = scheme.getGrantAdmins();
+//        Integer createdBy = scheme.getCreatedBy();
+//
+//        return this.mapEditorListToDto(editors, createdBy, authHeader);
     }
 
     private String getEmailFromUserResponse(final List<DecryptedUserEmailResponse> userResponse,
