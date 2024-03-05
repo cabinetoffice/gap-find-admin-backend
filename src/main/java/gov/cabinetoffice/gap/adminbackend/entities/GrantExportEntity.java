@@ -46,6 +46,7 @@ public class GrantExportEntity {
     private String location;
 
     // Not a database column, needed to support SQS message for Submission Export
+    @Transient
     private Integer schemeId;
 
     @Override
