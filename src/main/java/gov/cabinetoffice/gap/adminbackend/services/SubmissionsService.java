@@ -310,7 +310,8 @@ public class SubmissionsService {
         return list.stream()
                 .map(submission -> GrantExportEntity.builder().id(new GrantExportId(exportId, submission.getId()))
                         .status(GrantExportStatus.REQUESTED).applicationId(applicationId)
-                        .emailAddress(adminSession.getEmailAddress()).createdBy(adminSession.getGrantAdminId()).build())
+                        .emailAddress(adminSession.getEmailAddress()).createdBy(adminSession.getGrantAdminId())
+                        .schemeId(submission.getScheme().getId()).build())
                 .toList();
     }
 
@@ -338,6 +339,9 @@ public class SubmissionsService {
                     return new SendMessageBatchRequestEntry().withId(randomUuid).withMessageBody(randomUuid)
                             .withMessageDeduplicationId(randomUuid)
                             .withMessageGroupId(exportRecord.getId().getExportBatchId().toString())
+                            .addMessageAttributesEntry("schemeId",
+                                    new MessageAttributeValue().withDataType("String")
+                                            .withStringValue(exportRecord.getSchemeId().toString()))
                             .addMessageAttributesEntry("submissionId",
                                     new MessageAttributeValue().withDataType("String")
                                             .withStringValue(exportRecord.getId().getSubmissionId().toString()))
