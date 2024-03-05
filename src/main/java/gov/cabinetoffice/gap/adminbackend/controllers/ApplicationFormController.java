@@ -5,7 +5,9 @@ import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.EventType;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
@@ -15,6 +17,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.*;
+import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -51,6 +54,10 @@ public class ApplicationFormController {
     private final SchemeService schemeService;
 
     private final EventLogService eventLogService;
+
+    private final UserService userService;
+
+    private final AwsEncryptionServiceImpl encryptionService;
 
     @PostMapping
     @ApiResponses(value = {
@@ -229,6 +236,22 @@ public class ApplicationFormController {
             GenericErrorDTO genericErrorDTO = new GenericErrorDTO(afe.getMessage());
             return ResponseEntity.internalServerError().body(genericErrorDTO);
         }
+
+    }
+
+    @GetMapping("/{applicationId}/lastUpdated/email")
+    @CheckSchemeOwnership
+    public ResponseEntity<String> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
+        final Integer lastUpdatedBy = applicationFormService.getLastUpdatedBy(applicationId);
+        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(lastUpdatedBy);
+        if (grantAdmin.isEmpty()) {
+            throw new NotFoundException("User not found");
+        }
+
+        final String sub = grantAdmin.get().getGapUser().getUserSub();
+        final String email = userService.getEmailAddressForSub(sub);
+        return ResponseEntity.ok(email);
+
 
     }
 
