@@ -242,7 +242,7 @@ public class ApplicationFormController {
         final Integer lastUpdatedBy = applicationFormService.getLastUpdatedBy(applicationId);
         final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(lastUpdatedBy);
         if (grantAdmin.isEmpty()) {
-            throw new NotFoundException("User not found");
+            return ResponseEntity.notFound().build();
         }
 
         final String sub = grantAdmin.get().getGapUser().getUserSub();
