@@ -373,6 +373,7 @@ public class ApplicationFormService {
         questions.add(newSectionIndex, question);
 
         applicationForm.getDefinition().setSections(sections);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         save(applicationForm);
     }
 
