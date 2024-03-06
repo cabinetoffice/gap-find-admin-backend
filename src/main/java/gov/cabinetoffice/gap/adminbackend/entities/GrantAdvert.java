@@ -91,6 +91,16 @@ public class GrantAdvert extends BaseEntity {
     @Column(name = "response", columnDefinition = "json")
     private GrantAdvertResponse response;
 
+    /**
+     * The "lastUpdated" field has historically not being set correctly (it's not being updated with the advert).
+     * A recent PR has fixed this, see: https://github.com/cabinetoffice/gap-find-admin-backend/pull/216
+     * Advert rows created prior to the PR above have an invalid lastUpdated.
+     * Going forward, this field (validLastUpdated) needs to populate with "true" when adverts are created or updated.
+     * This field is used by the front-end to conditionally render the lastUpdated field (only when it's valid).
+     */
+    @Column(name="valid_last_updated", columnDefinition = "boolean default false")
+    private boolean validLastUpdated;
+
     @Override
     public boolean equals(Object o) {
         if (this == o)

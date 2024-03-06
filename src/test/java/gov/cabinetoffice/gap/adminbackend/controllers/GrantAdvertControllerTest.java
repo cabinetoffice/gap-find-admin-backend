@@ -456,6 +456,8 @@ class GrantAdvertControllerTest {
 
         private final Instant lastPublishedDate = dateTimeInput;
 
+        private final Instant createdDate = Instant.parse("2021-01-01T00:00:00.00Z");
+
         private final Instant unpublishedDate = dateTimeInput;
 
         @Test
@@ -466,6 +468,8 @@ class GrantAdvertControllerTest {
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
                     .lastUpdatedByEmail("an-email")
+                    .created(createdDate)
+                    .validLastUpdated(true)
                     .lastUpdated(lastPublishedDate)
                     .closingDate(closingDate).openingDate(openingDate).build();
 
