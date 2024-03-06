@@ -391,4 +391,59 @@ class SchemeServiceTest {
 
         assertThat(methodResponse).isEqualTo(schemeDtos);
     }
+
+    @Test
+    void getOwnedSchemes_Success() {
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByOrderByCreatedDateDesc(1))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getOwnedSchemes();
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void getPaginatedEditableSchemes_Success() {
+        final Pageable pagination = Pageable.ofSize(2);
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(1, 1, pagination))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getPaginatedEditableSchemes(pagination);
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void getEditableSchemes_Success() {
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(1, 1))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getEditableSchemes();
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
 }
