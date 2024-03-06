@@ -15,9 +15,6 @@ import java.util.Optional;
 public interface ApplicationFormRepository extends JpaRepository<ApplicationFormEntity, Integer> {
 
     Optional<ApplicationFormEntity> findById(Integer applicationId);
-
-
-
     Optional<ApplicationFormNoSections> findByGrantApplicationId(Integer applicationId);
     Optional<ApplicationFormEntity> findByGrantSchemeId(Integer grantSchemeId);
 
