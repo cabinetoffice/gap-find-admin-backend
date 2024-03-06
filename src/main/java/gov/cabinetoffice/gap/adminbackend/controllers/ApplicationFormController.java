@@ -5,7 +5,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
@@ -17,7 +16,6 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.*;
-import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -57,7 +55,6 @@ public class ApplicationFormController {
 
     private final UserService userService;
 
-    private final AwsEncryptionServiceImpl encryptionService;
 
     @PostMapping
     @ApiResponses(value = {
@@ -251,8 +248,6 @@ public class ApplicationFormController {
         final String sub = grantAdmin.get().getGapUser().getUserSub();
         final String email = userService.getEmailAddressForSub(sub);
         return ResponseEntity.ok(email);
-
-
     }
 
     private void logApplicationEvent(EventType eventType, String sessionId, String applicationId) {
