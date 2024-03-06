@@ -169,4 +169,40 @@ public class SchemeService {
         scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
     }
+
+    public List<SchemeDTO> getPaginatedOwnedSchemes(Pageable pagination) {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
+        final int grantAdminId = adminSession.getGrantAdminId();
+        final List<SchemeEntity> schemes = this.schemeRepo
+                    .findByCreatedByOrderByCreatedDateDesc(grantAdminId, pagination);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getOwnedSchemes() {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
+        final int grantAdminId = adminSession.getGrantAdminId();
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByOrderByCreatedDateDesc(grantAdminId);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getPaginatedEditableSchemes(Pageable pagination) {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
+        final int grantAdminId = adminSession.getGrantAdminId();
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(grantAdminId, grantAdminId, pagination);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getEditableSchemes() {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
+        final int grantAdminId = adminSession.getGrantAdminId();
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(grantAdminId, grantAdminId);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
 }

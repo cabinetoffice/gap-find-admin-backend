@@ -23,4 +23,8 @@ public interface SchemeRepository extends JpaRepository<SchemeEntity, Integer> {
     @PreAuthorize("hasRole('ADMIN')")
     boolean existsByIdAndCreatedBy(Integer schemeId, Integer grantAdminId);
 
+    List<SchemeEntity> findByCreatedByOrderByCreatedDateDesc(Integer grantAdminId, Pageable pagination);
+    List<SchemeEntity> findByCreatedByOrderByCreatedDateDesc(Integer grantAdminId);
+    List<SchemeEntity> findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(Integer createdBy, Integer editorId, Pageable pagination);
+    List<SchemeEntity> findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(Integer createdBy, Integer editorId);
 }

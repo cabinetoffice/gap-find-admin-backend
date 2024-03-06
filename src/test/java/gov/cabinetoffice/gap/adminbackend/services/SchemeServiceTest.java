@@ -14,12 +14,14 @@ import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
+import org.apache.http.conn.scheme.Scheme;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -369,5 +371,24 @@ class SchemeServiceTest {
                 () -> SchemeServiceTest.this.schemeService.patchCreatedBy(GrantAdmin.builder().id(1).build(), 1))
                 .isInstanceOf(SchemeEntityException.class).hasMessage(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: 1");
+    }
+
+    @Test
+    void getPaginatedOwnedSchemes_Success() {
+        final Pageable pagination = Pageable.ofSize(2);
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByOrderByCreatedDateDesc(1, pagination))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getPaginatedOwnedSchemes(pagination);
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
     }
 }
