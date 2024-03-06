@@ -73,7 +73,6 @@ public class ApplicationFormSectionService {
         }
 
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
-
         this.applicationFormRepository.save(applicationForm);
 
     }
@@ -128,6 +127,7 @@ public class ApplicationFormSectionService {
         sections.add(NEW_SECTION_INDEX, section);
 
         applicationForm.getDefinition().setSections(sections);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         this.applicationFormRepository.save(applicationForm);
     }
 

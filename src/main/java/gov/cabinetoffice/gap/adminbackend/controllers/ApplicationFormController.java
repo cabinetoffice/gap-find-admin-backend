@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.EventType;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
@@ -51,6 +52,8 @@ public class ApplicationFormController {
     private final SchemeService schemeService;
 
     private final EventLogService eventLogService;
+
+    private final UserService userService;
 
     @PostMapping
     @ApiResponses(value = {
@@ -230,6 +233,20 @@ public class ApplicationFormController {
             return ResponseEntity.internalServerError().body(genericErrorDTO);
         }
 
+    }
+
+    @GetMapping("/{applicationId}/lastUpdated/email")
+    @CheckSchemeOwnership
+    public ResponseEntity<String> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
+        final Integer lastUpdatedBy = applicationFormService.getLastUpdatedBy(applicationId);
+        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(lastUpdatedBy);
+        if (grantAdmin.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        final String sub = grantAdmin.get().getGapUser().getUserSub();
+        final String email = userService.getEmailAddressForSub(sub);
+        return ResponseEntity.ok(email);
     }
 
     private void logApplicationEvent(EventType eventType, String sessionId, String applicationId) {
