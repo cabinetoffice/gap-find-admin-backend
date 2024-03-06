@@ -506,7 +506,6 @@ public class GrantAdvertService {
 
     public GetGrantAdvertPublishingInformationResponseDTO getGrantAdvertPublishingInformationBySchemeId(
             Integer grantSchemeId) {
-        //threw not exists after adding an editor and clicking back
         GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
