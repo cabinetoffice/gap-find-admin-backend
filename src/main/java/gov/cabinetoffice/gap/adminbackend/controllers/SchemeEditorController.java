@@ -59,4 +59,10 @@ public class SchemeEditorController {
         return ResponseEntity.ok("Editor added to scheme successfully");
     }
 
+    @DeleteMapping(value = "/{editorId}")
+    public ResponseEntity<String> deleteSchemeEditor(@PathVariable Integer schemeId, @PathVariable Integer editorId) {
+        schemeEditorService.deleteEditor(schemeId, editorId);
+        return ResponseEntity.ok().build();
+    }
+
 }

@@ -3,12 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.contentful.java.cma.model.CMAHttpException;
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertResponseDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPagePatchResponseDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -152,22 +147,22 @@ public class GrantAdvertController {
     @GetMapping("/publish-information")
     @Operation(summary = "Retrieves the information around publishing a grant advert for query params provided")
     @ApiResponses(value = { @ApiResponse(responseCode = "200",
-            description = "Successfully fetched the publishing information of grant advert for query params provided",
-            content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = GetGrantAdvertPublishingInformationResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions to fetch this grant advert",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No grant advert found for scheme id provided",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "400", description = "Bad request body",
-                    content = @Content(mediaType = "application/json")) })
+                description = "Successfully fetched the publishing information of grant advert for query params provided",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = GetGrantAdvertPublishingInformationResponseDTO.class))),
+                @ApiResponse(responseCode = "403", description = "Insufficient permissions to fetch this grant advert",
+                        content = @Content(mediaType = "application/json")),
+                @ApiResponse(responseCode = "404", description = "No grant advert found for scheme id provided",
+                        content = @Content(mediaType = "application/json")),
+                @ApiResponse(responseCode = "400", description = "Bad request body",
+                        content = @Content(mediaType = "application/json")) })
     @CheckSchemeOwnership
     public ResponseEntity getPublishInformation(@RequestParam @NotNull final Integer grantSchemeId) {
-
         GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponse = this.grantAdvertService
-                .getGrantAdvertPublishingInformationBySchemeId(grantSchemeId);
+                    .getGrantAdvertPublishingInformationBySchemeId(grantSchemeId);
 
-        return ResponseEntity.ok(grantAdvertPublishingInformationResponse);
+            return ResponseEntity.ok(grantAdvertPublishingInformationResponse);
+
     }
 
     @DeleteMapping("/{grantAdvertId}")

@@ -19,6 +19,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAttachmentRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
@@ -60,6 +61,9 @@ class SubmissionsServiceTest {
 
     @Mock
     private SubmissionRepository submissionRepository;
+
+    @Mock
+    private GrantAttachmentRepository grantAttachmentRepository;
 
     @Mock
     private AmazonSQS amazonSQS;
@@ -369,8 +373,9 @@ class SubmissionsServiceTest {
 
         @Test
         void happyPath_throwsNoException() {
+            SchemeEntity scheme = SchemeEntity.builder().id(1).build();
             List<Submission> submissions = Collections
-                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).build());
+                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).scheme(scheme).build());
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
                     .thenReturn(submissions);
 
@@ -404,8 +409,9 @@ class SubmissionsServiceTest {
 
         @Test
         void sqsMessageFailure_throwsException() {
+            SchemeEntity scheme = SchemeEntity.builder().id(1).build();
             List<Submission> submissions = Collections
-                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).build());
+                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).scheme(scheme).build());
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
                     .thenReturn(submissions);
             when(amazonSQS.sendMessageBatch(any())).thenThrow(new AmazonSQSException("Cannot send messages"));

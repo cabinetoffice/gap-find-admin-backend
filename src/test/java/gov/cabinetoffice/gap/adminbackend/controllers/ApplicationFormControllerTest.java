@@ -6,19 +6,14 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchD
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.*;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
-import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
-import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
-import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
-import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -103,6 +98,9 @@ class ApplicationFormControllerTest {
 
     @MockBean
     private SchemeService schemeService;
+
+    @MockBean
+    private UserService userService;
 
     @Test
     @WithAdminSession
@@ -441,4 +439,28 @@ class ApplicationFormControllerTest {
         verifyNoInteractions(eventLogService);
     }
 
+    @Test
+    void getLastUpdatedEmailHappyPath() throws Exception {
+        when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov");
+        when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
+        when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.of(GrantAdmin.builder().gapUser(GapUser.builder().userSub("sub").build()).build()));
+
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
+                .andExpect(content().string("test@test.gov"));
+
+    }
+
+    @Test
+    void getLastUpdatedEmailReturnsNotFoundWhenNoApplicationFound() throws Exception {
+        when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.empty());
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getLastUpdatedEmailReturnsNotFoundWhenNoGrantAdminFound() throws Exception {
+        when(applicationFormRepository.findById(anyInt())).
+                thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
+        when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.empty());
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
+    }
 }

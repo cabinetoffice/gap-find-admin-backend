@@ -24,7 +24,6 @@ import static java.lang.Integer.parseInt;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -374,6 +373,14 @@ public class ApplicationFormService {
         questions.add(newSectionIndex, question);
 
         applicationForm.getDefinition().setSections(sections);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         save(applicationForm);
+    }
+
+    public Integer getLastUpdatedBy(Integer applicationId) {
+        return this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"))
+                .getLastUpdateBy();
+
     }
 }

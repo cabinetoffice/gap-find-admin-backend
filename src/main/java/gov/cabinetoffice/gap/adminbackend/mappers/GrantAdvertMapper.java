@@ -34,6 +34,7 @@ public interface GrantAdvertMapper {
 
     @Mapping(target = "grantAdvertId", source = "id")
     @Mapping(target = "grantAdvertStatus", source = "status")
+    @Mapping(target = "lastUpdatedByEmail", ignore = true)
     GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishInformationResponseDtoFromGrantAdvert(
             GrantAdvert grantAdvert);
 

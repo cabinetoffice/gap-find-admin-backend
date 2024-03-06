@@ -9,6 +9,8 @@ import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
@@ -16,7 +18,9 @@ import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServi
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -27,10 +31,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import javax.persistence.EntityNotFoundException;
-
-import static org.mockito.Mockito.*;
-
 import java.util.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -224,4 +228,63 @@ public class SchemeEditorServiceTest {
                 .isInstanceOf(FieldViolationException.class);
     }
 
+
+    @Nested
+    class DeleteEditor {
+
+        final Integer schemeId = 1;
+        final Integer editorId = 2;
+        @Test
+        void removesAnEditor() {
+            final Date now = new Date();
+            final SchemeEntity scheme = SchemeEntity.builder()
+                    .createdBy(1)
+                    .createdDate(now.toInstant())
+                    .build();
+            final GrantAdmin admin = GrantAdmin.builder()
+                    .schemes(Collections.singletonList(scheme))
+                    .build();
+            scheme.addAdmin(admin);
+
+            assertThat(scheme.getGrantAdmins()).hasSize(1);
+            final ArgumentCaptor<SchemeEntity> schemeArgumentCaptor = ArgumentCaptor.forClass(SchemeEntity.class);
+            when(schemeRepository.findById(schemeId)).thenReturn(Optional.of(scheme));
+            when(grantAdminRepository.findById(editorId)).thenReturn(Optional.of(admin));
+
+            schemeEditorService.deleteEditor(schemeId, editorId);
+
+            verify(schemeRepository).save(schemeArgumentCaptor.capture());
+            assertThat(schemeArgumentCaptor.getValue().getGrantAdmins()).isEmpty();
+        }
+
+        @Test
+        void throwsNotFoundExceptionWhenNoSchemeFound() {
+            when(schemeRepository.findById(schemeId)).thenReturn(Optional.empty());
+            Assertions.assertThrows(NotFoundException.class, () -> schemeEditorService.deleteEditor(schemeId, editorId));
+        }
+
+        @Test
+        void throwsNotFoundExceptionWhenNoAdminFound() {
+            final SchemeEntity scheme = SchemeEntity.builder()
+                    .createdBy(1)
+                    .build();
+            when(schemeRepository.findById(schemeId)).thenReturn(Optional.of(scheme));
+            when(grantAdminRepository.findById(editorId)).thenReturn(Optional.empty());
+            Assertions.assertThrows(NotFoundException.class, () -> schemeEditorService.deleteEditor(schemeId, editorId));
+        }
+
+        @Test
+        void throwsForbiddenExceptionWhenSchemeCreatedByMatchesEditorId() {
+            final SchemeEntity scheme = SchemeEntity.builder()
+                    .createdBy(editorId)
+                    .build();
+            final GrantAdmin admin = GrantAdmin.builder()
+                    .schemes(Collections.singletonList(scheme))
+                    .build();
+            scheme.addAdmin(admin);
+            when(schemeRepository.findById(schemeId)).thenReturn(Optional.of(scheme));
+            when(grantAdminRepository.findById(editorId)).thenReturn(Optional.of(admin));
+            Assertions.assertThrows(ForbiddenException.class, () -> schemeEditorService.deleteEditor(schemeId, editorId));
+        }
+    }
 }
