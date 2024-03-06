@@ -36,4 +36,8 @@ public class GetGrantAdvertPublishingInformationResponseDTO {
 
     private Instant lastUpdated;
 
+    private Instant created;
+
+    private boolean validLastUpdated;
+
 }

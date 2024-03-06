@@ -78,7 +78,7 @@ public class GrantAdvertService {
 
     private final FeatureFlagsConfigurationProperties featureFlagsProperties;
 
-    public GrantAdvert save(GrantAdvert advert) {
+    public GrantAdvert  save(GrantAdvert advert) {
         final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Optional.ofNullable(auth)
                 .ifPresentOrElse(authentication -> {
@@ -92,6 +92,8 @@ public class GrantAdvertService {
 
                     advert.getScheme().setLastUpdated(updatedAt);
                     advert.getScheme().setLastUpdatedBy(adminSession.getGrantAdminId());
+
+                    advert.setValidLastUpdated(true);
                 }, () -> log.warn("Admin session was null. Update must have been performed by a lambda."));
 
         return grantAdvertRepository.save(advert);
@@ -106,7 +108,7 @@ public class GrantAdvertService {
         if (!doesAdvertExist) {
             final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme)
                     .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
-                    .status(GrantAdvertStatus.DRAFT).version(version).build();
+                    .status(GrantAdvertStatus.DRAFT).version(version).validLastUpdated(true).build();
             return save(grantAdvert);
         }
         final GrantAdvert existingAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).get();
@@ -504,6 +506,7 @@ public class GrantAdvertService {
 
     public GetGrantAdvertPublishingInformationResponseDTO getGrantAdvertPublishingInformationBySchemeId(
             Integer grantSchemeId) {
+        //threw not exists after adding an editor and clicking back
         GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
