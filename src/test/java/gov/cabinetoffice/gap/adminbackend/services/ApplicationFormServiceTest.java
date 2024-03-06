@@ -740,6 +740,27 @@ class ApplicationFormServiceTest {
         verify(applicationFormRepository, never()).save(any());
     }
 
+    @Test
+    void getLastUpdatedByByReturnsLastUpdatedByForApplication() {
+        ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().lastUpdateBy(2).build();
+        Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(1))
+                .thenReturn(Optional.of(testApplicationFormEntity));
+
+        Integer lastUpdatedBy = ApplicationFormServiceTest.this.applicationFormService.getLastUpdatedBy(1);
+
+        assertThat(lastUpdatedBy).isEqualTo(2);
+    }
+
+    @Test
+    void getLastUpdatedByReturnsNFEIfNoApplicationFound() {
+        Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(1))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.getLastUpdatedBy(1)).isInstanceOf(NotFoundException.class)
+                .hasMessage("Application with id 1 does not exist");
+    }
+
+
 
     @Nested
     class updateQuestionOrder {

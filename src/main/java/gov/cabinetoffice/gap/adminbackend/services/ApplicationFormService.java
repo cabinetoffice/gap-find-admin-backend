@@ -381,5 +381,6 @@ public class ApplicationFormService {
         return this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"))
                 .getLastUpdateBy();
+
     }
 }

@@ -55,7 +55,6 @@ public class ApplicationFormController {
 
     private final UserService userService;
 
-
     @PostMapping
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Application form created successfully.",
