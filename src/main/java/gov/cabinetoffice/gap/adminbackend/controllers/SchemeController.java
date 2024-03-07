@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
@@ -215,12 +216,13 @@ public class SchemeController {
     @Parameter(name = "pagination", hidden = true)
     @PageableAsQueryParam
     public ResponseEntity<OwnedAndEditableSchemesDto> getOwnedAndEditableSchemes(final @RequestParam(defaultValue = "false") boolean paginate, final Pageable pagination) {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
         final OwnedAndEditableSchemesDto schemes = paginate ? new OwnedAndEditableSchemesDto(
-                this.schemeService.getPaginatedOwnedSchemes(pagination),
-                this.schemeService.getPaginatedEditableSchemes(pagination)
+                this.schemeService.getPaginatedOwnedSchemesByAdminId(adminSession.getGrantAdminId(), pagination),
+                this.schemeService.getPaginatedEditableSchemesByAdminId(adminSession.getGrantAdminId(), pagination)
         ) : new OwnedAndEditableSchemesDto(
-                this.schemeService.getOwnedSchemes(),
-                this.schemeService.getEditableSchemes()
+                this.schemeService.getOwnedSchemesByAdminId(adminSession.getGrantAdminId()),
+                this.schemeService.getEditableSchemesByAdminId(adminSession.getGrantAdminId())
         );
 
         return ResponseEntity.ok()

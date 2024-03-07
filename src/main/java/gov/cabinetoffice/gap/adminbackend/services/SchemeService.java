@@ -170,38 +170,30 @@ public class SchemeService {
         this.schemeRepo.save(scheme);
     }
 
-    public List<SchemeDTO> getPaginatedOwnedSchemes(Pageable pagination) {
-        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
-        final int grantAdminId = adminSession.getGrantAdminId();
+    public List<SchemeDTO> getPaginatedOwnedSchemesByAdminId(int adminId, Pageable pagination) {
         final List<SchemeEntity> schemes = this.schemeRepo
-                    .findByCreatedByOrderByCreatedDateDesc(grantAdminId, pagination);
+                    .findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(adminId, pagination);
 
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }
 
-    public List<SchemeDTO> getOwnedSchemes() {
-        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
-        final int grantAdminId = adminSession.getGrantAdminId();
+    public List<SchemeDTO> getOwnedSchemesByAdminId(int adminId) {
         final List<SchemeEntity> schemes = this.schemeRepo
-                .findByCreatedByOrderByCreatedDateDesc(grantAdminId);
+                .findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(adminId);
 
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }
 
-    public List<SchemeDTO> getPaginatedEditableSchemes(Pageable pagination) {
-        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
-        final int grantAdminId = adminSession.getGrantAdminId();
+    public List<SchemeDTO> getPaginatedEditableSchemesByAdminId(int adminId, Pageable pagination) {
         final List<SchemeEntity> schemes = this.schemeRepo
-                .findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(grantAdminId, grantAdminId, pagination);
+                .findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(adminId, adminId, pagination);
 
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }
 
-    public List<SchemeDTO> getEditableSchemes() {
-        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
-        final int grantAdminId = adminSession.getGrantAdminId();
+    public List<SchemeDTO> getEditableSchemesByAdminId(int adminId) {
         final List<SchemeEntity> schemes = this.schemeRepo
-                .findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(grantAdminId, grantAdminId);
+                .findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(adminId, adminId);
 
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }

@@ -8,13 +8,11 @@ import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
-import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
-import org.apache.http.conn.scheme.Scheme;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +21,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.persistence.EntityNotFoundException;
@@ -375,74 +372,78 @@ class SchemeServiceTest {
 
     @Test
     void getPaginatedOwnedSchemes_Success() {
+        final int adminId = 1;
         final Pageable pagination = Pageable.ofSize(2);
         final SchemeEntity scheme = SchemeEntity.builder().build();
         final List<SchemeEntity> schemes = List.of(scheme);
         final SchemeDTO schemeDto = SchemeDTO.builder().build();
         final List<SchemeDTO> schemeDtos = List.of(schemeDto);
 
-        when(schemeRepository.findByCreatedByOrderByCreatedDateDesc(1, pagination))
+        when(schemeRepository.findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(1, pagination))
                 .thenReturn(schemes);
 
         when(schemeMapper.schemeEntityListtoDtoList(schemes))
                 .thenReturn(schemeDtos);
 
-        final List<SchemeDTO> methodResponse = schemeService.getPaginatedOwnedSchemes(pagination);
+        final List<SchemeDTO> methodResponse = schemeService.getPaginatedOwnedSchemesByAdminId(adminId, pagination);
 
         assertThat(methodResponse).isEqualTo(schemeDtos);
     }
 
     @Test
     void getOwnedSchemes_Success() {
+        final int adminId = 1;
         final SchemeEntity scheme = SchemeEntity.builder().build();
         final List<SchemeEntity> schemes = List.of(scheme);
         final SchemeDTO schemeDto = SchemeDTO.builder().build();
         final List<SchemeDTO> schemeDtos = List.of(schemeDto);
 
-        when(schemeRepository.findByCreatedByOrderByCreatedDateDesc(1))
+        when(schemeRepository.findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(1))
                 .thenReturn(schemes);
 
         when(schemeMapper.schemeEntityListtoDtoList(schemes))
                 .thenReturn(schemeDtos);
 
-        final List<SchemeDTO> methodResponse = schemeService.getOwnedSchemes();
+        final List<SchemeDTO> methodResponse = schemeService.getOwnedSchemesByAdminId(adminId);
 
         assertThat(methodResponse).isEqualTo(schemeDtos);
     }
 
     @Test
     void getPaginatedEditableSchemes_Success() {
+        final int adminId = 1;
         final Pageable pagination = Pageable.ofSize(2);
         final SchemeEntity scheme = SchemeEntity.builder().build();
         final List<SchemeEntity> schemes = List.of(scheme);
         final SchemeDTO schemeDto = SchemeDTO.builder().build();
         final List<SchemeDTO> schemeDtos = List.of(schemeDto);
 
-        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(1, 1, pagination))
+        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(1, 1, pagination))
                 .thenReturn(schemes);
 
         when(schemeMapper.schemeEntityListtoDtoList(schemes))
                 .thenReturn(schemeDtos);
 
-        final List<SchemeDTO> methodResponse = schemeService.getPaginatedEditableSchemes(pagination);
+        final List<SchemeDTO> methodResponse = schemeService.getPaginatedEditableSchemesByAdminId(adminId, pagination);
 
         assertThat(methodResponse).isEqualTo(schemeDtos);
     }
 
     @Test
     void getEditableSchemes_Success() {
+        final int adminId = 1;
         final SchemeEntity scheme = SchemeEntity.builder().build();
         final List<SchemeEntity> schemes = List.of(scheme);
         final SchemeDTO schemeDto = SchemeDTO.builder().build();
         final List<SchemeDTO> schemeDtos = List.of(schemeDto);
 
-        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByCreatedDateDesc(1, 1))
+        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(1, 1))
                 .thenReturn(schemes);
 
         when(schemeMapper.schemeEntityListtoDtoList(schemes))
                 .thenReturn(schemeDtos);
 
-        final List<SchemeDTO> methodResponse = schemeService.getEditableSchemes();
+        final List<SchemeDTO> methodResponse = schemeService.getEditableSchemesByAdminId(adminId);
 
         assertThat(methodResponse).isEqualTo(schemeDtos);
     }

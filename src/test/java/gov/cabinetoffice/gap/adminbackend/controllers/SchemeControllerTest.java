@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -27,7 +28,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -441,6 +441,7 @@ class SchemeControllerTest {
                 .andExpect(content().string("{\"error\":{\"message\":\"\"}}"));
     }
 
+    @WithAdminSession
     @Test
     void getOwnedAndEditableSchemes_ReturnsPaginatedSchemes() throws Exception {
 
@@ -450,14 +451,15 @@ class SchemeControllerTest {
         final SchemeDTO editableScheme = SchemeDTO.builder().build();
         final List<SchemeDTO> editableSchemes = List.of(editableScheme);
 
-        when(schemeService.getPaginatedOwnedSchemes(any())).thenReturn(ownedSchemes);
-        when(schemeService.getPaginatedEditableSchemes(any())).thenReturn(editableSchemes);
+        when(schemeService.getPaginatedOwnedSchemesByAdminId(eq(1), any())).thenReturn(ownedSchemes);
+        when(schemeService.getPaginatedEditableSchemesByAdminId(eq(1), any())).thenReturn(editableSchemes);
 
         mockMvc.perform(get("/schemes/editable?paginate=true"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(HelperUtils.asJsonString(new OwnedAndEditableSchemesDto(ownedSchemes, editableSchemes))));
     }
 
+    @WithAdminSession
     @Test
     void getOwnedAndEditableSchemes_ReturnsUnPaginatedSchemes() throws Exception {
 
@@ -467,8 +469,8 @@ class SchemeControllerTest {
         final SchemeDTO editableScheme = SchemeDTO.builder().build();
         final List<SchemeDTO> editableSchemes = List.of(editableScheme);
 
-        when(schemeService.getOwnedSchemes()).thenReturn(ownedSchemes);
-        when(schemeService.getEditableSchemes()).thenReturn(editableSchemes);
+        when(schemeService.getOwnedSchemesByAdminId(1)).thenReturn(ownedSchemes);
+        when(schemeService.getEditableSchemesByAdminId(1)).thenReturn(editableSchemes);
 
         mockMvc.perform(get("/schemes/editable"))
                 .andExpect(status().isOk())
