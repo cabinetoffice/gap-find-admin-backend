@@ -19,7 +19,7 @@ public class RandomApplicationFormWithCustomQuestionGenerator {
 
     public static ApplicationFormEntity.ApplicationFormEntityBuilder randomApplicationFormWithCustomQuestion(
             final ApplicationFormQuestionDTO questionDTO) {
-        return ApplicationFormEntity.builder().grantApplicationId(1).grantSchemeId(1).version(1).created(Instant.now())
+        return ApplicationFormEntity.builder().grantApplicationId(1).grantSchemeId(1).revision(1).created(Instant.now())
                 .applicationName("Application name").applicationStatus(ApplicationStatusEnum.DRAFT)
                 .definition(randomApplicationDefinitionWithCustomQuestion(questionDTO).build());
     }

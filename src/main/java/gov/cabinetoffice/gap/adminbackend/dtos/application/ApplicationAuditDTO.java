@@ -13,7 +13,7 @@ import java.time.Instant;
 @Builder
 public class ApplicationAuditDTO {
 
-    private Integer version;
+    private Integer revision;
 
     private Instant created;
 

@@ -10,7 +10,7 @@ public interface ApplicationFormNoSections {
 
     Integer getGrantSchemeId();
 
-    Integer getVersion();
+    Integer getRevision();
 
     Instant getCreated();
 
@@ -30,7 +30,7 @@ public interface ApplicationFormNoSections {
 
     Integer setGrantSchemeId(Integer grantSchemeId);
 
-    Integer setVersion(Integer version);
+    Integer setRevision(Integer revision);
 
     Instant setCreated(Instant created);
 

@@ -1,9 +1,14 @@
 package gov.cabinetoffice.gap.adminbackend.utils;
 
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.Date;
+import java.util.Objects;
 
 public class ApplicationFormUtils {
 
@@ -13,7 +18,13 @@ public class ApplicationFormUtils {
             AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
             applicationFormEntity.setLastUpdateBy(session.getGrantAdminId());
         }
-        applicationFormEntity.setVersion(applicationFormEntity.getVersion() + 1);
+        applicationFormEntity.setRevision(applicationFormEntity.getRevision() + 1);
+    }
+
+    public static void verifyApplicationFormRevision(Integer revision, ApplicationFormEntity applicationFormEntity) {
+        if (!Objects.equals(revision, applicationFormEntity.getRevision())) {
+            throw new ConflictException("MULTIPLE_EDITORS");
+        }
     }
 
 }

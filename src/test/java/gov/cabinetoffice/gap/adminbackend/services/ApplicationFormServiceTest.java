@@ -89,7 +89,7 @@ class ApplicationFormServiceTest {
             assertThat(argument.getValue().getDefinition().getSections())
                     .as("Verify that the sections have been mapped from the template").asList()
                     .hasSizeGreaterThanOrEqualTo(1);
-            assertThat(argument.getValue().getVersion()).as("Verify that version is 1").isEqualTo(1);
+            assertThat(argument.getValue().getRevision()).as("Verify that revision is 1").isEqualTo(1);
 
         }
 
@@ -116,7 +116,7 @@ class ApplicationFormServiceTest {
             assertThat(argument.getValue().getDefinition().getSections())
                     .as("Verify that the sections have been mapped from the template").asList()
                     .hasSizeGreaterThanOrEqualTo(1);
-            assertThat(argument.getValue().getVersion()).as("Verify that version is 2").isEqualTo(2);
+            assertThat(argument.getValue().getRevision()).as("Verify that revision is 2").isEqualTo(2);
 
         }
 

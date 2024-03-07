@@ -102,13 +102,13 @@ public class GrantAdvertService {
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
         final GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
         final SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
-        final Integer version = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
+        final Integer revision = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
         final boolean doesAdvertExist = grantAdvertRepository.findBySchemeId(grantSchemeId).isPresent();
 
         if (!doesAdvertExist) {
             final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme)
                     .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
-                    .status(GrantAdvertStatus.DRAFT).version(version).validLastUpdated(true).build();
+                    .status(GrantAdvertStatus.DRAFT).revision(revision).validLastUpdated(true).build();
             return save(grantAdvert);
         }
         final GrantAdvert existingAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).get();

@@ -31,7 +31,7 @@ public interface ApplicationFormMapper {
 
     ApplicationFormEntity applicationExistsDtoToEntity(ApplicationFormExistsDTO existsDto);
 
-    @Mapping(source = "version", target = "audit.version")
+    @Mapping(source = "revision", target = "audit.revision")
     @Mapping(source = "created", target = "audit.created")
     @Mapping(source = "createdBy", target = "audit.createdBy")
     @Mapping(source = "lastUpdated", target = "audit.lastUpdated")
@@ -40,7 +40,7 @@ public interface ApplicationFormMapper {
     @Mapping(source = "definition.sections", target = "sections")
     ApplicationFormDTO applicationEntityToDto(ApplicationFormEntity entity);
 
-    @Mapping(source = "version", target = "audit.version")
+    @Mapping(source = "revision", target = "audit.revision")
     @Mapping(source = "created", target = "audit.created")
     @Mapping(source = "createdBy", target = "audit.createdBy")
     @Mapping(source = "lastUpdated", target = "audit.lastUpdated")

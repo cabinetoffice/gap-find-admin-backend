@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS event_stream.event_log
 );
 
 
-create index event_log_object_id_index on event_stream.event_log(object_id);
-create index event_log_user_sub_index on event_stream.event_log(user_sub);
-create index event_log_object_id_user_sub_index on event_stream.event_log(object_id, user_sub);
+ create index IF NOT EXISTS event_log_object_id_index on event_stream.event_log(object_id);
+ create index IF NOT EXISTS event_log_user_sub_index on event_stream.event_log(user_sub);
+ create index IF NOT EXISTS event_log_object_id_user_sub_index on event_stream.event_log(object_id, user_sub);
 
 
 

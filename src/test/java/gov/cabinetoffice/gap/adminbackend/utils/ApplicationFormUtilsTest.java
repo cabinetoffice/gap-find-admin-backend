@@ -39,9 +39,9 @@ class ApplicationFormUtilsTest {
     void updateAuditDetailsAfterFormChange_UpdatingExpectedAuditDetails() {
 
         Instant fiveSecondsAgo = Instant.now().minusSeconds(5);
-        Integer version = 1;
+        Integer revision = 1;
         ApplicationFormEntity applicationForm = RandomApplicationFormGenerators.randomApplicationFormEntity()
-                .lastUpdateBy(7).lastUpdated(fiveSecondsAgo).version(version).build();
+                .lastUpdateBy(7).lastUpdated(fiveSecondsAgo).revision(revision).build();
 
         AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", "test.user@and.digital",
                 "[FIND, APPLY, ADMIN]", "UserSub");
@@ -50,20 +50,20 @@ class ApplicationFormUtilsTest {
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
         assertEquals(session.getGrantAdminId(), applicationForm.getLastUpdateBy());
-        assertEquals(Integer.valueOf(2), applicationForm.getVersion());
+        assertEquals(Integer.valueOf(2), applicationForm.getRevision());
     }
 
     @Test
     void doesntCallSetLastUpdateByWhenIsLambdaEqualsTrue() {
         Instant fiveSecondsAgo = Instant.now().minusSeconds(5);
-        Integer version = 1;
+        Integer revision = 1;
         ApplicationFormEntity applicationForm = Mockito.spy(RandomApplicationFormGenerators
-                .randomApplicationFormEntity().lastUpdateBy(7).lastUpdated(fiveSecondsAgo).version(version).build());
+                .randomApplicationFormEntity().lastUpdateBy(7).lastUpdated(fiveSecondsAgo).revision(revision).build());
         Mockito.verify(applicationForm, Mockito.times(0)).setLastUpdateBy(any());
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, true);
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
-        assertEquals(Integer.valueOf(2), applicationForm.getVersion());
+        assertEquals(Integer.valueOf(2), applicationForm.getRevision());
     }
 
 }

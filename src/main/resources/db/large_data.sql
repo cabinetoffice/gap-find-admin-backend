@@ -246,7 +246,7 @@ DO $$
                            now(),
                            'SUBMITTED',
                            now(),
-                           1, -- version
+                           1, -- revision
                            1, -- applicant_id
                            2, -- application_id
                            1, -- created_by

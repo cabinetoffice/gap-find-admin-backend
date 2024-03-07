@@ -20,7 +20,7 @@ public class RandomGrantAdvertGenerators {
     // Grant advert generators
     public static GrantAdvert.GrantAdvertBuilder randomGrantAdvertEntity() {
         return GrantAdvert.builder().id(UUID.randomUUID()).scheme(RandomSchemeGenerator.randomSchemeEntity().build())
-                .version(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).lastUpdated(Instant.now())
+                .revision(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).lastUpdated(Instant.now())
                 .lastUpdatedBy(new GrantAdmin(1, null, GapUser.builder().userSub("sub").build(), new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
                 .contentfulEntryId("entry-id").contentfulSlug("contentful-slug").grantAdvertName("Grant Advert Name")
                 .response(randomAdvertResponse().build());

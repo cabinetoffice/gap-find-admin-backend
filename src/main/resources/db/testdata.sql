@@ -232,7 +232,7 @@ SELECT SETVAL((SELECT PG_GET_SERIAL_SEQUENCE('"gap_user"', 'gap_user_id')), (SEL
 SELECT SETVAL((SELECT PG_GET_SERIAL_SEQUENCE('"grant_funding_organisation"', 'funder_id')), (SELECT MAX(funder_id) FROM grant_funding_organisation));
 SELECT SETVAL((SELECT PG_GET_SERIAL_SEQUENCE('"grant_admin"', 'grant_admin_id')), (SELECT MAX(grant_admin_id) FROM grant_admin));
 
-INSERT INTO public.grant_advert (grant_advert_id, contentful_entry_id, contentful_slug, created, grant_advert_name, last_updated, response, status, version, created_by, last_updated_by, scheme_id)
+INSERT INTO public.grant_advert (grant_advert_id, contentful_entry_id, contentful_slug, created, grant_advert_name, last_updated, response, status, revision, created_by, last_updated_by, scheme_id)
 VALUES ('fa8f4b1d-d090-4ff6-97be-ccabd3b1d87d', NULL, NULL, '2022-11-28 14:36:21.628791', 'UK Tradeshow Programme (UKTP) - Advert', '2022-11-28 14:36:21.628793',
 '{
     "sections":[

@@ -36,8 +36,8 @@ public class GrantAdvert extends BaseEntity {
     @JsonIgnoreProperties({ "hibernateLazyInitializer" })
     private SchemeEntity scheme;
 
-    @Column(name = "version", nullable = false)
-    private Integer version;
+    @Column(name = "revision", nullable = false)
+    private Integer revision;
 
     @CreatedDate
     @Column(name = "created", nullable = false)

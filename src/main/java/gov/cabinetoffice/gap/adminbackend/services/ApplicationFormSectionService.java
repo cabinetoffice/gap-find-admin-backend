@@ -7,6 +7,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
@@ -90,10 +91,12 @@ public class ApplicationFormSectionService {
         this.applicationFormRepository.save(applicationForm);
     }
 
-    public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title) {
+    public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title, final Integer revision) {
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+
+        ApplicationFormUtils.verifyApplicationFormRevision(revision, applicationForm);
 
         ApplicationDefinitionDTO applicationDefinition = applicationForm.getDefinition();
 

@@ -121,7 +121,7 @@ class GrantAdvertServiceTest {
                 mockedStatic.when(Instant::now).thenReturn(instant);
                 GrantAdvert expectedAdvert = GrantAdvert.builder().id(id).grantAdvertName(name).scheme(grantScheme)
                         .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin)
-                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).version(1).build();
+                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).revision(1).build();
 
                 when(grantAdminRepository.findById(grantAdminId)).thenReturn(Optional.of(grantAdmin));
                 when(schemeRepository.findById(grantSchemeId)).thenReturn(Optional.of(grantScheme));
@@ -153,7 +153,7 @@ class GrantAdvertServiceTest {
                 mockedStatic.when(Instant::now).thenReturn(instant);
                 final GrantAdvert expectedAdvert = GrantAdvert.builder().id(id).grantAdvertName(name)
                         .scheme(grantScheme).createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin)
-                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).version(1).build();
+                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).revision(1).build();
 
                 when(grantAdminRepository.findById(grantAdminId)).thenReturn(Optional.of(grantAdmin));
                 when(schemeRepository.findById(grantSchemeId)).thenReturn(Optional.of(grantScheme));
@@ -187,7 +187,7 @@ class GrantAdvertServiceTest {
                 mockedStatic.when(Instant::now).thenReturn(instant);
                 GrantAdvert expectedAdvert = GrantAdvert.builder().id(id).grantAdvertName(name).scheme(grantScheme)
                         .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin)
-                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).version(2).build();
+                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).revision(2).build();
 
                 when(grantAdminRepository.findById(grantAdminId)).thenReturn(Optional.of(grantAdmin));
                 when(schemeRepository.findById(grantSchemeId)).thenReturn(Optional.of(grantScheme));
@@ -218,7 +218,7 @@ class GrantAdvertServiceTest {
                 mockedStatic.when(Instant::now).thenReturn(instant);
                 GrantAdvert expectedAdvert = GrantAdvert.builder().id(id).grantAdvertName(name).scheme(grantScheme)
                         .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin)
-                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).version(1).build();
+                        .lastUpdated(Instant.now()).status(GrantAdvertStatus.DRAFT).revision(1).build();
 
                 when(grantAdvertRepository.findById(id)).thenReturn(Optional.ofNullable(expectedAdvert));
 
@@ -774,7 +774,7 @@ class GrantAdvertServiceTest {
         @WithAdminSession
         void publishAdvert_successfullyPublishedAdvert() {
 
-            final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme).version(1)
+            final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme).revision(1)
                     .created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).lastUpdated(Instant.now())
                     .lastUpdatedBy(new GrantAdmin(1, null, null, new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
                     .contentfulEntryId("entry-id").contentfulSlug("contentful-slug")
@@ -859,7 +859,7 @@ class GrantAdvertServiceTest {
         void publishAdvert_updatesExistingAdvert_IfFirstPublishedDateHasBeenSet() {
 
             final GrantAdvert grantAvertInDatabase = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme)
-                    .version(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>()))
+                    .revision(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>()))
                     .lastUpdated(Instant.now()).lastUpdatedBy(new GrantAdmin(1, null, null, new ArrayList<>()))
                     .status(GrantAdvertStatus.DRAFT).contentfulEntryId(contentfulAdvertId)
                     .contentfulSlug("contentful-slug").grantAdvertName("Grant Advert Name").response(response)
@@ -921,7 +921,7 @@ class GrantAdvertServiceTest {
 
         @Test
         void publishAdvertThroughLambda_successfullyPublishedAdvert() {
-            final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme).version(1)
+            final GrantAdvert mockGrantAdvert = GrantAdvert.builder().id(UUID.randomUUID()).scheme(scheme).revision(1)
                     .created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).lastUpdated(Instant.now())
                     .lastUpdatedBy(new GrantAdmin(1, null, null, new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
                     .contentfulEntryId("entry-id").contentfulSlug("contentful-slug")
