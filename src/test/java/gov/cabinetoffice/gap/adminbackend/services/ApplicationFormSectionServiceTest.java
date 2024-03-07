@@ -5,10 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectio
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.*;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -467,6 +464,19 @@ class ApplicationFormSectionServiceTest {
 
             Assertions.assertThrows(FieldViolationException.class, () -> applicationFormSectionService
                     .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title", 1));
+        }
+
+        @Test
+        void updateSectionTitle_RevisionDoesNotMatch() {
+            String newTitle = "newTitle";
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().revision(2).build();
+            Mockito.when(
+                            ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1)).isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS");
         }
 
     }
