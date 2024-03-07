@@ -140,8 +140,8 @@ class SchemeMapperTest {
 
         final SchemeDTO schemeDto = schemeMapper.schemeEntityToDto(scheme);
 
-        assertThat(schemeDto.getLastUpdatedBy()).isEqualTo(updatedBy);
-        assertThat(schemeDto.getLastUpdatedDate()).isEqualTo(scheme.getCreatedDate());
+        assertThat(schemeDto.getLastUpdatedBy()).isNull();
+        assertThat(schemeDto.getLastUpdatedDate()).isNull();
 
         assertCommonFields(schemeDto, scheme);
     }

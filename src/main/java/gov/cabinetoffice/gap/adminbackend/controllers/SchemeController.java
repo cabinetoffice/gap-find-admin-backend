@@ -2,11 +2,13 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.OwnedAndEditableSchemesDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
@@ -26,7 +28,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -198,6 +201,32 @@ public class SchemeController {
         catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @GetMapping("/editable")
+    @Operation(summary = "Retrieve all grant schemes which belong to the logged in user.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found schemes",
+                    content = @Content(mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = SchemeDTO.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid properties provided",
+                    content = @Content(mediaType = "application/json")),})
+    @Parameter(in = ParameterIn.QUERY, description = "True to paginate results from endpoint", name = "paginate",
+            schema = @Schema(type = "boolean"))
+    @Parameter(name = "pagination", hidden = true)
+    @PageableAsQueryParam
+    public ResponseEntity<OwnedAndEditableSchemesDto> getOwnedAndEditableSchemes(final @RequestParam(defaultValue = "false") boolean paginate, final Pageable pagination) {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
+        final OwnedAndEditableSchemesDto schemes = paginate ? new OwnedAndEditableSchemesDto(
+                this.schemeService.getPaginatedOwnedSchemesByAdminId(adminSession.getGrantAdminId(), pagination),
+                this.schemeService.getPaginatedEditableSchemesByAdminId(adminSession.getGrantAdminId(), pagination)
+        ) : new OwnedAndEditableSchemesDto(
+                this.schemeService.getOwnedSchemesByAdminId(adminSession.getGrantAdminId()),
+                this.schemeService.getEditableSchemesByAdminId(adminSession.getGrantAdminId())
+        );
+
+        return ResponseEntity.ok()
+                .body(schemes);
     }
 
     @PatchMapping("/{schemeId}/scheme-ownership")

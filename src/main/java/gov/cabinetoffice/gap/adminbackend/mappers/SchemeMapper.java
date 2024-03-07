@@ -45,25 +45,24 @@ public abstract class SchemeMapper {
         schemeDTO.createdDate( schemeEntity.getCreatedDate() );
         schemeDTO.createdBy( schemeEntity.getCreatedBy() );
 
-        // if last updated is null then return created date + created by.
         setLastUpdatedByValues(schemeEntity, schemeDTO);
 
         return schemeDTO.build();
     }
 
     private void setLastUpdatedByValues(SchemeEntity schemeEntity, SchemeDTO.SchemeDTOBuilder schemeDTO) {
-        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null;
-        final int lastUpdatedBy  = isLastUpdatedBySet ? schemeEntity.getLastUpdatedBy() : schemeEntity.getCreatedBy();
-        final String lastUpdatedByEmail = userService.getGrantAdminById(lastUpdatedBy)
-                .map(admin -> {
-                    final String sub = admin.getGapUser().getUserSub();
-                    return userService.getEmailAddressForSub(sub);
-                })
-                .orElse(UserService.EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
-        final Instant lastUpdatedDate = isLastUpdatedBySet ? schemeEntity.getLastUpdated() : schemeEntity.getCreatedDate();
+        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null && schemeEntity.getLastUpdated() != null;
+        if (isLastUpdatedBySet) {
+            final String lastUpdatedByEmail = userService.getGrantAdminById(schemeEntity.getLastUpdatedBy())
+                    .map(admin -> {
+                        final String sub = admin.getGapUser().getUserSub();
+                        return userService.getEmailAddressForSub(sub);
+                    })
+                    .orElse(UserService.EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
 
-        schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
-        schemeDTO.lastUpdatedDate(lastUpdatedDate);
+            schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
+            schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
+        }
     }
 
     public abstract List<SchemeDTO> schemeEntityListtoDtoList(List<SchemeEntity> schemeEntityList);

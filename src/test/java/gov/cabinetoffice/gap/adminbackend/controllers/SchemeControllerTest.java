@@ -1,8 +1,11 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
+import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.OwnedAndEditableSchemesDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
@@ -34,6 +37,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_ENTITY;
@@ -437,4 +441,39 @@ class SchemeControllerTest {
                 .andExpect(content().string("{\"error\":{\"message\":\"\"}}"));
     }
 
+    @WithAdminSession
+    @Test
+    void getOwnedAndEditableSchemes_ReturnsPaginatedSchemes() throws Exception {
+
+        final SchemeDTO ownedScheme = SchemeDTO.builder().build();
+        final List<SchemeDTO> ownedSchemes = List.of(ownedScheme);
+
+        final SchemeDTO editableScheme = SchemeDTO.builder().build();
+        final List<SchemeDTO> editableSchemes = List.of(editableScheme);
+
+        when(schemeService.getPaginatedOwnedSchemesByAdminId(eq(1), any())).thenReturn(ownedSchemes);
+        when(schemeService.getPaginatedEditableSchemesByAdminId(eq(1), any())).thenReturn(editableSchemes);
+
+        mockMvc.perform(get("/schemes/editable?paginate=true"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(HelperUtils.asJsonString(new OwnedAndEditableSchemesDto(ownedSchemes, editableSchemes))));
+    }
+
+    @WithAdminSession
+    @Test
+    void getOwnedAndEditableSchemes_ReturnsUnPaginatedSchemes() throws Exception {
+
+        final SchemeDTO ownedScheme = SchemeDTO.builder().build();
+        final List<SchemeDTO> ownedSchemes = List.of(ownedScheme);
+
+        final SchemeDTO editableScheme = SchemeDTO.builder().build();
+        final List<SchemeDTO> editableSchemes = List.of(editableScheme);
+
+        when(schemeService.getOwnedSchemesByAdminId(1)).thenReturn(ownedSchemes);
+        when(schemeService.getEditableSchemesByAdminId(1)).thenReturn(editableSchemes);
+
+        mockMvc.perform(get("/schemes/editable"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(HelperUtils.asJsonString(new OwnedAndEditableSchemesDto(ownedSchemes, editableSchemes))));
+    }
 }

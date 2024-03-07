@@ -169,4 +169,32 @@ public class SchemeService {
         scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
     }
+
+    public List<SchemeDTO> getPaginatedOwnedSchemesByAdminId(int adminId, Pageable pagination) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                    .findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(adminId, pagination);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getOwnedSchemesByAdminId(int adminId) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(adminId);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getPaginatedEditableSchemesByAdminId(int adminId, Pageable pagination) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(adminId, adminId, pagination);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getEditableSchemesByAdminId(int adminId) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(adminId, adminId);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
 }
