@@ -428,47 +428,47 @@ class ApplicationFormSectionServiceTest {
 
     }
 
-//    @Nested
-//    class updateSectionTitle {
-//
-//        @Test
-//        void updateSectionTitle_HappyPath() {
-//            String newTitle = "newTitle";
-//            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
-//            Mockito.when(
-//                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-//                    .thenReturn(Optional.of(testApplicationForm));
-//
-//            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
-//
-//            applicationFormSectionService.updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle);
-//
-//            Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
-//        }
-//
-//        @Test
-//        void updateSectionTitle_NotFound() {
-//            String newTitle = "newTitle";
-//            Mockito.when(
-//                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-//                    .thenReturn(Optional.empty());
-//
-//            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-//                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle)).isInstanceOf(NotFoundException.class)
-//                            .hasMessage("Application with id 111 does not exist");
-//        }
-//
-//        @Test
-//        void updateSectionTitle_throwsFieldErrorWithAMatchingSectionTitle() {
-//            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
-//            Mockito.when(
-//                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
-//                    .thenReturn(Optional.of(testApplicationForm));
-//
-//            Assertions.assertThrows(FieldViolationException.class, () -> applicationFormSectionService
-//                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title"));
-//        }
-//
-//    }
+    @Nested
+    class updateSectionTitle {
+
+        @Test
+        void updateSectionTitle_HappyPath() {
+            String newTitle = "newTitle";
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            applicationFormSectionService.updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1);
+
+            Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
+        }
+
+        @Test
+        void updateSectionTitle_NotFound() {
+            String newTitle = "newTitle";
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1)).isInstanceOf(NotFoundException.class)
+                            .hasMessage("Application with id 111 does not exist");
+        }
+
+        @Test
+        void updateSectionTitle_throwsFieldErrorWithAMatchingSectionTitle() {
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(1).build();
+            Mockito.when(
+                    ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            Assertions.assertThrows(FieldViolationException.class, () -> applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title", 1));
+        }
+
+    }
 
 }

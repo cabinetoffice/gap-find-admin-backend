@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.dtos.application;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ import javax.validation.constraints.Size;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class PatchSectionDTO {
 
     // following regex allows empty string, letters, spaces, apostrophes, commas, and

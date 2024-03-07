@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationSectionOrderPatchDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.PatchSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
@@ -227,121 +228,120 @@ class ApplicationFormSectionsControllerTest {
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
     }
 
-//    @Nested
-//    @WithAdminSession
-//    class updateSectionStatus {
-//
-//        @Test
-//        void updateSectionStatusHappyPathTest() throws Exception {
-//
-//            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionStatus(SAMPLE_APPLICATION_ID, "ESSENTIAL", SectionStatusEnum.COMPLETE);
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc
-//                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL")
-//                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString("COMPLETE")))
-//                    .andExpect(status().isOk());
-//        }
-//
-//        @Test
-//        void updateSectionStatusCustomSectionTest() throws Exception {
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc
-//                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM SECTION"))
-//                    .andExpect(status().isBadRequest());
-//        }
-//
-//        @Test
-//        void updateSectionStatusSectionDoesntExistTest() throws Exception {
-//
-//            doThrow(new NotFoundException("Error message"))
-//                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionStatus(SAMPLE_APPLICATION_ID, "ESSENTIAL", SectionStatusEnum.COMPLETE);
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc
-//                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL")
-//                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString("COMPLETE")))
-//                    .andExpect(status().isNotFound())
-//                    .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
-//        }
-//
-//        @Test
-//        void updateSectionStatus_AccessDeniedTest() throws Exception {
-//
-//            doThrow(new AccessDeniedException("Error message"))
-//                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionStatus(SAMPLE_APPLICATION_ID, "ESSENTIAL", SectionStatusEnum.COMPLETE);
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc
-//                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL")
-//                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString("COMPLETE")))
-//                    .andExpect(status().isForbidden()).andExpect(content().string(""));
-//        }
-//
-//        @Test
-//        void updateSectionTitle__HappyPath() throws Exception {
-//
-//            String sectionTitle = "sectionTitle";
-//
-//            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionTitle(any(), any(), any());
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
-//                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
-//                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
-//                    .andExpect(status().isOk());
-//        }
-//
-//        @Test
-//        void updateSectionTitle__BadRequest__NoPayload() throws Exception {
-//            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionTitle(any(), any(), any());
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc
-//                    .perform(patch(
-//                            "/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title"))
-//                    .andExpect(status().isBadRequest());
-//        }
-//
-//        @Test
-//        void updateSectionTitle__BadRequest__NotACustomSection() throws Exception {
-//            String sectionTitle = "sectionTitle";
-//            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionTitle(any(), any(), any());
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
-//                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ELIGIBILITY" + "/title")
-//                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
-//                    .andExpect(status().isBadRequest());
-//        }
-//
-//        @Test
-//        void updateSectionTitle__NotFound() throws Exception {
-//            String sectionTitle = "sectionTitle";
-//            doThrow(NotFoundException.class)
-//                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionTitle(any(), any(), any());
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
-//                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
-//                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
-//                    .andExpect(status().isNotFound());
-//        }
-//
-//        @Test
-//        void updateSectionTitle__AccessDenied() throws Exception {
-//            String sectionTitle = "sectionTitle";
-//            doThrow(AccessDeniedException.class)
-//                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-//                    .updateSectionTitle(any(), any(), any());
-//
-//            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
-//                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
-//                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
-//                    .andExpect(status().isForbidden());
-//        }
-//
-//    }
+    @Nested
+    @WithAdminSession
+    class updateSectionStatus {
+
+        @Test
+        void updateSectionStatusHappyPathTest() throws Exception {
+
+            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionStatus(SAMPLE_APPLICATION_ID, "ESSENTIAL", SectionStatusEnum.COMPLETE);
+
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString("COMPLETE")))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        void updateSectionStatusCustomSectionTest() throws Exception {
+
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM SECTION"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updateSectionStatusSectionDoesntExistTest() throws Exception {
+
+            doThrow(new NotFoundException("Error message"))
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionStatus(SAMPLE_APPLICATION_ID, "ESSENTIAL", SectionStatusEnum.COMPLETE);
+
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString("COMPLETE")))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
+        }
+
+        @Test
+        void updateSectionStatus_AccessDeniedTest() throws Exception {
+
+            doThrow(new AccessDeniedException("Error message"))
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionStatus(SAMPLE_APPLICATION_ID, "ESSENTIAL", SectionStatusEnum.COMPLETE);
+
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString("COMPLETE")))
+                    .andExpect(status().isForbidden()).andExpect(content().string(""));
+        }
+
+        @Test
+        void updateSectionTitle__HappyPath() throws Exception {
+            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").revision(1).build();
+
+            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionTitle(any(), any(), any(), any());
+
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(patchSectionDTO)))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        void updateSectionTitle__BadRequest__NoPayload() throws Exception {
+            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionTitle(any(), any(), any(), any());
+
+            ApplicationFormSectionsControllerTest.this.mockMvc
+                    .perform(patch(
+                            "/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updateSectionTitle__BadRequest__NotACustomSection() throws Exception {
+            String sectionTitle = "sectionTitle";
+            doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionTitle(any(), any(), any(), any());
+
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ELIGIBILITY" + "/title")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(sectionTitle)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updateSectionTitle__NotFound() throws Exception {
+            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").revision(1).build();
+            doThrow(NotFoundException.class)
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionTitle(any(), any(), any(), any());
+
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(patchSectionDTO)))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void updateSectionTitle__AccessDenied() throws Exception {
+            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").revision(1).build();
+            doThrow(AccessDeniedException.class)
+                    .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
+                    .updateSectionTitle(any(), any(), any(), any());
+
+            ApplicationFormSectionsControllerTest.this.mockMvc.perform(
+                    patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "CUSTOM_SECTION" + "/title")
+                            .contentType(MediaType.APPLICATION_JSON).content(HelperUtils.asJsonString(patchSectionDTO)))
+                    .andExpect(status().isForbidden());
+        }
+
+    }
 
     @Nested
     @WithAdminSession
