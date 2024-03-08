@@ -15,7 +15,6 @@ public class ApplicationFormUtils {
             AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
             applicationFormEntity.setLastUpdateBy(session.getGrantAdminId());
         }
-        applicationFormEntity.setVersion(applicationFormEntity.getVersion() + 1);
     }
 
     public static void verifyApplicationFormVersion(Integer version, ApplicationFormEntity applicationFormEntity) {

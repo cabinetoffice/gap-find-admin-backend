@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.annotations.NotAllNull;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.ClassErrorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -112,6 +114,14 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 
         return handleExceptionInternal(ex, new GenericErrorDTO("Contentful exception."), new HttpHeaders(),
                 HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
+
+    @ExceptionHandler(value = { ObjectOptimisticLockingFailureException.class })
+    protected ResponseEntity<Object> handleConflict(ObjectOptimisticLockingFailureException ex, WebRequest request) {
+        log.error(ex.getMessage(), ex);
+
+        return handleExceptionInternal(ex, new GenericErrorDTO("MULTIPLE_EDITORS"), new HttpHeaders(),
+                HttpStatus.CONFLICT, request);
     }
 
     /**

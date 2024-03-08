@@ -96,13 +96,14 @@ public class ApplicationFormSectionService {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
 
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
+
         ApplicationDefinitionDTO applicationDefinition = applicationForm.getDefinition();
 
         verifyUniqueSectionName(applicationForm, title);
 
         applicationDefinition.getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
 
-        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         this.applicationFormRepository.save(applicationForm);
     }
