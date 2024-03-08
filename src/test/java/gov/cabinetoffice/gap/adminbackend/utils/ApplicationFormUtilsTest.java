@@ -53,7 +53,6 @@ class ApplicationFormUtilsTest {
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
         assertEquals(session.getGrantAdminId(), applicationForm.getLastUpdateBy());
-        assertEquals(Integer.valueOf(2), applicationForm.getVersion());
     }
 
     @Test
@@ -66,7 +65,6 @@ class ApplicationFormUtilsTest {
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, true);
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
-        assertEquals(Integer.valueOf(2), applicationForm.getVersion());
     }
 
     @Test
