@@ -14,22 +14,14 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
-import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormEntity;
-import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
 import gov.cabinetoffice.gap.adminbackend.testdata.projectionimpls.TestApplicationFormsFoundView;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Fail.fail;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-import static org.mockito.Mockito.*;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.persistence.EntityNotFoundException;
@@ -38,6 +30,14 @@ import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import java.util.*;
+
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
+import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormEntity;
+import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Fail.fail;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -837,6 +837,39 @@ class ApplicationFormServiceTest {
                     .updateQuestionOrder(applicationId, sectionId, questionId, increment)).isInstanceOf(NotFoundException.class)
                     .hasMessage("Application with id " + applicationId
                             + " does not exist or insufficient permissions");
+
+        }
+
+    }
+
+    @Nested
+    class getApplicationStatus {
+
+        @Test
+        void getApplicationStatusSuccessful() {
+            final Integer applicationId =1;
+            final ApplicationStatusEnum expectedStatus = ApplicationStatusEnum.PUBLISHED;
+            ApplicationFormEntity applicationForm = ApplicationFormEntity.builder()
+                    .grantApplicationId(applicationId)
+                    .applicationStatus(expectedStatus)
+                    .build();
+
+            when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.of(applicationForm));
+
+            final ApplicationStatusEnum response = applicationFormService.getApplicationStatus(applicationId);
+
+            verify(applicationFormRepository).findById(applicationId);
+            assertThat(response).isEqualTo(expectedStatus);
+
+        }
+
+        @Test
+        void getApplicationStatusNotFoundException() {
+            final Integer applicationId = 1;
+            when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> applicationFormService.getApplicationStatus(applicationId))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + applicationId + " does not exist");
 
         }
 

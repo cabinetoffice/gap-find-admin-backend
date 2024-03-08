@@ -34,34 +34,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_ADVERT_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_MULTIPLE_PROPS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_NAME;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_POST_FORM_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_RESPONSE_SUCCESS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_CLASS_ERROR_NO_PROPS_PROVIDED;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_APPLICATION_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_UPDATED_APPLICATION_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SCHEME_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -462,5 +440,22 @@ class ApplicationFormControllerTest {
                 thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.empty());
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getApplicationStatus() throws Exception {
+        when(applicationFormService.getApplicationStatus(anyInt())).thenReturn(ApplicationStatusEnum.PUBLISHED);
+
+        this.mockMvc.perform(get("/application-forms/1/status"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(ApplicationStatusEnum.PUBLISHED.toString()));
+    }
+
+    @Test
+    void getApplicationStatusNotFoundException() throws Exception {
+        when(applicationFormService.getApplicationStatus(anyInt())).thenThrow(new NotFoundException());
+
+        this.mockMvc.perform(get("/application-forms/1/status"))
+                .andExpect(status().isNotFound());
     }
 }
