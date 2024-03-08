@@ -20,7 +20,6 @@ import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import static java.lang.Integer.parseInt;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -35,6 +34,8 @@ import javax.validation.Validator;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
+
+import static java.lang.Integer.parseInt;
 
 @Service
 @RequiredArgsConstructor
@@ -381,6 +382,11 @@ public class ApplicationFormService {
         return this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"))
                 .getLastUpdateBy();
+    }
 
+    public ApplicationStatusEnum getApplicationStatus(Integer applicationId) {
+        return this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"))
+                .getApplicationStatus();
     }
 }

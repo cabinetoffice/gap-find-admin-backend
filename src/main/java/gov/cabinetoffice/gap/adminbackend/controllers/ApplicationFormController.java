@@ -249,6 +249,14 @@ public class ApplicationFormController {
         return ResponseEntity.ok(email);
     }
 
+    @GetMapping("/{applicationId}/status")
+    @CheckSchemeOwnership
+    public ResponseEntity<String> getApplicationStatus(@PathVariable final Integer applicationId) {
+        final ApplicationStatusEnum applicationStatus = applicationFormService.getApplicationStatus(applicationId);
+        return ResponseEntity.ok(applicationStatus.toString());
+    }
+
+
     private void logApplicationEvent(EventType eventType, String sessionId, String applicationId) {
 
         try {
