@@ -2,7 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.user.DecryptedUserEmailResponse;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.SchemeEditorEmailResponse;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
@@ -51,9 +51,9 @@ public class SchemeEditorService {
         return this.mapEditorListToDto(editors, createdBy, authHeader);
     }
 
-    private byte[] getEmailFromUserResponse(final List<DecryptedUserEmailResponse> userResponse,
+    private byte[] getEmailFromUserResponse(final List<SchemeEditorEmailResponse> userResponse,
             final String editorsSub) {
-        DecryptedUserEmailResponse editorsRow = userResponse.stream()
+        SchemeEditorEmailResponse editorsRow = userResponse.stream()
                 .filter(item -> item.userSub().equals(editorsSub)).findFirst()
                 .orElseThrow(() -> new NotFoundException("Could not find users email using sub: " + editorsSub));
         return editorsRow.emailAddress();
@@ -63,7 +63,7 @@ public class SchemeEditorService {
         List<String> userSubs = editors.stream()
                 .map(editor -> editor.getGapUser().getUserSub())
                 .toList();
-        List<DecryptedUserEmailResponse> userResponse = getEmailsFromUserSubBatch(userSubs, authHeader);
+        List<SchemeEditorEmailResponse> userResponse = getEmailsFromUserSubBatch(userSubs, authHeader);
 
         return editors.stream()
                 .map(editor -> {
@@ -80,7 +80,7 @@ public class SchemeEditorService {
                 .toList();
     }
 
-    private List<DecryptedUserEmailResponse> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
+    private List<SchemeEditorEmailResponse> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
         final String url = userServiceConfig.getDomain() + "/user-emails-from-subs";
 
         UserEmailRequestDto requestBody = UserEmailRequestDto.builder().userSubs(userSubs).build();
@@ -92,7 +92,7 @@ public class SchemeEditorService {
                 .cookie(userServiceConfig.getCookieName(), authHeader).retrieve().bodyToMono(responseType).block();
 
         return Objects.requireNonNull(response).stream()
-                .map((item) -> DecryptedUserEmailResponse.builder().userSub(item.sub()).emailAddress(
+                .map((item) -> SchemeEditorEmailResponse.builder().userSub(item.sub()).emailAddress(
                         item.emailAddress()).build())
                 .toList();
     }
