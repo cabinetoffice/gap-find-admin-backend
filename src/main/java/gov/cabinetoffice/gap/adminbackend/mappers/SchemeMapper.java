@@ -57,7 +57,7 @@ public abstract class SchemeMapper {
                     .map(admin -> {
                         final String sub = admin.getGapUser().getUserSub();
                         return userService.getEmailAddressForSub(sub);
-                    }).orElseThrow(() -> new NotFoundException("Email not found for admin with id" + schemeEntity.getLastUpdatedBy()));
+                    }).orElse(null);
 
             schemeDTO.encryptedLastUpdatedBy(lastUpdatedByEmail);
             schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
