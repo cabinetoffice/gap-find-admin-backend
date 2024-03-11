@@ -16,6 +16,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.UserMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.TechSupportUserService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -52,6 +53,8 @@ public class UserController {
     private final UserServiceConfig userServiceConfig;
 
     private final TechSupportUserService techSupportUserService;
+
+    private final SchemeService schemeService;
 
     @Value("${feature.onelogin.enabled}")
     private boolean oneLoginEnabled;
@@ -110,6 +113,11 @@ public class UserController {
             return ResponseEntity.status(403).body("User not authorized to delete user: " + oneLoginSub);
         }
 
+
+        String userSub = oneLoginSub.orElseGet(() -> colaSub.map(Object::toString).orElseThrow(() ->
+                new IllegalStateException("oneLoginSub and colaSub are not present")));
+
+        schemeService.removeAdminReference(userSub);
         userService.deleteUser(oneLoginSub, colaSub);
         return ResponseEntity.ok("User deleted successfully");
     }

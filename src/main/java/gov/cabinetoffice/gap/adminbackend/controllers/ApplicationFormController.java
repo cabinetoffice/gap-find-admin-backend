@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -238,8 +239,14 @@ public class ApplicationFormController {
     @GetMapping("/{applicationId}/lastUpdated/email")
     @CheckSchemeOwnership
     public ResponseEntity<String> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
-        final Integer lastUpdatedBy = applicationFormService.getLastUpdatedBy(applicationId);
-        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(lastUpdatedBy);
+        final ApplicationFormEntity applicationForm = applicationFormService.getLastUpdatedBy(applicationId);
+
+        if (applicationForm.getLastUpdateBy() == null && applicationForm.getLastUpdated() != null) {
+            return ResponseEntity.ok("Deleted user");
+        }
+
+        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(Objects
+                .requireNonNull(applicationForm.getLastUpdateBy()));
         if (grantAdmin.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

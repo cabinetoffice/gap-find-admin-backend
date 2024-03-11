@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -420,7 +421,8 @@ class ApplicationFormControllerTest {
     @Test
     void getLastUpdatedEmailHappyPath() throws Exception {
         when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov");
-        when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
+        when(applicationFormService.getLastUpdatedBy(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdateBy(1).build());
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.of(GrantAdmin.builder().gapUser(GapUser.builder().userSub("sub").build()).build()));
 
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
@@ -429,15 +431,20 @@ class ApplicationFormControllerTest {
     }
 
     @Test
-    void getLastUpdatedEmailReturnsNotFoundWhenNoApplicationFound() throws Exception {
-        when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.empty());
-        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
+    void shouldReturnDeletedUserWhenLastUpdatedByIsNullAndLastUpdatedIsValid() throws Exception {
+        when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov");
+        when(applicationFormService.getLastUpdatedBy(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdated(Instant.now()).build());
+
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
+                .andExpect(content().string("Deleted user"));
+
     }
 
     @Test
     void getLastUpdatedEmailReturnsNotFoundWhenNoGrantAdminFound() throws Exception {
-        when(applicationFormRepository.findById(anyInt())).
-                thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
+        when(applicationFormService.getLastUpdatedBy(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdateBy(1).build());
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.empty());
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
     }

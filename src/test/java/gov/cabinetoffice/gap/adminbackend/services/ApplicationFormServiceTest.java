@@ -746,9 +746,9 @@ class ApplicationFormServiceTest {
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(1))
                 .thenReturn(Optional.of(testApplicationFormEntity));
 
-        Integer lastUpdatedBy = ApplicationFormServiceTest.this.applicationFormService.getLastUpdatedBy(1);
+        ApplicationFormEntity applicationForm = ApplicationFormServiceTest.this.applicationFormService.getLastUpdatedBy(1);
 
-        assertThat(lastUpdatedBy).isEqualTo(2);
+        assertThat(applicationForm).isEqualTo(testApplicationFormEntity);
     }
 
     @Test
