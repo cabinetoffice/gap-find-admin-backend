@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.utils;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators;
 import org.junit.Before;
@@ -14,6 +15,8 @@ import org.mockito.Mockito;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
@@ -50,11 +53,10 @@ class ApplicationFormUtilsTest {
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
         assertEquals(session.getGrantAdminId(), applicationForm.getLastUpdateBy());
-        assertEquals(Integer.valueOf(2), applicationForm.getVersion());
     }
 
     @Test
-    void doesntCallSetLastUpdateByWhenIsLambdaEqualsTrue() {
+    void updateAuditDetailsAfterFormChange_DoesNotCallSetLastUpdateByWhenIsLambdaEqualsTrue() {
         Instant fiveSecondsAgo = Instant.now().minusSeconds(5);
         Integer version = 1;
         ApplicationFormEntity applicationForm = Mockito.spy(RandomApplicationFormGenerators
@@ -63,7 +65,33 @@ class ApplicationFormUtilsTest {
         ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, true);
 
         assertThat(applicationForm.getLastUpdated()).isAfter(fiveSecondsAgo);
-        assertEquals(Integer.valueOf(2), applicationForm.getVersion());
+    }
+
+    @Test
+    void verifyApplicationFormVersion_DoesNotThrowErrorWhenVersionMatches() {
+        Integer version = 2;
+        ApplicationFormEntity applicationForm = RandomApplicationFormGenerators
+                .randomApplicationFormEntity()
+                .version(version)
+                .build();
+
+        assertDoesNotThrow(() ->
+                ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm)
+        );
+    }
+
+    @Test
+    void verifyApplicationFormVersion_ThrowsErrorWhenVersionDoesNotMatch() {
+        Integer version = 2;
+        ApplicationFormEntity applicationForm = RandomApplicationFormGenerators
+                .randomApplicationFormEntity()
+                .version(version)
+                .build();
+
+        assertThrows(
+                ConflictException.class,
+                () -> ApplicationFormUtils.verifyApplicationFormVersion(1, applicationForm)
+        );
     }
 
 }

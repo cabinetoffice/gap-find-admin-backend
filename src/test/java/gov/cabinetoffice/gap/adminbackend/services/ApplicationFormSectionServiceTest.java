@@ -5,10 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectio
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.*;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -441,7 +438,7 @@ class ApplicationFormSectionServiceTest {
 
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
-            applicationFormSectionService.updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle);
+            applicationFormSectionService.updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1);
 
             Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
         }
@@ -454,7 +451,7 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle)).isInstanceOf(NotFoundException.class)
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1)).isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id 111 does not exist");
         }
 
@@ -466,7 +463,20 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.of(testApplicationForm));
 
             Assertions.assertThrows(FieldViolationException.class, () -> applicationFormSectionService
-                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title"));
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title", 1));
+        }
+
+        @Test
+        void updateSectionTitle_VersionDoesNotMatch() {
+            String newTitle = "newTitle";
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().version(2).build();
+            Mockito.when(
+                            ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1)).isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS");
         }
 
     }
