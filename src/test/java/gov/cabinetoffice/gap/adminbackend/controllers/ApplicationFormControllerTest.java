@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.EncryptedLastUpdatedEmailDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.*;
@@ -419,12 +420,15 @@ class ApplicationFormControllerTest {
 
     @Test
     void getLastUpdatedEmailHappyPath() throws Exception {
-        when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov");
+        byte[] encryptedEmail = "test@test.gov".getBytes();
+        EncryptedLastUpdatedEmailDTO encryptedLastUpdatedEmailDTO =
+                EncryptedLastUpdatedEmailDTO.builder().encryptedLastUpdatedEmail(encryptedEmail).build();
+        when(userService.getEmailAddressForSub(anyString())).thenReturn(encryptedEmail);
         when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.of(GrantAdmin.builder().gapUser(GapUser.builder().userSub("sub").build()).build()));
 
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
-                .andExpect(content().string("test@test.gov"));
+                .andExpect(content().json(HelperUtils.asJsonString(encryptedLastUpdatedEmailDTO)));
 
     }
 

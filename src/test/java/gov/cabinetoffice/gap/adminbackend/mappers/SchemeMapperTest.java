@@ -116,14 +116,11 @@ class SchemeMapperTest {
                 .gapUser(user)
                 .build();
 
-        final String updatedBy = "thisNeedsReplaced@email.com";
-        final byte[] encryptedEmail = updatedBy.getBytes();
+        final byte[] updatedBy = "thisNeedsReplaced@email.com".getBytes();
 
         when(userService.getGrantAdminById(createdBy))
                 .thenReturn(Optional.of(grantAdmin));
 
-        when(encryptionService.decryptField(encryptedEmail))
-                .thenReturn(updatedBy);
 
         when(userServiceConfig.getDomain())
                 .thenReturn("https://user-service-domain");
@@ -136,11 +133,10 @@ class SchemeMapperTest {
 
         // make sure we will end up going down the null "updated by" path
         assertThat(scheme.getLastUpdatedBy()).isNull();
-        assertThat(scheme.getLastUpdatedBy()).isNull();
 
         final SchemeDTO schemeDto = schemeMapper.schemeEntityToDto(scheme);
 
-        assertThat(schemeDto.getLastUpdatedBy()).isNull();
+        assertThat(schemeDto.getEncryptedLastUpdatedBy()).isNull();
         assertThat(schemeDto.getLastUpdatedDate()).isNull();
 
         assertCommonFields(schemeDto, scheme);
@@ -188,7 +184,7 @@ class SchemeMapperTest {
                 .thenReturn("secret");
 
         when(userService.getEmailAddressForSub(user.getUserSub()))
-                .thenReturn(updatedBy);
+                .thenReturn(encryptedEmail);
 
         // make sure we won't end up going down the null "updated by" path
         assertThat(scheme.getLastUpdatedBy()).isNotNull();
@@ -196,7 +192,7 @@ class SchemeMapperTest {
 
         final SchemeDTO schemeDto = schemeMapper.schemeEntityToDto(scheme);
 
-        assertThat(schemeDto.getLastUpdatedBy()).isEqualTo(updatedBy);
+        assertThat(schemeDto.getEncryptedLastUpdatedBy()).isEqualTo(encryptedEmail);
         assertThat(schemeDto.getLastUpdatedDate()).isEqualTo(scheme.getLastUpdated());
 
         assertCommonFields(schemeDto, scheme);

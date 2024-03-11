@@ -243,7 +243,6 @@ class UserServiceTest {
     void getEmailAddressForSub_Success() {
         final String userSub = "56743-12345-66543-1111";
         final byte[] encryptedEmail = "an-encrypted-email".getBytes();
-        final String decryptedEmail = "an-encrypted-email";
 
         final WebClient webClient = mock(WebClient.class);
         final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
@@ -269,12 +268,8 @@ class UserServiceTest {
                         )
                 );
 
-        when(encryptionService.decryptField(encryptedEmail))
-                .thenReturn(decryptedEmail);
+        final byte[] emailAddress = userService.getEmailAddressForSub(userSub);
 
-        final String emailAddress = userService.getEmailAddressForSub(userSub);
-
-        verify(encryptionService).decryptField(encryptedEmail);
-        assertThat(emailAddress).isEqualTo(decryptedEmail);
+        assertThat(emailAddress).isEqualTo(encryptedEmail);
     }
 }
