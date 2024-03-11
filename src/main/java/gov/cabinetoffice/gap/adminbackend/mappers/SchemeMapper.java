@@ -4,7 +4,6 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.*;
@@ -28,22 +27,22 @@ public abstract class SchemeMapper {
     }
 
     public SchemeDTO schemeEntityToDto(SchemeEntity schemeEntity) {
-        if ( schemeEntity == null ) {
+        if (schemeEntity == null) {
             return null;
         }
 
         SchemeDTO.SchemeDTOBuilder schemeDTO = SchemeDTO.builder();
 
-        schemeDTO.schemeId( schemeEntity.getId() );
-        schemeDTO.ggisReference( schemeEntity.getGgisIdentifier() );
-        schemeDTO.contactEmail( schemeEntity.getEmail() );
-        schemeDTO.funderId( schemeEntity.getFunderId() );
-        schemeDTO.name( schemeEntity.getName() );
-        if ( schemeEntity.getVersion() != null ) {
-            schemeDTO.version( String.valueOf( schemeEntity.getVersion() ) );
+        schemeDTO.schemeId(schemeEntity.getId());
+        schemeDTO.ggisReference(schemeEntity.getGgisIdentifier());
+        schemeDTO.contactEmail(schemeEntity.getEmail());
+        schemeDTO.funderId(schemeEntity.getFunderId());
+        schemeDTO.name(schemeEntity.getName());
+        if (schemeEntity.getVersion() != null) {
+            schemeDTO.version(String.valueOf(schemeEntity.getVersion()));
         }
-        schemeDTO.createdDate( schemeEntity.getCreatedDate() );
-        schemeDTO.createdBy( schemeEntity.getCreatedBy() );
+        schemeDTO.createdDate(schemeEntity.getCreatedDate());
+        schemeDTO.createdBy(schemeEntity.getCreatedBy());
 
         setLastUpdatedByValues(schemeEntity, schemeDTO);
 
@@ -51,13 +50,15 @@ public abstract class SchemeMapper {
     }
 
     private void setLastUpdatedByValues(SchemeEntity schemeEntity, SchemeDTO.SchemeDTOBuilder schemeDTO) {
-        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null && schemeEntity.getLastUpdated() != null;
+        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null
+                && schemeEntity.getLastUpdated() != null;
         if (isLastUpdatedBySet) {
             final byte[] lastUpdatedByEmail = userService.getGrantAdminById(schemeEntity.getLastUpdatedBy())
                     .map(admin -> {
                         final String sub = admin.getGapUser().getUserSub();
                         return userService.getEmailAddressForSub(sub);
-                    }).orElse(null);
+                    }).orElse(null); // Should literally never end up in here but would rather display a blank value
+                                     // than throw an error
 
             schemeDTO.encryptedLastUpdatedBy(lastUpdatedByEmail);
             schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
@@ -78,11 +79,12 @@ public abstract class SchemeMapper {
 
     public abstract SchemePostDTO schemeEntityToPostDto(SchemeEntity schemeEntity);
 
-    public abstract  List<SchemePostDTO> schemeEntityListToPostDtoList(List<SchemeEntity> schemeEntityList);
+    public abstract List<SchemePostDTO> schemeEntityListToPostDtoList(List<SchemeEntity> schemeEntityList);
 
     @Mapping(target = "ggisIdentifier", source = "ggisReference")
     @Mapping(target = "email", source = "contactEmail")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void updateSchemeEntityFromPatchDto(SchemePatchDTO schemePatchDto, @MappingTarget SchemeEntity schemeEntity);
+    public abstract void updateSchemeEntityFromPatchDto(SchemePatchDTO schemePatchDto,
+            @MappingTarget SchemeEntity schemeEntity);
 
 }
