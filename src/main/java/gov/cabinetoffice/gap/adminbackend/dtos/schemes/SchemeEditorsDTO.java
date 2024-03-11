@@ -6,6 +6,6 @@ import lombok.*;
 import lombok.Builder;
 
 @Builder
-public record SchemeEditorsDTO(Integer id, String email, SchemeEditorRoleEnum role) {
+public record SchemeEditorsDTO(Integer id, byte[] email, SchemeEditorRoleEnum role) {
 
 }

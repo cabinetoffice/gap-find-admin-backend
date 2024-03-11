@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.*;
@@ -11,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.List;
 
 @Component
@@ -53,14 +53,13 @@ public abstract class SchemeMapper {
     private void setLastUpdatedByValues(SchemeEntity schemeEntity, SchemeDTO.SchemeDTOBuilder schemeDTO) {
         final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null && schemeEntity.getLastUpdated() != null;
         if (isLastUpdatedBySet) {
-            final String lastUpdatedByEmail = userService.getGrantAdminById(schemeEntity.getLastUpdatedBy())
+            final byte[] lastUpdatedByEmail = userService.getGrantAdminById(schemeEntity.getLastUpdatedBy())
                     .map(admin -> {
                         final String sub = admin.getGapUser().getUserSub();
                         return userService.getEmailAddressForSub(sub);
-                    })
-                    .orElse(UserService.EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
+                    }).orElseThrow(() -> new NotFoundException("Email not found for admin with id" + schemeEntity.getLastUpdatedBy()));
 
-            schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
+            schemeDTO.encryptedLastUpdatedBy(lastUpdatedByEmail);
             schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
         }
     }

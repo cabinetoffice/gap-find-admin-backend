@@ -51,7 +51,7 @@ public class SchemeEditorService {
         return this.mapEditorListToDto(editors, createdBy, authHeader);
     }
 
-    private String getEmailFromUserResponse(final List<DecryptedUserEmailResponse> userResponse,
+    private byte[] getEmailFromUserResponse(final List<DecryptedUserEmailResponse> userResponse,
             final String editorsSub) {
         DecryptedUserEmailResponse editorsRow = userResponse.stream()
                 .filter(item -> item.userSub().equals(editorsSub)).findFirst()
@@ -68,7 +68,7 @@ public class SchemeEditorService {
         return editors.stream()
                 .map(editor -> {
                     String editorsSub = editor.getGapUser().getUserSub();
-                    String email = getEmailFromUserResponse(userResponse, editorsSub);
+                    byte[] email = getEmailFromUserResponse(userResponse, editorsSub);
                     Integer id = editor.getId();
                     SchemeEditorRoleEnum role = id.equals(createdBy)
                             ? SchemeEditorRoleEnum.Owner
@@ -93,7 +93,7 @@ public class SchemeEditorService {
 
         return Objects.requireNonNull(response).stream()
                 .map((item) -> DecryptedUserEmailResponse.builder().userSub(item.sub()).emailAddress(
-                        awsEncryptionService.decryptField(item.emailAddress())).build())
+                        item.emailAddress()).build())
                 .toList();
     }
 
