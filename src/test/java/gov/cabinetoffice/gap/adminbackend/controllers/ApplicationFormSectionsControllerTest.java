@@ -194,16 +194,16 @@ class ApplicationFormSectionsControllerTest {
     void deleteSectionHappyPathTest() throws Exception {
 
         doNothing().when(this.applicationFormSectionService).deleteSectionFromApplication(SAMPLE_APPLICATION_ID,
-                SAMPLE_SECTION_ID, 1);
+                SAMPLE_SECTION_ID, SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + 1))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + SAMPLE_VERSION))
                 .andExpect(status().isOk());
     }
 
     @Test
     void deleteSectionDeleteMandatorySectionTest() throws Exception {
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL" + "/" + 1))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL" + "/" + SAMPLE_VERSION))
                 .andExpect(status().isBadRequest());
     }
 
@@ -211,9 +211,9 @@ class ApplicationFormSectionsControllerTest {
     void deleteSectionDoesntExistTest() throws Exception {
 
         doThrow(new NotFoundException("Error message")).when(this.applicationFormSectionService)
-                .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, 1);
+                .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + 1))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + SAMPLE_VERSION))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
     }
@@ -222,9 +222,9 @@ class ApplicationFormSectionsControllerTest {
     void deleteSectionAccessDeniedTest() throws Exception {
 
         doThrow(new AccessDeniedException("Error message")).when(this.applicationFormSectionService)
-                .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, 1);
+                .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + 1))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + SAMPLE_VERSION))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
     }
 
@@ -281,7 +281,7 @@ class ApplicationFormSectionsControllerTest {
 
         @Test
         void updateSectionTitle__HappyPath() throws Exception {
-            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").version(1).build();
+            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").version(SAMPLE_VERSION).build();
 
             doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
                     .updateSectionTitle(any(), any(), any(), any());
@@ -317,7 +317,7 @@ class ApplicationFormSectionsControllerTest {
 
         @Test
         void updateSectionTitle__NotFound() throws Exception {
-            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").version(1).build();
+            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").version(SAMPLE_VERSION).build();
             doThrow(NotFoundException.class)
                     .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
                     .updateSectionTitle(any(), any(), any(), any());
@@ -330,7 +330,7 @@ class ApplicationFormSectionsControllerTest {
 
         @Test
         void updateSectionTitle__AccessDenied() throws Exception {
-            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").version(1).build();
+            PatchSectionDTO patchSectionDTO = new PatchSectionDTO().builder().sectionTitle("sectionTitle").version(SAMPLE_VERSION).build();
             doThrow(AccessDeniedException.class)
                     .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
                     .updateSectionTitle(any(), any(), any(), any());
