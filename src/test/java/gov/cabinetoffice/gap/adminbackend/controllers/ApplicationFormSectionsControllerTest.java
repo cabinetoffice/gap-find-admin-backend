@@ -196,14 +196,14 @@ class ApplicationFormSectionsControllerTest {
         doNothing().when(this.applicationFormSectionService).deleteSectionFromApplication(SAMPLE_APPLICATION_ID,
                 SAMPLE_SECTION_ID, SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + SAMPLE_VERSION))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "?version=" + SAMPLE_VERSION))
                 .andExpect(status().isOk());
     }
 
     @Test
     void deleteSectionDeleteMandatorySectionTest() throws Exception {
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL" + "/" + SAMPLE_VERSION))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + "ESSENTIAL" + "?version=" + SAMPLE_VERSION))
                 .andExpect(status().isBadRequest());
     }
 
@@ -213,7 +213,7 @@ class ApplicationFormSectionsControllerTest {
         doThrow(new NotFoundException("Error message")).when(this.applicationFormSectionService)
                 .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + SAMPLE_VERSION))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "?version=" + SAMPLE_VERSION))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
     }
@@ -224,7 +224,7 @@ class ApplicationFormSectionsControllerTest {
         doThrow(new AccessDeniedException("Error message")).when(this.applicationFormSectionService)
                 .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "/" + SAMPLE_VERSION))
+        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID + "?version=" + SAMPLE_VERSION))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
     }
 

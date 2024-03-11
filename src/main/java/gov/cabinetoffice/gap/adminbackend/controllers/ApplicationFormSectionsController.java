@@ -104,7 +104,7 @@ public class ApplicationFormSectionsController {
         }
     }
 
-    @DeleteMapping("/{sectionId}/{version}")
+    @DeleteMapping("/{sectionId}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Section deleted successfully.",
                     content = @Content(mediaType = "application/json")),
@@ -116,7 +116,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")) })
     @CheckSchemeOwnership
     public ResponseEntity deleteSection(final HttpServletRequest request, @PathVariable Integer applicationId,
-            @PathVariable String sectionId, @PathVariable Integer version) {
+            @PathVariable String sectionId, @RequestParam Integer version) {
         try {
             // don't allow admins to delete mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
