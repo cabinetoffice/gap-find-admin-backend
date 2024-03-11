@@ -14,6 +14,8 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +25,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SchemeService {
@@ -88,10 +91,8 @@ public class SchemeService {
     }
 
     public void patchExistingScheme(Integer schemeId, SchemePatchDTO schemePatchDTO) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
-
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
 
             this.schemeMapper.updateSchemeEntityFromPatchDto(schemePatchDTO, scheme);
@@ -163,10 +164,24 @@ public class SchemeService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(GrantAdmin grantAdmin, Integer schemeId) {
-        SchemeEntity scheme = this.findSchemeById(schemeId);
+    public void updateGrantSchemeOwner(GrantAdmin grantAdmin, Integer schemeId) {
+        final SchemeEntity scheme = this.findSchemeById(schemeId);
+        scheme.getGrantAdmins().stream()
+                .filter(admin -> admin.getId().equals(scheme.getCreatedBy()))
+                .findAny()
+                .ifPresent(scheme::removeAdmin);
+
         scheme.setCreatedBy(grantAdmin.getId());
         scheme.setFunderId(grantAdmin.getFunder().getId());
+
+        scheme.getGrantAdmins().stream()
+                .filter(admin -> admin.getId().equals(grantAdmin.getId()))
+                .findAny()
+                .ifPresentOrElse(
+                        admin -> log.info("Admin with ID {} is already an editor on scheme {}", admin.getId(), scheme.getId()),
+                        () -> scheme.addAdmin(grantAdmin)
+                );
+
         this.schemeRepo.save(scheme);
     }
 

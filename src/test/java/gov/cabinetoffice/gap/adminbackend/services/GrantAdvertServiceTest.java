@@ -1309,14 +1309,14 @@ class GrantAdvertServiceTest {
         doReturn(patchedGrantAdvert)
                 .when(grantAdvertService).save(any());
 
-        grantAdvertService.patchCreatedBy(2, 1);
+        grantAdvertService.updateAdvertOwner(2, 1);
 
         assertThat(testGrantAdvert.getCreatedBy()).isEqualTo(patchedGrantAdvert.getCreatedBy());
     }
 
     @Test
     void patchCreatedByDoesNothingIfSchemeIsNotPresent() {
-        GrantAdvertServiceTest.this.grantAdvertService.patchCreatedBy(2, 2);
+        GrantAdvertServiceTest.this.grantAdvertService.updateAdvertOwner(2, 2);
 
         verify(grantAdvertRepository, never()).save(any());
     }

@@ -12,27 +12,28 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
+import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.*;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -192,10 +193,12 @@ class SchemeServiceTest {
     @Test
     void postNewScheme_UnexpectedError() {
         SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
+        HttpSession session = new MockHttpSession();
+
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
         when(this.schemeRepository.save(testEntity)).thenThrow(new RuntimeException());
 
-        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, new MockHttpSession()))
+        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, session))
                 .isInstanceOf(SchemeEntityException.class)
                 .hasMessage("Something went wrong while creating a new grant scheme.");
 
@@ -205,12 +208,13 @@ class SchemeServiceTest {
     void postNewScheme_IllegalArgumentException() {
         SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
         GrantAdmin mockAdmin = GrantAdmin.builder().id(1).build();
+        HttpSession session = new MockHttpSession();
 
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
         when(this.grantAdminRepository.findById(mockAdmin.getId())).thenReturn(Optional.of(mockAdmin));
         when(this.schemeRepository.save(testEntity)).thenThrow(new IllegalArgumentException());
 
-        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, new MockHttpSession()))
+        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, session))
                 .isInstanceOf(IllegalArgumentException.class);
 
     }
@@ -219,11 +223,12 @@ class SchemeServiceTest {
     void postNewScheme_SchemeEntityException() {
         Integer invalidId = 999;
         SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
+        HttpSession session = new MockHttpSession();
+
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
         when(this.grantAdminRepository.findById(invalidId)).thenReturn(null);
 
-
-        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, new MockHttpSession()))
+        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, session))
                 .isInstanceOf(SchemeEntityException.class);
 
     }
@@ -345,19 +350,106 @@ class SchemeServiceTest {
     }
 
     @Test
-    void patchCreatedByUpdatesGrantScheme() {
+    void updateGrantSchemeOwner_AddsNewOwner_AndRemovesOldOne() {
         final int testAdmin = 1;
         final int patchedAdmin = 2;
-        SchemeEntity testScheme = SchemeEntity.builder().id(1).createdBy(testAdmin).build();
-        SchemeEntity patchedScheme = SchemeEntity.builder().id(1).createdBy(patchedAdmin).build();
 
-        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
-        Mockito.when(SchemeServiceTest.this.schemeRepository.save(testScheme)).thenReturn(patchedScheme);
-        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(2)).thenReturn(Optional.of(patchedScheme));
+        final FundingOrganisation originalFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+        final GrantAdmin originalOwner = GrantAdmin.builder()
+                .id(testAdmin)
+                .funder(originalFunder)
+                .build();
+        final SchemeEntity testScheme = SchemeEntity.builder()
+                .id(1)
+                .createdBy(testAdmin)
+                .grantAdmins(new ArrayList<> (List.of(originalOwner)))
+                .build();
 
-        SchemeServiceTest.this.schemeService.patchCreatedBy(
-                GrantAdmin.builder().id(2).funder(FundingOrganisation.builder().id(1).build()).build(), 1);
-        AssertionsForClassTypes.assertThat(testScheme.getCreatedBy()).isEqualTo(patchedScheme.getCreatedBy());
+        final FundingOrganisation newFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+        final GrantAdmin newOwner = GrantAdmin.builder()
+                .id(patchedAdmin)
+                .funder(newFunder)
+                .build();
+        final SchemeEntity patchedScheme = SchemeEntity.builder()
+                .id(1)
+                .createdBy(patchedAdmin)
+                .grantAdmins(List.of(newOwner))
+                .build();
+
+        final ArgumentCaptor<SchemeEntity> schemeCaptor = ArgumentCaptor.forClass(SchemeEntity.class);
+
+        when(schemeRepository.findById(1))
+                .thenReturn(Optional.of(testScheme));
+        when(schemeRepository.save(testScheme))
+                .thenReturn(patchedScheme);
+        when(schemeRepository.findById(2))
+                .thenReturn(Optional.of(patchedScheme));
+
+
+        schemeService.updateGrantSchemeOwner(newOwner, 1);
+
+        assertThat(testScheme.getCreatedBy()).isEqualTo(patchedScheme.getCreatedBy());
+        assertThat(testScheme.getFunderId()).isEqualTo(newFunder.getId());
+
+        verify(schemeRepository).save(schemeCaptor.capture());
+
+        final SchemeEntity savedScheme = schemeCaptor.getValue();
+        assertThat(savedScheme.getGrantAdmins()).doesNotContain(originalOwner);
+        assertThat(savedScheme.getGrantAdmins()).contains(newOwner);
+    }
+
+    @Test
+    void updateGrantSchemeOwner_DoesNotReAddNewOwnerAsEditor_IfNewOwnerIsExistingEditor() {
+        final int testAdmin = 1;
+        final int patchedAdmin = 2;
+
+        final FundingOrganisation originalFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+
+        final GrantAdmin originalOwner = GrantAdmin.builder()
+                .id(testAdmin)
+                .funder(originalFunder)
+                .build();
+
+        final FundingOrganisation newFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+
+        final GrantAdmin newOwner = GrantAdmin.builder()
+                .id(patchedAdmin)
+                .funder(newFunder)
+                .build();
+
+        final SchemeEntity testScheme = SchemeEntity.builder()
+                .id(1)
+                .createdBy(testAdmin)
+                .grantAdmins(new ArrayList<> (List.of(originalOwner, newOwner)))
+                .build();
+
+        final SchemeEntity patchedScheme = Mockito.spy(
+                SchemeEntity.builder()
+                        .id(1)
+                        .createdBy(patchedAdmin)
+                        .grantAdmins(List.of(newOwner))
+                        .build()
+        );
+
+        when(schemeRepository.findById(1))
+                .thenReturn(Optional.of(testScheme));
+        when(schemeRepository.save(testScheme))
+                .thenReturn(patchedScheme);
+        when(schemeRepository.findById(2))
+                .thenReturn(Optional.of(patchedScheme));
+
+
+        schemeService.updateGrantSchemeOwner(newOwner, 1);
+
+        verify(patchedScheme, never()).addAdmin(newOwner);
     }
 
     @Test
@@ -365,7 +457,7 @@ class SchemeServiceTest {
         Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.empty());
 
         AssertionsForClassTypes.assertThatThrownBy(
-                () -> SchemeServiceTest.this.schemeService.patchCreatedBy(GrantAdmin.builder().id(1).build(), 1))
+                () -> SchemeServiceTest.this.schemeService.updateGrantSchemeOwner(GrantAdmin.builder().id(1).build(), 1))
                 .isInstanceOf(SchemeEntityException.class).hasMessage(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: 1");
     }

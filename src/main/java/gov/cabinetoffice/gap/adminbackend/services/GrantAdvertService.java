@@ -31,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -416,8 +415,7 @@ public class GrantAdvertService {
         contentfulAdvert.setField(questionResponse.getId(), CONTENTFUL_LOCALE, contentfulValue);
     }
 
-    // TODO ideally this is just a stop gap until we can use the CMA library to convert
-    // the rich text strings to CMARichDocument objects
+    // TODO ideally this is just a stop gap until we can use the CMA library to convert the rich text strings to CMARichDocument objects
     private void createRichTextQuestionsInContentful(final GrantAdvert advert, final CMAEntry contentfulAdvert) {
 
         // get all the rich text responses
@@ -583,7 +581,7 @@ public class GrantAdvertService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+    public void updateAdvertOwner(Integer adminId, Integer schemeId) {
         this.grantAdvertRepository.findBySchemeId(schemeId)
                 .ifPresent(advert -> {
                     advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
