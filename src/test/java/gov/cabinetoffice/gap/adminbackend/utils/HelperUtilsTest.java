@@ -40,7 +40,7 @@ class HelperUtilsTest {
         String schemeJson = HelperUtils.asJsonString(SCHEME_DTO_EXAMPLE);
         assertThat(schemeJson).isEqualTo("{\"schemeId\":" + SAMPLE_SCHEME_ID + ",\"funderId\":" + SAMPLE_ORGANISATION_ID
                 + ",\"name\":\"" + SAMPLE_SCHEME_NAME + "\",\"ggisReference\":\"" + SAMPLE_GGIS_REFERENCE
-                + "\",\"contactEmail\":\"" + SAMPLE_SCHEME_CONTACT + "\"}");
+                + "\",\"contactEmail\":\"" + SAMPLE_SCHEME_CONTACT + "\",\"lastUpdatedByADeletedUser\":false}");
     }
 
 }
