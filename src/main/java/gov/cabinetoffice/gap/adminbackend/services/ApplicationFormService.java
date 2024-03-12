@@ -291,10 +291,12 @@ public class ApplicationFormService {
 
     }
 
-    public void deleteQuestionFromSection(Integer applicationId, String sectionId, String questionId) {
+    public void deleteQuestionFromSection(Integer applicationId, String sectionId, String questionId, Integer version) {
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         boolean questionDeleted = applicationForm.getDefinition().getSectionById(sectionId).getQuestions()
                 .removeIf(question -> Objects.equals(question.getQuestionId(), questionId));
@@ -343,7 +345,7 @@ public class ApplicationFormService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+    public void updateApplicationOwner(Integer adminId, Integer schemeId) {
         Optional<ApplicationFormEntity> applicationOptional = this.applicationFormRepository
                 .findByGrantSchemeId(schemeId);
         if (applicationOptional.isPresent()) {
@@ -353,10 +355,13 @@ public class ApplicationFormService {
         }
     }
 
-    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId, final Integer increment) {
+    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId,
+                                    final Integer increment, final Integer version) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         final List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
         final ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);

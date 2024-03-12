@@ -50,8 +50,8 @@ public abstract class SchemeMapper {
     }
 
     private void setLastUpdatedByValues(SchemeEntity schemeEntity, SchemeDTO.SchemeDTOBuilder schemeDTO) {
-        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null
-                && schemeEntity.getLastUpdated() != null;
+        final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null && schemeEntity.getLastUpdated() != null;
+        final boolean isDeletedUser = schemeEntity.getLastUpdatedBy() == null && schemeEntity.getLastUpdated() != null;
         if (isLastUpdatedBySet) {
             final byte[] lastUpdatedByEmail = userService.getGrantAdminById(schemeEntity.getLastUpdatedBy())
                     .map(admin -> {
@@ -61,6 +61,9 @@ public abstract class SchemeMapper {
                                      // than throw an error
 
             schemeDTO.encryptedLastUpdatedBy(lastUpdatedByEmail);
+            schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
+        } else if (isDeletedUser) {
+            schemeDTO.lastUpdatedBy("Deleted user");
             schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
         }
     }

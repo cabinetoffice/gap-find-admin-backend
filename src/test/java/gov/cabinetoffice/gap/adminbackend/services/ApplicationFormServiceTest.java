@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
@@ -519,7 +520,7 @@ class ApplicationFormServiceTest {
                     .when(applicationFormService).save(any());
 
             applicationFormService.deleteQuestionFromSection(applicationId, sectionId,
-                    questionId);
+                    questionId, SAMPLE_VERSION);
 
             verify(applicationFormService).save(argument.capture());
             List<ApplicationFormQuestionDTO> questions = argument.getValue().getDefinition().getSectionById(sectionId)
@@ -541,7 +542,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID))
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_VERSION))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
@@ -555,7 +556,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, incorrectId, SAMPLE_QUESTION_ID))
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, incorrectId, SAMPLE_QUESTION_ID, SAMPLE_VERSION))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Section with id " + incorrectId + " does not exist");
 
@@ -569,9 +570,23 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, incorrectId))
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, incorrectId, SAMPLE_VERSION))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Question with id " + incorrectId + " does not exist");
+
+        }
+
+        @Test
+        void deleteQuestionQuestionVersionConflict() {
+            String incorrectId = "incorrectId";
+
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
+
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, 2))
+                            .isInstanceOf(ConflictException.class)
+                            .hasMessage("MULTIPLE_EDITORS");
 
         }
 
@@ -728,14 +743,14 @@ class ApplicationFormServiceTest {
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(testApplicationFormEntity))
                 .thenReturn(patchedApplicationFormEntity);
 
-        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 1);
+        ApplicationFormServiceTest.this.applicationFormService.updateApplicationOwner(2, 1);
 
         assertThat(testApplicationFormEntity.getCreatedBy()).isEqualTo(2);
     }
 
     @Test
     void patchCreatedByDoesNothingIfAdminIdIsNotFound() {
-        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 2);
+        ApplicationFormServiceTest.this.applicationFormService.updateApplicationOwner(2, 2);
 
         verify(applicationFormRepository, never()).save(any());
     }
@@ -794,13 +809,13 @@ class ApplicationFormServiceTest {
             doReturn(testApplicationFormEntity)
                     .when(applicationFormService).save(any());
 
-            applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment);
+            applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment, SAMPLE_VERSION);
 
             verify(applicationFormService).save(argument.capture());
         }
 
         @Test
-        void updateSectionOrderOutsideOfRange() {
+        void updateQuestionOrderOutsideOfRange() {
             ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
             List<ApplicationFormSectionDTO> sections = new ArrayList<>(
                     List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").questions(
@@ -822,12 +837,14 @@ class ApplicationFormServiceTest {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
 
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment))
-                    .isInstanceOf(FieldViolationException.class).hasMessage("Question is already at the top");
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .updateQuestionOrder(applicationId, sectionId, questionId, increment, SAMPLE_VERSION))
+                    .isInstanceOf(FieldViolationException.class)
+                    .hasMessage("Question is already at the top");
         }
 
         @Test
-        void updateSectionOrderUnauthorised() {
+        void updateQuestionOrderUnauthorised() {
             final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().createdBy(2).build();
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = "test-section-id";
@@ -835,10 +852,29 @@ class ApplicationFormServiceTest {
             final Integer increment = 1;
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .updateQuestionOrder(applicationId, sectionId, questionId, increment)).isInstanceOf(NotFoundException.class)
-                    .hasMessage("Application with id " + applicationId
-                            + " does not exist or insufficient permissions");
+                    .updateQuestionOrder(applicationId, sectionId, questionId, increment, SAMPLE_VERSION))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
+        }
 
+        @Test
+        void updateQuestionOrderOutdatedVersion() {
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final Integer increment = 1;
+
+            when(applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            doReturn(testApplicationFormEntity).when(applicationFormService).save(any());
+
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .updateQuestionOrder(applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, increment, SAMPLE_VERSION - 1))
+                    .isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS");
         }
 
     }

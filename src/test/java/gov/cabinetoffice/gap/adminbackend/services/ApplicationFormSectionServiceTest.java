@@ -278,8 +278,6 @@ class ApplicationFormSectionServiceTest {
                                     + " does not exist or insufficient permissions");
         }
 
-
-
         @Test
         void deleteSection_OutdatedVersionNumber() {
             Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
@@ -367,8 +365,6 @@ class ApplicationFormSectionServiceTest {
 
         @Test
         void updateSectionOrderSuccessful() {
-            MockedStatic<ApplicationFormUtils> utilMock = mockStatic(ApplicationFormUtils.class);
-
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
@@ -386,17 +382,14 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.of(testApplicationFormEntity));
 
             ApplicationFormSectionServiceTest.this.applicationFormSectionService.updateSectionOrder(applicationId,
-                    sectionId, increment);
+                    sectionId, increment, SAMPLE_VERSION);
 
             Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
-            utilMock.close();
         }
 
         @Test
         void updateSectionOrderOutsideOfRange() {
             MockedStatic<ApplicationFormUtils> utilMock = mockStatic(ApplicationFormUtils.class);
-
-            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
             List<ApplicationFormSectionDTO> sections = new ArrayList<>(
@@ -413,7 +406,7 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.of(testApplicationFormEntity));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionOrder(applicationId, sectionId, increment))
+                    .updateSectionOrder(applicationId, sectionId, increment, SAMPLE_VERSION))
                             .isInstanceOf(FieldViolationException.class).hasMessage("Section is already at the bottom");
 
             utilMock.close();
@@ -428,10 +421,21 @@ class ApplicationFormSectionServiceTest {
             final Integer increment = 1;
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionOrder(applicationId, sectionId, increment)).isInstanceOf(NotFoundException.class)
+                    .updateSectionOrder(applicationId, sectionId, increment, SAMPLE_VERSION)).isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + applicationId
                                     + " does not exist or insufficient permissions");
+        }
 
+
+        @Test
+        void updateSectionOrderOutdatedVersion() {
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().version(2).build();
+            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionOrder(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, 1, 1)).isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS");
         }
 
     }

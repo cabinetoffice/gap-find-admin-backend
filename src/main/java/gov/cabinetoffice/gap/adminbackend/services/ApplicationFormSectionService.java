@@ -110,10 +110,12 @@ public class ApplicationFormSectionService {
         this.applicationFormRepository.save(applicationForm);
     }
 
-    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment) {
+    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment, final Integer version) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
         ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
