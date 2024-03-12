@@ -61,10 +61,12 @@ public class ApplicationFormSectionService {
         return newSection.getSectionId();
     }
 
-    public void deleteSectionFromApplication(Integer applicationId, String sectionId) {
+    public void deleteSectionFromApplication(Integer applicationId, String sectionId, Integer version) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         boolean sectionDeleted = applicationForm.getDefinition().getSections()
                 .removeIf(section -> Objects.equals(section.getSectionId(), sectionId));

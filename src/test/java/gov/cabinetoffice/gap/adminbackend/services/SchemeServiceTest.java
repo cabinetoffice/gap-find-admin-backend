@@ -4,26 +4,33 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.*;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
+import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
+import org.apache.http.impl.client.HttpClients;
 import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.persistence.EntityNotFoundException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -31,8 +38,10 @@ import java.util.Optional;
 import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -55,6 +64,12 @@ class SchemeServiceTest {
 
     @Mock
     private GrantAdminRepository grantAdminRepository;
+
+    @Mock
+    private GrantAdvertService grantAdvertService;
+
+    @Mock
+    private ApplicationFormService applicationFormService;
 
     @Mock
     private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
@@ -446,5 +461,25 @@ class SchemeServiceTest {
         final List<SchemeDTO> methodResponse = schemeService.getEditableSchemesByAdminId(adminId);
 
         assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void testRemoveAdminReferenceWhenUserExists() {
+
+        final String userSub = "123";
+        final GrantAdmin grantAdmin = GrantAdmin.builder().id(1)
+                .gapUser(GapUser.builder().userSub(userSub).build()).build();
+
+        final SchemeEntity scheme = SchemeEntity.builder().id(1).lastUpdatedBy(grantAdmin.getId()).lastUpdatedBy(1).build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+
+        when(grantAdminRepository.findByGapUserUserSub(anyString())).thenReturn(Optional.of(grantAdmin));
+        when(schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(any())).thenReturn(schemes);
+
+        schemeService.removeAdminReference("userSub");
+
+        verify(schemeRepository).saveAll(schemes);
+        verify(grantAdvertService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
+        verify(applicationFormService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
     }
 }
