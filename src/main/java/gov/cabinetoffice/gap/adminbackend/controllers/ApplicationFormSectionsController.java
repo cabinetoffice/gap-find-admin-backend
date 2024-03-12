@@ -116,7 +116,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")) })
     @CheckSchemeOwnership
     public ResponseEntity deleteSection(final HttpServletRequest request, @PathVariable Integer applicationId,
-            @PathVariable String sectionId) {
+            @PathVariable String sectionId, @RequestParam Integer version) {
         try {
             // don't allow admins to delete mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
@@ -124,7 +124,7 @@ public class ApplicationFormSectionsController {
                         HttpStatus.BAD_REQUEST);
             }
 
-            this.applicationFormSectionService.deleteSectionFromApplication(applicationId, sectionId);
+            this.applicationFormSectionService.deleteSectionFromApplication(applicationId, sectionId, version);
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
