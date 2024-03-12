@@ -323,21 +323,21 @@ class ApplicationFormQuestionsControllerTest {
 
     @Nested
     @WithAdminSession
-    class updateSectionOrder {
+    class updateQuestionOrder {
 
         @Test
-        void updateSectionOrderHappyPathTest() throws Exception {
+        void updateQuestionOrderHappyPathTest() throws Exception {
 
             doNothing().when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
                     .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1, SAMPLE_VERSION);
 
             ApplicationFormQuestionsControllerTest.this.mockMvc
-                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1?version=1"))
                     .andExpect(status().isOk());
         }
 
         @Test
-        void updateSectionOrderNoIncrement() throws Exception {
+        void updateQuestionOrderNoIncrement() throws Exception {
 
             ApplicationFormQuestionsControllerTest.this.mockMvc
                     .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order"))
@@ -345,14 +345,14 @@ class ApplicationFormQuestionsControllerTest {
         }
 
         @Test
-        void updateSectionOrder_AccessDeniedTest() throws Exception {
+        void updateQuestionOrder_AccessDeniedTest() throws Exception {
 
             doThrow(new AccessDeniedException("Error message"))
                     .when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
                     .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1, SAMPLE_VERSION);
 
             ApplicationFormQuestionsControllerTest.this.mockMvc
-                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))
+                    .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1?version=1"))
                     .andExpect(status().isForbidden()).andExpect(content().string(""));
         }
 
