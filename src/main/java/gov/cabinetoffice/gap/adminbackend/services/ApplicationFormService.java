@@ -147,6 +147,8 @@ public class ApplicationFormService {
             ApplicationFormQuestionDTO questionDto, HttpSession session) {
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
 
+            ApplicationFormUtils.verifyApplicationFormVersion(questionDto.getVersion(), applicationForm);
+
             ApplicationFormQuestionDTO questionById = applicationForm.getDefinition().getSectionById(sectionId)
                     .getQuestionById(questionId);
 
