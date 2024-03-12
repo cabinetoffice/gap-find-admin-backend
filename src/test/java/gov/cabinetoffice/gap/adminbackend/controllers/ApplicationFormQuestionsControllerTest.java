@@ -329,7 +329,7 @@ class ApplicationFormQuestionsControllerTest {
         void updateSectionOrderHappyPathTest() throws Exception {
 
             doNothing().when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
-                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1);
+                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1, SAMPLE_VERSION);
 
             ApplicationFormQuestionsControllerTest.this.mockMvc
                     .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))
@@ -349,7 +349,7 @@ class ApplicationFormQuestionsControllerTest {
 
             doThrow(new AccessDeniedException("Error message"))
                     .when(ApplicationFormQuestionsControllerTest.this.applicationFormService)
-                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1);
+                    .updateQuestionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid","question-id", 1, SAMPLE_VERSION);
 
             ApplicationFormQuestionsControllerTest.this.mockMvc
                     .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/A-random-uuid/questions/question-id/order/1"))

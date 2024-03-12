@@ -355,10 +355,13 @@ public class ApplicationFormService {
         }
     }
 
-    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId, final Integer increment) {
+    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId,
+                                    final Integer increment, final Integer version) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         final List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
         final ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);

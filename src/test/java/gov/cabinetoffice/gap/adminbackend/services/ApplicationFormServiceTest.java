@@ -809,13 +809,13 @@ class ApplicationFormServiceTest {
             doReturn(testApplicationFormEntity)
                     .when(applicationFormService).save(any());
 
-            applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment);
+            applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment, SAMPLE_VERSION);
 
             verify(applicationFormService).save(argument.capture());
         }
 
         @Test
-        void updateSectionOrderOutsideOfRange() {
+        void updateQuestionOrderOutsideOfRange() {
             ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
             List<ApplicationFormSectionDTO> sections = new ArrayList<>(
                     List.of(ApplicationFormSectionDTO.builder().sectionId("Section1").questions(
@@ -837,12 +837,14 @@ class ApplicationFormServiceTest {
             Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(applicationId))
                     .thenReturn(Optional.of(testApplicationFormEntity));
 
-            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment))
-                    .isInstanceOf(FieldViolationException.class).hasMessage("Question is already at the top");
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .updateQuestionOrder(applicationId, sectionId, questionId, increment, SAMPLE_VERSION))
+                    .isInstanceOf(FieldViolationException.class)
+                    .hasMessage("Question is already at the top");
         }
 
         @Test
-        void updateSectionOrderUnauthorised() {
+        void updateQuestionOrderUnauthorised() {
             final ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().createdBy(2).build();
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final String sectionId = "test-section-id";
@@ -850,10 +852,29 @@ class ApplicationFormServiceTest {
             final Integer increment = 1;
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .updateQuestionOrder(applicationId, sectionId, questionId, increment)).isInstanceOf(NotFoundException.class)
-                    .hasMessage("Application with id " + applicationId
-                            + " does not exist or insufficient permissions");
+                    .updateQuestionOrder(applicationId, sectionId, questionId, increment, SAMPLE_VERSION))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessage("Application with id " + applicationId + " does not exist or insufficient permissions");
+        }
 
+        @Test
+        void updateQuestionOrderOutdatedVersion() {
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final Integer increment = 1;
+
+            when(applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            doReturn(testApplicationFormEntity).when(applicationFormService).save(any());
+
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .updateQuestionOrder(applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, increment, SAMPLE_VERSION - 1))
+                    .isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS");
         }
 
     }
