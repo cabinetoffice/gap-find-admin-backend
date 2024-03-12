@@ -345,7 +345,7 @@ public class ApplicationFormService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(Integer adminId, Integer schemeId) {
+    public void updateApplicationOwner(Integer adminId, Integer schemeId) {
         Optional<ApplicationFormEntity> applicationOptional = this.applicationFormRepository
                 .findByGrantSchemeId(schemeId);
         if (applicationOptional.isPresent()) {

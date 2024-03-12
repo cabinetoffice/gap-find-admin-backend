@@ -743,14 +743,14 @@ class ApplicationFormServiceTest {
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.save(testApplicationFormEntity))
                 .thenReturn(patchedApplicationFormEntity);
 
-        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 1);
+        ApplicationFormServiceTest.this.applicationFormService.updateApplicationOwner(2, 1);
 
         assertThat(testApplicationFormEntity.getCreatedBy()).isEqualTo(2);
     }
 
     @Test
     void patchCreatedByDoesNothingIfAdminIdIsNotFound() {
-        ApplicationFormServiceTest.this.applicationFormService.patchCreatedBy(2, 2);
+        ApplicationFormServiceTest.this.applicationFormService.updateApplicationOwner(2, 2);
 
         verify(applicationFormRepository, never()).save(any());
     }

@@ -396,9 +396,9 @@ class SchemeControllerTest {
     void updateGrantOwnership() throws Exception {
         GrantAdmin grantAdmin = GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build();
 
-        Mockito.doNothing().when(schemeService).patchCreatedBy(grantAdmin, 1);
-        Mockito.doNothing().when(grantAdvertService).patchCreatedBy(1, 1);
-        Mockito.doNothing().when(applicationFormService).patchCreatedBy(1, 1);
+        Mockito.doNothing().when(schemeService).updateGrantSchemeOwner(grantAdmin, 1);
+        Mockito.doNothing().when(grantAdvertService).updateAdvertOwner(1, 1);
+        Mockito.doNothing().when(applicationFormService).updateApplicationOwner(1, 1);
         when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
 
         when(userService.getGrantAdminIdFromUserServiceEmail(anyString(), anyString())).thenReturn(grantAdmin);

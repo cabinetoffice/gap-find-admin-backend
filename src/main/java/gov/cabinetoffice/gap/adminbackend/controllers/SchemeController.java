@@ -235,11 +235,15 @@ public class SchemeController {
     public ResponseEntity<String> updateGrantOwnership(@PathVariable final Integer schemeId,
             @RequestBody final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-        GrantAdmin grantAdmin = userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(),
-                jwt);
-        schemeService.patchCreatedBy(grantAdmin, schemeId);
-        grantAdvertService.patchCreatedBy(grantAdmin.getId(), schemeId);
-        applicationFormService.patchCreatedBy(grantAdmin.getId(), schemeId);
+        final GrantAdmin grantAdmin = userService.getGrantAdminIdFromUserServiceEmail(
+                checkNewAdminEmailDto.getEmailAddress(),
+                jwt
+        );
+
+        schemeService.updateGrantSchemeOwner(grantAdmin, schemeId);
+        grantAdvertService.updateAdvertOwner(grantAdmin.getId(), schemeId);
+        applicationFormService.updateApplicationOwner(grantAdmin.getId(), schemeId);
+
         return ResponseEntity.ok("Grant ownership updated successfully");
     }
 
