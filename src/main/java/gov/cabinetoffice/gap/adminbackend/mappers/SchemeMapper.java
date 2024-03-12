@@ -52,6 +52,7 @@ public abstract class SchemeMapper {
 
     private void setLastUpdatedByValues(SchemeEntity schemeEntity, SchemeDTO.SchemeDTOBuilder schemeDTO) {
         final boolean isLastUpdatedBySet = schemeEntity.getLastUpdatedBy() != null && schemeEntity.getLastUpdated() != null;
+        final boolean isDeletedUser = schemeEntity.getLastUpdatedBy() == null && schemeEntity.getLastUpdated() != null;
         if (isLastUpdatedBySet) {
             final String lastUpdatedByEmail = userService.getGrantAdminById(schemeEntity.getLastUpdatedBy())
                     .map(admin -> {
@@ -61,6 +62,9 @@ public abstract class SchemeMapper {
                     .orElse(UserService.EMPTY_EMAIL_VALUE); // Should literally never end up in here but would rather display a blank value than throw an error
 
             schemeDTO.lastUpdatedBy(lastUpdatedByEmail);
+            schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
+        } else if (isDeletedUser) {
+            schemeDTO.lastUpdatedBy("Deleted user");
             schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
         }
     }
