@@ -2,8 +2,8 @@ package gov.cabinetoffice.gap.adminbackend.listeners;
 
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
-import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.persistence.PrePersist;
@@ -21,10 +21,12 @@ public class SchemeUpdateListener {
 
         Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .ifPresent(authentication -> {
-                    final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
+                    if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
+                        final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
 
-                    scheme.setLastUpdated(Instant.now());
-                    scheme.setLastUpdatedBy(adminSession.getGrantAdminId());
+                        scheme.setLastUpdated(Instant.now());
+                        scheme.setLastUpdatedBy(adminSession.getGrantAdminId());
+                    }
                 });
     }
 }
