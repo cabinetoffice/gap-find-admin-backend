@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
@@ -519,7 +520,7 @@ class ApplicationFormServiceTest {
                     .when(applicationFormService).save(any());
 
             applicationFormService.deleteQuestionFromSection(applicationId, sectionId,
-                    questionId);
+                    questionId, SAMPLE_VERSION);
 
             verify(applicationFormService).save(argument.capture());
             List<ApplicationFormQuestionDTO> questions = argument.getValue().getDefinition().getSectionById(sectionId)
@@ -541,7 +542,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID))
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_VERSION))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + SAMPLE_APPLICATION_ID + " does not exist");
 
@@ -555,7 +556,7 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, incorrectId, SAMPLE_QUESTION_ID))
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, incorrectId, SAMPLE_QUESTION_ID, SAMPLE_VERSION))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Section with id " + incorrectId + " does not exist");
 
@@ -569,9 +570,23 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, incorrectId))
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, incorrectId, SAMPLE_VERSION))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Question with id " + incorrectId + " does not exist");
+
+        }
+
+        @Test
+        void deleteQuestionQuestionVersionConflict() {
+            String incorrectId = "incorrectId";
+
+            Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
+
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, 2))
+                            .isInstanceOf(ConflictException.class)
+                            .hasMessage("MULTIPLE_EDITORS");
 
         }
 

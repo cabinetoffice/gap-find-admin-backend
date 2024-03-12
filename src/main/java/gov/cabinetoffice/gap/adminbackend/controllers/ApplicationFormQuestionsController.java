@@ -112,14 +112,14 @@ public class ApplicationFormQuestionsController {
                     content = @Content(mediaType = "application/json")) })
     @CheckSchemeOwnership
     public ResponseEntity<Void> deleteQuestion(HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
-            @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId) {
+            @PathVariable @NotBlank String sectionId, @PathVariable @NotBlank String questionId, @RequestParam Integer version) {
         try {
             // don't allow admins to delete questions from mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
                 return new ResponseEntity(new GenericErrorDTO("You cannot delete mandatory sections"),
                         HttpStatus.BAD_REQUEST);
             }
-            this.applicationFormService.deleteQuestionFromSection(applicationId, sectionId, questionId);
+            this.applicationFormService.deleteQuestionFromSection(applicationId, sectionId, questionId, version);
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 

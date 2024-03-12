@@ -291,10 +291,12 @@ public class ApplicationFormService {
 
     }
 
-    public void deleteQuestionFromSection(Integer applicationId, String sectionId, String questionId) {
+    public void deleteQuestionFromSection(Integer applicationId, String sectionId, String questionId, Integer version) {
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         boolean questionDeleted = applicationForm.getDefinition().getSectionById(sectionId).getQuestions()
                 .removeIf(question -> Objects.equals(question.getQuestionId(), questionId));
