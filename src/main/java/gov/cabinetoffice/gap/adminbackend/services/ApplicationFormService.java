@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
@@ -52,6 +53,8 @@ public class ApplicationFormService {
     private final ApplicationFormMapper applicationFormMapper;
 
     private final SessionsService sessionsService;
+
+    private final OdtService odtService;
 
     private final Validator validator;
 
@@ -409,5 +412,12 @@ public class ApplicationFormService {
 
                     applicationFormRepository.save(application);
                 });
+    }
+
+    public OdfTextDocument getApplicationFormExport(Integer applicationId) {
+        final ApplicationFormEntity applicationForm = applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException(String.format("No application with ID %s was found", applicationId)));
+
+        return odtService.generateSingleOdt(applicationForm);
     }
 }

@@ -25,7 +25,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +38,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,6 +60,8 @@ public class ApplicationFormController {
     private final EventLogService eventLogService;
 
     private final UserService userService;
+
+    private final OdtService odtService;
 
     @PostMapping
     @ApiResponses(value = {
@@ -261,6 +268,26 @@ public class ApplicationFormController {
     public ResponseEntity<String> getApplicationStatus(@PathVariable final Integer applicationId) {
         final ApplicationStatusEnum applicationStatus = applicationFormService.getApplicationStatus(applicationId);
         return ResponseEntity.ok(applicationStatus.toString());
+    }
+
+    @GetMapping("/{applicationId}/download-summary")
+    @CheckSchemeOwnership
+    public ResponseEntity<ByteArrayResource> exportApplication(
+            @PathVariable final Integer applicationId, HttpServletRequest request) {
+        try (OdfTextDocument odt = applicationFormService.getApplicationFormExport(applicationId)) {
+
+            ByteArrayResource odtResource = odtService.odtToResource(odt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"application.odt\"");
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+
+            return ResponseEntity.ok().headers(headers).contentLength(odtResource.contentLength())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM).body(odtResource);
+        } catch (Exception e) {
+            log.error("Could not generate ZIP. Exception: ", e);
+            throw new RuntimeException(e);
+        }
     }
 
 
