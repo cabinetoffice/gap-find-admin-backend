@@ -223,6 +223,11 @@
             <artifactId>aws-java-sdk-sns</artifactId>
             <version>1.12.593</version>
         </dependency>
+        <dependency>
+            <groupId>org.odftoolkit</groupId>
+            <artifactId>odfdom-java</artifactId>
+            <version>0.10.0</version>
+        </dependency>
     </dependencies>
 
     <build>
