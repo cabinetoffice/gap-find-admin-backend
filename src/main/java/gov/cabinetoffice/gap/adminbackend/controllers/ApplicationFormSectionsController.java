@@ -202,7 +202,7 @@ public class ApplicationFormSectionsController {
             final @RequestBody ApplicationSectionOrderPatchDto sectionOrderPatchDto) {
         try {
             this.applicationFormSectionService.updateSectionOrder(applicationId, sectionOrderPatchDto.getSectionId(),
-                    sectionOrderPatchDto.getIncrement());
+                    sectionOrderPatchDto.getIncrement(), sectionOrderPatchDto.getVersion());
             logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
             return ResponseEntity.ok().build();
         }

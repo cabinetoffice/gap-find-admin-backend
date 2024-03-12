@@ -351,7 +351,7 @@ class ApplicationFormSectionsControllerTest {
         void updateSectionOrderHappyPathTest() throws Exception {
 
             doNothing().when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid", 1);
+                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid", 1, SAMPLE_VERSION);
 
             ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
                     .sectionId("test").increment(1).build();
@@ -375,7 +375,7 @@ class ApplicationFormSectionsControllerTest {
 
             doThrow(new AccessDeniedException("Error message"))
                     .when(ApplicationFormSectionsControllerTest.this.applicationFormSectionService)
-                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "test", 1);
+                    .updateSectionOrder(SAMPLE_APPLICATION_ID, "test", 1, SAMPLE_VERSION);
 
             ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
                     .sectionId("test").increment(1).build();
