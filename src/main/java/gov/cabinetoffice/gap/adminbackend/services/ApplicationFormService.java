@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.TemplateApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
@@ -382,15 +383,28 @@ public class ApplicationFormService {
         save(applicationForm);
     }
 
-    public Integer getLastUpdatedBy(Integer applicationId) {
+    public ApplicationFormEntity getApplicationById(Integer applicationId) {
         return this.applicationFormRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"))
-                .getLastUpdateBy();
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
     }
 
     public ApplicationStatusEnum getApplicationStatus(Integer applicationId) {
         return this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"))
                 .getApplicationStatus();
+    }
+
+    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
+        applicationFormRepository.findByGrantSchemeId(schemeId)
+                .ifPresent(application -> {
+                    if (Objects.equals(application.getLastUpdateBy(), grantAdmin.getId())) {
+                        application.setLastUpdateBy(null);
+                    }
+                    if (Objects.equals(application.getCreatedBy(), grantAdmin.getId())) {
+                        application.setCreatedBy(null);
+                    }
+
+                    applicationFormRepository.save(application);
+                });
     }
 }
