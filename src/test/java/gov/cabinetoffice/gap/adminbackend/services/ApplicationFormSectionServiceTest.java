@@ -5,10 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectio
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ForbiddenException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.*;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
@@ -216,7 +213,7 @@ class ApplicationFormSectionServiceTest {
     class deleteSection {
 
         @Test
-        void deleteSectionHappyPathTest() {
+        void deleteSection_HappyPathTest() {
             MockedStatic<ApplicationFormUtils> utilMock = mockStatic(ApplicationFormUtils.class);
 
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
@@ -226,7 +223,7 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_QUESTION));
 
             ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID);
+                    .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, 1);
 
             Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
 
@@ -242,20 +239,20 @@ class ApplicationFormSectionServiceTest {
         }
 
         @Test
-        void deleteSectionApplicationNotFoundTest() {
+        void deleteSection_ApplicationNotFoundTest() {
 
             Mockito.when(
                     ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID))
+                    .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, 1))
                             .isInstanceOf(NotFoundException.class).hasMessage("Application with id "
                                     + SAMPLE_APPLICATION_ID + " does not exist or insufficient permissions");
         }
 
         @Test
-        void deleteSectionSectionNotFound() {
+        void deleteSection_SectionNotFound() {
             String incorrectId = "incorrectId";
 
             Mockito.when(
@@ -263,23 +260,34 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION));
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, incorrectId))
+                    .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, incorrectId, 1))
                             .isInstanceOf(NotFoundException.class)
                             .hasMessage("Section with id " + incorrectId + " does not exist");
 
         }
 
         @Test
-        void deleteSection_insufficientPermissionsToDeleteThisSection() {
+        void deleteSection_InsufficientPermissionsToDeleteThisSection() {
             ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().createdBy(2).build();
             Integer applicationId = testApplicationForm.getGrantApplicationId();
             String sectionId = "test-section-id";
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .deleteSectionFromApplication(applicationId, sectionId)).isInstanceOf(NotFoundException.class)
+                    .deleteSectionFromApplication(applicationId, sectionId, 1)).isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id " + applicationId
                                     + " does not exist or insufficient permissions");
+        }
 
+
+
+        @Test
+        void deleteSection_OutdatedVersionNumber() {
+            Mockito.when(ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY_DELETE_QUESTION));
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .deleteSectionFromApplication(SAMPLE_APPLICATION_ID, "1", 2)).isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS");
         }
 
     }
@@ -441,7 +449,7 @@ class ApplicationFormSectionServiceTest {
 
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
-            applicationFormSectionService.updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle);
+            applicationFormSectionService.updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1);
 
             Mockito.verify(ApplicationFormSectionServiceTest.this.applicationFormRepository).save(argument.capture());
         }
@@ -454,7 +462,7 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
-                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle)).isInstanceOf(NotFoundException.class)
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1)).isInstanceOf(NotFoundException.class)
                             .hasMessage("Application with id 111 does not exist");
         }
 
@@ -466,7 +474,20 @@ class ApplicationFormSectionServiceTest {
                     .thenReturn(Optional.of(testApplicationForm));
 
             Assertions.assertThrows(FieldViolationException.class, () -> applicationFormSectionService
-                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title"));
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", "Section title", 1));
+        }
+
+        @Test
+        void updateSectionTitle_VersionDoesNotMatch() {
+            String newTitle = "newTitle";
+            ApplicationFormEntity testApplicationForm = randomApplicationFormEntity().version(2).build();
+            Mockito.when(
+                            ApplicationFormSectionServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(testApplicationForm));
+
+            assertThatThrownBy(() -> ApplicationFormSectionServiceTest.this.applicationFormSectionService
+                    .updateSectionTitle(SAMPLE_APPLICATION_ID, "1", newTitle, 1)).isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS");
         }
 
     }

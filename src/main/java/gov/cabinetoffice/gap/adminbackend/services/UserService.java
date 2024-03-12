@@ -81,7 +81,10 @@ public class UserService {
     @Transactional
     public void deleteUser(final Optional<String> oneLoginSubOptional, final Optional<UUID> colaSubOptional) {
         // Deleting COLA and OneLogin subs as either could be stored against the user
-        oneLoginSubOptional.ifPresent(grantApplicantRepository::deleteByUserId);
+        oneLoginSubOptional.ifPresent(sub -> {
+            grantApplicantRepository.deleteByUserId(sub);
+            grantAdminRepository.deleteByGapUserUserSub(sub);
+        });
 
         if (colaSubOptional.isPresent()) {
             grantApplicantRepository.deleteByUserId(colaSubOptional.get().toString());

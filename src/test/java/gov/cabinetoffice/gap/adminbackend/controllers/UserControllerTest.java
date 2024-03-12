@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.TechSupportUserService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -70,6 +71,9 @@ class UserControllerTest {
 
     @MockBean
     private UserServiceConfig userServiceConfig;
+
+    @MockBean
+    private SchemeService schemeService;
 
     @MockBean
     private TechSupportUserService techSupportService;

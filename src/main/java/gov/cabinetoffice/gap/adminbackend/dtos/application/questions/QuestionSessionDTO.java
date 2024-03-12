@@ -26,4 +26,6 @@ public class QuestionSessionDTO {
     @NotEmpty(message = "Select whether the question is optional or not")
     private String optional;
 
+    private Integer version;
+
 }

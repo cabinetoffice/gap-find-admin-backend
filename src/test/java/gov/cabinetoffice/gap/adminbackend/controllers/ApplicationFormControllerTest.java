@@ -4,7 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.application.EncryptedEmailAddressDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.EncryptedLastUpdatedEmailAddressDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.*;
@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -421,11 +422,14 @@ class ApplicationFormControllerTest {
     @Test
     void getLastUpdatedEmailHappyPath() throws Exception {
         byte[] encryptedEmail = "test@test.gov".getBytes();
-        EncryptedEmailAddressDTO encryptedLastUpdatedEmailDTO =
-                EncryptedEmailAddressDTO.builder().encryptedLastUpdatedEmail(encryptedEmail).build();
+        EncryptedLastUpdatedEmailAddressDTO encryptedLastUpdatedEmailDTO =
+                EncryptedLastUpdatedEmailAddressDTO.builder().encryptedLastUpdatedEmail(encryptedEmail).build();
         when(userService.getEmailAddressForSub(anyString())).thenReturn(encryptedEmail);
         when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.of(GrantAdmin.builder().gapUser(GapUser.builder().userSub("sub").build()).build()));
+        when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov".getBytes());
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdateBy(1).build());
 
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
                 .andExpect(content().json(HelperUtils.asJsonString(encryptedLastUpdatedEmailDTO)));
@@ -433,15 +437,21 @@ class ApplicationFormControllerTest {
     }
 
     @Test
-    void getLastUpdatedEmailReturnsNotFoundWhenNoApplicationFound() throws Exception {
-        when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.empty());
-        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
+    void shouldReturnDeletedUserWhenLastUpdatedByIsNullAndLastUpdatedIsValid() throws Exception {
+        when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov".getBytes());
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdated(Instant.now()).build());
+
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
+                .andExpect(content().json(
+                        HelperUtils.asJsonString(EncryptedLastUpdatedEmailAddressDTO.builder().deletedUser(true).build())
+                ));
     }
 
     @Test
     void getLastUpdatedEmailReturnsNotFoundWhenNoGrantAdminFound() throws Exception {
-        when(applicationFormRepository.findById(anyInt())).
-                thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdateBy(1).build());
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.empty());
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
     }

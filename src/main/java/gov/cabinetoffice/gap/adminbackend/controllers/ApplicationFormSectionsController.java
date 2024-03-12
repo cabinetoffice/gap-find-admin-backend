@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationSectionOrderPatchDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.PatchSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
@@ -115,7 +116,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")) })
     @CheckSchemeOwnership
     public ResponseEntity deleteSection(final HttpServletRequest request, @PathVariable Integer applicationId,
-            @PathVariable String sectionId) {
+            @PathVariable String sectionId, @RequestParam Integer version) {
         try {
             // don't allow admins to delete mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
@@ -123,7 +124,7 @@ public class ApplicationFormSectionsController {
                         HttpStatus.BAD_REQUEST);
             }
 
-            this.applicationFormSectionService.deleteSectionFromApplication(applicationId, sectionId);
+            this.applicationFormSectionService.deleteSectionFromApplication(applicationId, sectionId, version);
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
@@ -176,12 +177,12 @@ public class ApplicationFormSectionsController {
     @CheckSchemeOwnership
     public ResponseEntity<Void> updateSectionTitle(final HttpServletRequest request,
             final @PathVariable Integer applicationId, final @PathVariable String sectionId,
-            final @RequestBody @Validated PostSectionDTO sectionDTO) {
+            final @RequestBody @Validated PatchSectionDTO sectionDTO) {
         if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
             return new ResponseEntity(new GenericErrorDTO("You cannot update the title of a non-custom section"),
                     HttpStatus.BAD_REQUEST);
         }
-        this.applicationFormSectionService.updateSectionTitle(applicationId, sectionId, sectionDTO.getSectionTitle());
+        this.applicationFormSectionService.updateSectionTitle(applicationId, sectionId, sectionDTO.getSectionTitle(), sectionDTO.getVersion());
         logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
 
         return ResponseEntity.ok().build();

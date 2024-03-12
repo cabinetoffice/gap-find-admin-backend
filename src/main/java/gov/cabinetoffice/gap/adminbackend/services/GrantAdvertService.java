@@ -512,11 +512,13 @@ public class GrantAdvertService {
         GetGrantAdvertPublishingInformationResponseDTO publishingInfo = this.grantAdvertMapper
                 .grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
 
-        String adminSub = grantAdvert.getLastUpdatedBy().getGapUser().getUserSub();
+        if (grantAdvert.getLastUpdatedBy() != null) {
+            String adminSub = grantAdvert.getLastUpdatedBy().getGapUser().getUserSub();
 
-        byte[] emailAddress = userService.getEmailAddressForSub(adminSub);
+            byte[] emailAddress = userService.getEmailAddressForSub(adminSub);
 
-        publishingInfo.setLastUpdatedByEmail(emailAddress);
+            publishingInfo.setLastUpdatedByEmail(emailAddress);
+        }
 
         return publishingInfo;
     }
@@ -588,6 +590,20 @@ public class GrantAdvertService {
                 .ifPresent(advert -> {
                     advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
                     save(advert);
+                });
+    }
+
+    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
+        grantAdvertRepository.findBySchemeId(schemeId)
+                .ifPresent(advert -> {
+                    if (advert.getLastUpdatedBy() == grantAdmin) {
+                        advert.setLastUpdatedBy(null);
+                    }
+                    if (advert.getCreatedBy() == grantAdmin) {
+                        advert.setCreatedBy(null);
+                    }
+
+                    grantAdvertRepository.save(advert);
                 });
     }
 }

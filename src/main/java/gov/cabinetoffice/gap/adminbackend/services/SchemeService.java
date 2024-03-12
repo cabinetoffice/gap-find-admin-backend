@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
@@ -35,6 +36,10 @@ public class SchemeService {
 
 
     private final GrantAdminRepository grantAdminRepository;
+
+    private final GrantAdvertService grantAdvertService;
+
+    private final ApplicationFormService applicationFormService;
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
@@ -169,6 +174,30 @@ public class SchemeService {
         scheme.setFunderId(grantAdmin.getFunder().getId());
         this.schemeRepo.save(scheme);
     }
+
+    @Transactional
+    public void removeAdminReference(String userSub) {
+        grantAdminRepository.findByGapUserUserSub(userSub).ifPresent(grantAdmin -> {
+
+            List<SchemeEntity> schemes = schemeRepo.findByGrantAdminsIdOrderByCreatedDateDesc(grantAdmin.getId());
+
+            for (SchemeEntity scheme: schemes) {
+
+                if (scheme.getLastUpdatedBy().equals(grantAdmin.getId())) {
+                    scheme.setLastUpdatedBy(null);
+                }
+
+                scheme.removeAdmin(grantAdmin);
+                grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin, scheme.getId());
+                applicationFormService.removeAdminReferenceBySchemeId(grantAdmin, scheme.getId());
+            }
+
+            schemeRepo.saveAll(schemes);
+        });
+
+
+    }
+
 
     public List<SchemeDTO> getPaginatedOwnedSchemesByAdminId(int adminId, Pageable pagination) {
         final List<SchemeEntity> schemes = this.schemeRepo

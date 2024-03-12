@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +55,7 @@ public class ApplicationFormController {
     private final EventLogService eventLogService;
 
     private final UserService userService;
-
+    
     @PostMapping
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Application form created successfully.",
@@ -237,9 +238,15 @@ public class ApplicationFormController {
 
     @GetMapping("/{applicationId}/lastUpdated/email")
     @CheckSchemeOwnership
-    public ResponseEntity<EncryptedEmailAddressDTO> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
-        final Integer lastUpdatedBy = applicationFormService.getLastUpdatedBy(applicationId);
-        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(lastUpdatedBy);
+    public ResponseEntity<EncryptedLastUpdatedEmailAddressDTO> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
+        final ApplicationFormEntity applicationForm = applicationFormService.getApplicationById(applicationId);
+
+        if (applicationForm.getLastUpdateBy() == null && applicationForm.getLastUpdated() != null) {
+            return ResponseEntity.ok(EncryptedLastUpdatedEmailAddressDTO.builder().deletedUser(true).build());
+        }
+
+        final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(Objects
+                .requireNonNull(applicationForm.getLastUpdateBy()));
         if (grantAdmin.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -247,7 +254,7 @@ public class ApplicationFormController {
         final String sub = grantAdmin.get().getGapUser().getUserSub();
         final byte[] email = userService.getEmailAddressForSub(sub);
         return ResponseEntity.ok()
-                .body(EncryptedEmailAddressDTO.builder().encryptedLastUpdatedEmail(email).build());
+                .body(EncryptedLastUpdatedEmailAddressDTO.builder().encryptedLastUpdatedEmail(email).build());
     }
 
     @GetMapping("/{applicationId}/status")
