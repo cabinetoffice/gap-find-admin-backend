@@ -415,7 +415,6 @@ public class GrantAdvertService {
         contentfulAdvert.setField(questionResponse.getId(), CONTENTFUL_LOCALE, contentfulValue);
     }
 
-    // TODO ideally this is just a stop gap until we can use the CMA library to convert the rich text strings to CMARichDocument objects
     private void createRichTextQuestionsInContentful(final GrantAdvert advert, final CMAEntry contentfulAdvert) {
 
         // get all the rich text responses
