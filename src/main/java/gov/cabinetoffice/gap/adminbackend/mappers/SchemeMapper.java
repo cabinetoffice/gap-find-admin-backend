@@ -63,7 +63,7 @@ public abstract class SchemeMapper {
             schemeDTO.encryptedLastUpdatedBy(lastUpdatedByEmail);
             schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
         } else if (isDeletedUser) {
-            schemeDTO.lastUpdatedBy("Deleted user");
+            schemeDTO.lastUpdatedByADeletedUser(true);
             schemeDTO.lastUpdatedDate(schemeEntity.getLastUpdated());
         }
     }
