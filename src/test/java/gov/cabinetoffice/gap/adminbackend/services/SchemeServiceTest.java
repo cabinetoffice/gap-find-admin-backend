@@ -5,6 +5,7 @@ import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
+import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
@@ -20,6 +21,7 @@ import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -56,6 +58,12 @@ class SchemeServiceTest {
 
     @Mock
     private GrantAdminRepository grantAdminRepository;
+
+    @Mock
+    private GrantAdvertService grantAdvertService;
+
+    @Mock
+    private ApplicationFormService applicationFormService;
 
     @Mock
     private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
@@ -538,5 +546,25 @@ class SchemeServiceTest {
         final List<SchemeDTO> methodResponse = schemeService.getEditableSchemesByAdminId(adminId);
 
         assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void testRemoveAdminReferenceWhenUserExists() {
+
+        final String userSub = "123";
+        final GrantAdmin grantAdmin = GrantAdmin.builder().id(1)
+                .gapUser(GapUser.builder().userSub(userSub).build()).build();
+
+        final SchemeEntity scheme = SchemeEntity.builder().id(1).lastUpdatedBy(grantAdmin.getId()).lastUpdatedBy(1).build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+
+        when(grantAdminRepository.findByGapUserUserSub(anyString())).thenReturn(Optional.of(grantAdmin));
+        when(schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(any())).thenReturn(schemes);
+
+        schemeService.removeAdminReference("userSub");
+
+        verify(schemeRepository).saveAll(schemes);
+        verify(grantAdvertService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
+        verify(applicationFormService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
     }
 }

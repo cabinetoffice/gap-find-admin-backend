@@ -211,10 +211,12 @@ class ApplicationFormQuestionsControllerTest {
     void deleteQuestionHappyPathTest() throws Exception {
 
         doNothing().when(this.applicationFormService).deleteQuestionFromSection(SAMPLE_APPLICATION_ID,
-                SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID);
+                SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
-                + "/questions/" + SAMPLE_QUESTION_ID)).andExpect(status().isOk());
+        this.mockMvc
+                .perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
+                        + "/questions/" + SAMPLE_QUESTION_ID + "?version=" + SAMPLE_VERSION))
+                .andExpect(status().isOk());
 
         verify(eventLogService).logApplicationUpdatedEvent(any(), anyString(), anyLong(),
                 eq(SAMPLE_APPLICATION_ID.toString()));
@@ -223,8 +225,9 @@ class ApplicationFormQuestionsControllerTest {
     @Test
     void deleteQuestionDeleteFromMandatorySectionTest() throws Exception {
 
-        this.mockMvc.perform(delete(
-                "/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/ESSENTIAL/questions/" + SAMPLE_QUESTION_ID))
+        this.mockMvc
+                .perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/ESSENTIAL/questions/"
+                        + SAMPLE_QUESTION_ID + "?version=" + SAMPLE_VERSION))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(eventLogService);
@@ -234,11 +237,11 @@ class ApplicationFormQuestionsControllerTest {
     void deleteQuestionOrSectionDoesntExistTest() throws Exception {
 
         doThrow(new NotFoundException("Error message")).when(this.applicationFormService)
-                .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, "incorrectId");
+                .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, "incorrectId", SAMPLE_VERSION);
 
         this.mockMvc
                 .perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
-                        + "/questions/incorrectId"))
+                        + "/questions/incorrectId" + "?version=" + SAMPLE_VERSION))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json(HelperUtils.asJsonString(new GenericErrorDTO("Error message"))));
 
@@ -249,10 +252,13 @@ class ApplicationFormQuestionsControllerTest {
     void deleteQuestion_AccessDeniedTest() throws Exception {
 
         doThrow(new AccessDeniedException("Error message")).when(this.applicationFormService)
-                .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, "incorrectId");
+                .deleteQuestionFromSection(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, "incorrectId", SAMPLE_VERSION);
 
-        this.mockMvc.perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
-                + "/questions/incorrectId")).andExpect(status().isForbidden()).andExpect(content().string(""));
+        this.mockMvc
+                .perform(delete("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/" + SAMPLE_SECTION_ID
+                        + "/questions/incorrectId" + "?version=" + SAMPLE_VERSION))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string(""));
 
         verifyNoInteractions(eventLogService);
     }

@@ -32,11 +32,16 @@ import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPag
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.json.JSONObject;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import static org.mockito.Mockito.*;
+
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -50,7 +55,7 @@ import java.util.*;
 class GrantAdvertServiceTest {
 
     @Mock
-    private GrantAdvertRepository grantAdvertRepository;
+    GrantAdvertRepository grantAdvertRepository;
 
     @Mock
     private GrantAdminRepository grantAdminRepository;
@@ -1293,6 +1298,22 @@ class GrantAdvertServiceTest {
         }
 
     }
+
+    @Test
+    void testRemoveAdminReferenceBySchemeId() {
+        GrantAdmin grantAdmin = GrantAdmin.builder().id(SAMPLE_SCHEME_ID).build();
+
+
+        GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
+
+
+        when(grantAdvertRepository.findBySchemeId(anyInt())).thenReturn(Optional.of(grantAdvert));
+
+        grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin, 1);
+
+        verify(grantAdvertRepository).save(grantAdvert);
+    }
+
 
     @Test
     void patchCreatedByUpdatesGrantAdvert() {

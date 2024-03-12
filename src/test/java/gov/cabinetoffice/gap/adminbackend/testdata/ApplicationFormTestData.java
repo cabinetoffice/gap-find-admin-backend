@@ -57,11 +57,11 @@ public class ApplicationFormTestData {
 
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION = new ApplicationFormQuestionDTO(SAMPLE_QUESTION_ID,
             "ORG_TYPE", null, SAMPLE_QUESTION_FIELD_TITLE, "Answer the question", null, null, null,
-            ResponseTypeEnum.YesNo, Collections.singletonMap("mandatory", true), null);
+            ResponseTypeEnum.YesNo, Collections.singletonMap("mandatory", true), null, 1);
 
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION_WITH_OPTIONS = new ApplicationFormQuestionDTO(
             SAMPLE_QUESTION_ID, "ORG_TYPE", null, "Select one of the folloiwng", "Answer the question", null, null,
-            null, ResponseTypeEnum.Dropdown, Collections.singletonMap("mandatory", true), SAMPLE_QUESTION_OPTIONS);
+            null, ResponseTypeEnum.Dropdown, Collections.singletonMap("mandatory", true), SAMPLE_QUESTION_OPTIONS, 1);
 
     public final static List<ApplicationFormQuestionDTO> SAMPLE_QUESTION_LIST = new LinkedList<>(
             Collections.singletonList(SAMPLE_QUESTION));
