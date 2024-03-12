@@ -169,13 +169,14 @@ public class ApplicationFormQuestionsController {
             @ApiResponse(responseCode = "404", description = "No question found with given ids.",
                     content = @Content(mediaType = "application/json")) })
     @CheckSchemeOwnership
-    public ResponseEntity<String> updateSectionOrder(final HttpServletRequest request,
-                                                     final @PathVariable @NotBlank Integer applicationId,
-                                                     final @PathVariable @NotBlank String sectionId,
-                                                     final @PathVariable @NotBlank String questionId,
-                                                     final @PathVariable @NotBlank Integer increment) {
+    public ResponseEntity<String> updateQuestionOrder(final HttpServletRequest request,
+                                                      final @PathVariable @NotBlank Integer applicationId,
+                                                      final @PathVariable @NotBlank String sectionId,
+                                                      final @PathVariable @NotBlank String questionId,
+                                                      final @PathVariable @NotBlank Integer increment,
+                                                      final @RequestParam @NotBlank Integer version) {
         try {
-            this.applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment);
+            this.applicationFormService.updateQuestionOrder(applicationId, sectionId, questionId, increment, version);
             logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
             return ResponseEntity.ok().build();
         }
