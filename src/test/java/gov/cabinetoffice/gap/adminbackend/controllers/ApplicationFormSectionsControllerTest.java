@@ -354,7 +354,7 @@ class ApplicationFormSectionsControllerTest {
                     .updateSectionOrder(SAMPLE_APPLICATION_ID, "A-random-uuid", 1, SAMPLE_VERSION);
 
             ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
-                    .sectionId("test").increment(1).build();
+                    .sectionId("test").increment(1).version(1).build();
             ApplicationFormSectionsControllerTest.this.mockMvc
                     .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -378,7 +378,7 @@ class ApplicationFormSectionsControllerTest {
                     .updateSectionOrder(SAMPLE_APPLICATION_ID, "test", 1, SAMPLE_VERSION);
 
             ApplicationSectionOrderPatchDto applicationSectionOrderPatchDto = ApplicationSectionOrderPatchDto.builder()
-                    .sectionId("test").increment(1).build();
+                    .sectionId("test").increment(1).version(1).build();
 
             ApplicationFormSectionsControllerTest.this.mockMvc
                     .perform(patch("/application-forms/" + SAMPLE_APPLICATION_ID + "/sections/order")
