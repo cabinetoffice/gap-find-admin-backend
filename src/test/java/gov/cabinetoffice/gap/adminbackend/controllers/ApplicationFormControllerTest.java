@@ -421,7 +421,7 @@ class ApplicationFormControllerTest {
     @Test
     void getLastUpdatedEmailHappyPath() throws Exception {
         when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov");
-        when(applicationFormService.getLastUpdatedBy(anyInt())).thenReturn(ApplicationFormEntity.builder()
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
                 .lastUpdateBy(1).build());
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.of(GrantAdmin.builder().gapUser(GapUser.builder().userSub("sub").build()).build()));
 
@@ -433,7 +433,7 @@ class ApplicationFormControllerTest {
     @Test
     void shouldReturnDeletedUserWhenLastUpdatedByIsNullAndLastUpdatedIsValid() throws Exception {
         when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov");
-        when(applicationFormService.getLastUpdatedBy(anyInt())).thenReturn(ApplicationFormEntity.builder()
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
                 .lastUpdated(Instant.now()).build());
 
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
@@ -443,7 +443,7 @@ class ApplicationFormControllerTest {
 
     @Test
     void getLastUpdatedEmailReturnsNotFoundWhenNoGrantAdminFound() throws Exception {
-        when(applicationFormService.getLastUpdatedBy(anyInt())).thenReturn(ApplicationFormEntity.builder()
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
                 .lastUpdateBy(1).build());
         when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.empty());
         this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());

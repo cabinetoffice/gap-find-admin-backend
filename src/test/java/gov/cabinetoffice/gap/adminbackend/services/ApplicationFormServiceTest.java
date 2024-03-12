@@ -746,7 +746,8 @@ class ApplicationFormServiceTest {
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(1))
                 .thenReturn(Optional.of(testApplicationFormEntity));
 
-        ApplicationFormEntity applicationForm = ApplicationFormServiceTest.this.applicationFormService.getLastUpdatedBy(1);
+        ApplicationFormEntity applicationForm = ApplicationFormServiceTest.this.applicationFormService
+                .getApplicationById(1);
 
         assertThat(applicationForm).isEqualTo(testApplicationFormEntity);
     }
@@ -756,7 +757,7 @@ class ApplicationFormServiceTest {
         Mockito.when(ApplicationFormServiceTest.this.applicationFormRepository.findById(1))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.getLastUpdatedBy(1)).isInstanceOf(NotFoundException.class)
+        assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService.getApplicationById(1)).isInstanceOf(NotFoundException.class)
                 .hasMessage("Application with id 1 does not exist");
     }
 

@@ -379,7 +379,7 @@ public class ApplicationFormService {
         save(applicationForm);
     }
 
-    public ApplicationFormEntity getLastUpdatedBy(Integer applicationId) {
+    public ApplicationFormEntity getApplicationById(Integer applicationId) {
         return this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
     }

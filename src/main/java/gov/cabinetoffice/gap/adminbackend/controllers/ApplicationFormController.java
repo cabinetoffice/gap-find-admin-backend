@@ -239,7 +239,7 @@ public class ApplicationFormController {
     @GetMapping("/{applicationId}/lastUpdated/email")
     @CheckSchemeOwnership
     public ResponseEntity<String> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
-        final ApplicationFormEntity applicationForm = applicationFormService.getLastUpdatedBy(applicationId);
+        final ApplicationFormEntity applicationForm = applicationFormService.getApplicationById(applicationId);
 
         if (applicationForm.getLastUpdateBy() == null && applicationForm.getLastUpdated() != null) {
             return ResponseEntity.ok("Deleted user");
