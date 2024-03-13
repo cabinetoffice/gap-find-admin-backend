@@ -1132,7 +1132,7 @@ class GrantAdvertServiceTest {
 
             when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
 
-            when(userService.getEmailAddressForSub(any())).thenReturn(testEmailAddress);
+            when(userService.getEmailAddressForSub(any())).thenReturn(testEmailAddress.getBytes());
 
             GetGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID);
@@ -1145,7 +1145,7 @@ class GrantAdvertServiceTest {
             assertThat(actualOutput.getOpeningDate()).isEqualTo(grantAdvert.getOpeningDate());
             assertThat(actualOutput.getUnpublishedDate()).isEqualTo(grantAdvert.getUnpublishedDate());
             assertThat(actualOutput.getLastPublishedDate()).isEqualTo(grantAdvert.getLastPublishedDate());
-            assertThat(actualOutput.getLastUpdatedByEmail()).isEqualTo(testEmailAddress);
+            assertThat(actualOutput.getLastUpdatedByEmail()).isEqualTo(testEmailAddress.getBytes());
 
             verify(grantAdvertMapper).grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
         }
@@ -1349,14 +1349,16 @@ class GrantAdvertServiceTest {
         @WithAdminSession
         @Test
         void save_WithAdminSession_Success() {
-            final SchemeEntity scheme = SchemeEntity.builder().build();
-            final GrantAdvert advertToSave = GrantAdvert.builder()
-                    .scheme(scheme)
-                    .build();
             final GrantAdmin grantAdmin = GrantAdmin.builder()
                     .id(1)
                     .build();
             final String now = "2024-02-27T10:15:30Z";
+            final SchemeEntity scheme = SchemeEntity.builder()
+                    .grantAdmins(List.of(grantAdmin))
+                    .build();
+            final GrantAdvert advertToSave = GrantAdvert.builder()
+                    .scheme(scheme)
+                    .build();
 
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 

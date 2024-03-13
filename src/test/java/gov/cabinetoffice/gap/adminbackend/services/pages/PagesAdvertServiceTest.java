@@ -176,11 +176,11 @@ class PagesAdvertServiceTest {
 
         final GrantAdvertQuestionResponse openingDateResponse = GrantAdvertQuestionResponse.builder()
                 .id("grantApplicationOpenDate").seen(true)
-                .multiResponse(new String[] { "10", "12", "2022", "00", "01" }).build();
+                .multiResponse(new String[] { "10", "12", "2022", "00", "00" }).build();
 
         final GrantAdvertQuestionResponse closingDateResponse = GrantAdvertQuestionResponse.builder()
                 .id("grantApplicationCloseDate").seen(true)
-                .multiResponse(new String[] { "10", "12", "2023", "23", "59" }).build();
+                .multiResponse(new String[] { "11", "12", "2023", "00", "00" }).build();
 
         final GrantAdvertPageResponse datesPage = GrantAdvertPageResponse.builder().id("1")
                 .status(GrantAdvertPageResponseStatus.COMPLETED)
@@ -248,8 +248,8 @@ class PagesAdvertServiceTest {
 
             assertThat(advertPreviewPageDto.getGrantName()).isEqualTo(grantAdvertName);
             assertThat(advertPreviewPageDto.getGrantShortDescription()).isEqualTo(grantShortDescription);
-            assertThat(advertPreviewPageDto.getGrantApplicationOpenDate()).isEqualTo("10 December 2022, 12:01am");
-            assertThat(advertPreviewPageDto.getGrantApplicationCloseDate()).isEqualTo("10 December 2023, 11:59pm");
+            assertThat(advertPreviewPageDto.getGrantApplicationOpenDate()).isEqualTo("10 December 2022, (Midnight) 12:01am");
+            assertThat(advertPreviewPageDto.getGrantApplicationCloseDate()).isEqualTo("10 December 2023, (Midnight) 11:59pm");
             assertThat(advertPreviewPageDto.getTabs().get(0).getContent())
                     .isEqualTo(String.format(richTextTemplate, "summary"));
             assertThat(advertPreviewPageDto.getTabs().get(1).getContent())

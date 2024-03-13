@@ -111,6 +111,8 @@ public class ApplicationFormTestData {
     public final static ApplicationDefinitionDTO SAMPLE_APPLICATION_DEFINITION = new ApplicationDefinitionDTO(
             SAMPLE_SECTIONS_LIST);
 
+    public final static ApplicationDefinitionDTO SAMPLE_EMPTY_APPLICATION_DEFINITION = new ApplicationDefinitionDTO(Collections.emptyList());
+
     public final static ApplicationDefinitionDTO SAMPLE_APPLICATION_DEFINITION_DELETE_SECTION = new ApplicationDefinitionDTO(
             SAMPLE_SECTIONS_LIST_DELETE_SECTION);
 
@@ -152,6 +154,12 @@ public class ApplicationFormTestData {
             SAMPLE_APPLICATION_ID, SAMPLE_SCHEME_ID, SAMPLE_VERSION, SAMPLE_CREATED, SAMPLE_CREATED_BY,
             SAMPLE_LAST_UPDATED, SAMPLE_LAST_UPDATE_BY, SAMPLE_LAST_PUBLISHED, SAMPLE_APPLICATION_NAME,
             ApplicationStatusEnum.DRAFT, SAMPLE_APPLICATION_DEFINITION);
+
+    public final static ApplicationFormEntity SAMPLE_EMPTY_APPLICATION_FORM_ENTITY = new ApplicationFormEntity(
+            SAMPLE_APPLICATION_ID, SAMPLE_SCHEME_ID, SAMPLE_VERSION, SAMPLE_CREATED, SAMPLE_CREATED_BY,
+            SAMPLE_LAST_UPDATED, SAMPLE_LAST_UPDATE_BY, SAMPLE_LAST_PUBLISHED, SAMPLE_APPLICATION_NAME,
+            ApplicationStatusEnum.DRAFT, SAMPLE_EMPTY_APPLICATION_DEFINITION);
+
 
     public final static ApplicationFormEntity SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION = new ApplicationFormEntity(
             SAMPLE_APPLICATION_ID, SAMPLE_SCHEME_ID, SAMPLE_VERSION, SAMPLE_CREATED, SAMPLE_CREATED_BY,

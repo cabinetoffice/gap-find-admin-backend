@@ -328,4 +328,24 @@ class UserControllerTest {
                 .andExpect(status().isNotFound()).andReturn();
     }
 
+    @Test
+    void shouldRemoveAdminReferenceWhenValidSubIsGiven() throws Exception {
+        final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
+        final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
+        when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
+        when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
+        when(userService.getGrantAdminIdFromSub(anyString())).thenReturn(
+                Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
+        Mockito.doNothing().when(userService).updateFundingOrganisation(any(GrantAdmin.class), anyString());
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/users/admin-user/123")
+                        .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(schemeService, times(1)).removeAdminReference(any());
+        verify(userService, times(1)).deleteAdminUser(any());
+
+
+    }
+
 }

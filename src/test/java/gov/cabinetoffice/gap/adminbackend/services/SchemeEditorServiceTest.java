@@ -106,21 +106,22 @@ public class SchemeEditorServiceTest {
         when(requestHeadersSpec.cookie(any(), any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
 
+        byte[] emailBytes = "email".getBytes();
+        byte[] emailBytes2 = "email2".getBytes();
+
         when(responseSpec.bodyToMono(eq(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {})))
                 .thenReturn(Mono.just(Arrays.asList(
-                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).sub("sub1").build(),
-                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).sub("sub2").build())));
-
-        when(awsEncryptionService.decryptField(any())).thenReturn("decrypted-email");
+                        UserEmailResponseDto.builder().emailAddress(emailBytes).sub("sub1").build(),
+                        UserEmailResponseDto.builder().emailAddress(emailBytes2).sub("sub2").build())));
 
         List<SchemeEditorsDTO> result = schemeEditorService.getEditorsFromSchemeId(1, "authHeader");
 
         Assertions.assertEquals(2, result.size());
         Assertions.assertEquals(1, result.get(0).id());
-        Assertions.assertEquals("decrypted-email", result.get(0).email());
+        Assertions.assertEquals(emailBytes, result.get(0).email());
         Assertions.assertEquals(SchemeEditorRoleEnum.Owner, result.get(0).role());
         Assertions.assertEquals(2, result.get(1).id());
-        Assertions.assertEquals("decrypted-email", result.get(1).email());
+        Assertions.assertEquals(emailBytes2, result.get(1).email());
         Assertions.assertEquals(SchemeEditorRoleEnum.Editor, result.get(1).role());
     }
 
@@ -141,41 +142,6 @@ public class SchemeEditorServiceTest {
                 .thenThrow(new RestClientException("Test RestClientException"));
 
         Assertions.assertThrows(RestClientException.class, () -> {
-            schemeEditorService.getEditorsFromSchemeId(1, "authHeader");
-        });
-    }
-
-    @Test
-    void testGetEditorsFromSchemeId_DecryptField_ThrowsIllegalStateException() {
-        GrantAdmin grantAdmin1 = GrantAdmin.builder().id(1).gapUser(GapUser.builder().userSub("sub").build()).build();
-        GrantAdmin grantAdmin2 = GrantAdmin.builder().id(2).gapUser(GapUser.builder().userSub("sub").build()).build();
-        List<GrantAdmin> editors = Arrays.asList(grantAdmin1, grantAdmin2);
-        SchemeEntity schemeEntity = SchemeEntity.builder().id(1).createdBy(1).grantAdmins(editors).build();
-        when(schemeService.findSchemeById(anyInt())).thenReturn(schemeEntity);
-
-        final WebClient webClient = mock(WebClient.class);
-        final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
-        final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        when(webClientBuilder.build()).thenReturn(webClient);
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.body(any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.cookie(any(), any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-
-        when(responseSpec.bodyToMono(eq(new ParameterizedTypeReference<List<UserEmailResponseDto>>() {})))
-                .thenReturn(Mono.just(Arrays.asList(
-                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build(),
-                        UserEmailResponseDto.builder().emailAddress("email".getBytes()).build())));
-
-
-        when(awsEncryptionService.decryptField(any()))
-                .thenThrow(new IllegalStateException("Wrong Encryption Context!"));
-
-        Assertions.assertThrows(IllegalStateException.class, () -> {
             schemeEditorService.getEditorsFromSchemeId(1, "authHeader");
         });
     }

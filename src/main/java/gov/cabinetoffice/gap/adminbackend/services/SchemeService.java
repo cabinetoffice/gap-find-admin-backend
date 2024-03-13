@@ -198,7 +198,7 @@ public class SchemeService {
 
             for (SchemeEntity scheme: schemes) {
 
-                if (scheme.getLastUpdatedBy().equals(grantAdmin.getId())) {
+                if (scheme.getLastUpdatedBy() != null && scheme.getLastUpdatedBy().equals(grantAdmin.getId())) {
                     scheme.setLastUpdatedBy(null);
                 }
 

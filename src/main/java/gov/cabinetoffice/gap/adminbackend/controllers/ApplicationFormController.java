@@ -244,11 +244,11 @@ public class ApplicationFormController {
 
     @GetMapping("/{applicationId}/lastUpdated/email")
     @CheckSchemeOwnership
-    public ResponseEntity<String> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
+    public ResponseEntity<EncryptedEmailAddressDTO> getLastUpdatedEmail(@PathVariable final Integer applicationId) {
         final ApplicationFormEntity applicationForm = applicationFormService.getApplicationById(applicationId);
 
         if (applicationForm.getLastUpdateBy() == null && applicationForm.getLastUpdated() != null) {
-            return ResponseEntity.ok("Deleted user");
+            return ResponseEntity.ok(EncryptedEmailAddressDTO.builder().deletedUser(true).build());
         }
 
         final Optional<GrantAdmin> grantAdmin = userService.getGrantAdminById(Objects
@@ -258,8 +258,9 @@ public class ApplicationFormController {
         }
 
         final String sub = grantAdmin.get().getGapUser().getUserSub();
-        final String email = userService.getEmailAddressForSub(sub);
-        return ResponseEntity.ok(email);
+        final byte[] email = userService.getEmailAddressForSub(sub);
+        return ResponseEntity.ok()
+                .body(EncryptedEmailAddressDTO.builder().encryptedEmail(email).build());
     }
 
     @GetMapping("/{applicationId}/status")

@@ -84,6 +84,7 @@ public class UserService {
         oneLoginSubOptional.ifPresent(sub -> {
             grantApplicantRepository.deleteByUserId(sub);
             grantAdminRepository.deleteByGapUserUserSub(sub);
+            gapUserRepository.deleteByUserSub(sub);
         });
 
         if (colaSubOptional.isPresent()) {
@@ -91,6 +92,12 @@ public class UserService {
             grantAdminRepository.deleteByGapUserUserSub(colaSubOptional.get().toString());
             gapUserRepository.deleteByUserSub(colaSubOptional.get().toString());
         }
+    }
+
+    @Transactional
+    public void deleteAdminUser(String userSub) {
+            grantAdminRepository.deleteByGapUserUserSub(userSub);
+            gapUserRepository.deleteByUserSub(userSub);
     }
 
     public Boolean verifyAdminRoles(final String emailAddress, final String roles) {
@@ -163,7 +170,7 @@ public class UserService {
         }
     }
 
-    public String getEmailAddressForSub(final String sub) {
+    public byte[] getEmailAddressForSub(final String sub) {
         final String url = userServiceConfig.getDomain() + "/users/emails";
         final ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {
         };
@@ -184,8 +191,8 @@ public class UserService {
         return Optional.ofNullable(response)
                 .orElse(Collections.emptyList())
                 .stream()
-                .map(userEmailDto -> encryptionService.decryptField(userEmailDto.emailAddress()))
+                .map(UserEmailResponseDto::emailAddress)
                 .findFirst()
-                .orElse(EMPTY_EMAIL_VALUE);
+                .orElseThrow(() -> new NotFoundException("Email not found for user with sub " + sub));
     }
 }
