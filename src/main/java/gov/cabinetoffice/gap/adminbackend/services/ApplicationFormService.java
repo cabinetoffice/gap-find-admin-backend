@@ -237,7 +237,7 @@ public class ApplicationFormService {
             try {
                 sectionDTO = applicationForm.getDefinition().getSectionById(sectionId);
             } catch (NotFoundException e) {
-                //If the section does not exist here it must have been deleted.
+                //If the section does not exist here it must have been recently deleted by another editor.
                 throw new ConflictException("MULTIPLE_EDITORS_SECTION_DELETED");
             }
 
