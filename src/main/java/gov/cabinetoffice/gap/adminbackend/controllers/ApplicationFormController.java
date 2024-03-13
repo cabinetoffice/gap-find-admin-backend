@@ -38,7 +38,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

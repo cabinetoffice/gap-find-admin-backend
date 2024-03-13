@@ -3,6 +3,8 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import org.odftoolkit.odfdom.doc.OdfTextDocument;
 import org.odftoolkit.odfdom.doc.table.OdfTable;
@@ -26,8 +28,8 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,18 +39,6 @@ public class OdtService {
 
     private static final Logger logger = LoggerFactory.getLogger(OdtService.class);
     private static final String ELIGIBILITY_SECTION_ID = "ELIGIBILITY";
-    private static final String ESSENTIAL_SECTION_ID = "ESSENTIAL";
-    private static final String ORGANISATION_DETAILS_SECTION_ID = "ORGANISATION_DETAILS";
-    private static final String FUNDING_DETAILS_SECTION_ID = "FUNDING_DETAILS";
-    private static final String APPLICANT_TYPE = "APPLICANT_TYPE";
-    private static final String APPLICANT_ORG_NAME = "APPLICANT_ORG_NAME";
-    private static final String APPLICANT_ORG_ADDRESS = "APPLICANT_ORG_ADDRESS";
-    private static final String APPLICANT_ORG_CHARITY_NUMBER = "APPLICANT_ORG_CHARITY_NUMBER";
-    private static final String APPLICANT_ORG_COMPANIES_HOUSE = "APPLICANT_ORG_COMPANIES_HOUSE";
-    private static final String APPLICANT_AMOUNT = "APPLICANT_AMOUNT";
-    private static final String BENEFITIARY_LOCATION = "BENEFITIARY_LOCATION";
-    private static final String APPLICANT_ORG_TYPE_INDIVIDUAL = "I am applying as an individual";
-    private static final String APPLICANT_ORG_TYPE_LOCAL_AUTHORITY = "Local authority";
     private static final String Heading_20_1 = "Heading_20_1";
     private static final String Heading_20_2 = "Heading_20_2";
     private static final String Heading_20_3 = "Heading_20_3";
@@ -56,35 +46,30 @@ public class OdtService {
     private static final String Text_20_2 = "Text_20_2";
     private static final String Text_20_3 = "Text_20_3";
     private static final String UUID_REGEX = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy 'at' HH:mm").withZone(ZoneOffset.UTC);
 
-    public OdfTextDocument generateSingleOdt(final ApplicationFormEntity applicationForm) {
+    public OdfTextDocument generateSingleOdt(final SchemeEntity grantScheme, final ApplicationFormEntity applicationForm) {
         try {
             OdfStyleProcessor styleProcessor = new OdfStyleProcessor();
             OdfTextDocument odt = OdfTextDocument.newTextDocument();
             OdfOfficeStyles stylesOfficeStyles = odt.getOrCreateDocumentStyles();
             OdfContentDom contentDom = odt.getContentDom();
             OfficeTextElement documentText = odt.getContentRoot();
-            final String fundingSectionName = ESSENTIAL_SECTION_ID;
-            final String requiredCheckSectionName = ESSENTIAL_SECTION_ID;
-            final ApplicationFormSectionDTO requiredCheckSection = applicationForm.getDefinition().getSectionById(requiredCheckSectionName);
 
             setOfficeStyles(odt, styleProcessor, stylesOfficeStyles);
+            OdfTextParagraph sectionBreak = new OdfTextParagraph(contentDom);
 
-            populateHeadingSection(applicationForm, documentText, contentDom, odt);
+            populateSchemeHeadingSection(grantScheme, documentText, contentDom, odt);
+
+            documentText.appendChild(sectionBreak);
+
+            populateApplicationHeadingSection(applicationForm, documentText, contentDom);
 
             odt.getContentRoot().setTextUseSoftPageBreaksAttribute(true);
 
-            addPageBreak(contentDom, odt);
+            populateEligibilitySection(applicationForm, documentText, contentDom);
 
-            OdfTextParagraph sectionBreak = new OdfTextParagraph(contentDom);
-
-            populateEligibilitySection(applicationForm, documentText, contentDom, sectionBreak);
-
-            addPageBreak(contentDom, odt);
-
-            populateRequiredChecksSection(applicationForm, documentText, contentDom,
-                    requiredCheckSection, fundingSectionName, odt);
+            populateRequiredChecksSection(documentText, contentDom, odt);
 
             AtomicInteger count = new AtomicInteger(3); //2 sections already added
 
@@ -114,44 +99,51 @@ public class OdtService {
         page.setStyleName(style.getStyleNameAttribute());
     }
 
-    private static void populateHeadingSection(final ApplicationFormEntity applicationForm,
-                                               final OfficeTextElement documentText,
-                                               final OdfContentDom contentDom,
-                                               final OdfTextDocument odt){
+    private static void populateSchemeHeadingSection(final SchemeEntity grantScheme,
+                                                     final OfficeTextElement documentText,
+                                                     final OdfContentDom contentDom,
+                                                     final OdfTextDocument odt) {
+
+        OdfTextHeading h1 = new OdfTextHeading(contentDom);
+        OdfTextHeading h2 = new OdfTextHeading(contentDom);
+
+        h1.addStyledContentWhitespace(Heading_20_1, "Scheme details");
+        h2.addStyledContentWhitespace(Heading_20_2, grantScheme.getName());
+
+        OdfTable table;
+        table = OdfTable.newTable(odt, 2, 1);
+        table.getRowByIndex(0).getCellByIndex(0).setStringValue("GGIS");
+        table.getRowByIndex(0).getCellByIndex(1).setStringValue(grantScheme.getGgisIdentifier());
+        table.getRowByIndex(1).getCellByIndex(0).setStringValue("Contact Email");
+        table.getRowByIndex(1).getCellByIndex(1).setStringValue(grantScheme.getEmail());
+
+        documentText.appendChild(h1);
+        documentText.appendChild(h2);
+        documentText.appendChild(table.getOdfElement());
+    }
+
+    private static void populateApplicationHeadingSection(final ApplicationFormEntity applicationForm,
+                                                          final OfficeTextElement documentText,
+                                                          final OdfContentDom contentDom) {
 
         OdfTextHeading h1 = new OdfTextHeading(contentDom);
         OdfTextHeading h2 = new OdfTextHeading(contentDom);
         OdfTextParagraph p = new OdfTextParagraph(contentDom);
 
-        h1.addStyledContentWhitespace(Heading_20_1, applicationForm.getApplicationName());
-//        p.addStyledContentWhitespace(Text_20_1, "Application for " + applicationForm.getScheme().getName() + "\n");
-        h2.addStyledContentWhitespace(Heading_20_2, "Application details");
-//        OdfTable table;
-
-
-//        table = OdfTable.newTable(odt, 4, 1);
-//        table.getRowByIndex(0).getCellByIndex(0).setStringValue("Organisation");
-//        table.getRowByIndex(0).getCellByIndex(1).setStringValue(submission.getLegalName());
-//        table.getRowByIndex(1).getCellByIndex(0).setStringValue("Lead Applicant");
-//        table.getRowByIndex(1).getCellByIndex(1).setStringValue(email);
-//        table.getRowByIndex(2).getCellByIndex(0).setStringValue("Applying for");
-//        table.getRowByIndex(2).getCellByIndex(1).setStringValue(submission.getScheme().getName());
-//        table.getRowByIndex(3).getCellByIndex(0).setStringValue("Submitted on");
-//        table.getRowByIndex(3).getCellByIndex(1).setStringValue(Objects.equals(null,
-//                submission.getSubmittedDate())
-//                ? "Not yet submitted" : submission.getSubmittedDate().format(formatter));
-
+        h1.addStyledContentWhitespace(Heading_20_1, "\nApplication details");
+        h2.addStyledContentWhitespace(Heading_20_2, applicationForm.getApplicationName());
+        p.addStyledContentWhitespace(Text_20_3, (
+                Objects.equals(ApplicationStatusEnum.PUBLISHED, applicationForm.getApplicationStatus())
+                        ? ("Published on " + formatter.format(applicationForm.getLastPublished()))
+                        : "Not published"
+        ) + "\n\n");
         documentText.appendChild(h1);
-        documentText.appendChild(p);
         documentText.appendChild(h2);
-//        documentText.appendChild(table.getOdfElement());
+        documentText.appendChild(p);
     }
 
-    private static void populateRequiredChecksSection(final ApplicationFormEntity applicationForm,
-                                                      final OfficeTextElement documentText,
+    private static void populateRequiredChecksSection(final OfficeTextElement documentText,
                                                       final OdfContentDom contentDom,
-                                                      final ApplicationFormSectionDTO requiredCheckSection,
-                                                      final String fundingSectionName,
                                                       final OdfTextDocument odt) {
         OdfTextHeading requiredCheckHeading = new OdfTextHeading(contentDom);
         OdfTextHeading requiredCheckSubHeading = new OdfTextHeading(contentDom);
@@ -177,15 +169,12 @@ public class OdtService {
 
     private static void populateEligibilitySection(final ApplicationFormEntity applicationForm,
                                                    final OfficeTextElement documentText,
-                                                   final OdfContentDom contentDom,
-                                                   final OdfTextParagraph sectionBreak
-    ) {
+                                                   final OdfContentDom contentDom) {
         final ApplicationFormSectionDTO eligibilitySection = applicationForm.getDefinition().getSectionById(ELIGIBILITY_SECTION_ID);
         OdfTextHeading eligibilityHeading = new OdfTextHeading(contentDom);
         OdfTextParagraph eligibilityStatement = new OdfTextParagraph(contentDom);
         OdfTextParagraph eligibilityResponse = new OdfTextParagraph(contentDom);
 
-        documentText.appendChild(sectionBreak);
         eligibilityHeading.addStyledContent(Heading_20_2, "Eligibility");
         documentText.appendChild(eligibilityHeading);
 
@@ -194,11 +183,11 @@ public class OdtService {
         documentText.appendChild(eligibilitySubHeading);
 
         eligibilityResponse.addStyledContentWhitespace(Text_20_3, eligibilitySection
-                .getQuestionById(ELIGIBILITY_SECTION_ID).getDisplayText() + "\n\n");
+                .getQuestionById(ELIGIBILITY_SECTION_ID).getDisplayText() + "\n");
 
         documentText.appendChild(eligibilityResponse);
 
-        documentText.appendChild(new OdfTextHeading(contentDom).addContentWhitespace("\n\n"));
+        documentText.appendChild(new OdfTextHeading(contentDom).addContentWhitespace(""));
         documentText.appendChild(eligibilityStatement);
     }
 
@@ -213,15 +202,17 @@ public class OdtService {
         if (section.getQuestions().size() > 0) {
             AtomicInteger questionIndex = new AtomicInteger(1);
             OdfTable table = OdfTable.newTable(odt, section.getQuestions().size(), 3);
-            long columnWidth = table.getWidth() / 4;
+            long columnWidth = table.getWidth() / 5;
             table.getColumnByIndex(0).setWidth(columnWidth);
             table.getColumnByIndex(1).setWidth(columnWidth);
             table.getColumnByIndex(2).setWidth(columnWidth);
             table.getColumnByIndex(3).setWidth(columnWidth);
+            table.getColumnByIndex(4).setWidth(columnWidth);
             table.getRowByIndex(0).getCellByIndex(0).setStringValue("Question");
             table.getRowByIndex(0).getCellByIndex(1).setStringValue("Hint text");
             table.getRowByIndex(0).getCellByIndex(2).setStringValue("Question type");
             table.getRowByIndex(0).getCellByIndex(3).setStringValue("Options / Max words");
+            table.getRowByIndex(0).getCellByIndex(4).setStringValue("Optional");
             section.getQuestions().forEach(question -> {
                 populateDocumentFromQuestionResponse(question, documentText, questionIndex,
                         table);
@@ -229,15 +220,17 @@ public class OdtService {
             });
         } else {
             OdfTable table = OdfTable.newTable(odt, 1, 3);
-            long columnWidth = table.getWidth() / 4;
+            long columnWidth = table.getWidth() / 5;
             table.getColumnByIndex(0).setWidth(columnWidth);
             table.getColumnByIndex(1).setWidth(columnWidth);
             table.getColumnByIndex(2).setWidth(columnWidth);
             table.getColumnByIndex(3).setWidth(columnWidth);
+            table.getColumnByIndex(4).setWidth(columnWidth);
             table.getRowByIndex(0).getCellByIndex(0).setStringValue("Question");
             table.getRowByIndex(0).getCellByIndex(1).setStringValue("Hint text");
             table.getRowByIndex(0).getCellByIndex(2).setStringValue("Question type");
             table.getRowByIndex(0).getCellByIndex(3).setStringValue("Options / Max words");
+            table.getRowByIndex(0).getCellByIndex(4).setStringValue("Optional");
             documentText.appendChild(table.getOdfElement());
         }
         documentText.appendChild(new OdfTextParagraph(contentDom).addContentWhitespace(""));
@@ -263,23 +256,32 @@ public class OdtService {
         table.getRowByIndex(questionIndex.get()).getCellByIndex(0).setStringValue(question.getFieldTitle());
         table.getRowByIndex(questionIndex.get()).getCellByIndex(1).setStringValue(question.getHintText());
         table.getRowByIndex(questionIndex.get()).getCellByIndex(2).setStringValue(responseTypeMap.get(question.getResponseType()));
-        boolean shouldHaveOptions = question.getResponseType().equals(ResponseTypeEnum.MultipleSelection)
+        // Options / Max Words
+        boolean shouldDisplayOptions = question.getResponseType().equals(ResponseTypeEnum.MultipleSelection)
                 || question.getResponseType().equals(ResponseTypeEnum.SingleSelection)
                 || question.getResponseType().equals(ResponseTypeEnum.Dropdown);
-        if (shouldHaveOptions) {
+        boolean shouldDisplayMaxWords = question.getResponseType().equals(ResponseTypeEnum.LongAnswer)
+                || question.getResponseType().equals(ResponseTypeEnum.ShortAnswer);
+        if (shouldDisplayOptions) {
             table.getRowByIndex(questionIndex.get()).getCellByIndex(3).setStringValue(String.join(",\n", question.getOptions()));
-        } else if (question.getResponseType().equals(ResponseTypeEnum.LongAnswer)) {
+        } else if (shouldDisplayMaxWords) {
             table.getRowByIndex(questionIndex.get()).getCellByIndex(3).setStringValue(question.getValidation().get("maxWords").toString());
         } else {
             table.getRowByIndex(questionIndex.get()).getCellByIndex(3).setStringValue("");
         }
+        //Optional
+        table.getRowByIndex(questionIndex.get()).getCellByIndex(4).setStringValue(
+                Objects.equals(question.getValidation().get("mandatory"), true)
+                        ? "No"
+                        : "Yes"
+        );
         documentText.appendChild(table.getOdfElement());
     }
 
     private static TableTableElement generateEssentialTable(OdfTextDocument doc) {
         OdfTable odfTable = OdfTable.newTable(doc, 9, 1);
 
-        odfTable.getRowByIndex(0).getCellByIndex(0).setStringValue("Organisation Name");
+        odfTable.getRowByIndex(0).getCellByIndex(0).setStringValue("Organisation name");
         odfTable.getRowByIndex(1).getCellByIndex(0).setStringValue("Organisation type");
 
         odfTable.getRowByIndex(2).getCellByIndex(0).setStringValue("Address line 1");

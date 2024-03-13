@@ -417,7 +417,8 @@ public class ApplicationFormService {
     public OdfTextDocument getApplicationFormExport(Integer applicationId) {
         final ApplicationFormEntity applicationForm = applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(String.format("No application with ID %s was found", applicationId)));
+        SchemeEntity scheme = this.schemeRepository.findById(applicationForm.getGrantSchemeId()).orElseThrow(EntityNotFoundException::new);
 
-        return odtService.generateSingleOdt(applicationForm);
+        return odtService.generateSingleOdt(scheme, applicationForm);
     }
 }
