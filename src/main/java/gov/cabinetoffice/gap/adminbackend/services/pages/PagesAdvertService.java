@@ -215,9 +215,9 @@ public class PagesAdvertService {
         return AdvertPreviewPageDto.builder().grantName(grantAdvert.getGrantAdvertName())
                 .grantShortDescription(response.nullCheckSingleResponse("grantDetails", "1", "grantShortDescription"))
                 .grantApplicationOpenDate(buildDateForPreview(
-                        response.nullCheckMultiResponse(ADVERT_DATES_SECTION_ID, "1", OPENING_DATE_ID)))
+                        response.nullCheckMultiResponse(ADVERT_DATES_SECTION_ID, "1", OPENING_DATE_ID), OPENING_DATE_ID))
                 .grantApplicationCloseDate(buildDateForPreview(
-                        response.nullCheckMultiResponse(ADVERT_DATES_SECTION_ID, "1", CLOSING_DATE_ID)))
+                        response.nullCheckMultiResponse(ADVERT_DATES_SECTION_ID, "1", CLOSING_DATE_ID), CLOSING_DATE_ID))
                 .tabs(advertPreviewTabs).build();
 
     }
@@ -230,7 +230,7 @@ public class PagesAdvertService {
         return multiResponse[1];
     }
 
-    private String buildDateForPreview(String[] date) {
+    private String buildDateForPreview(String[] date, String dateId) {
         if (date == null) {
             return "";
         }
@@ -238,9 +238,22 @@ public class PagesAdvertService {
         int[] dateInts = Arrays.stream(date).mapToInt(Integer::parseInt).toArray();
         LocalDateTime castDate = LocalDateTime.of(dateInts[2], dateInts[1], dateInts[0], dateInts[3], dateInts[4]);
 
+        if (castDate.toLocalTime().equals(LocalDateTime.MIN.toLocalTime())) {
+            final String previewMidnightDatePattern = "d MMMM u, ";
+            final DateTimeFormatter previewMidnightFormatter = DateTimeFormatter.ofPattern(previewMidnightDatePattern).withLocale(Locale.UK);
+            if(dateId.equals(CLOSING_DATE_ID)) {
+                castDate = castDate.minusMinutes(1);
+            }
+            if(dateId.equals(OPENING_DATE_ID)) {
+                castDate = castDate.plusMinutes(1);
+            }
+            return previewMidnightFormatter.format(castDate) + "(Midnight) "
+                    + DateTimeFormatter.ofPattern("hh:mma", Locale.UK).format(castDate);
+        }
+
         // "30 November 2022, 12:01am"
-        String previewDatePattern = "d MMMM u, hh:mma";
-        DateTimeFormatter previewFormatter = DateTimeFormatter.ofPattern(previewDatePattern).withLocale(Locale.UK);
+        final String previewDatePattern = "d MMMM u, hh:mma";
+        final DateTimeFormatter previewFormatter = DateTimeFormatter.ofPattern(previewDatePattern).withLocale(Locale.UK);
         return previewFormatter.format(castDate);
 
     }
