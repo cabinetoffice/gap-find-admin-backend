@@ -28,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -192,6 +193,18 @@ public class UserController {
 
         techSupportUserService.deleteTechSupportUser(userSub);
 
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping(value = "/admin-user/{userSub}")
+    @Transactional
+    public ResponseEntity<String> removeAdminReference(@PathVariable String userSub,
+                                                        @RequestHeader("Authorization") String token) {
+        final String logMessage = String.format("User not authorized to remove admin reference: %s", userSub);
+        validateToken(token, logMessage);
+
+        schemeService.removeAdminReference(userSub);
+        userService.deleteAdminUser(userSub);
         return ResponseEntity.ok().build();
     }
 

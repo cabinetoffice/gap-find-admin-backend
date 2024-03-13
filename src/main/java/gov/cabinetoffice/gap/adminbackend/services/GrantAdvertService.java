@@ -595,10 +595,10 @@ public class GrantAdvertService {
     public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
         grantAdvertRepository.findBySchemeId(schemeId)
                 .ifPresent(advert -> {
-                    if (advert.getLastUpdatedBy() == grantAdmin) {
+                    if (advert.getLastUpdatedBy() != null && advert.getLastUpdatedBy() == grantAdmin) {
                         advert.setLastUpdatedBy(null);
                     }
-                    if (advert.getCreatedBy() == grantAdmin) {
+                    if (advert.getCreatedBy() != null && advert.getCreatedBy() == grantAdmin) {
                         advert.setCreatedBy(null);
                     }
 

@@ -108,6 +108,14 @@ class UserServiceTest {
         }
 
         @Test
+        void shouldDeleteAdminFromGapUserAndGrantAdminRepositories() {
+            userService.deleteAdminUser(oneLoginSub);
+
+            verify(grantAdminRepository, times(1)).deleteByGapUserUserSub(any());
+            verify(gapUserRepository, times(1)).deleteByUserSub(any());
+        }
+
+        @Test
         void migrateUserMatchesGrantApplicantAndGapUser() {
             final GrantApplicant grantApplicant = GrantApplicant.builder().build();
             final GapUser gapUser = GapUser.builder().build();
