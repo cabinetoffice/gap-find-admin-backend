@@ -27,6 +27,8 @@ public class SchemeDTO {
 
     private Instant lastUpdatedDate;
 
-    private String lastUpdatedBy;
+    private boolean lastUpdatedByADeletedUser;
+
+    private byte[] encryptedLastUpdatedBy;
 
 }

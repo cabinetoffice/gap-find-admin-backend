@@ -170,7 +170,7 @@ public class UserService {
         }
     }
 
-    public String getEmailAddressForSub(final String sub) {
+    public byte[] getEmailAddressForSub(final String sub) {
         final String url = userServiceConfig.getDomain() + "/users/emails";
         final ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {
         };
@@ -191,8 +191,8 @@ public class UserService {
         return Optional.ofNullable(response)
                 .orElse(Collections.emptyList())
                 .stream()
-                .map(userEmailDto -> encryptionService.decryptField(userEmailDto.emailAddress()))
+                .map(UserEmailResponseDto::emailAddress)
                 .findFirst()
-                .orElse(EMPTY_EMAIL_VALUE);
+                .orElseThrow(() -> new NotFoundException("Email not found for user with sub " + sub));
     }
 }

@@ -514,7 +514,7 @@ public class GrantAdvertService {
         if (grantAdvert.getLastUpdatedBy() != null) {
             String adminSub = grantAdvert.getLastUpdatedBy().getGapUser().getUserSub();
 
-            String emailAddress = userService.getEmailAddressForSub(adminSub);
+            byte[] emailAddress = userService.getEmailAddressForSub(adminSub);
 
             publishingInfo.setLastUpdatedByEmail(emailAddress);
         }

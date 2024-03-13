@@ -1132,7 +1132,7 @@ class GrantAdvertServiceTest {
 
             when(grantAdvertRepository.findBySchemeId(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(grantAdvert));
 
-            when(userService.getEmailAddressForSub(any())).thenReturn(testEmailAddress);
+            when(userService.getEmailAddressForSub(any())).thenReturn(testEmailAddress.getBytes());
 
             GetGrantAdvertPublishingInformationResponseDTO actualOutput = grantAdvertService
                     .getGrantAdvertPublishingInformationBySchemeId(SAMPLE_SCHEME_ID);
@@ -1145,7 +1145,7 @@ class GrantAdvertServiceTest {
             assertThat(actualOutput.getOpeningDate()).isEqualTo(grantAdvert.getOpeningDate());
             assertThat(actualOutput.getUnpublishedDate()).isEqualTo(grantAdvert.getUnpublishedDate());
             assertThat(actualOutput.getLastPublishedDate()).isEqualTo(grantAdvert.getLastPublishedDate());
-            assertThat(actualOutput.getLastUpdatedByEmail()).isEqualTo(testEmailAddress);
+            assertThat(actualOutput.getLastUpdatedByEmail()).isEqualTo(testEmailAddress.getBytes());
 
             verify(grantAdvertMapper).grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
         }

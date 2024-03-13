@@ -2,9 +2,8 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeEditorsDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.user.DecryptedUserEmailResponse;
-import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SchemeEditorRoleEnum;
@@ -51,10 +50,10 @@ public class SchemeEditorService {
         return this.mapEditorListToDto(editors, createdBy, authHeader);
     }
 
-    private String getEmailFromUserResponse(final List<DecryptedUserEmailResponse> userResponse,
+    private byte[] getEmailFromUserResponse(final List<UserEmailResponseDto> userResponse,
             final String editorsSub) {
-        DecryptedUserEmailResponse editorsRow = userResponse.stream()
-                .filter(item -> item.userSub().equals(editorsSub)).findFirst()
+        UserEmailResponseDto editorsRow = userResponse.stream()
+                .filter(item -> item.sub().equals(editorsSub)).findFirst()
                 .orElseThrow(() -> new NotFoundException("Could not find users email using sub: " + editorsSub));
         return editorsRow.emailAddress();
     }
@@ -63,12 +62,12 @@ public class SchemeEditorService {
         List<String> userSubs = editors.stream()
                 .map(editor -> editor.getGapUser().getUserSub())
                 .toList();
-        List<DecryptedUserEmailResponse> userResponse = getEmailsFromUserSubBatch(userSubs, authHeader);
+        List<UserEmailResponseDto> userResponse = getEmailsFromUserSubBatch(userSubs, authHeader);
 
         return editors.stream()
                 .map(editor -> {
                     String editorsSub = editor.getGapUser().getUserSub();
-                    String email = getEmailFromUserResponse(userResponse, editorsSub);
+                    byte[] email = getEmailFromUserResponse(userResponse, editorsSub);
                     Integer id = editor.getId();
                     SchemeEditorRoleEnum role = id.equals(createdBy)
                             ? SchemeEditorRoleEnum.Owner
@@ -80,20 +79,21 @@ public class SchemeEditorService {
                 .toList();
     }
 
-    private List<DecryptedUserEmailResponse> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
+    private List<UserEmailResponseDto> getEmailsFromUserSubBatch(final List<String> userSubs, final String authHeader) {
         final String url = userServiceConfig.getDomain() + "/user-emails-from-subs";
 
         UserEmailRequestDto requestBody = UserEmailRequestDto.builder().userSubs(userSubs).build();
 
-        ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {};
+        ParameterizedTypeReference<List<UserEmailResponseDto>> responseType = new ParameterizedTypeReference<>() {
+        };
 
         List<UserEmailResponseDto> response = webClientBuilder.build().post()
                 .uri(url).body(BodyInserters.fromValue(requestBody))
                 .cookie(userServiceConfig.getCookieName(), authHeader).retrieve().bodyToMono(responseType).block();
 
         return Objects.requireNonNull(response).stream()
-                .map((item) -> DecryptedUserEmailResponse.builder().userSub(item.sub()).emailAddress(
-                        awsEncryptionService.decryptField(item.emailAddress())).build())
+                .map((item) -> UserEmailResponseDto.builder().sub(item.sub()).emailAddress(
+                        item.emailAddress()).build())
                 .toList();
     }
 
@@ -109,11 +109,13 @@ public class SchemeEditorService {
         try {
             editorToAdd = userService.getGrantAdminIdFromUserServiceEmail(editorEmailAddress, jwt);
         } catch (NotFoundException e) {
-            throw new FieldViolationException("editorEmailAddress", "This account does not have an 'Administrator' account.");
+            throw new FieldViolationException("editorEmailAddress",
+                    "This account does not have an 'Administrator' account.");
         }
 
         if (existingEditors.stream().anyMatch(editor -> editor.getId().equals(editorToAdd.getId()))) {
-            throw new FieldViolationException("editorEmailAddress", "This email address is already an editor for this scheme");
+            throw new FieldViolationException("editorEmailAddress",
+                    "This email address is already an editor for this scheme");
         }
 
         scheme.addAdmin(editorToAdd);
@@ -132,7 +134,8 @@ public class SchemeEditorService {
             throw new ForbiddenException("Delete scheme editor: Cannot delete scheme creator");
 
         final GrantAdmin grantAdmin = grantAdminRepository.findById(editorId)
-                .orElseThrow(() -> new NotFoundException("Delete scheme editor: Grant Admin not found for this scheme"));
+                .orElseThrow(
+                        () -> new NotFoundException("Delete scheme editor: Grant Admin not found for this scheme"));
 
         scheme.removeAdmin(grantAdmin);
         schemeRepo.save(scheme);

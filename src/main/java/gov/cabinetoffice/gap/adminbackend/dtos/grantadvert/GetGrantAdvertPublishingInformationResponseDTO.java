@@ -32,7 +32,7 @@ public class GetGrantAdvertPublishingInformationResponseDTO {
 
     private String contentfulSlug;
 
-    private String lastUpdatedByEmail;
+    private byte[] lastUpdatedByEmail;
 
     private Instant lastUpdated;
 

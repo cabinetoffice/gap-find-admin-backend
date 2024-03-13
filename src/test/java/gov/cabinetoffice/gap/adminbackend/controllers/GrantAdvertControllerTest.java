@@ -467,14 +467,14 @@ class GrantAdvertControllerTest {
                     .builder().grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus)
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
-                    .lastUpdatedByEmail("an-email")
+                    .lastUpdatedByEmail("an-email".getBytes())
                     .created(createdDate)
                     .validLastUpdated(true)
                     .lastUpdated(lastPublishedDate)
                     .closingDate(closingDate).openingDate(openingDate).build();
 
 
-            when(userService.getEmailAddressForSub(any())).thenReturn("an-email");
+            when(userService.getEmailAddressForSub(any())).thenReturn("an-email".getBytes());
 
 
             when(grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(grantSchemeId))
