@@ -84,6 +84,7 @@ public class UserService {
         oneLoginSubOptional.ifPresent(sub -> {
             grantApplicantRepository.deleteByUserId(sub);
             grantAdminRepository.deleteByGapUserUserSub(sub);
+            gapUserRepository.deleteByUserSub(sub);
         });
 
         if (colaSubOptional.isPresent()) {
@@ -91,6 +92,12 @@ public class UserService {
             grantAdminRepository.deleteByGapUserUserSub(colaSubOptional.get().toString());
             gapUserRepository.deleteByUserSub(colaSubOptional.get().toString());
         }
+    }
+
+    @Transactional
+    public void deleteAdminUser(String userSub) {
+            grantAdminRepository.deleteByGapUserUserSub(userSub);
+            gapUserRepository.deleteByUserSub(userSub);
     }
 
     public Boolean verifyAdminRoles(final String emailAddress, final String roles) {

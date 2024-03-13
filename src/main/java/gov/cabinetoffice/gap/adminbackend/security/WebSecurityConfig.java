@@ -54,6 +54,7 @@ public class WebSecurityConfig {
                                 "/users/migrate",
                                 "/users/delete",
                                 "/users/tech-support-user/**",
+                                "/users/admin-user/**",
                                 "/users/funding-organisation",
                                 "/application-forms/lambda/**",
                                 "/feedback/add"
