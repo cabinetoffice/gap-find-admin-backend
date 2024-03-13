@@ -285,7 +285,7 @@ public class ApplicationFormController {
             return ResponseEntity.ok().headers(headers).contentLength(odtResource.contentLength())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM).body(odtResource);
         } catch (Exception e) {
-            log.error("Could not generate ZIP. Exception: ", e);
+            log.error("Could not generate ODT. Exception: ", e);
             throw new RuntimeException(e);
         }
     }
