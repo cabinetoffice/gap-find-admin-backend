@@ -12,6 +12,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
@@ -232,6 +233,14 @@ public class ApplicationFormService {
         String questionId = UUID.randomUUID().toString();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
+            ApplicationFormSectionDTO sectionDTO = null;
+            try {
+                sectionDTO = applicationForm.getDefinition().getSectionById(sectionId);
+            } catch (NotFoundException e) {
+                //If the section does not exist here it must have been deleted.
+                throw new ConflictException("MULTIPLE_EDITORS_SECTION_DELETED");
+            }
+
             ApplicationFormQuestionDTO applicationFormQuestionDTO;
             QuestionAbstractPostDTO questionAbstractPostDTO = validatePostQuestion(question);
             if (questionAbstractPostDTO.getClass() == QuestionOptionsPostDTO.class) {
@@ -247,7 +256,7 @@ public class ApplicationFormService {
             applicationFormQuestionDTO.getValidation()
                     .putAll(applicationFormQuestionDTO.getResponseType().getValidation());
 
-            applicationForm.getDefinition().getSectionById(sectionId).getQuestions().add(applicationFormQuestionDTO);
+            sectionDTO.getQuestions().add(applicationFormQuestionDTO);
 
             ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 

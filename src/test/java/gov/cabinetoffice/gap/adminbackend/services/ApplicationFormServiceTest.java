@@ -497,6 +497,19 @@ class ApplicationFormServiceTest {
                     .isInstanceOf(ConstraintViolationException.class)
                     .hasMessage("options[2].<list element>: Enter an option");
         }
+
+        @Test
+        void addNewQuestionOptionValueConflictExceptionTest() {
+            final HttpSession session = new MockHttpSession();
+            when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(SAMPLE_EMPTY_APPLICATION_FORM_ENTITY));
+
+            assertThatThrownBy(() -> applicationFormService
+                    .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
+                            SAMPLE_QUESTION_OPTIONS_CONTENT_INVALID_POST_DTO, session))
+                    .isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS_SECTION_DELETED");
+        }
     }
 
     @Nested
