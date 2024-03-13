@@ -233,7 +233,7 @@ public class ApplicationFormService {
         String questionId = UUID.randomUUID().toString();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
-            ApplicationFormSectionDTO sectionDTO = null;
+            ApplicationFormSectionDTO sectionDTO;
             try {
                 sectionDTO = applicationForm.getDefinition().getSectionById(sectionId);
             } catch (NotFoundException e) {
