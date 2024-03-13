@@ -1349,14 +1349,16 @@ class GrantAdvertServiceTest {
         @WithAdminSession
         @Test
         void save_WithAdminSession_Success() {
-            final SchemeEntity scheme = SchemeEntity.builder().build();
-            final GrantAdvert advertToSave = GrantAdvert.builder()
-                    .scheme(scheme)
-                    .build();
             final GrantAdmin grantAdmin = GrantAdmin.builder()
                     .id(1)
                     .build();
             final String now = "2024-02-27T10:15:30Z";
+            final SchemeEntity scheme = SchemeEntity.builder()
+                    .grantAdmins(List.of(grantAdmin))
+                    .build();
+            final GrantAdvert advertToSave = GrantAdvert.builder()
+                    .scheme(scheme)
+                    .build();
 
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 

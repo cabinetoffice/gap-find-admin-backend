@@ -346,13 +346,12 @@ public class ApplicationFormService {
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void updateApplicationOwner(Integer adminId, Integer schemeId) {
-        Optional<ApplicationFormEntity> applicationOptional = this.applicationFormRepository
-                .findByGrantSchemeId(schemeId);
-        if (applicationOptional.isPresent()) {
-            final ApplicationFormEntity application = applicationOptional.get();
-            application.setCreatedBy(adminId);
-            applicationFormRepository.save(application);
-        }
+        this.applicationFormRepository
+                .findByGrantSchemeId(schemeId)
+                .ifPresent(application -> {
+                    application.setCreatedBy(adminId);
+                    applicationFormRepository.save(application);
+                });
     }
 
     public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId,

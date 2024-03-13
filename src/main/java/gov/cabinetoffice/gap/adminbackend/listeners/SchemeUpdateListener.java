@@ -24,8 +24,15 @@ public class SchemeUpdateListener {
                     if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
                         final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
 
-                        scheme.setLastUpdated(Instant.now());
-                        scheme.setLastUpdatedBy(adminSession.getGrantAdminId());
+                        // if updates were performed by the system or a super admin then don't populate these fields
+                        scheme.getGrantAdmins()
+                                .stream()
+                                .filter(grantAdmin -> grantAdmin.getId().equals(adminSession.getGrantAdminId()))
+                                .findAny()
+                                .ifPresent(grantAdmin -> {
+                                    scheme.setLastUpdated(Instant.now());
+                                    scheme.setLastUpdatedBy(grantAdmin.getId());
+                                });
                     }
                 });
     }
