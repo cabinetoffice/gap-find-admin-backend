@@ -112,9 +112,9 @@ public class OdtService {
 
         OdfTable table;
         table = OdfTable.newTable(odt, 2, 1);
-        table.getRowByIndex(0).getCellByIndex(0).setStringValue("GGIS");
+        table.getRowByIndex(0).getCellByIndex(0).setStringValue("GGIS ID");
         table.getRowByIndex(0).getCellByIndex(1).setStringValue(grantScheme.getGgisIdentifier());
-        table.getRowByIndex(1).getCellByIndex(0).setStringValue("Contact Email");
+        table.getRowByIndex(1).getCellByIndex(0).setStringValue("Contact email");
         table.getRowByIndex(1).getCellByIndex(1).setStringValue(grantScheme.getEmail());
 
         documentText.appendChild(h1);

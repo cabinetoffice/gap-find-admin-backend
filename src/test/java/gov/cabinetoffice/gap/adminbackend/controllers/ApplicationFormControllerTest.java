@@ -15,34 +15,44 @@ import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ApplicationFormController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -80,6 +90,9 @@ class ApplicationFormControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private OdtService odtService;
 
     @Test
     @WithAdminSession
@@ -465,4 +478,61 @@ class ApplicationFormControllerTest {
         this.mockMvc.perform(get("/application-forms/1/status"))
                 .andExpect(status().isNotFound());
     }
+
+
+    @Test
+    void testExportApplication() throws Exception {
+        Integer applicationId = 1;
+        OdfTextDocument odfTextDocument = OdfTextDocument.newTextDocument();
+        when(applicationFormService.getApplicationFormExport(applicationId)).thenReturn(odfTextDocument);
+        when(odtService.odtToResource(any())).thenReturn(new ByteArrayResource(new byte[]{1}));
+
+        this.mockMvc.perform(get("/application-forms/1/download-summary"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"application.odt\""))
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE));
+        verify(applicationFormService, times(1)).getApplicationFormExport(any());
+        verify(odtService, times(1)).odtToResource(any());
+    }
+
+    @Test
+    void testExportApplicationOdtServiceThrowsIOException() throws Exception {
+        Integer applicationId = 1;
+        OdfTextDocument odfTextDocument = OdfTextDocument.newTextDocument();
+        when(applicationFormService.getApplicationFormExport(applicationId)).thenReturn(odfTextDocument);
+        when(odtService.odtToResource(Mockito.any())).thenThrow(new IOException());
+
+        MvcResult result = this.mockMvc.perform(get("/application-forms/" + applicationId + "/download-summary"))
+                .andExpect(status().isInternalServerError())
+                .andReturn();
+
+        Exception resolvedException = result.getResolvedException();
+        assertNotNull(resolvedException);
+        assertEquals(RuntimeException.class, resolvedException.getClass());
+        verify(applicationFormService, times(1)).getApplicationFormExport(any());
+        verify(odtService, times(1)).odtToResource(any());
+
+
+        UUID submissionId = UUID.randomUUID();
+        HttpServletRequest mockRequest = new MockHttpServletRequest();
+        Submission mockSubmission = mock(Submission.class);
+    }
+
+
+    @Test
+    void testExportApplicationThrowsRuntimeError() throws Exception {
+        when(applicationFormService.getApplicationFormExport(Mockito.any()))
+                .thenThrow(new RuntimeException());
+
+        MvcResult result = this.mockMvc.perform(get("/application-forms/1/download-summary"))
+                .andExpect(status().isInternalServerError())
+                .andReturn();
+
+        Exception resolvedException = result.getResolvedException();
+        assertNotNull(resolvedException);
+        assertEquals(RuntimeException.class, resolvedException.getClass());
+        verify(applicationFormService, times(1)).getApplicationFormExport(any());
+        verify(odtService, times(0)).odtToResource(any());
+    }
+
 }
