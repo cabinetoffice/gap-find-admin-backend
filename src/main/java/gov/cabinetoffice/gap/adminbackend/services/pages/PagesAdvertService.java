@@ -243,8 +243,7 @@ public class PagesAdvertService {
             final DateTimeFormatter previewMidnightFormatter = DateTimeFormatter.ofPattern(previewMidnightDatePattern).withLocale(Locale.UK);
             if(dateId.equals(CLOSING_DATE_ID)) {
                 castDate = castDate.minusMinutes(1);
-            }
-            if(dateId.equals(OPENING_DATE_ID)) {
+            } else if(dateId.equals(OPENING_DATE_ID)) {
                 castDate = castDate.plusMinutes(1);
             }
             return previewMidnightFormatter.format(castDate) + "(Midnight) "
