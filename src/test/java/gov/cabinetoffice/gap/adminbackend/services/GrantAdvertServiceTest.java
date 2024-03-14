@@ -18,6 +18,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponse
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapperImpl;
@@ -607,14 +608,14 @@ class GrantAdvertServiceTest {
 
             final GrantAdvert advert = GrantAdvert.builder().build();
 
-            String[] openingMultiResponse = new String[] { "10", "10", "2010", "13:00" };
+            String[] openingMultiResponse = new String[]{"10", "10", "2010", "13:00"};
             GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder().id(OPENING_DATE_ID)
                     .multiResponse(openingMultiResponse).build();
-            String[] closingMultiResponse = new String[] { "12", "12", "2012", "13:00" };
+            String[] closingMultiResponse = new String[]{"12", "12", "2012", "13:00"};
             GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder().id(CLOSING_DATE_ID)
                     .multiResponse(closingMultiResponse).build();
-            String[] expectedOpeningMultiResponse = new String[] { "10", "10", "2010", "13", "00" };
-            String[] expectedClosingMultiResponse = new String[] { "12", "12", "2012", "13", "00" };
+            String[] expectedOpeningMultiResponse = new String[]{"10", "10", "2010", "13", "00"};
+            String[] expectedClosingMultiResponse = new String[]{"12", "12", "2012", "13", "00"};
 
             GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder().id(pageId)
                     .status(GrantAdvertPageResponseStatus.COMPLETED)
@@ -659,6 +660,16 @@ class GrantAdvertServiceTest {
             assertThat(closingQuestion.get().getMultiResponse()).isEqualTo(expectedClosingMultiResponse);
         }
 
+        @Test
+        void updatePageResponseThrowsConflictException() {
+            final GrantAdvert advert = GrantAdvert.builder().status(GrantAdvertStatus.PUBLISHED).build();
+            when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(advert));
+            GrantAdvertPageResponseValidationDto datePagePatchDto = GrantAdvertPageResponseValidationDto.builder()
+                    .grantAdvertId(grantAdvertId).sectionId(ADVERT_DATES_SECTION_ID).page(samplePageDto).build();
+
+            assertThrows(ConflictException.class, () -> grantAdvertService.updatePageResponse(datePagePatchDto));
+
+        }
     }
 
     // TODO refactor this test and the underlying service methods to be more maintainable
