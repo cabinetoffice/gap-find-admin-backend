@@ -82,7 +82,7 @@ public class SchemeTestData {
     public final static Pageable EXAMPLE_PAGINATION_PROPS = PageRequest.of(0, 20);
 
     public final static String SCHEME_POST_ALL_NULL_DTO_JSON = "{" + "\"fieldErrors\":[" + "{"
-            + "	\"fieldName\":\"name\"," + "	\"errorMessage\":\"Enter the name of your grant\"" + "}," + "{"
+            + "	\"fieldName\":\"grantName\"," + "	\"errorMessage\":\"Enter the name of your grant\"" + "}," + "{"
             + "	\"fieldName\":\"ggisReference\"," + "	\"errorMessage\":\"Enter your GGIS Scheme Reference Number\""
             + "} " + "]" + "}";
 

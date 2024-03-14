@@ -96,7 +96,7 @@ class GrantAdvertControllerTest {
 
         String advertName = "AdvertName";
 
-        CreateGrantAdvertDto dto = CreateGrantAdvertDto.builder().grantSchemeId(grantSchemeId).name(advertName).build();
+        CreateGrantAdvertDto dto = CreateGrantAdvertDto.builder().grantSchemeId(grantSchemeId).advertName(advertName).build();
 
         UUID advertId = UUID.randomUUID();
 

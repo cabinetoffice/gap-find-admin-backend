@@ -18,7 +18,7 @@ public class SchemePostDTO {
     @NotNull(message = "Enter the name of your grant")
     @Size(min = 1, message = "Enter the name of your grant")
     @Size(max = 255, message = "Name should not be greater than 255 characters")
-    private String name;
+    private String grantName;
 
     @NotNull(message = "Enter your GGIS Scheme Reference Number")
     @Size(min = 1, message = "Enter your GGIS Scheme Reference Number")

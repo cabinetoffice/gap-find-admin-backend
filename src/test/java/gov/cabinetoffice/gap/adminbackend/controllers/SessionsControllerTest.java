@@ -47,10 +47,10 @@ class SessionsControllerTest {
     @Test
     void testFailAddingToInvalidValueToSession() throws Exception {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("key", "newScheme.name");
+        params.add("key", "newScheme.grantName");
         params.add("value", "");
         FieldErrorsDTO fieldErrorsDTO = new FieldErrorsDTO(
-                Collections.singletonList(new ValidationError("name", "Enter the name of your grant")));
+                Collections.singletonList(new ValidationError("grantName", "Enter the name of your grant")));
 
         this.mockMvc.perform(patch("/sessions/add").params(params)).andExpect(status().isBadRequest())
                 .andExpect(content().json(HelperUtils.asJsonString(fieldErrorsDTO)));
@@ -124,7 +124,7 @@ class SessionsControllerTest {
         this.mockMvc
                 .perform(patch("/sessions/batch-add").params(params).contentType(MediaType.APPLICATION_JSON)
                         .content(SESSION_BATCH_ADD_BODY_JSON))
-                .andExpect(status().isOk()).andExpect(request().sessionAttribute("newScheme.name", "sampleSchemeName"))
+                .andExpect(status().isOk()).andExpect(request().sessionAttribute("newScheme.grantName", "sampleSchemeName"))
                 .andExpect(request().sessionAttribute("newScheme.ggisReference", "sampleSchemeGGiSReference"));
     }
 
