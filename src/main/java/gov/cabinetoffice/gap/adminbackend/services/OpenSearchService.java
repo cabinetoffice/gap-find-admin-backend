@@ -35,6 +35,7 @@ public class OpenSearchService {
                 .header(AUTHORIZATION, createAuthHeader())
                 .retrieve()
                 .bodyToMono(void.class)
+                .doOnError(e -> log.error("Failed to create an index entry for ad " + contentfulEntry.getId() + "in open search: {}", e.getMessage()))
                 .block();
     }
 
@@ -47,6 +48,7 @@ public class OpenSearchService {
                 .header(AUTHORIZATION, createAuthHeader())
                 .retrieve()
                 .bodyToMono(void.class)
+                .doOnError(e -> log.error("Failed to delete an index entry for ad " + contentfulEntry.getId() + "in open search: {}", e.getMessage()))
                 .block();
     }
 
