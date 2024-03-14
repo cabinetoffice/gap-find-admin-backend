@@ -2,6 +2,7 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormQuestionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectionDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;

@@ -11,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.*;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.OdtException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
@@ -510,7 +511,7 @@ class ApplicationFormControllerTest {
 
         Exception resolvedException = result.getResolvedException();
         assertNotNull(resolvedException);
-        assertEquals(RuntimeException.class, resolvedException.getClass());
+        assertEquals(OdtException.class, resolvedException.getClass());
         verify(applicationFormService, times(1)).getApplicationFormExport(any());
         verify(odtService, times(1)).odtToResource(any());
 
@@ -532,7 +533,7 @@ class ApplicationFormControllerTest {
 
         Exception resolvedException = result.getResolvedException();
         assertNotNull(resolvedException);
-        assertEquals(RuntimeException.class, resolvedException.getClass());
+        assertEquals(OdtException.class, resolvedException.getClass());
         verify(applicationFormService, times(1)).getApplicationFormExport(any());
         verify(odtService, times(0)).odtToResource(any());
     }

@@ -9,10 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.EventType;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.InvalidEventException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.*;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.*;
@@ -273,7 +270,7 @@ public class ApplicationFormController {
     @GetMapping("/{applicationId}/download-summary")
     @CheckSchemeOwnership
     public ResponseEntity<ByteArrayResource> exportApplication(
-            @PathVariable final Integer applicationId, HttpServletRequest request) {
+            @PathVariable final Integer applicationId) {
         try (OdfTextDocument odt = applicationFormService.getApplicationFormExport(applicationId)) {
 
             ByteArrayResource odtResource = odtService.odtToResource(odt);
@@ -284,9 +281,12 @@ public class ApplicationFormController {
 
             return ResponseEntity.ok().headers(headers).contentLength(odtResource.contentLength())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM).body(odtResource);
+        } catch (RuntimeException e) {
+            log.error("Could not generate ODT for application " + applicationId + ". Exception: ", e);
+            throw new OdtException("Could not generate ODT for this application");
         } catch (Exception e) {
-            log.error("Could not generate ODT. Exception: ", e);
-            throw new RuntimeException(e);
+            log.error("Could not convert ODT to resource for application " + applicationId + ". Exception: ", e);
+            throw new OdtException("Could not download ODT for this application");
         }
     }
 
