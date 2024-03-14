@@ -6,6 +6,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.QuestionGenericPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
@@ -14,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.testdata.projectionimpls.TestApplicationFormsFoundView;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -55,6 +58,12 @@ class ApplicationFormServiceTest {
 
     @Mock
     private ApplicationFormRepository applicationFormRepository;
+
+    @Mock
+    private SchemeRepository schemeRepository;
+
+    @Mock
+    private OdtService odtService;
 
     @Mock
     private SessionsService sessionsService;
@@ -925,5 +934,31 @@ class ApplicationFormServiceTest {
 
     }
 
+    @Nested
+    class getApplicationFormExport {
+        @Test
+        void getApplicationFormExportSuccessful() throws Exception {
+            final Integer applicationId = 1;
+            final Integer grantSchemeId = 1;
+            ApplicationFormEntity applicationForm = ApplicationFormEntity.builder()
+                    .grantApplicationId(applicationId)
+                    .grantSchemeId(grantSchemeId)
+                    .build();
+            SchemeEntity scheme = SchemeEntity.builder()
+                    .id(grantSchemeId)
+                    .build();
 
+            when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.of(applicationForm));
+            when(schemeRepository.findById(anyInt())).thenReturn(Optional.of(scheme));
+            OdfTextDocument odfTextDocument = OdfTextDocument.newTextDocument();
+            when(odtService.generateSingleOdt(scheme, applicationForm)).thenReturn(odfTextDocument);
+
+            final OdfTextDocument response = applicationFormService.getApplicationFormExport(applicationId);
+
+            verify(applicationFormRepository).findById(applicationId);
+            verify(schemeRepository).findById(applicationId);
+            assertThat(response).isInstanceOf(OdfTextDocument.class);
+
+        }
+    }
 }

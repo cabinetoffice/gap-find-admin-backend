@@ -9,10 +9,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.EventType;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.InvalidEventException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.*;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.*;
@@ -25,7 +22,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
@@ -55,7 +56,9 @@ public class ApplicationFormController {
     private final EventLogService eventLogService;
 
     private final UserService userService;
-    
+
+    private final OdtService odtService;
+
     @PostMapping
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Application form created successfully.",
@@ -262,6 +265,29 @@ public class ApplicationFormController {
     public ResponseEntity<String> getApplicationStatus(@PathVariable final Integer applicationId) {
         final ApplicationStatusEnum applicationStatus = applicationFormService.getApplicationStatus(applicationId);
         return ResponseEntity.ok(applicationStatus.toString());
+    }
+
+    @GetMapping("/{applicationId}/download-summary")
+    @CheckSchemeOwnership
+    public ResponseEntity<ByteArrayResource> exportApplication(
+            @PathVariable final Integer applicationId) {
+        try (OdfTextDocument odt = applicationFormService.getApplicationFormExport(applicationId)) {
+
+            ByteArrayResource odtResource = odtService.odtToResource(odt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"application.odt\"");
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+
+            return ResponseEntity.ok().headers(headers).contentLength(odtResource.contentLength())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM).body(odtResource);
+        } catch (RuntimeException e) {
+            log.error("Could not generate ODT for application " + applicationId + ". Exception: ", e);
+            throw new OdtException("Could not generate ODT for this application");
+        } catch (Exception e) {
+            log.error("Could not convert ODT to resource for application " + applicationId + ". Exception: ", e);
+            throw new OdtException("Could not download ODT for this application");
+        }
     }
 
 

@@ -91,11 +91,6 @@ public class SubmissionsService {
                     + " is unable to access application with id " + applicationId);
         }
 
-        // TODO GAP-1377 we need to limit the number of submissions we export
-        // to 1000 rows in a file due to a restriction the Spotlight input
-        // processing. So we will need to "page" the returned data and create
-        // multiple files if there are more than 999 submissions.
-
         final List<Submission> submissionsByAppId = submissionRepository
                 .findByApplicationGrantApplicationIdAndStatus(applicationId, SubmissionStatus.SUBMITTED);
         log.info("Found {} submissions in SUBMITTED state for application ID {}", submissionsByAppId.size(),
