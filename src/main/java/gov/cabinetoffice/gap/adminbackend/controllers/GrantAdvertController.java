@@ -62,12 +62,12 @@ public class GrantAdvertController {
     @PostMapping("/create")
     public ResponseEntity<CreateGrantAdvertResponseDto> create(HttpServletRequest request,
             @Valid @RequestBody CreateGrantAdvertDto createGrantAdvertDto) {
-        log.info("Creating Grant Advert '{}' for Grant Scheme ID '{}'", createGrantAdvertDto.getName(),
+        log.info("Creating Grant Advert '{}' for Grant Scheme ID '{}'", createGrantAdvertDto.getAdvertName(),
                 createGrantAdvertDto.getGrantSchemeId());
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         GrantAdvert grantAdvert = grantAdvertService.create(createGrantAdvertDto.getGrantSchemeId(),
-                session.getGrantAdminId(), createGrantAdvertDto.getName());
+                session.getGrantAdminId(), createGrantAdvertDto.getAdvertName());
         log.info("Successfully created Grant Advert named '{}' with id '{}'", grantAdvert.getGrantAdvertName(),
                 grantAdvert.getId());
 
