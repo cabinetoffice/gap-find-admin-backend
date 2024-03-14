@@ -87,7 +87,7 @@ public class OdtService {
             logger.info("ODT file generated successfully");
             return odt;
         } catch (Exception e) {
-            logger.error("Could not generate ODT for given submission", e);
+            logger.error("Could not generate ODT for given application", e);
             throw new RuntimeException(e);
         }
     }
