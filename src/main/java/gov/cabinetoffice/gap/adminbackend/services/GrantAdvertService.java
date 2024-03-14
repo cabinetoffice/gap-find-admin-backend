@@ -425,7 +425,6 @@ public class GrantAdvertService {
                     contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
                     contentfulAdvert.getId());
             log.debug(url);
-
             webClientBuilder.build()
                     .patch()
                     .uri(url)
@@ -436,7 +435,8 @@ public class GrantAdvertService {
                     })
                     .bodyValue(requestBody)
                     .retrieve()
-                    .bodyToMono(Object.class)
+                    .bodyToMono(Void.class)
+                    .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", url, exception.getMessage()))
                     .block();
         }
     }
