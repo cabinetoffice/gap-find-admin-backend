@@ -1,12 +1,10 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
-import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailRequestDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
@@ -17,7 +15,6 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
-import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.ParameterizedTypeReference;
@@ -32,11 +29,12 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import javax.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static gov.cabinetoffice.gap.adminbackend.utils.HelperUtils.encryptSecret;
 
 @Service
 @RequiredArgsConstructor
@@ -63,7 +61,6 @@ public class UserService {
 
     private final AwsEncryptionServiceImpl encryptionService;
 
-    private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
 
     @Transactional
     public void migrateUser(final String oneLoginSub, final UUID colaSub) {
@@ -179,7 +176,7 @@ public class UserService {
                 .post()
                 .uri(url)
                 .body(BodyInserters.fromValue(List.of(sub)))
-                .headers(h -> h.set("Authorization", lambdaSecretConfigProperties.getSecret()))
+                .headers(h -> h.set("Authorization", encryptSecret(userServiceConfig.getSecret(),userServiceConfig.getPublicKey())))
                 .retrieve()
                 .onStatus(HttpStatus::isError, clientResponse -> {
                     log.error("Unable to get email address for user with sub {}, HTTP status code {}", sub, clientResponse.statusCode());

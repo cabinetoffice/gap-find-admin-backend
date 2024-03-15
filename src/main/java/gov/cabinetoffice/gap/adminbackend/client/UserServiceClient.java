@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -17,6 +16,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.Map;
+
+import static gov.cabinetoffice.gap.adminbackend.utils.HelperUtils.encryptSecret;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ public class UserServiceClient {
     public UserDto getUserForSub(String sub) {
         final String url = userServiceConfig.getDomain() + "/user?userSub={userSub}";
         final HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.add("Authorization", userServiceConfig.getSecret());
+        requestHeaders.add("Authorization", encryptSecret(userServiceConfig.getSecret(),userServiceConfig.getPublicKey()));
         final HttpEntity<String> requestEntity = new HttpEntity<>(null, requestHeaders);
         final Map<String, String> params = Collections.singletonMap("userSub", sub);
         ResponseEntity<UserDto> response;
