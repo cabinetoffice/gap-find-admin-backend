@@ -17,6 +17,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponse
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.GrantAdvertException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UserNotFoundException;
@@ -168,8 +169,11 @@ public class GrantAdvertService {
         GrantAdvert grantAdvert = grantAdvertRepository.findById(pagePatchDto.getGrantAdvertId())
                 .orElseThrow(() -> new NotFoundException(
                         String.format("GrantAdvert with id %s not found", pagePatchDto.getGrantAdvertId())));
+
+        validateAdvertStatus(grantAdvert);
         // adds the static opening and closing time to the date question
         addStaticTimeToDateQuestion(pagePatchDto);
+
 
         // if response/section/page does not exist, create it. If it does exist, update it
         GrantAdvertResponse response = Optional.ofNullable(grantAdvert.getResponse()).orElseGet(() -> {
@@ -594,5 +598,11 @@ public class GrantAdvertService {
 
                     grantAdvertRepository.save(advert);
                 });
+    }
+
+    public static void validateAdvertStatus(GrantAdvert grantAdvert) {
+        if (grantAdvert.getStatus() == GrantAdvertStatus.PUBLISHED || grantAdvert.getStatus() == GrantAdvertStatus.SCHEDULED) {
+            throw new ConflictException("GRANT_ADVERT_MULTIPLE_EDITORS");
+        }
     }
 }
