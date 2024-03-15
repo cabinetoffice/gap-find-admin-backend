@@ -182,7 +182,7 @@ public class GrantAdvertService {
                 .orElseThrow(() -> new NotFoundException(
                         String.format("GrantAdvert with id %s not found", pagePatchDto.getGrantAdvertId())));
 
-        advertPublishedOrScheduledError(grantAdvert);
+        validateAdvertStatus(grantAdvert);
         // adds the static opening and closing time to the date question
         addStaticTimeToDateQuestion(pagePatchDto);
 
@@ -610,7 +610,7 @@ public class GrantAdvertService {
                 });
     }
 
-    public static void advertPublishedOrScheduledError(GrantAdvert grantAdvert) {
+    public static void validateAdvertStatus(GrantAdvert grantAdvert) {
         if (grantAdvert.getStatus() == GrantAdvertStatus.PUBLISHED || grantAdvert.getStatus() == GrantAdvertStatus.SCHEDULED) {
             throw new ConflictException("GRANT_ADVERT_MULTIPLE_EDITORS");
         }
