@@ -22,6 +22,6 @@ public class CreateGrantAdvertDto {
 
     @NotBlank(message = "Enter the name of your grant")
     @Size(max = 255, message = "Grant name cannot be greater than 255 characters")
-    private String name;
+    private String advertName;
 
 }

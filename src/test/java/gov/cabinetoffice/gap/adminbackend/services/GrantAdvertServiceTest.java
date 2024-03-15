@@ -9,7 +9,10 @@ import com.contentful.java.cma.model.CMAEntry;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
@@ -25,23 +28,12 @@ import gov.cabinetoffice.gap.adminbackend.models.*;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
-import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.SAMPLE_SCHEME_ID;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomGrantAdvertGenerators;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.json.JSONObject;
-
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
-import static org.mockito.Mockito.*;
-
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -50,6 +42,13 @@ import reactor.core.publisher.Mono;
 
 import java.time.*;
 import java.util.*;
+
+import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.SAMPLE_SCHEME_ID;
+import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
 class GrantAdvertServiceTest {
@@ -100,6 +99,9 @@ class GrantAdvertServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private OpenSearchService openSearchService;
 
     @InjectMocks
     @Spy
@@ -805,6 +807,8 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
+            when(contentfulEntries.publish(publishedContentfulAdvert)).thenReturn(publishedContentfulAdvert);
+
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
 
             final WebClient webClient = mock(WebClient.class);
@@ -828,6 +832,8 @@ class GrantAdvertServiceTest {
             grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
+
+            verify(openSearchService).indexEntry(publishedContentfulAdvert);
 
             GrantAdvert savedAdvert = grantAdvertArgumentCaptor.getValue();
 
@@ -881,6 +887,7 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.update(Mockito.any())).thenReturn(publishedContentfulAdvert);
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert,
                     publishedContentfulAdvert);
+            when(contentfulEntries.publish(publishedContentfulAdvert)).thenReturn(publishedContentfulAdvert);
             doReturn(grantAvertInDatabase).when(grantAdvertService).save(any());
 
             final WebClient webClient = mock(WebClient.class);
@@ -901,6 +908,7 @@ class GrantAdvertServiceTest {
             grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
+            verify(openSearchService).indexEntry(publishedContentfulAdvert);
 
             final GrantAdvert savedAdvert = grantAdvertArgumentCaptor.getValue();
 
@@ -966,6 +974,8 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
+            when(contentfulEntries.publish(publishedContentfulAdvert)).thenReturn(publishedContentfulAdvert);
+
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
@@ -973,6 +983,7 @@ class GrantAdvertServiceTest {
             grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
+            verify(openSearchService).indexEntry(publishedContentfulAdvert);
 
             GrantAdvert savedAdvert = grantAdvertArgumentCaptor.getValue();
 
@@ -1029,6 +1040,7 @@ class GrantAdvertServiceTest {
             when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(grantAdvert));
             when(contentfulManagementClient.entries()).thenReturn(contentfulEntries);
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(contentfulAdvert);
+            when(contentfulEntries.unPublish(contentfulAdvert)).thenReturn(contentfulAdvert);
             doReturn(advert).when(grantAdvertService).save(any());
 
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
@@ -1039,6 +1051,7 @@ class GrantAdvertServiceTest {
             grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
+            verify(openSearchService).removeIndexEntry(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
 
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);
@@ -1056,6 +1069,7 @@ class GrantAdvertServiceTest {
             when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(grantAdvert));
             when(contentfulManagementClient.entries()).thenReturn(contentfulEntries);
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(contentfulAdvert);
+            when(contentfulEntries.unPublish(contentfulAdvert)).thenReturn(contentfulAdvert);
             doReturn(advert).when(grantAdvertService).save(any());
 
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
@@ -1066,6 +1080,7 @@ class GrantAdvertServiceTest {
             grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
+            verify(openSearchService).removeIndexEntry(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
 
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);

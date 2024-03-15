@@ -76,6 +76,7 @@ public abstract class SchemeMapper {
 
     @Mapping(target = "ggisIdentifier", source = "ggisReference")
     @Mapping(target = "email", source = "contactEmail")
+    @Mapping(target = "name", source = "grantName")
     public abstract SchemeEntity schemePostDtoToEntity(SchemePostDTO schemePostDto);
 
     public abstract List<SchemeEntity> schemePostDtoListToEntityList(List<SchemePostDTO> schemePostDtoList);
