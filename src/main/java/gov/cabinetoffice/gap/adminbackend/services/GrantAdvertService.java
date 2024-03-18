@@ -70,19 +70,21 @@ public class GrantAdvertService {
         final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Optional.ofNullable(auth)
                 .ifPresentOrElse(authentication -> {
-                    final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
-                    final GrantAdmin admin = grantAdminRepository.findByGapUserUserSub(adminSession.getUserSub())
-                            .orElseThrow(() -> new UserNotFoundException("Could not find an admin with sub " + adminSession.getUserSub()));
+                    if (!HelperUtils.isAnonymousSession()) {
+                        final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
+                        final GrantAdmin admin = grantAdminRepository.findByGapUserUserSub(adminSession.getUserSub())
+                                .orElseThrow(() -> new UserNotFoundException("Could not find an admin with sub " + adminSession.getUserSub()));
 
-                    if (advert.getScheme().getGrantAdmins().contains(admin)) {
-                        final Instant updatedAt = Instant.now(clock);
-                        advert.setLastUpdated(updatedAt);
-                        advert.setLastUpdatedBy(admin);
+                        if (advert.getScheme().getGrantAdmins().contains(admin)) {
+                            final Instant updatedAt = Instant.now(clock);
+                            advert.setLastUpdated(updatedAt);
+                            advert.setLastUpdatedBy(admin);
 
-                        advert.getScheme().setLastUpdated(updatedAt);
-                        advert.getScheme().setLastUpdatedBy(adminSession.getGrantAdminId());
+                            advert.getScheme().setLastUpdated(updatedAt);
+                            advert.getScheme().setLastUpdatedBy(adminSession.getGrantAdminId());
 
-                        advert.setValidLastUpdated(true);
+                            advert.setValidLastUpdated(true);
+                        }
                     }
                 }, () -> log.warn("Admin session was null. Update must have been performed by a lambda."));
 
