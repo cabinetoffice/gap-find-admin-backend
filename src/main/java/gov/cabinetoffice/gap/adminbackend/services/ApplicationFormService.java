@@ -66,13 +66,15 @@ public class ApplicationFormService {
 
         Optional.ofNullable(HelperUtils.getAdminSessionForAuthenticatedUser())
                 .ifPresentOrElse(adminSession -> {
-                    final SchemeEntity grantScheme = schemeRepository.findById(applicationForm.getGrantSchemeId())
-                            .orElseThrow(() -> new EntityNotFoundException("Could not find grant scheme with ID" + applicationForm.getGrantSchemeId()));
+                    if (!HelperUtils.isAnonymousSession()) {
+                        final SchemeEntity grantScheme = schemeRepository.findById(applicationForm.getGrantSchemeId())
+                                .orElseThrow(() -> new EntityNotFoundException("Could not find grant scheme with ID" + applicationForm.getGrantSchemeId()));
 
-                    grantScheme.setLastUpdated(Instant.now(clock));
-                    grantScheme.setLastUpdatedBy(adminSession.getGrantAdminId());
+                        grantScheme.setLastUpdated(Instant.now(clock));
+                        grantScheme.setLastUpdatedBy(adminSession.getGrantAdminId());
 
-                    this.schemeRepository.save(grantScheme);
+                        this.schemeRepository.save(grantScheme);
+                    }
                 }, () -> log.warn("Admin session was null. Update must have been performed by a lambda."));
 
         return savedApplicationForm;
