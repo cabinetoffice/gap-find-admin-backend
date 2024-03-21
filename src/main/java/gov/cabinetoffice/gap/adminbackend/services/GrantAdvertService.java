@@ -285,6 +285,7 @@ public class GrantAdvertService {
     }
 
     public GrantAdvert publishAdvert(UUID advertId) {
+        final Instant now = Instant.now();
         final GrantAdvert advert = getAdvertById(advertId);
 
         CMAEntry contentfulAdvert;
@@ -308,6 +309,7 @@ public class GrantAdvertService {
                 @Override
                 protected void onSuccess(CMAEntry result) {
                     openSearchService.indexEntry(result);
+                    log.info("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
                 }
             });
         }
@@ -414,14 +416,15 @@ public class GrantAdvertService {
         contentfulAdvert.setField(questionResponse.getId(), CONTENTFUL_LOCALE, contentfulValue);
     }
 
-    private CMAEntry createRichTextQuestionsInContentful(final GrantAdvert advert, final CMAEntry contentfulAdvert) {
+    private void createRichTextQuestionsInContentful(final GrantAdvert advert, final CMAEntry contentfulAdvert) {
         final List<GrantAdvertQuestionResponse> responses = getRichTextResponses(advert);
         final String requestBody = buildRichTextPatchRequestBody(responses);
         final String contentfulUrl = String.format("https://api.contentful.com/spaces/%1$s/environments/%2$s/entries/%3$s",
                 contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
                 contentfulAdvert.getId());
 
-        return webClientBuilder.build()
+        final Instant now = Instant.now();
+        webClientBuilder.build()
                 .patch()
                 .uri(contentfulUrl)
                 .headers(h -> {
@@ -434,6 +437,7 @@ public class GrantAdvertService {
                 .bodyToMono(CMAEntry.class)
                 .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", contentfulUrl, exception.getMessage()))
                 .block();
+        log.info("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
     }
 
     private List<GrantAdvertQuestionResponse> getRichTextResponses(final GrantAdvert advert) {
