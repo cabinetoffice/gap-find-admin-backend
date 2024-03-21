@@ -435,7 +435,10 @@ public class GrantAdvertService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(CMAEntry.class)
-                .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", contentfulUrl, exception.getMessage()))
+                .doOnError(exception -> {
+                    log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", contentfulUrl, exception.getMessage());
+                    log.info("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
+                })
                 .block();
         log.info("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
     }
