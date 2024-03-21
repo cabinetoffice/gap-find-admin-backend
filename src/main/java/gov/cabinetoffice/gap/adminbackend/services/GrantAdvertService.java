@@ -286,7 +286,6 @@ public class GrantAdvertService {
         final GrantAdvert advert = getAdvertById(advertId);
 
         CMAEntry contentfulAdvert;
-
         // if advert has not been published previously
         if (advert.getFirstPublishedDate() == null) {
             contentfulAdvert = createAdvertInContentful(advert);
@@ -297,6 +296,7 @@ public class GrantAdvertService {
             advert.setLastPublishedDate(Instant.now());
         }
 
+        contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId() == null ? contentfulAdvert.getId() : advert.getContentfulEntryId());
         advert.setStatus(GrantAdvertStatus.PUBLISHED);
         advert.setContentfulSlug(contentfulAdvert.getField("label", CONTENTFUL_LOCALE));
         advert.setContentfulEntryId(contentfulAdvert.getId());

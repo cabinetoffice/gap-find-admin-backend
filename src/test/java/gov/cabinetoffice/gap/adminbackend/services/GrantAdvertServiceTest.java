@@ -819,6 +819,8 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.create(Mockito.eq("grantDetails"), Mockito.any()))
                     .thenReturn(unpublishedContentfulAdvert);
 
+            when(contentfulEntries.fetchOne("entry-id")).thenReturn(publishedContentfulAdvert);
+
             when(contentfulEntries.async()).thenReturn(async);
 
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
@@ -866,6 +868,9 @@ class GrantAdvertServiceTest {
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
             verify(responseSpec).bodyToMono(CMAEntry.class);
+
+            // verify that we've refreshed the data after adding RTF data
+            verify(contentfulEntries).fetchOne("entry-id");
 
             // verify that we've published
             verify(async).publish(eq(publishedContentfulAdvert), any());
@@ -930,6 +935,9 @@ class GrantAdvertServiceTest {
 
             verify(contentfulEntries).update(publishedContentfulAdvert);
 
+            // verify that we've refreshed the data after adding RTF data
+            verify(contentfulEntries, atLeastOnce()).fetchOne(contentfulAdvertId);
+
             // verify that we've published
             verify(async).publish(eq(publishedContentfulAdvert), any());
         }
@@ -974,6 +982,8 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.create(Mockito.eq("grantDetails"), Mockito.any()))
                     .thenReturn(unpublishedContentfulAdvert);
 
+            when(contentfulEntries.fetchOne("entry-id")).thenReturn(publishedContentfulAdvert);
+
             when(contentfulEntries.async()).thenReturn(async);
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
@@ -1006,6 +1016,9 @@ class GrantAdvertServiceTest {
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
             verify(responseSpec).bodyToMono(CMAEntry.class);
+
+            // verify that we've refreshed the data after adding RTF data
+            verify(contentfulEntries).fetchOne("entry-id");
 
             // verify that we've published
             verify(async).publish(eq(publishedContentfulAdvert), any());
