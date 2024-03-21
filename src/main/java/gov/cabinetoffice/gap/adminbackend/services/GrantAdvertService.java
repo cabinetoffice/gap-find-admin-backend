@@ -4,12 +4,16 @@ import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
 import com.contentful.java.cda.CDAEntry;
 import com.contentful.java.cda.QueryOperation;
+import com.contentful.java.cma.CMACallback;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
@@ -280,12 +284,10 @@ public class GrantAdvertService {
             throw new NotFoundException("Grant Advert not found with id of " + grantAdvertId);
     }
 
-    @Transactional
     public GrantAdvert publishAdvert(UUID advertId) {
         final GrantAdvert advert = getAdvertById(advertId);
 
         CMAEntry contentfulAdvert;
-
         // if advert has not been published previously
         if (advert.getFirstPublishedDate() == null) {
             contentfulAdvert = createAdvertInContentful(advert);
@@ -296,24 +298,32 @@ public class GrantAdvertService {
             advert.setLastPublishedDate(Instant.now());
         }
 
-        contentfulAdvert = contentfulManagementClient.entries().publish(contentfulAdvert);
-        openSearchService.indexEntry(contentfulAdvert);
-
+        contentfulAdvert = contentfulManagementClient.entries().fetchOne(contentfulAdvert.getId());
         advert.setStatus(GrantAdvertStatus.PUBLISHED);
         advert.setContentfulSlug(contentfulAdvert.getField("label", CONTENTFUL_LOCALE));
         advert.setContentfulEntryId(contentfulAdvert.getId());
-        updateGrantAdvertApplicationDates(advert);
 
+        if (Boolean.FALSE.equals(contentfulAdvert.isPublished())) {
+            contentfulManagementClient.entries().async().publish(contentfulAdvert, new CMACallback<>() {
+                @Override
+                protected void onSuccess(CMAEntry result) {
+                    openSearchService.indexEntry(result);
+                }
+            });
+        }
+
+        updateGrantAdvertApplicationDates(advert);
         return save(advert);
     }
 
     public void unpublishAdvert(UUID advertId) {
         final GrantAdvert advert = this.getAdvertById(advertId);
+        final CMAEntry contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId());
 
-        CMAEntry contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId());
-
-        contentfulAdvert = contentfulManagementClient.entries().unPublish(contentfulAdvert);
-        openSearchService.removeIndexEntry(contentfulAdvert);
+        if (Boolean.TRUE.equals(contentfulAdvert.isPublished())) {
+            final CMAEntry unpublishedAd = contentfulManagementClient.entries().unPublish(contentfulAdvert);
+            openSearchService.removeIndexEntry(unpublishedAd);
+        }
 
         advert.setStatus(GrantAdvertStatus.DRAFT);
         advert.setUnpublishedDate(Instant.now());
@@ -330,19 +340,10 @@ public class GrantAdvertService {
         contentfulAdvert.setField("grantName", CONTENTFUL_LOCALE, grantAdvert.getGrantAdvertName());
         contentfulAdvert.setField("label", CONTENTFUL_LOCALE, generateUniqueSlug(grantAdvert));
 
-        final CMAEntry createdAAdvert = contentfulManagementClient.entries().create(CONTENTFUL_GRANT_TYPE_ID,
+        final CMAEntry createdAdvert = contentfulManagementClient.entries().create(CONTENTFUL_GRANT_TYPE_ID,
                 contentfulAdvert);
-        createRichTextQuestionsInContentful(grantAdvert, createdAAdvert);
-
-        /*
-         * hate this but because we create a new advert and then immediately update it the
-         * version number in contentful is bumped up, so we need to refresh the data to
-         * prevent errors when publishing the advert :(.
-         *
-         * Absolutely begging to be rate limited by getting this loose with the number of
-         * requests to their API.
-         */
-        return contentfulManagementClient.entries().fetchOne(createdAAdvert.getId());
+        createRichTextQuestionsInContentful(grantAdvert, createdAdvert);
+        return createdAdvert;
     }
 
     private CMAEntry updateAdvertInContentful(final GrantAdvert grantAdvert) {
@@ -358,8 +359,7 @@ public class GrantAdvertService {
 
         final CMAEntry updatedAdvert = contentfulManagementClient.entries().update(contentfulAdvert);
         createRichTextQuestionsInContentful(grantAdvert, updatedAdvert);
-
-        return contentfulManagementClient.entries().fetchOne(updatedAdvert.getId());
+        return updatedAdvert;
     }
 
     private String generateUniqueSlug(final GrantAdvert grantAdvert) {
@@ -414,39 +414,36 @@ public class GrantAdvertService {
         contentfulAdvert.setField(questionResponse.getId(), CONTENTFUL_LOCALE, contentfulValue);
     }
 
-    private void createRichTextQuestionsInContentful(final GrantAdvert advert, final CMAEntry contentfulAdvert) {
+    private CMAEntry createRichTextQuestionsInContentful(final GrantAdvert advert, final CMAEntry contentfulAdvert) {
+        final List<GrantAdvertQuestionResponse> responses = getRichTextResponses(advert);
+        final String requestBody = buildRichTextPatchRequestBody(responses);
+        final String contentfulUrl = String.format("https://api.contentful.com/spaces/%1$s/environments/%2$s/entries/%3$s",
+                contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
+                contentfulAdvert.getId());
 
-        // get all the rich text responses
-        final List<GrantAdvertQuestionResponse> responses = advert.getResponse().getSections().stream()
+        return webClientBuilder.build()
+                .patch()
+                .uri(contentfulUrl)
+                .headers(h -> {
+                    h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
+                    h.set("Content-Type", "application/json-patch+json");
+                    h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
+                })
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(CMAEntry.class)
+                .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", contentfulUrl, exception.getMessage()))
+                .block();
+    }
+
+    private List<GrantAdvertQuestionResponse> getRichTextResponses(final GrantAdvert advert) {
+        return advert.getResponse().getSections().stream()
                 .flatMap(s -> s.getPages().stream()).flatMap(p -> p.getQuestions().stream())
                 .filter(q -> advertDefinition.getSections().stream().flatMap(s -> s.getPages().stream())
                         .flatMap(p -> p.getQuestions().stream())
                         .filter(qr -> qr.getResponseType().equals(AdvertDefinitionQuestionResponseType.RICH_TEXT))
                         .anyMatch(qr -> qr.getId().equals(q.getId())))
                 .toList();
-
-        if (!responses.isEmpty()) {
-            final String requestBody = buildRichTextPatchRequestBody(responses);
-
-            // send to contentful
-            final String url = String.format("https://api.contentful.com/spaces/%1$s/environments/%2$s/entries/%3$s",
-                    contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
-                    contentfulAdvert.getId());
-            log.debug(url);
-            webClientBuilder.build()
-                    .patch()
-                    .uri(url)
-                    .headers(h -> {
-                        h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
-                        h.set("Content-Type", "application/json-patch+json");
-                        h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
-                    })
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", url, exception.getMessage()))
-                    .block();
-        }
     }
 
     // built to replicate
@@ -570,7 +567,6 @@ public class GrantAdvertService {
         // set dates on advert
         grantAdvert.setOpeningDate(openingDateInstant);
         grantAdvert.setClosingDate(closingDateInstant);
-
     }
 
     public void unscheduleGrantAdvert(final UUID advertId) {
