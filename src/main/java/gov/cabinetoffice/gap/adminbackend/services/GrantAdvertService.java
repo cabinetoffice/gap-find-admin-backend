@@ -309,7 +309,7 @@ public class GrantAdvertService {
                 @Override
                 protected void onSuccess(CMAEntry result) {
                     openSearchService.indexEntry(result);
-                    log.info("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
+                    log.debug("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
                 }
             });
         }
@@ -434,13 +434,13 @@ public class GrantAdvertService {
                 })
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToMono(CMAEntry.class)
+                .bodyToMono(void.class)
                 .doOnError(exception -> {
                     log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", contentfulUrl, exception.getMessage());
-                    log.info("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
+                    log.debug("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
                 })
                 .block();
-        log.info("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
+        log.debug("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
     }
 
     private List<GrantAdvertQuestionResponse> getRichTextResponses(final GrantAdvert advert) {
