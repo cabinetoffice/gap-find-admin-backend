@@ -296,7 +296,7 @@ public class GrantAdvertService {
             advert.setLastPublishedDate(Instant.now());
         }
 
-        contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId() == null ? contentfulAdvert.getId() : advert.getContentfulEntryId());
+        contentfulAdvert = contentfulManagementClient.entries().fetchOne(contentfulAdvert.getId());
         advert.setStatus(GrantAdvertStatus.PUBLISHED);
         advert.setContentfulSlug(contentfulAdvert.getField("label", CONTENTFUL_LOCALE));
         advert.setContentfulEntryId(contentfulAdvert.getId());
@@ -340,7 +340,8 @@ public class GrantAdvertService {
 
         final CMAEntry createdAdvert = contentfulManagementClient.entries().create(CONTENTFUL_GRANT_TYPE_ID,
                 contentfulAdvert);
-        return createRichTextQuestionsInContentful(grantAdvert, createdAdvert);
+        createRichTextQuestionsInContentful(grantAdvert, createdAdvert);
+        return createdAdvert;
     }
 
     private CMAEntry updateAdvertInContentful(final GrantAdvert grantAdvert) {
@@ -355,7 +356,8 @@ public class GrantAdvertService {
         contentfulAdvert.setField("grantUpdated", CONTENTFUL_LOCALE, true);
 
         final CMAEntry updatedAdvert = contentfulManagementClient.entries().update(contentfulAdvert);
-        return createRichTextQuestionsInContentful(grantAdvert, updatedAdvert);
+        createRichTextQuestionsInContentful(grantAdvert, updatedAdvert);
+        return updatedAdvert;
     }
 
     private String generateUniqueSlug(final GrantAdvert grantAdvert) {
