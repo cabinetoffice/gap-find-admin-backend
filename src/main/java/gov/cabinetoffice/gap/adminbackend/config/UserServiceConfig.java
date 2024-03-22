@@ -13,7 +13,7 @@ import javax.validation.constraints.NotNull;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Configuration("cognitoConfigurationProperties")
+@Configuration("userServiceConfigurationProperties")
 @ConfigurationProperties(prefix = "user-service")
 public class UserServiceConfig {
 
@@ -25,5 +25,8 @@ public class UserServiceConfig {
 
     @NotNull
     private String secret;
+
+    @NotNull
+    private String publicKey;
 
 }

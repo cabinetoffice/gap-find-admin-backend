@@ -11,9 +11,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.crypto.Cipher;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -109,5 +115,22 @@ public class HelperUtils {
                 .orElse(Collections.emptyList())
                 .stream()
                 .anyMatch(auth -> auth.equals(ROLE_ANONYMOUS));
+    }
+
+    public static String encryptSecret(String secret, String publicKey) {
+        try {
+            final byte[] publicKeyBytes = Base64.getDecoder().decode(publicKey);
+            final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
+            final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            final PublicKey rsaPublicKey = keyFactory.generatePublic(keySpec);
+            final Cipher encryptCipher = Cipher.getInstance("RSA");
+
+            encryptCipher.init(Cipher.ENCRYPT_MODE, rsaPublicKey);
+            final byte[] cipherText = encryptCipher.doFinal(secret.getBytes(StandardCharsets.UTF_8));
+
+            return Base64.getEncoder().encodeToString(cipherText);
+        } catch (Exception e) {
+            throw new RuntimeException("Error occurred while encrypting the secret " + e);
+        }
     }
 }
