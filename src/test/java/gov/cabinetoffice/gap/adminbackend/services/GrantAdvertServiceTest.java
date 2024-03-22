@@ -836,7 +836,7 @@ class GrantAdvertServiceTest {
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-            when(responseSpec.bodyToMono(void.class)).thenReturn(Mono.empty());
+            when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -867,7 +867,7 @@ class GrantAdvertServiceTest {
             verify(requestBodyUriSpec).headers(any());
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
-            verify(responseSpec).bodyToMono(void.class);
+            verify(responseSpec).bodyToMono(Void.class);
 
             // verify that we've refreshed the data after adding RTF data
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
@@ -912,7 +912,7 @@ class GrantAdvertServiceTest {
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-            when(responseSpec.bodyToMono(void.class)).thenReturn(Mono.empty());
+            when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
@@ -931,7 +931,7 @@ class GrantAdvertServiceTest {
             verify(requestBodyUriSpec).headers(any());
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
-            verify(responseSpec).bodyToMono(void.class);
+            verify(responseSpec).bodyToMono(Void.class);
 
             verify(contentfulEntries).update(publishedContentfulAdvert);
 
@@ -962,7 +962,7 @@ class GrantAdvertServiceTest {
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-            when(responseSpec.bodyToMono(void.class)).thenReturn(Mono.empty());
+            when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
 
             when(advertDefinition.getSections()).thenReturn(definition.getSections());
@@ -1015,7 +1015,7 @@ class GrantAdvertServiceTest {
             verify(requestBodyUriSpec).headers(any());
             verify(requestBodyUriSpec).bodyValue(any());
             verify(requestHeadersSpec).retrieve();
-            verify(responseSpec).bodyToMono(void.class);
+            verify(responseSpec).bodyToMono(Void.class);
 
             // verify that we've refreshed the data after adding RTF data
             verify(contentfulEntries).fetchOne(contentfulAdvertId);

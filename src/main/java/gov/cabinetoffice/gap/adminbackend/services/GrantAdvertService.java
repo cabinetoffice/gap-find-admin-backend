@@ -423,6 +423,10 @@ public class GrantAdvertService {
                 contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
                 contentfulAdvert.getId());
 
+        if (responses == null || responses.isEmpty()) {
+            log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: No rich text responses found", contentfulUrl);
+        }
+
         final Instant now = Instant.now();
         webClientBuilder.build()
                 .patch()
@@ -434,13 +438,13 @@ public class GrantAdvertService {
                 })
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToMono(void.class)
+                .bodyToMono(Void.class)
                 .doOnError(exception -> {
                     log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", contentfulUrl, exception.getMessage());
-                    log.debug("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
+                    log.info("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
                 })
                 .block();
-        log.debug("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
+        log.info("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
     }
 
     private List<GrantAdvertQuestionResponse> getRichTextResponses(final GrantAdvert advert) {
