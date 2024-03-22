@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -19,9 +20,13 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 
 public class HelperUtils {
+
+    public static final String ROLE_ANONYMOUS = "ROLE_ANONYMOUS";
 
     /**
      * Used to generate a safely encoded URL, incl. any query params This method will
@@ -94,8 +99,25 @@ public class HelperUtils {
         return userServiceToken.getValue();
     }
 
-    public static String encryptSecret(String secret, String publicKey) {
 
+    /**
+     * Verifies whether a session is anonymous in spring security or not.
+     *
+     * Useful method to have because some of our lambdas use encrypted headers to bypass spring security.
+     * @return
+     */
+    public static boolean isAnonymousSession() {
+        return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+                .map(authentication -> authentication.getAuthorities()
+                        .stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .toList())
+                .orElse(Collections.emptyList())
+                .stream()
+                .anyMatch(auth -> auth.equals(ROLE_ANONYMOUS));
+    }
+
+    public static String encryptSecret(String secret, String publicKey) {
         try {
             final byte[] publicKeyBytes = Base64.getDecoder().decode(publicKey);
             final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);

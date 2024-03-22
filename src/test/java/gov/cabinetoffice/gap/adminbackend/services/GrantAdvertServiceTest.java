@@ -21,6 +21,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponse
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapperImpl;
@@ -81,6 +82,9 @@ class GrantAdvertServiceTest {
 
     @Mock
     private ModuleEntries contentfulEntries;
+
+    @Mock
+    private ModuleEntries.Async async;
 
     @Mock
     private FetchQuery mockedFetchQuery;
@@ -609,14 +613,14 @@ class GrantAdvertServiceTest {
 
             final GrantAdvert advert = GrantAdvert.builder().build();
 
-            String[] openingMultiResponse = new String[] { "10", "10", "2010", "13:00" };
+            String[] openingMultiResponse = new String[]{"10", "10", "2010", "13:00"};
             GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder().id(OPENING_DATE_ID)
                     .multiResponse(openingMultiResponse).build();
-            String[] closingMultiResponse = new String[] { "12", "12", "2012", "13:00" };
+            String[] closingMultiResponse = new String[]{"12", "12", "2012", "13:00"};
             GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder().id(CLOSING_DATE_ID)
                     .multiResponse(closingMultiResponse).build();
-            String[] expectedOpeningMultiResponse = new String[] { "10", "10", "2010", "13", "00" };
-            String[] expectedClosingMultiResponse = new String[] { "12", "12", "2012", "13", "00" };
+            String[] expectedOpeningMultiResponse = new String[]{"10", "10", "2010", "13", "00"};
+            String[] expectedClosingMultiResponse = new String[]{"12", "12", "2012", "13", "00"};
 
             GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder().id(pageId)
                     .status(GrantAdvertPageResponseStatus.COMPLETED)
@@ -661,6 +665,16 @@ class GrantAdvertServiceTest {
             assertThat(closingQuestion.get().getMultiResponse()).isEqualTo(expectedClosingMultiResponse);
         }
 
+        @Test
+        void updatePageResponseThrowsConflictException() {
+            final GrantAdvert advert = GrantAdvert.builder().status(GrantAdvertStatus.PUBLISHED).build();
+            when(grantAdvertRepository.findById(grantAdvertId)).thenReturn(Optional.of(advert));
+            GrantAdvertPageResponseValidationDto datePagePatchDto = GrantAdvertPageResponseValidationDto.builder()
+                    .grantAdvertId(grantAdvertId).sectionId(ADVERT_DATES_SECTION_ID).page(samplePageDto).build();
+
+            assertThrows(ConflictException.class, () -> grantAdvertService.updatePageResponse(datePagePatchDto));
+
+        }
     }
 
     // TODO refactor this test and the underlying service methods to be more maintainable
@@ -807,7 +821,7 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            when(contentfulEntries.publish(publishedContentfulAdvert)).thenReturn(publishedContentfulAdvert);
+            when(contentfulEntries.async()).thenReturn(async);
 
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
 
@@ -824,7 +838,6 @@ class GrantAdvertServiceTest {
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
-
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
@@ -832,8 +845,6 @@ class GrantAdvertServiceTest {
             grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
-
-            verify(openSearchService).indexEntry(publishedContentfulAdvert);
 
             GrantAdvert savedAdvert = grantAdvertArgumentCaptor.getValue();
 
@@ -862,7 +873,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(contentfulEntries).publish(publishedContentfulAdvert);
+            verify(async).publish(eq(publishedContentfulAdvert), any());
         }
 
         @Test
@@ -887,7 +898,7 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.update(Mockito.any())).thenReturn(publishedContentfulAdvert);
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert,
                     publishedContentfulAdvert);
-            when(contentfulEntries.publish(publishedContentfulAdvert)).thenReturn(publishedContentfulAdvert);
+            when(contentfulEntries.async()).thenReturn(async);
             doReturn(grantAvertInDatabase).when(grantAdvertService).save(any());
 
             final WebClient webClient = mock(WebClient.class);
@@ -908,7 +919,6 @@ class GrantAdvertServiceTest {
             grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
-            verify(openSearchService).indexEntry(publishedContentfulAdvert);
 
             final GrantAdvert savedAdvert = grantAdvertArgumentCaptor.getValue();
 
@@ -929,7 +939,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries, atLeastOnce()).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(contentfulEntries).publish(publishedContentfulAdvert);
+            verify(async).publish(eq(publishedContentfulAdvert), any());
         }
 
         @Test
@@ -974,7 +984,7 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            when(contentfulEntries.publish(publishedContentfulAdvert)).thenReturn(publishedContentfulAdvert);
+            when(contentfulEntries.async()).thenReturn(async);
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -983,7 +993,6 @@ class GrantAdvertServiceTest {
             grantAdvertService.publishAdvert(grantAdvertId);
 
             verify(grantAdvertService).save(grantAdvertArgumentCaptor.capture());
-            verify(openSearchService).indexEntry(publishedContentfulAdvert);
 
             GrantAdvert savedAdvert = grantAdvertArgumentCaptor.getValue();
 
@@ -1012,7 +1021,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(contentfulEntries).publish(publishedContentfulAdvert);
+            verify(async).publish(eq(publishedContentfulAdvert), any());
         }
 
     }
@@ -1027,8 +1036,8 @@ class GrantAdvertServiceTest {
         final GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().id(grantAdvertId)
                 .contentfulEntryId(contentfulAdvertId).build();
 
+        @Mock
         final CMAEntry contentfulAdvert = new CMAEntry().setId(contentfulAdvertId).setVersion(2);
-
         @Test
         @WithAdminSession
         void unpublishAdvert_UnpublishesAdvertFromContentful_AndSetsStatusToDraftInDb() {
@@ -1042,6 +1051,7 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(contentfulAdvert);
             when(contentfulEntries.unPublish(contentfulAdvert)).thenReturn(contentfulAdvert);
             doReturn(advert).when(grantAdvertService).save(any());
+            when(contentfulAdvert.isPublished()).thenReturn(true);
 
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
@@ -1071,6 +1081,7 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(contentfulAdvert);
             when(contentfulEntries.unPublish(contentfulAdvert)).thenReturn(contentfulAdvert);
             doReturn(advert).when(grantAdvertService).save(any());
+            when(contentfulAdvert.isPublished()).thenReturn(true);
 
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
