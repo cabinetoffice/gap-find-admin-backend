@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
-import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
@@ -45,8 +44,6 @@ public class SubmissionsController {
     private final S3Service s3Service;
 
     private final FileService fileService;
-
-    private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
 
     @GetMapping(value = "/spotlight-export/{applicationId}", produces = EXPORT_CONTENT_TYPE)
     @CheckSchemeOwnership
@@ -107,7 +104,7 @@ public class SubmissionsController {
             final @PathVariable @NotNull UUID batchExportId) {
         try {
             final LambdaSubmissionDefinition submission = submissionsService.getSubmissionInfo(submissionId,
-                    batchExportId, lambdaSecretConfigProperties.getSecret());
+                    batchExportId);
             return ResponseEntity.ok(submission);
         }
         catch (NotFoundException e) {
