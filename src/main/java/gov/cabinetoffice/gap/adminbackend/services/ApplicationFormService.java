@@ -12,7 +12,6 @@ import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
-import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
@@ -238,13 +237,8 @@ public class ApplicationFormService {
         String questionId = UUID.randomUUID().toString();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
-            ApplicationFormSectionDTO sectionDTO;
-            try {
-                sectionDTO = applicationForm.getDefinition().getSectionById(sectionId);
-            } catch (NotFoundException e) {
-                //If the section does not exist here it must have been recently deleted by another editor.
-                throw new ConflictException("MULTIPLE_EDITORS_SECTION_DELETED");
-            }
+            ApplicationFormSectionDTO sectionDTO =
+                    ApplicationFormUtils.verifyAndGetApplicationFormSection(applicationForm, sectionId);
 
             ApplicationFormQuestionDTO applicationFormQuestionDTO;
             QuestionAbstractPostDTO questionAbstractPostDTO = validatePostQuestion(question);
@@ -328,7 +322,9 @@ public class ApplicationFormService {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
 
-        return applicationForm.getDefinition().getSectionById(sectionId).getQuestionById(questionId);
+        ApplicationFormSectionDTO sectionDTO = ApplicationFormUtils.verifyAndGetApplicationFormSection(applicationForm, sectionId);
+
+        return sectionDTO.getQuestionById(questionId);
 
     }
 
@@ -374,10 +370,11 @@ public class ApplicationFormService {
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
+        final ApplicationFormSectionDTO section = ApplicationFormUtils.verifyAndGetApplicationFormSection(applicationForm, sectionId);
         ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         final List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
-        final ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
+
         final List<ApplicationFormQuestionDTO> questions = section.getQuestions();
         final ApplicationFormQuestionDTO question = section.getQuestionById(questionId);
 
