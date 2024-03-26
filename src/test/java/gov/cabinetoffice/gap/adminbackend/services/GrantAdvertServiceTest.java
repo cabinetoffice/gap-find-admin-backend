@@ -1044,6 +1044,7 @@ class GrantAdvertServiceTest {
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);
             assertThat(advertCaptor.getValue().getStatus()).isEqualTo(GrantAdvertStatus.DRAFT);
             assertThat(advertCaptor.getValue().getUnpublishedDate()).isNotNull();
+            assertThat(advertCaptor.getValue().getContentfulSlug()).isNull();
         }
 
         @Test
@@ -1071,6 +1072,7 @@ class GrantAdvertServiceTest {
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);
             assertThat(advertCaptor.getValue().getStatus()).isEqualTo(GrantAdvertStatus.DRAFT);
             assertThat(advertCaptor.getValue().getUnpublishedDate()).isNotNull();
+            assertThat(advertCaptor.getValue().getContentfulSlug()).isNull();
         }
 
     }
