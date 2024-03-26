@@ -403,6 +403,9 @@ class ApplicationFormServiceTest {
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
             doReturn(form).when(applicationFormService).save(any());
 
+            utilMock.when(() -> ApplicationFormUtils.verifyAndGetApplicationFormSection(any(), any()))
+                    .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY.getDefinition().getSections().get(0));
+
             String questionId = applicationFormService.addQuestionToApplicationForm(
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_GENERIC_POST_DTO, new MockHttpSession());
 
@@ -431,6 +434,9 @@ class ApplicationFormServiceTest {
             Mockito.when(applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.of(SAMPLE_APPLICATION_FORM_ENTITY));
             doReturn(form).when(applicationFormService).save(any());
+
+            utilMock.when(() -> ApplicationFormUtils.verifyAndGetApplicationFormSection(any(), any()))
+                    .thenReturn(SAMPLE_APPLICATION_FORM_ENTITY.getDefinition().getSections().get(0));
 
             String questionId = applicationFormService.addQuestionToApplicationForm(
                     SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID, SAMPLE_QUESTION_OPTIONS_POST_DTO, new MockHttpSession());
@@ -512,6 +518,9 @@ class ApplicationFormServiceTest {
             final HttpSession session = new MockHttpSession();
             when(ApplicationFormServiceTest.this.applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
                     .thenReturn(Optional.of(SAMPLE_EMPTY_APPLICATION_FORM_ENTITY));
+
+            utilMock.when(() -> ApplicationFormUtils.verifyAndGetApplicationFormSection(any(), any()))
+                    .thenThrow(new ConflictException("MULTIPLE_EDITORS_SECTION_DELETED"));
 
             assertThatThrownBy(() -> applicationFormService
                     .addQuestionToApplicationForm(SAMPLE_APPLICATION_ID, SAMPLE_SECTION_ID,
@@ -652,8 +661,8 @@ class ApplicationFormServiceTest {
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
                     .retrieveQuestion(SAMPLE_APPLICATION_ID, "differentId", SAMPLE_QUESTION_ID))
-                            .isInstanceOf(NotFoundException.class)
-                            .hasMessage("Section with id differentId does not exist");
+                            .isInstanceOf(ConflictException.class)
+                            .hasMessage("MULTIPLE_EDITORS_SECTION_DELETED");
 
         }
 
@@ -884,6 +893,7 @@ class ApplicationFormServiceTest {
             ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
 
             ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+            String sectionId =  testApplicationFormEntity.getDefinition().getSections().get(0).getSectionId();
 
             final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
             final Integer increment = 1;
@@ -894,9 +904,29 @@ class ApplicationFormServiceTest {
             doReturn(testApplicationFormEntity).when(applicationFormService).save(any());
 
             assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
-                    .updateQuestionOrder(applicationId, SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, increment, SAMPLE_VERSION - 1))
+                    .updateQuestionOrder(applicationId,sectionId, SAMPLE_QUESTION_ID, increment, SAMPLE_VERSION - 1))
                     .isInstanceOf(ConflictException.class)
                     .hasMessage("MULTIPLE_EDITORS");
+        }
+
+        @Test
+        void updateQuestionOrderSectionDeleted() {
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity testApplicationFormEntity = randomApplicationFormEntity().build();
+
+            final Integer applicationId = testApplicationFormEntity.getGrantApplicationId();
+            final Integer increment = 1;
+
+            when(applicationFormRepository.findById(applicationId))
+                    .thenReturn(Optional.of(testApplicationFormEntity));
+
+            doReturn(testApplicationFormEntity).when(applicationFormService).save(any());
+
+            assertThatThrownBy(() -> ApplicationFormServiceTest.this.applicationFormService
+                    .updateQuestionOrder(applicationId,SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, increment, SAMPLE_VERSION - 1))
+                    .isInstanceOf(ConflictException.class)
+                    .hasMessage("MULTIPLE_EDITORS_SECTION_DELETED");
         }
 
     }
