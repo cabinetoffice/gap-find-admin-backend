@@ -328,6 +328,7 @@ public class GrantAdvertService {
         }
 
         advert.setStatus(GrantAdvertStatus.DRAFT);
+        advert.setContentfulSlug(null);
         advert.setUnpublishedDate(Instant.now());
 
         save(advert);
