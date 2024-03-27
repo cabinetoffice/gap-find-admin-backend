@@ -25,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.odftoolkit.odfdom.doc.OdfTextDocument;
 
@@ -63,9 +65,11 @@ public class ApplicationFormService {
     public ApplicationFormEntity save(ApplicationFormEntity applicationForm) {
         final ApplicationFormEntity savedApplicationForm = applicationFormRepository.save(applicationForm);
 
-        Optional.ofNullable(HelperUtils.getAdminSessionForAuthenticatedUser())
-                .ifPresentOrElse(adminSession -> {
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional.ofNullable(auth)
+                .ifPresentOrElse(authentication -> {
                     if (!HelperUtils.isAnonymousSession()) {
+                        final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
                         final SchemeEntity grantScheme = schemeRepository.findById(applicationForm.getGrantSchemeId())
                                 .orElseThrow(() -> new EntityNotFoundException("Could not find grant scheme with ID" + applicationForm.getGrantSchemeId()));
 
