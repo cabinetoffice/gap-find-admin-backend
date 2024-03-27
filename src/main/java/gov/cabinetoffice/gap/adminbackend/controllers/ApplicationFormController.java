@@ -168,21 +168,18 @@ public class ApplicationFormController {
             @ApiResponse(responseCode = "404", description = "Application not found with given id",
                     content = @Content(mediaType = "application/json")), })
     @LambdasHeaderValidator
-    public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(@PathVariable @NotNull UUID grantAdvertId) {
+    public ResponseEntity<Void> removeApplicationAttachedToGrantAdvert(@PathVariable @NotNull final UUID grantAdvertId) {
         try {
-
-            Integer schemeId = grantAdvertService.getAdvertById(grantAdvertId).getScheme().getId();
-            Optional<ApplicationFormEntity> applicationForm = applicationFormService
-                    .getOptionalApplicationFromSchemeId(schemeId);
+            final Integer schemeId = grantAdvertService.getSchemeIdFromAdvert(grantAdvertId);
+            final Optional<ApplicationFormEntity> applicationForm = applicationFormService.getOptionalApplicationFromSchemeId(schemeId);
             if (applicationForm.isEmpty()) {
                 log.info("No application form attached to grant advert with id: " + grantAdvertId + " was found.");
                 return ResponseEntity.noContent().build();
             }
 
-            ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
+            final ApplicationFormPatchDTO applicationFormPatchDTO = new ApplicationFormPatchDTO();
             applicationFormPatchDTO.setApplicationStatus(ApplicationStatusEnum.REMOVED);
-            this.applicationFormService.patchApplicationForm(applicationForm.get().getGrantApplicationId(),
-                    applicationFormPatchDTO, true);
+            applicationFormService.patchApplicationForm(applicationForm.get().getGrantApplicationId(), applicationFormPatchDTO, true);
 
             return ResponseEntity.noContent().build();
         }
@@ -192,10 +189,10 @@ public class ApplicationFormController {
         catch (UnauthorizedException error) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        catch (ApplicationFormException error) {
+        catch (Exception error) {
+            log.error("Error removing application attached to grant advert with id: " + grantAdvertId, error);
             return ResponseEntity.internalServerError().build();
         }
-
     }
 
     @PatchMapping("/{applicationId}")

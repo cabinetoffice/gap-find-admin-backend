@@ -18,6 +18,10 @@ public interface GrantAdvertRepository extends JpaRepository<GrantAdvert, UUID> 
     @Override
     Optional<GrantAdvert> findById(UUID id);
 
+    @Query("select g from GrantAdvert g where g.id = ?1")
+    @EntityGraph(attributePaths = {"scheme"})
+    Optional<GrantAdvert> findByIdWithScheme(UUID id);
+
     @PreAuthorize("#grantAdminId == authentication.principal.grantAdminId")
     Long deleteByIdAndCreatedById(UUID advertId, Integer grantAdminId);
 

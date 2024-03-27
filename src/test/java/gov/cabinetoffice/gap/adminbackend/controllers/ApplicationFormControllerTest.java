@@ -291,8 +291,7 @@ class ApplicationFormControllerTest {
     @Test
     void removesApplicationAttachedToGrantAdvert_Successfully() throws Exception {
         SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
-        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
-        when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID)).thenReturn(grantAdvert);
+        when(grantAdvertService.getSchemeIdFromAdvert(SAMPLE_ADVERT_ID)).thenReturn(1);
         when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
                 .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
                         .applicationName("application").grantSchemeId(scheme.getId()).build()));
@@ -310,7 +309,7 @@ class ApplicationFormControllerTest {
 
     @Test
     void removesApplicationAttachedToGrantAdvert_throwsNotFoundWhenNoAdvertFound() throws Exception {
-        doThrow(NotFoundException.class).when(grantAdvertService).getAdvertById(SAMPLE_ADVERT_ID);
+        doThrow(NotFoundException.class).when(grantAdvertService).getSchemeIdFromAdvert(SAMPLE_ADVERT_ID);
 
         this.mockMvc
                 .perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
@@ -321,8 +320,7 @@ class ApplicationFormControllerTest {
     @Test
     void removesApplicationAttachedToGrantAdvert_throwsApplicationFormExceptionWhenUnableToPatch() throws Exception {
         SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
-        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
-        when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID)).thenReturn(grantAdvert);
+        when(grantAdvertService.getSchemeIdFromAdvert(SAMPLE_ADVERT_ID)).thenReturn(1);
         when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
                 .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
                         .applicationName("application").grantSchemeId(scheme.getId()).build()));
