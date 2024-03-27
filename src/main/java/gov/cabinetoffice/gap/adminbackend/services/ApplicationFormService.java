@@ -355,7 +355,6 @@ public class ApplicationFormService {
             throw new ApplicationFormException("Error occurred when patching application with id of " + applicationId,
                     e);
         }
-
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")

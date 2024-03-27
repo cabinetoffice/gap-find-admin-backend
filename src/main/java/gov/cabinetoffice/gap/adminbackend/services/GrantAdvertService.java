@@ -126,6 +126,13 @@ public class GrantAdvertService {
         return advert;
     }
 
+    public Integer getSchemeIdFromAdvert(UUID advertId) {
+        return grantAdvertRepository.findByIdWithScheme(advertId)
+                .map(GrantAdvert::getScheme)
+                .map(SchemeEntity::getId)
+                .orElseThrow(() -> new NotFoundException("Scheme not found for advert with id " + advertId));
+    }
+
     public GetGrantAdvertPageResponseDTO getAdvertBuilderPageData(UUID grantAdvertId, String sectionId, String pageId) {
 
         GrantAdvert grantAdvert = getAdvertById(grantAdvertId);
