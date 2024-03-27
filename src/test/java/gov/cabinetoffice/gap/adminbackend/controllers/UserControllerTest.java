@@ -13,6 +13,7 @@ import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.JwtPayload;
 import gov.cabinetoffice.gap.adminbackend.services.JwtService;
+import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
 import gov.cabinetoffice.gap.adminbackend.services.TechSupportUserService;
 import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -70,6 +71,9 @@ class UserControllerTest {
 
     @MockBean
     private UserServiceConfig userServiceConfig;
+
+    @MockBean
+    private SchemeService schemeService;
 
     @MockBean
     private TechSupportUserService techSupportService;
@@ -322,6 +326,26 @@ class UserControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.patch("/users/funding-organisation").content(requestBody)
                 .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
                 .andExpect(status().isNotFound()).andReturn();
+    }
+
+    @Test
+    void shouldRemoveAdminReferenceWhenValidSubIsGiven() throws Exception {
+        final DecodedJWT decodedJWT = TestDecodedJwt.builder().subject("oneLoginSub").build();
+        final JwtPayload jwtPayload = JwtPayload.builder().roles("SUPER_ADMIN").build();
+        when(jwtService.verifyToken("jwt")).thenReturn(decodedJWT);
+        when(jwtService.getPayloadFromJwtV2(decodedJWT)).thenReturn(jwtPayload);
+        when(userService.getGrantAdminIdFromSub(anyString())).thenReturn(
+                Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
+        Mockito.doNothing().when(userService).updateFundingOrganisation(any(GrantAdmin.class), anyString());
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/users/admin-user/123")
+                        .contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer jwt"))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(schemeService, times(1)).removeAdminReference(any());
+        verify(userService, times(1)).deleteAdminUser(any());
+
+
     }
 
 }

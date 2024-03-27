@@ -28,8 +28,9 @@ public class ApplicationFormEntity extends BaseEntity {
     @Column(name = "grant_scheme_id")
     private Integer grantSchemeId;
 
+    @Version
     @Column(name = "version")
-    private Integer version;
+    protected Integer version;
 
     @Column(name = "created")
     private Instant created;

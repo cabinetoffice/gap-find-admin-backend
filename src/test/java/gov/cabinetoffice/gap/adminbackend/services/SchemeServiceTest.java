@@ -5,33 +5,37 @@ import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
+import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
+import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.*;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSchemeGenerator;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.*;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static gov.cabinetoffice.gap.adminbackend.testdata.SchemeTestData.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig
 @WithAdminSession
@@ -47,7 +51,19 @@ class SchemeServiceTest {
     private SessionsService sessionsService;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     private SchemeRepository schemeRepository;
+
+    @Mock
+    private GrantAdminRepository grantAdminRepository;
+
+    @Mock
+    private GrantAdvertService grantAdvertService;
+
+    @Mock
+    private ApplicationFormService applicationFormService;
 
     @Mock
     private FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
@@ -130,20 +146,11 @@ class SchemeServiceTest {
     }
 
     @Test
-    void sendSchemePatchRequest_AttemptingToPatchSchemeNotCreatedByLoggedInUser() {
-        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().createdBy(2).build();
-        when(this.schemeRepository.findById(SAMPLE_SCHEME_ID)).thenReturn(Optional.of(testEntity));
-
-        assertThatThrownBy(() -> this.schemeService.patchExistingScheme(SAMPLE_SCHEME_ID, SCHEME_PATCH_DTO_EXAMPLE))
-                .isInstanceOf(AccessDeniedException.class);
-
-    }
-
-    @Test
     void postNewSchemeHappyPathTest() {
         SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
         SchemeEntity testEntityAfterSave = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntityAfterSave.getId();
+        GrantAdmin mockAdmin = GrantAdmin.builder().id(1).build();
 
         MockHttpSession mockSession = new MockHttpSession();
 
@@ -152,10 +159,14 @@ class SchemeServiceTest {
         when(this.schemeRepository.save(mockEntity)).thenReturn(testEntityAfterSave);
         when(this.featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(false);
 
+        when(this.grantAdminRepository.findById(mockAdmin.getId())).thenReturn(Optional.of(mockAdmin));
+
+
         Integer response = this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, mockSession);
 
         verify(mockEntity).setCreatedBy(1);
         verify(this.schemeRepository).save(mockEntity);
+        verify(mockEntity).addAdmin(mockAdmin);
         verify(this.sessionsService).deleteObjectFromSession(SessionObjectEnum.newScheme, mockSession);
         assertThat(response).as("Scheme ID should match value from mock object").isEqualTo(testSchemeId);
     }
@@ -165,6 +176,8 @@ class SchemeServiceTest {
         SchemeEntity mockEntity = Mockito.mock(SchemeEntity.class);
         SchemeEntity testEntityAfterSave = RandomSchemeGenerator.randomSchemeEntity().build();
         Integer testSchemeId = testEntityAfterSave.getId();
+        GrantAdmin mockAdmin = GrantAdmin.builder().id(1).build();
+
 
         MockHttpSession mockSession = new MockHttpSession();
 
@@ -173,11 +186,14 @@ class SchemeServiceTest {
         when(this.schemeRepository.save(mockEntity)).thenReturn(testEntityAfterSave);
         when(this.featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()).thenReturn(true);
 
+        when(this.grantAdminRepository.findById(mockAdmin.getId())).thenReturn(Optional.of(mockAdmin));
+
         Integer response = this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, mockSession);
 
         verify(mockEntity).setCreatedBy(1);
         verify(mockEntity).setVersion(2);
         verify(this.schemeRepository).save(mockEntity);
+        verify(mockEntity).addAdmin(mockAdmin);
         verify(this.sessionsService).deleteObjectFromSession(SessionObjectEnum.newScheme, mockSession);
         assertThat(response).as("Scheme ID should match value from mock object").isEqualTo(testSchemeId);
     }
@@ -185,10 +201,12 @@ class SchemeServiceTest {
     @Test
     void postNewScheme_UnexpectedError() {
         SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
+        HttpSession session = new MockHttpSession();
+
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
         when(this.schemeRepository.save(testEntity)).thenThrow(new RuntimeException());
 
-        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, new MockHttpSession()))
+        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, session))
                 .isInstanceOf(SchemeEntityException.class)
                 .hasMessage("Something went wrong while creating a new grant scheme.");
 
@@ -197,11 +215,29 @@ class SchemeServiceTest {
     @Test
     void postNewScheme_IllegalArgumentException() {
         SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
+        GrantAdmin mockAdmin = GrantAdmin.builder().id(1).build();
+        HttpSession session = new MockHttpSession();
+
         when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
+        when(this.grantAdminRepository.findById(mockAdmin.getId())).thenReturn(Optional.of(mockAdmin));
         when(this.schemeRepository.save(testEntity)).thenThrow(new IllegalArgumentException());
 
-        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, new MockHttpSession()))
+        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, session))
                 .isInstanceOf(IllegalArgumentException.class);
+
+    }
+
+    @Test
+    void postNewScheme_SchemeEntityException() {
+        Integer invalidId = 999;
+        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().build();
+        HttpSession session = new MockHttpSession();
+
+        when(this.schemeMapper.schemePostDtoToEntity(SCHEME_POST_DTO_EXAMPLE)).thenReturn(testEntity);
+        when(this.grantAdminRepository.findById(invalidId)).thenReturn(null);
+
+        assertThatThrownBy(() -> this.schemeService.postNewScheme(SCHEME_POST_DTO_EXAMPLE, session))
+                .isInstanceOf(SchemeEntityException.class);
 
     }
 
@@ -242,19 +278,8 @@ class SchemeServiceTest {
     }
 
     @Test
-    void deleteASchemeById_EntityFoundButNotCreatedByLoggedInUser() {
-        SchemeEntity testEntity = RandomSchemeGenerator.randomSchemeEntity().createdBy(2).build();
-        Integer testSchemeId = testEntity.getId();
-
-        when(this.schemeRepository.findById(testSchemeId)).thenReturn(Optional.of(testEntity));
-
-        assertThatThrownBy(() -> this.schemeService.deleteASchemeById(testSchemeId))
-                .isInstanceOf(AccessDeniedException.class);
-    }
-
-    @Test
     void getSchemesHappyPathTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID))
                 .thenReturn(SCHEME_ENTITY_LIST_EXAMPLE);
         when(this.schemeMapper.schemeEntityListtoDtoList(SCHEME_ENTITY_LIST_EXAMPLE)).thenReturn(SCHEME_DTOS_EXAMPLE);
 
@@ -267,7 +292,7 @@ class SchemeServiceTest {
 
     @Test
     void getSchemesHappyPathNoResultsTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID))
                 .thenReturn(Collections.emptyList());
 
         List<SchemeDTO> response = this.schemeService.getSignedInUsersSchemes();
@@ -277,7 +302,7 @@ class SchemeServiceTest {
 
     @Test
     void getSchemes_UnexpectedError() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID))
                 .thenThrow(new RuntimeException());
 
         assertThatThrownBy(() -> this.schemeService.getSignedInUsersSchemes())
@@ -286,7 +311,7 @@ class SchemeServiceTest {
 
     @Test
     void getPaginatedSchemesHappyPathTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
                 .thenReturn(SCHEME_ENTITY_LIST_EXAMPLE);
         when(this.schemeMapper.schemeEntityListtoDtoList(SCHEME_ENTITY_LIST_EXAMPLE)).thenReturn(SCHEME_DTOS_EXAMPLE);
 
@@ -299,7 +324,7 @@ class SchemeServiceTest {
 
     @Test
     void getPaginatedSchemesHappyPathNoResultsTest() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
                 .thenReturn(Collections.emptyList());
 
         List<SchemeDTO> response = this.schemeService.getPaginatedSchemes(EXAMPLE_PAGINATION_PROPS);
@@ -309,7 +334,7 @@ class SchemeServiceTest {
 
     @Test
     void getPaginatedSchemes_UnexpectedError() {
-        when(this.schemeRepository.findByCreatedByOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
+        when(this.schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(SAMPLE_USER_ID, EXAMPLE_PAGINATION_PROPS))
                 .thenThrow(new RuntimeException());
 
         assertThatThrownBy(() -> this.schemeService.getPaginatedSchemes(EXAMPLE_PAGINATION_PROPS))
@@ -333,19 +358,106 @@ class SchemeServiceTest {
     }
 
     @Test
-    void patchCreatedByUpdatesGrantScheme() {
+    void updateGrantSchemeOwner_AddsNewOwner_AndRemovesOldOne() {
         final int testAdmin = 1;
         final int patchedAdmin = 2;
-        SchemeEntity testScheme = SchemeEntity.builder().id(1).createdBy(testAdmin).build();
-        SchemeEntity patchedScheme = SchemeEntity.builder().id(1).createdBy(patchedAdmin).build();
 
-        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.of(testScheme));
-        Mockito.when(SchemeServiceTest.this.schemeRepository.save(testScheme)).thenReturn(patchedScheme);
-        Mockito.when(SchemeServiceTest.this.schemeRepository.findById(2)).thenReturn(Optional.of(patchedScheme));
+        final FundingOrganisation originalFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+        final GrantAdmin originalOwner = GrantAdmin.builder()
+                .id(testAdmin)
+                .funder(originalFunder)
+                .build();
+        final SchemeEntity testScheme = SchemeEntity.builder()
+                .id(1)
+                .createdBy(testAdmin)
+                .grantAdmins(new ArrayList<> (List.of(originalOwner)))
+                .build();
 
-        SchemeServiceTest.this.schemeService.patchCreatedBy(
-                GrantAdmin.builder().id(2).funder(FundingOrganisation.builder().id(1).build()).build(), 1);
-        AssertionsForClassTypes.assertThat(testScheme.getCreatedBy()).isEqualTo(patchedScheme.getCreatedBy());
+        final FundingOrganisation newFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+        final GrantAdmin newOwner = GrantAdmin.builder()
+                .id(patchedAdmin)
+                .funder(newFunder)
+                .build();
+        final SchemeEntity patchedScheme = SchemeEntity.builder()
+                .id(1)
+                .createdBy(patchedAdmin)
+                .grantAdmins(List.of(newOwner))
+                .build();
+
+        final ArgumentCaptor<SchemeEntity> schemeCaptor = ArgumentCaptor.forClass(SchemeEntity.class);
+
+        when(schemeRepository.findById(1))
+                .thenReturn(Optional.of(testScheme));
+        when(schemeRepository.save(testScheme))
+                .thenReturn(patchedScheme);
+        when(schemeRepository.findById(2))
+                .thenReturn(Optional.of(patchedScheme));
+
+
+        schemeService.updateGrantSchemeOwner(newOwner, 1);
+
+        assertThat(testScheme.getCreatedBy()).isEqualTo(patchedScheme.getCreatedBy());
+        assertThat(testScheme.getFunderId()).isEqualTo(newFunder.getId());
+
+        verify(schemeRepository).save(schemeCaptor.capture());
+
+        final SchemeEntity savedScheme = schemeCaptor.getValue();
+        assertThat(savedScheme.getGrantAdmins()).doesNotContain(originalOwner);
+        assertThat(savedScheme.getGrantAdmins()).contains(newOwner);
+    }
+
+    @Test
+    void updateGrantSchemeOwner_DoesNotReAddNewOwnerAsEditor_IfNewOwnerIsExistingEditor() {
+        final int testAdmin = 1;
+        final int patchedAdmin = 2;
+
+        final FundingOrganisation originalFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+
+        final GrantAdmin originalOwner = GrantAdmin.builder()
+                .id(testAdmin)
+                .funder(originalFunder)
+                .build();
+
+        final FundingOrganisation newFunder = FundingOrganisation.builder()
+                .id(1)
+                .build();
+
+        final GrantAdmin newOwner = GrantAdmin.builder()
+                .id(patchedAdmin)
+                .funder(newFunder)
+                .build();
+
+        final SchemeEntity testScheme = SchemeEntity.builder()
+                .id(1)
+                .createdBy(testAdmin)
+                .grantAdmins(new ArrayList<> (List.of(originalOwner, newOwner)))
+                .build();
+
+        final SchemeEntity patchedScheme = Mockito.spy(
+                SchemeEntity.builder()
+                        .id(1)
+                        .createdBy(patchedAdmin)
+                        .grantAdmins(List.of(newOwner))
+                        .build()
+        );
+
+        when(schemeRepository.findById(1))
+                .thenReturn(Optional.of(testScheme));
+        when(schemeRepository.save(testScheme))
+                .thenReturn(patchedScheme);
+        when(schemeRepository.findById(2))
+                .thenReturn(Optional.of(patchedScheme));
+
+
+        schemeService.updateGrantSchemeOwner(newOwner, 1);
+
+        verify(patchedScheme, never()).addAdmin(newOwner);
     }
 
     @Test
@@ -353,9 +465,106 @@ class SchemeServiceTest {
         Mockito.when(SchemeServiceTest.this.schemeRepository.findById(1)).thenReturn(Optional.empty());
 
         AssertionsForClassTypes.assertThatThrownBy(
-                () -> SchemeServiceTest.this.schemeService.patchCreatedBy(GrantAdmin.builder().id(1).build(), 1))
+                () -> SchemeServiceTest.this.schemeService.updateGrantSchemeOwner(GrantAdmin.builder().id(1).build(), 1))
                 .isInstanceOf(SchemeEntityException.class).hasMessage(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: 1");
     }
 
+    @Test
+    void getPaginatedOwnedSchemes_Success() {
+        final int adminId = 1;
+        final Pageable pagination = Pageable.ofSize(2);
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(1, pagination))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getPaginatedOwnedSchemesByAdminId(adminId, pagination);
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void getOwnedSchemes_Success() {
+        final int adminId = 1;
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(1))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getOwnedSchemesByAdminId(adminId);
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void getPaginatedEditableSchemes_Success() {
+        final int adminId = 1;
+        final Pageable pagination = Pageable.ofSize(2);
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(1, 1, pagination))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getPaginatedEditableSchemesByAdminId(adminId, pagination);
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void getEditableSchemes_Success() {
+        final int adminId = 1;
+        final SchemeEntity scheme = SchemeEntity.builder().build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+        final SchemeDTO schemeDto = SchemeDTO.builder().build();
+        final List<SchemeDTO> schemeDtos = List.of(schemeDto);
+
+        when(schemeRepository.findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(1, 1))
+                .thenReturn(schemes);
+
+        when(schemeMapper.schemeEntityListtoDtoList(schemes))
+                .thenReturn(schemeDtos);
+
+        final List<SchemeDTO> methodResponse = schemeService.getEditableSchemesByAdminId(adminId);
+
+        assertThat(methodResponse).isEqualTo(schemeDtos);
+    }
+
+    @Test
+    void testRemoveAdminReferenceWhenUserExists() {
+
+        final String userSub = "123";
+        final GrantAdmin grantAdmin = GrantAdmin.builder().id(1)
+                .gapUser(GapUser.builder().userSub(userSub).build()).build();
+
+        final SchemeEntity scheme = SchemeEntity.builder().id(1).lastUpdatedBy(grantAdmin.getId()).lastUpdatedBy(1).build();
+        final List<SchemeEntity> schemes = List.of(scheme);
+
+        when(grantAdminRepository.findByGapUserUserSub(anyString())).thenReturn(Optional.of(grantAdmin));
+        when(schemeRepository.findByGrantAdminsIdOrderByCreatedDateDesc(any())).thenReturn(schemes);
+
+        schemeService.removeAdminReference("userSub");
+
+        verify(schemeRepository).saveAll(schemes);
+        verify(grantAdvertService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
+        verify(applicationFormService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
+    }
 }

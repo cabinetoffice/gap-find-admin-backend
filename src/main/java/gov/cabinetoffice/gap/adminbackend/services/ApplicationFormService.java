@@ -5,6 +5,8 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.*;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.TemplateApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
@@ -15,21 +17,25 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ApplicationFormMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
+import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.TemplateApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 
@@ -44,11 +50,38 @@ public class ApplicationFormService {
 
     private final TemplateApplicationFormRepository templateApplicationFormRepository;
 
+    private final SchemeRepository schemeRepository;
+
     private final ApplicationFormMapper applicationFormMapper;
 
     private final SessionsService sessionsService;
 
+    private final OdtService odtService;
+
     private final Validator validator;
+
+    private final Clock clock;
+
+    public ApplicationFormEntity save(ApplicationFormEntity applicationForm) {
+        final ApplicationFormEntity savedApplicationForm = applicationFormRepository.save(applicationForm);
+
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional.ofNullable(auth)
+                .ifPresentOrElse(authentication -> {
+                    if (!HelperUtils.isAnonymousSession()) {
+                        final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
+                        final SchemeEntity grantScheme = schemeRepository.findById(applicationForm.getGrantSchemeId())
+                                .orElseThrow(() -> new EntityNotFoundException("Could not find grant scheme with ID" + applicationForm.getGrantSchemeId()));
+
+                        grantScheme.setLastUpdated(Instant.now(clock));
+                        grantScheme.setLastUpdatedBy(adminSession.getGrantAdminId());
+
+                        this.schemeRepository.save(grantScheme);
+                    }
+                }, () -> log.warn("Admin session was null. Update must have been performed by a lambda."));
+
+        return savedApplicationForm;
+    }
 
     /**
      * This method is responsible for saving basic details about an application form to
@@ -69,7 +102,7 @@ public class ApplicationFormService {
 
             newFormEntity.setCreatedBy(session.getGrantAdminId());
 
-            final ApplicationFormEntity save = this.applicationFormRepository.save(newFormEntity);
+            final ApplicationFormEntity save = save(newFormEntity);
             return new GenericPostResponseDTO(save.getGrantApplicationId());
         }
         catch (ApplicationFormException e) {
@@ -84,29 +117,20 @@ public class ApplicationFormService {
 
     public List<ApplicationFormsFoundDTO> getMatchingApplicationFormsIds(
             ApplicationFormExistsDTO applicationFormExistsDTO) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         List<ApplicationFormsFoundView> applicationFormsFoundView = this.applicationFormRepository
-                .findMatchingApplicationForm(session.getGrantAdminId(),
-                        applicationFormExistsDTO.getGrantApplicationId(), applicationFormExistsDTO.getApplicationName(),
+                .findMatchingApplicationForm(applicationFormExistsDTO.getGrantApplicationId(), applicationFormExistsDTO.getApplicationName(),
                         applicationFormExistsDTO.getGrantSchemeId());
 
         return this.applicationFormMapper.applicationFormFoundViewToDTO(applicationFormsFoundView);
     }
 
-    public ApplicationFormDTO retrieveApplicationFormSummary(Integer applicationId, Boolean withSections,
-            Boolean withQuestions) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
+    public ApplicationFormDTO retrieveApplicationFormSummary(Integer applicationId, boolean withSections,
+            boolean withQuestions) {
         if (withSections) {
             ApplicationFormEntity applicationFormEntity = this.applicationFormRepository.findById(applicationId)
                     .orElseThrow(() -> new ApplicationFormException("No application found with id " + applicationId));
             if (!withQuestions) {
                 applicationFormEntity.getDefinition().getSections().forEach(section -> section.setQuestions(null));
-            }
-            if (!session.getGrantAdminId().equals(applicationFormEntity.getCreatedBy())) {
-                throw new AccessDeniedException("User " + session.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
             }
             return this.applicationFormMapper.applicationEntityToDto(applicationFormEntity);
         }
@@ -114,24 +138,13 @@ public class ApplicationFormService {
             ApplicationFormNoSections applicationFormNoSections = this.applicationFormRepository
                     .findByGrantApplicationId(applicationId)
                     .orElseThrow(() -> new ApplicationFormException("No application found with id " + applicationId));
-            if (!session.getGrantAdminId().equals(applicationFormNoSections.getCreatedBy())) {
-                throw new AccessDeniedException("User " + session.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
             return this.applicationFormMapper.applicationEntityNoSectionsToDto(applicationFormNoSections);
         }
     }
 
     public void deleteApplicationForm(Integer applicationId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         ApplicationFormEntity applicationFormEntity = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException("No application found with id " + applicationId));
-
-        if (!session.getGrantAdminId().equals(applicationFormEntity.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
 
         this.applicationFormRepository.delete(applicationFormEntity);
     }
@@ -142,14 +155,9 @@ public class ApplicationFormService {
 
     public void patchQuestionValues(Integer applicationId, String sectionId, String questionId,
             ApplicationFormQuestionDTO questionDto, HttpSession session) {
-        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
 
-            if (!adminSession.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-                throw new AccessDeniedException("User " + adminSession.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
+            ApplicationFormUtils.verifyApplicationFormVersion(questionDto.getVersion(), applicationForm);
 
             ApplicationFormQuestionDTO questionById = applicationForm.getDefinition().getSectionById(sectionId)
                     .getQuestionById(questionId);
@@ -169,9 +177,9 @@ public class ApplicationFormService {
                         (QuestionOptionsPatchDTO) questionPatchDTO, questionById);
             }
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
-            this.applicationFormRepository.save(applicationForm);
+            save(applicationForm);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.updatedQuestion, session);
         }, () -> {
             throw new NotFoundException("Application with id " + applicationId + " does not exist");
@@ -229,16 +237,12 @@ public class ApplicationFormService {
 
     public String addQuestionToApplicationForm(Integer applicationId, String sectionId,
             ApplicationFormQuestionDTO question, HttpSession session) {
-        AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         String questionId = UUID.randomUUID().toString();
 
         this.applicationFormRepository.findById(applicationId).ifPresentOrElse(applicationForm -> {
-
-            if (!adminSession.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-                throw new AccessDeniedException("User " + adminSession.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
+            ApplicationFormSectionDTO sectionDTO =
+                    ApplicationFormUtils.verifyAndGetApplicationFormSection(applicationForm, sectionId);
 
             ApplicationFormQuestionDTO applicationFormQuestionDTO;
             QuestionAbstractPostDTO questionAbstractPostDTO = validatePostQuestion(question);
@@ -255,11 +259,11 @@ public class ApplicationFormService {
             applicationFormQuestionDTO.getValidation()
                     .putAll(applicationFormQuestionDTO.getResponseType().getValidation());
 
-            applicationForm.getDefinition().getSectionById(sectionId).getQuestions().add(applicationFormQuestionDTO);
+            sectionDTO.getQuestions().add(applicationFormQuestionDTO);
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, adminSession, false);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
-            this.applicationFormRepository.save(applicationForm);
+            save(applicationForm);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newQuestion, session);
         }, () -> {
             throw new NotFoundException("Application with id " + applicationId + " does not exist");
@@ -299,16 +303,12 @@ public class ApplicationFormService {
 
     }
 
-    public void deleteQuestionFromSection(Integer applicationId, String sectionId, String questionId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+    public void deleteQuestionFromSection(Integer applicationId, String sectionId, String questionId, Integer version) {
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
 
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         boolean questionDeleted = applicationForm.getDefinition().getSectionById(sectionId).getQuestions()
                 .removeIf(question -> Objects.equals(question.getQuestionId(), questionId));
@@ -317,40 +317,24 @@ public class ApplicationFormService {
             throw new NotFoundException("Question with id " + questionId + " does not exist");
         }
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
-        this.applicationFormRepository.save(applicationForm);
-
+        save(applicationForm);
     }
 
     public ApplicationFormQuestionDTO retrieveQuestion(Integer applicationId, String sectionId, String questionId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
 
-        if (!session.getGrantAdminId().equals(applicationForm.getCreatedBy())) {
-            throw new AccessDeniedException("User " + session.getGrantAdminId()
-                    + " is unable to access the application form with id " + applicationId);
-        }
+        ApplicationFormSectionDTO sectionDTO = ApplicationFormUtils.verifyAndGetApplicationFormSection(applicationForm, sectionId);
 
-        return applicationForm.getDefinition().getSectionById(sectionId).getQuestionById(questionId);
+        return sectionDTO.getQuestionById(questionId);
 
     }
 
     public void patchApplicationForm(Integer applicationId, ApplicationFormPatchDTO patchDTO, boolean isLambdaCall) {
-        AdminSession session = null;
-        ApplicationFormEntity application = this.applicationFormRepository.findByIdWithNoOwnershipCheck(applicationId)
+        ApplicationFormEntity application = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist."));
-
-        if (!isLambdaCall) {
-            session = HelperUtils.getAdminSessionForAuthenticatedUser();
-
-            if (!application.getCreatedBy().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException("User " + session.getGrantAdminId()
-                        + " is unable to access the application form with id " + applicationId);
-            }
-        }
 
         if (patchDTO.getApplicationStatus() == ApplicationStatusEnum.PUBLISHED && application.getDefinition()
                 .getSections().stream().anyMatch(section -> section.getQuestions().isEmpty())) {
@@ -363,35 +347,37 @@ public class ApplicationFormService {
                 application.setLastPublished(Instant.now());
             }
 
-            ApplicationFormUtils.updateAuditDetailsAfterFormChange(application, session, isLambdaCall);
+            ApplicationFormUtils.updateAuditDetailsAfterFormChange(application, isLambdaCall);
 
-            this.applicationFormRepository.save(application);
+            save(application);
         }
         catch (Exception e) {
             throw new ApplicationFormException("Error occurred when patching application with id of " + applicationId,
                     e);
         }
-
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(Integer adminId, Integer schemeId) {
-        Optional<ApplicationFormEntity> applicationOptional = this.applicationFormRepository
-                .findByGrantSchemeId(schemeId);
-        if (applicationOptional.isPresent()) {
-            final ApplicationFormEntity application = applicationOptional.get();
-            application.setCreatedBy(adminId);
-            this.applicationFormRepository.save(application);
-        }
+    public void updateApplicationOwner(Integer adminId, Integer schemeId) {
+        this.applicationFormRepository
+                .findByGrantSchemeId(schemeId)
+                .ifPresent(application -> {
+                    application.setCreatedBy(adminId);
+                    applicationFormRepository.save(application);
+                });
     }
 
-    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId, final Integer increment) {
+    public void updateQuestionOrder(final Integer applicationId, final String sectionId, final String questionId,
+                                    final Integer increment, final Integer version) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
+        final ApplicationFormSectionDTO section = ApplicationFormUtils.verifyAndGetApplicationFormSection(applicationForm, sectionId);
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
+
         final List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
-        final ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
+
         final List<ApplicationFormQuestionDTO> questions = section.getQuestions();
         final ApplicationFormQuestionDTO question = section.getQuestionById(questionId);
 
@@ -409,6 +395,40 @@ public class ApplicationFormService {
         questions.add(newSectionIndex, question);
 
         applicationForm.getDefinition().setSections(sections);
-        this.applicationFormRepository.save(applicationForm);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
+        save(applicationForm);
+    }
+
+    public ApplicationFormEntity getApplicationById(Integer applicationId) {
+        return this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+    }
+
+    public ApplicationStatusEnum getApplicationStatus(Integer applicationId) {
+        return this.applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"))
+                .getApplicationStatus();
+    }
+
+    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
+        applicationFormRepository.findByGrantSchemeId(schemeId)
+                .ifPresent(application -> {
+                    if (Objects.equals(application.getLastUpdateBy(), grantAdmin.getId())) {
+                        application.setLastUpdateBy(null);
+                    }
+                    if (Objects.equals(application.getCreatedBy(), grantAdmin.getId())) {
+                        application.setCreatedBy(null);
+                    }
+
+                    applicationFormRepository.save(application);
+                });
+    }
+
+    public OdfTextDocument getApplicationFormExport(Integer applicationId) {
+        final ApplicationFormEntity applicationForm = applicationFormRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException(String.format("No application with ID %s was found", applicationId)));
+        SchemeEntity scheme = this.schemeRepository.findById(applicationForm.getGrantSchemeId()).orElseThrow(EntityNotFoundException::new);
+
+        return odtService.generateSingleOdt(scheme, applicationForm);
     }
 }

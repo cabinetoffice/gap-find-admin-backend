@@ -26,4 +26,6 @@ public class LambdaSubmissionDefinition {
 
     private Integer schemeVersion;
 
+    private boolean hasAttachments;
+
 }

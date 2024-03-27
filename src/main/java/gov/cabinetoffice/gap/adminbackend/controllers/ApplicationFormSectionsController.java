@@ -3,12 +3,14 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import gov.cabinetoffice.gap.adminbackend.dtos.GenericPostResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationSectionOrderPatchDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.PatchSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.PostSectionDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormSectionService;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -51,6 +53,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No section found with provided ids.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<ApplicationFormSectionDTO> getApplicationFormSectionById(@PathVariable Integer applicationId,
             @PathVariable String sectionId, @RequestParam(defaultValue = "true") Boolean withQuestions) {
 
@@ -82,6 +85,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity postNewSection(final HttpServletRequest request, @PathVariable @NotNull Integer applicationId,
             @RequestBody @Validated PostSectionDTO sectionDTO) {
         try {
@@ -110,8 +114,9 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity deleteSection(final HttpServletRequest request, @PathVariable Integer applicationId,
-            @PathVariable String sectionId) {
+            @PathVariable String sectionId, @RequestParam Integer version) {
         try {
             // don't allow admins to delete mandatory sections
             if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
@@ -119,7 +124,7 @@ public class ApplicationFormSectionsController {
                         HttpStatus.BAD_REQUEST);
             }
 
-            this.applicationFormSectionService.deleteSectionFromApplication(applicationId, sectionId);
+            this.applicationFormSectionService.deleteSectionFromApplication(applicationId, sectionId, version);
 
             logApplicationUpdatedEvent(request.getRequestedSessionId(), applicationId);
 
@@ -143,6 +148,7 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity updateSectionStatus(final HttpServletRequest request,
             final @PathVariable Integer applicationId, final @PathVariable String sectionId,
             final @RequestBody SectionStatusEnum newStatus) {
@@ -168,14 +174,15 @@ public class ApplicationFormSectionsController {
     }
 
     @PatchMapping("/{sectionId}/title")
+    @CheckSchemeOwnership
     public ResponseEntity<Void> updateSectionTitle(final HttpServletRequest request,
             final @PathVariable Integer applicationId, final @PathVariable String sectionId,
-            final @RequestBody @Validated PostSectionDTO sectionDTO) {
+            final @RequestBody @Validated PatchSectionDTO sectionDTO) {
         if (Objects.equals(sectionId, "ELIGIBILITY") || Objects.equals(sectionId, "ESSENTIAL")) {
             return new ResponseEntity(new GenericErrorDTO("You cannot update the title of a non-custom section"),
                     HttpStatus.BAD_REQUEST);
         }
-        this.applicationFormSectionService.updateSectionTitle(applicationId, sectionId, sectionDTO.getSectionTitle());
+        this.applicationFormSectionService.updateSectionTitle(applicationId, sectionId, sectionDTO.getSectionTitle(), sectionDTO.getVersion());
         logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
 
         return ResponseEntity.ok().build();
@@ -189,12 +196,13 @@ public class ApplicationFormSectionsController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No application or section found with given id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<String> updateSectionOrder(final HttpServletRequest request,
             final @PathVariable Integer applicationId,
             final @RequestBody ApplicationSectionOrderPatchDto sectionOrderPatchDto) {
         try {
             this.applicationFormSectionService.updateSectionOrder(applicationId, sectionOrderPatchDto.getSectionId(),
-                    sectionOrderPatchDto.getIncrement());
+                    sectionOrderPatchDto.getIncrement(), sectionOrderPatchDto.getVersion());
             logApplicationUpdatedEvent(request.getSession().getId(), applicationId);
             return ResponseEntity.ok().build();
         }

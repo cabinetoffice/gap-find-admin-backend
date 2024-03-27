@@ -1,0 +1,1 @@
+ALTER TABLE grant_advert ADD valid_last_updated boolean default false

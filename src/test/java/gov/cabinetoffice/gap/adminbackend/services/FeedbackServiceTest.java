@@ -16,6 +16,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -58,7 +59,7 @@ public class FeedbackServiceTest {
     public static final FeedbackEntity EMPTY_COMMENT_ENTITY = new FeedbackEntity(null, 0, "", SAMPLE_CREATED,
             SAMPLE_CREATED_BY, DEFAULT_JOURNEY);
 
-    private final GrantAdmin SAMPLE_ADMIN = new GrantAdmin(1, null, new GapUser(1, "sub"));
+    private final GrantAdmin SAMPLE_ADMIN = new GrantAdmin(1, null, new GapUser(1, "sub"), new ArrayList<>());
 
     @Mock
     private FeedbackRepository feedbackRepository;

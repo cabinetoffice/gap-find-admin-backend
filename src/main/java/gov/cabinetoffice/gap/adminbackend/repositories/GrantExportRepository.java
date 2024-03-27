@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.repositories;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.ids.GrantExportId;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -44,5 +45,8 @@ public interface GrantExportRepository extends JpaRepository<GrantExportEntity, 
     long countByIdExportBatchIdAndStatus(UUID exportBatchId, GrantExportStatus status);
 
     long countByIdExportBatchIdAndStatusIsNotIn(UUID exportBatchId, Collection<GrantExportStatus> statuses);
+
+    List<GrantExportEntity> findByCreatedByAndId_ExportBatchIdAndStatus(Integer createdBy, UUID exportBatchId,
+            GrantExportStatus status, Pageable pageable);
 
 }

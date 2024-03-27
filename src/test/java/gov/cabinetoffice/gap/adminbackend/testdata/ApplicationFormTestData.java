@@ -57,11 +57,11 @@ public class ApplicationFormTestData {
 
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION = new ApplicationFormQuestionDTO(SAMPLE_QUESTION_ID,
             "ORG_TYPE", null, SAMPLE_QUESTION_FIELD_TITLE, "Answer the question", null, null, null,
-            ResponseTypeEnum.YesNo, Collections.singletonMap("mandatory", true), null);
+            ResponseTypeEnum.YesNo, Collections.singletonMap("mandatory", true), null, 1);
 
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION_WITH_OPTIONS = new ApplicationFormQuestionDTO(
             SAMPLE_QUESTION_ID, "ORG_TYPE", null, "Select one of the folloiwng", "Answer the question", null, null,
-            null, ResponseTypeEnum.Dropdown, Collections.singletonMap("mandatory", true), SAMPLE_QUESTION_OPTIONS);
+            null, ResponseTypeEnum.Dropdown, Collections.singletonMap("mandatory", true), SAMPLE_QUESTION_OPTIONS, 1);
 
     public final static List<ApplicationFormQuestionDTO> SAMPLE_QUESTION_LIST = new LinkedList<>(
             Collections.singletonList(SAMPLE_QUESTION));
@@ -111,6 +111,8 @@ public class ApplicationFormTestData {
     public final static ApplicationDefinitionDTO SAMPLE_APPLICATION_DEFINITION = new ApplicationDefinitionDTO(
             SAMPLE_SECTIONS_LIST);
 
+    public final static ApplicationDefinitionDTO SAMPLE_EMPTY_APPLICATION_DEFINITION = new ApplicationDefinitionDTO(Collections.emptyList());
+
     public final static ApplicationDefinitionDTO SAMPLE_APPLICATION_DEFINITION_DELETE_SECTION = new ApplicationDefinitionDTO(
             SAMPLE_SECTIONS_LIST_DELETE_SECTION);
 
@@ -152,6 +154,12 @@ public class ApplicationFormTestData {
             SAMPLE_APPLICATION_ID, SAMPLE_SCHEME_ID, SAMPLE_VERSION, SAMPLE_CREATED, SAMPLE_CREATED_BY,
             SAMPLE_LAST_UPDATED, SAMPLE_LAST_UPDATE_BY, SAMPLE_LAST_PUBLISHED, SAMPLE_APPLICATION_NAME,
             ApplicationStatusEnum.DRAFT, SAMPLE_APPLICATION_DEFINITION);
+
+    public final static ApplicationFormEntity SAMPLE_EMPTY_APPLICATION_FORM_ENTITY = new ApplicationFormEntity(
+            SAMPLE_APPLICATION_ID, SAMPLE_SCHEME_ID, SAMPLE_VERSION, SAMPLE_CREATED, SAMPLE_CREATED_BY,
+            SAMPLE_LAST_UPDATED, SAMPLE_LAST_UPDATE_BY, SAMPLE_LAST_PUBLISHED, SAMPLE_APPLICATION_NAME,
+            ApplicationStatusEnum.DRAFT, SAMPLE_EMPTY_APPLICATION_DEFINITION);
+
 
     public final static ApplicationFormEntity SAMPLE_APPLICATION_FORM_ENTITY_DELETE_SECTION = new ApplicationFormEntity(
             SAMPLE_APPLICATION_ID, SAMPLE_SCHEME_ID, SAMPLE_VERSION, SAMPLE_CREATED, SAMPLE_CREATED_BY,

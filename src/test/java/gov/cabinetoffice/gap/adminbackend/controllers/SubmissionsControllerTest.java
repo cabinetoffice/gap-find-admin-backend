@@ -1,6 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
-import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
@@ -13,11 +12,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
-import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
-import gov.cabinetoffice.gap.adminbackend.services.FileService;
-import gov.cabinetoffice.gap.adminbackend.services.S3Service;
-import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
-import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
+import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomSubmissionGenerator;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
@@ -49,16 +44,9 @@ import java.util.zip.ZipOutputStream;
 import static gov.cabinetoffice.gap.adminbackend.controllers.SubmissionsController.EXPORT_CONTENT_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(SubmissionsController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -71,9 +59,6 @@ class SubmissionsControllerTest {
 
     @MockBean
     private SubmissionsService submissionsService;
-
-    @MockBean
-    private LambdaSecretConfigProperties mockLambdaSecretConfigProperties;
 
     @MockBean
     private S3Service s3Service;
@@ -193,7 +178,7 @@ class SubmissionsControllerTest {
 
         @Test
         void exportAllSubmissions_NoPathVariableTest() throws Exception {
-            mockMvc.perform(post("/submissions/export-all")).andExpect(status().isNotFound());
+            mockMvc.perform(post("/submissions/export-all/")).andExpect(status().isNotFound());
         }
 
     }
@@ -217,8 +202,7 @@ class SubmissionsControllerTest {
         @Test
         void happyPath() throws Exception {
             final LambdaSubmissionDefinition lambdaSubmissionDefinition = LambdaSubmissionDefinition.builder().build();
-            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
-            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
+            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class)))
                     .thenReturn(lambdaSubmissionDefinition);
 
             mockMvc.perform(
@@ -230,8 +214,7 @@ class SubmissionsControllerTest {
 
         @Test
         void unauthorisedPath() throws Exception {
-            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
-            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
+            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class)))
                     .thenThrow(new UnauthorizedException());
 
             mockMvc.perform(
@@ -242,8 +225,7 @@ class SubmissionsControllerTest {
 
         @Test
         void resourceNotFoundPath() throws Exception {
-            when(mockLambdaSecretConfigProperties.getSecret()).thenReturn("secret");
-            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class), anyString()))
+            when(submissionsService.getSubmissionInfo(any(UUID.class), any(UUID.class)))
                     .thenThrow(new NotFoundException());
 
             mockMvc.perform(

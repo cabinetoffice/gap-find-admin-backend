@@ -4,71 +4,52 @@ import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormsFoundDTO;
+import gov.cabinetoffice.gap.adminbackend.dtos.application.EncryptedEmailAddressDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.GenericErrorDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
-import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
-import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
-import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
+import gov.cabinetoffice.gap.adminbackend.entities.*;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.OdtException;
 import gov.cabinetoffice.gap.adminbackend.mappers.ValidationErrorMapperImpl;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
-import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
-import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
-import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
-import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
+import gov.cabinetoffice.gap.adminbackend.services.*;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.*;
 
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_ADVERT_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_MULTIPLE_PROPS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_FORM_EXISTS_DTO_SINGLE_PROP;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_ID;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_NAME;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_POST_FORM_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_APPLICATION_RESPONSE_SUCCESS;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_CLASS_ERROR_NO_PROPS_PROVIDED;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_APPLICATION_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_PATCH_UPDATED_APPLICATION_DTO;
-import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.SAMPLE_SCHEME_ID;
+import static gov.cabinetoffice.gap.adminbackend.testdata.ApplicationFormTestData.*;
 import static gov.cabinetoffice.gap.adminbackend.testdata.generators.RandomApplicationFormGenerators.randomApplicationFormFound;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ApplicationFormController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -103,6 +84,12 @@ class ApplicationFormControllerTest {
 
     @MockBean
     private SchemeService schemeService;
+
+    @MockBean
+    private UserService userService;
+
+    @MockBean
+    private OdtService odtService;
 
     @Test
     @WithAdminSession
@@ -304,8 +291,7 @@ class ApplicationFormControllerTest {
     @Test
     void removesApplicationAttachedToGrantAdvert_Successfully() throws Exception {
         SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
-        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
-        when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
+        when(grantAdvertService.getSchemeIdFromAdvert(SAMPLE_ADVERT_ID)).thenReturn(1);
         when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
                 .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
                         .applicationName("application").grantSchemeId(scheme.getId()).build()));
@@ -323,7 +309,7 @@ class ApplicationFormControllerTest {
 
     @Test
     void removesApplicationAttachedToGrantAdvert_throwsNotFoundWhenNoAdvertFound() throws Exception {
-        doThrow(NotFoundException.class).when(grantAdvertService).getAdvertById(SAMPLE_ADVERT_ID, true);
+        doThrow(NotFoundException.class).when(grantAdvertService).getSchemeIdFromAdvert(SAMPLE_ADVERT_ID);
 
         this.mockMvc
                 .perform(delete("/application-forms/lambda/" + SAMPLE_ADVERT_ID + "/application/")
@@ -334,8 +320,7 @@ class ApplicationFormControllerTest {
     @Test
     void removesApplicationAttachedToGrantAdvert_throwsApplicationFormExceptionWhenUnableToPatch() throws Exception {
         SchemeEntity scheme = SchemeEntity.builder().id(1).name("scheme").build();
-        GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName("grant-advert").scheme(scheme).build();
-        when(grantAdvertService.getAdvertById(SAMPLE_ADVERT_ID, true)).thenReturn(grantAdvert);
+        when(grantAdvertService.getSchemeIdFromAdvert(SAMPLE_ADVERT_ID)).thenReturn(1);
         when(applicationFormService.getOptionalApplicationFromSchemeId(scheme.getId()))
                 .thenReturn(Optional.of(ApplicationFormEntity.builder().grantApplicationId(1)
                         .applicationName("application").grantSchemeId(scheme.getId()).build()));
@@ -439,6 +424,116 @@ class ApplicationFormControllerTest {
                         .json(HelperUtils.asJsonString(new GenericErrorDTO("Application Form Error Message"))));
 
         verifyNoInteractions(eventLogService);
+    }
+
+    @Test
+    void getLastUpdatedEmailHappyPath() throws Exception {
+        byte[] encryptedEmail = "test@test.gov".getBytes();
+        EncryptedEmailAddressDTO encryptedLastUpdatedEmailDTO =
+                EncryptedEmailAddressDTO.builder().encryptedEmail(encryptedEmail).build();
+        when(userService.getEmailAddressForSub(anyString())).thenReturn(encryptedEmail);
+        when(applicationFormRepository.findById(anyInt())).thenReturn(Optional.of(ApplicationFormEntity.builder().lastUpdateBy(1).build()));
+        when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.of(GrantAdmin.builder().gapUser(GapUser.builder().userSub("sub").build()).build()));
+        when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov".getBytes());
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdateBy(1).build());
+
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
+                .andExpect(content().json(HelperUtils.asJsonString(encryptedLastUpdatedEmailDTO)));
+
+    }
+
+    @Test
+    void shouldReturnDeletedUserWhenLastUpdatedByIsNullAndLastUpdatedIsValid() throws Exception {
+        when(userService.getEmailAddressForSub(anyString())).thenReturn("test@test.gov".getBytes());
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdated(Instant.now()).build());
+
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isOk())
+                .andExpect(content().json(
+                        HelperUtils.asJsonString(EncryptedEmailAddressDTO.builder().deletedUser(true).build())
+                ));
+    }
+
+    @Test
+    void getLastUpdatedEmailReturnsNotFoundWhenNoGrantAdminFound() throws Exception {
+        when(applicationFormService.getApplicationById(anyInt())).thenReturn(ApplicationFormEntity.builder()
+                .lastUpdateBy(1).build());
+        when(userService.getGrantAdminById(anyInt())).thenReturn(Optional.empty());
+        this.mockMvc.perform(get("/application-forms/1/lastUpdated/email")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getApplicationStatus() throws Exception {
+        when(applicationFormService.getApplicationStatus(anyInt())).thenReturn(ApplicationStatusEnum.PUBLISHED);
+
+        this.mockMvc.perform(get("/application-forms/1/status"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(ApplicationStatusEnum.PUBLISHED.toString()));
+    }
+
+    @Test
+    void getApplicationStatusNotFoundException() throws Exception {
+        when(applicationFormService.getApplicationStatus(anyInt())).thenThrow(new NotFoundException());
+
+        this.mockMvc.perform(get("/application-forms/1/status"))
+                .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    void testExportApplication() throws Exception {
+        Integer applicationId = 1;
+        OdfTextDocument odfTextDocument = OdfTextDocument.newTextDocument();
+        when(applicationFormService.getApplicationFormExport(applicationId)).thenReturn(odfTextDocument);
+        when(odtService.odtToResource(any())).thenReturn(new ByteArrayResource(new byte[]{1}));
+
+        this.mockMvc.perform(get("/application-forms/1/download-summary"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"application.odt\""))
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE));
+        verify(applicationFormService, times(1)).getApplicationFormExport(any());
+        verify(odtService, times(1)).odtToResource(any());
+    }
+
+    @Test
+    void testExportApplicationOdtServiceThrowsIOException() throws Exception {
+        Integer applicationId = 1;
+        OdfTextDocument odfTextDocument = OdfTextDocument.newTextDocument();
+        when(applicationFormService.getApplicationFormExport(applicationId)).thenReturn(odfTextDocument);
+        when(odtService.odtToResource(Mockito.any())).thenThrow(new IOException());
+
+        MvcResult result = this.mockMvc.perform(get("/application-forms/" + applicationId + "/download-summary"))
+                .andExpect(status().isInternalServerError())
+                .andReturn();
+
+        Exception resolvedException = result.getResolvedException();
+        assertNotNull(resolvedException);
+        assertEquals(OdtException.class, resolvedException.getClass());
+        verify(applicationFormService, times(1)).getApplicationFormExport(any());
+        verify(odtService, times(1)).odtToResource(any());
+
+
+        UUID submissionId = UUID.randomUUID();
+        HttpServletRequest mockRequest = new MockHttpServletRequest();
+        Submission mockSubmission = mock(Submission.class);
+    }
+
+
+    @Test
+    void testExportApplicationThrowsRuntimeError() throws Exception {
+        when(applicationFormService.getApplicationFormExport(Mockito.any()))
+                .thenThrow(new RuntimeException());
+
+        MvcResult result = this.mockMvc.perform(get("/application-forms/1/download-summary"))
+                .andExpect(status().isInternalServerError())
+                .andReturn();
+
+        Exception resolvedException = result.getResolvedException();
+        assertNotNull(resolvedException);
+        assertEquals(OdtException.class, resolvedException.getClass());
+        verify(applicationFormService, times(1)).getApplicationFormExport(any());
+        verify(odtService, times(0)).odtToResource(any());
     }
 
 }

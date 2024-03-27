@@ -4,6 +4,8 @@ import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 
+import java.util.ArrayList;
+
 public class LoginTestData {
 
     public final static Integer GAP_USER_ID = 1;
@@ -21,6 +23,6 @@ public class LoginTestData {
 
     public final static GapUser GAP_USER = new GapUser(GAP_USER_ID, GAP_USER_COGNITO_SUBSCRIPTION);
 
-    public final static GrantAdmin GRANT_ADMIN_USER = new GrantAdmin(GRANT_ADMIN_ID, FUNDING_ORGANISATION, GAP_USER);
+    public final static GrantAdmin GRANT_ADMIN_USER = new GrantAdmin(GRANT_ADMIN_ID, FUNDING_ORGANISATION, GAP_USER, new ArrayList<>());
 
 }

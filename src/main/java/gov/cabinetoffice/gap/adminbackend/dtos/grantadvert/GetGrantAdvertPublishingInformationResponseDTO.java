@@ -32,4 +32,12 @@ public class GetGrantAdvertPublishingInformationResponseDTO {
 
     private String contentfulSlug;
 
+    private byte[] lastUpdatedByEmail;
+
+    private Instant lastUpdated;
+
+    private Instant created;
+
+    private boolean validLastUpdated;
+
 }

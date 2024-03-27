@@ -3,11 +3,13 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
+import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationAuditDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.*;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.Submission;
@@ -19,6 +21,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapperImpl;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAttachmentRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
@@ -30,8 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
@@ -62,6 +63,9 @@ class SubmissionsServiceTest {
     private SubmissionRepository submissionRepository;
 
     @Mock
+    private GrantAttachmentRepository grantAttachmentRepository;
+
+    @Mock
     private AmazonSQS amazonSQS;
 
     @Mock
@@ -89,9 +93,36 @@ class SubmissionsServiceTest {
     @Mock
     private ZipService zipService;
 
+    @Mock
+    private UserServiceClient userServiceClient;
+
     private final List<String> EXPECTED_SPOTLIGHT_ROW = Arrays.asList("GAP-LL-20220927-1", "Some company name",
             "9-10 St Andrew Square", "Edinburgh", "EH2 2AF", "500", "12738494", "Yes", "");
 
+    @Nested
+    class GetSubmissionById {
+        final UUID submissionId = UUID.randomUUID();
+
+        @Test
+        void successfullyGetSubmissionById() {
+            final Submission submission = Submission.builder().id(submissionId).build();
+            when(submissionRepository.findById(submissionId)).thenReturn(Optional.ofNullable(submission));
+
+            final Submission response = submissionsService.getSubmissionById(submissionId);
+
+            verify(submissionRepository).findById(submissionId);
+            assertThat(response).isEqualTo(submission);
+        }
+
+        @Test
+        void throwsNotFoundException() {
+            when(submissionRepository.findById(submissionId)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> submissionsService.getSubmissionById(submissionId),
+                    "No Submission with ID " + submissionId + " was found");
+
+        }
+
+    }
     @Nested
     class ExportSpotlightChecksTests {
 
@@ -345,8 +376,9 @@ class SubmissionsServiceTest {
 
         @Test
         void happyPath_throwsNoException() {
+            SchemeEntity scheme = SchemeEntity.builder().id(1).build();
             List<Submission> submissions = Collections
-                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).build());
+                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).scheme(scheme).build());
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
                     .thenReturn(submissions);
 
@@ -380,8 +412,9 @@ class SubmissionsServiceTest {
 
         @Test
         void sqsMessageFailure_throwsException() {
+            SchemeEntity scheme = SchemeEntity.builder().id(1).build();
             List<Submission> submissions = Collections
-                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).build());
+                    .singletonList(randomSubmission().definition(SUBMISSION_DEFINITION).scheme(scheme).build());
             when(submissionRepository.findByApplicationGrantApplicationIdAndStatus(1, SubmissionStatus.SUBMITTED))
                     .thenReturn(submissions);
             when(amazonSQS.sendMessageBatch(any())).thenThrow(new AmazonSQSException("Cannot send messages"));
@@ -459,11 +492,9 @@ class SubmissionsServiceTest {
 
     @Nested
     class getSubmissionInfo {
-
-        final String authHeader = "randomAuthHeader";
-
         @Test
         void happyPath() {
+            final String emailAddress = "testEmailAddress";
             final ZonedDateTime zonedDateTime = ZonedDateTime.now();
             final Submission submission = randomSubmission()
                     .definition(randomSubmissionDefinition(randomSubmissionDefinition().build()).build())
@@ -474,16 +505,16 @@ class SubmissionsServiceTest {
                             .build())
                     .scheme(SchemeEntity.builder().id(1).name("testSchemeName").build()).submittedDate(zonedDateTime)
                     .build();
-            final UserV2DTO userDTO = UserV2DTO.builder().emailAddress("testEmailAddress").build();
+            final UserV2DTO userDTO = UserV2DTO.builder().emailAddress(emailAddress).build();
+            final UserDto usUserDto = UserDto.builder().emailAddress(emailAddress).build();
 
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(true);
             when(submissionRepository.findByIdWithApplicant(any(UUID.class))).thenReturn(Optional.of(submission));
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
-            when(restTemplate.exchange(anyString(), any(), any(), eq(UserV2DTO.class)))
-                    .thenReturn(new ResponseEntity<>(userDTO, HttpStatus.OK));
+            when(userServiceClient.getUserForSub(any())).thenReturn(usUserDto);
 
             final LambdaSubmissionDefinition actual = submissionsService.getSubmissionInfo(UUID.randomUUID(),
-                    UUID.randomUUID(), authHeader);
+                    UUID.randomUUID());
             final LambdaSubmissionDefinition expected = submissionMapper
                     .submissionToLambdaSubmissionDefinition(submission);
             expected.setEmail(userDTO.emailAddress());
@@ -498,7 +529,7 @@ class SubmissionsServiceTest {
             when(submissionMapper.submissionToLambdaSubmissionDefinition(any(Submission.class))).thenCallRealMethod();
 
             assertThatThrownBy(
-                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID(), authHeader))
+                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID()))
                             .isInstanceOf(NotFoundException.class);
         }
 
@@ -507,7 +538,7 @@ class SubmissionsServiceTest {
             when(grantExportRepository.existsById(any(GrantExportId.class))).thenReturn(false);
 
             assertThatThrownBy(
-                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID(), authHeader))
+                    () -> submissionsService.getSubmissionInfo(UUID.randomUUID(), UUID.randomUUID()))
                             .isInstanceOf(NotFoundException.class);
         }
 

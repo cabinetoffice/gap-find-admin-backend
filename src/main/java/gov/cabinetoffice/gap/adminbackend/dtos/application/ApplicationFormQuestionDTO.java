@@ -39,4 +39,6 @@ public class ApplicationFormQuestionDTO {
 
     private List<String> options;
 
+    private Integer version;
+
 }

@@ -13,4 +13,6 @@ public class ApplicationSectionOrderPatchDto {
 
     private Integer increment;
 
+    private Integer version;
+
 }
