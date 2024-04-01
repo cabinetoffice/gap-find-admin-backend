@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import javax.validation.Validator;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
@@ -448,9 +449,9 @@ class GrantAdvertControllerTest {
 
         private final Instant dateTimeInput = Instant.parse("2022-01-01T00:00:00.00Z");
 
-        private final Instant openingDate = dateTimeInput;
+        private final LocalDateTime openingDate = LocalDateTime.parse("2022-01-01T00:00:00.00");
 
-        private final Instant closingDate = dateTimeInput;
+        private final LocalDateTime closingDate = LocalDateTime.parse("2022-01-01T00:00:00.00");
 
         private final Instant firstPublishedDate = dateTimeInput;
 
