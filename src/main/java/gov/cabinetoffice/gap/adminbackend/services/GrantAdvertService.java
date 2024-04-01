@@ -574,18 +574,16 @@ public class GrantAdvertService {
         int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
                 .toArray();
 
-        // build LocalDateTimes, convert to Instant
-        Instant openingDateInstant = LocalDateTime
-                .of(openingResponse[2], openingResponse[1], openingResponse[0], openingResponse[3], openingResponse[4])
-                .atZone(ZoneId.of("Z")).toInstant();
+        // build LocalDateTimes
+        LocalDateTime openingDate = LocalDateTime
+                .of(openingResponse[2], openingResponse[1], openingResponse[0], openingResponse[3], openingResponse[4]);
 
-        Instant closingDateInstant = LocalDateTime
-                .of(closingResponse[2], closingResponse[1], closingResponse[0], closingResponse[3], closingResponse[4])
-                .atZone(ZoneId.of("Z")).toInstant();
+        LocalDateTime closingDate = LocalDateTime
+                .of(closingResponse[2], closingResponse[1], closingResponse[0], closingResponse[3], closingResponse[4]);
 
         // set dates on advert
-        grantAdvert.setOpeningDate(openingDateInstant);
-        grantAdvert.setClosingDate(closingDateInstant);
+        grantAdvert.setOpeningDate(openingDate);
+        grantAdvert.setClosingDate(closingDate);
     }
 
     public void unscheduleGrantAdvert(final UUID advertId) {
