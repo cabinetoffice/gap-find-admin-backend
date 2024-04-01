@@ -449,9 +449,9 @@ class GrantAdvertControllerTest {
 
         private final Instant dateTimeInput = Instant.parse("2022-01-01T00:00:00.00Z");
 
-        private final LocalDateTime openingDate = LocalDateTime.from(dateTimeInput);
+        private final LocalDateTime openingDate = LocalDateTime.parse("2022-01-01T00:00:00.00");
 
-        private final LocalDateTime closingDate = LocalDateTime.from(dateTimeInput);
+        private final LocalDateTime closingDate = LocalDateTime.parse("2022-01-01T00:00:00.00");
 
         private final Instant firstPublishedDate = dateTimeInput;
 
