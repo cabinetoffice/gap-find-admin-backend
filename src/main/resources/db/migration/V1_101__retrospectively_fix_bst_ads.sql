@@ -6,4 +6,4 @@ WHERE created > '2023-09-28 12:00:00'::TIMESTAMP
 UPDATE grant_advert
     SET closing_date = closing_date AT TIME ZONE 'Europe/London'
 WHERE created > '2023-09-28 12:00:00'::TIMESTAMP
-	AND status = 'PUBLISHED';
+	AND (status = 'PUBLISHED' OR status = 'SCHEDULED';)
