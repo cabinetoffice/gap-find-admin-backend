@@ -4,6 +4,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.models.ClassError;
 import gov.cabinetoffice.gap.adminbackend.models.ValidationError;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -72,7 +74,7 @@ public class SchemeTestData {
 
     public final static SchemeEntity SCHEME_ENTITY_EXAMPLE = new SchemeEntity(SAMPLE_SCHEME_ID, SAMPLE_ORGANISATION_ID,
             1, Instant.parse("2022-07-02T15:00:00.00Z"), SAMPLE_USER_ID, Instant.parse("2022-07-02T16:00:00.00Z"),
-            SAMPLE_USER_ID, SAMPLE_GGIS_REFERENCE, SAMPLE_SCHEME_NAME, SAMPLE_SCHEME_CONTACT);
+            SAMPLE_USER_ID, SAMPLE_GGIS_REFERENCE, SAMPLE_SCHEME_NAME, SAMPLE_SCHEME_CONTACT, new ArrayList<>());
 
     public final static List<SchemeEntity> SCHEME_ENTITY_LIST_EXAMPLE = Collections
             .singletonList(SCHEME_ENTITY_EXAMPLE);
@@ -80,7 +82,7 @@ public class SchemeTestData {
     public final static Pageable EXAMPLE_PAGINATION_PROPS = PageRequest.of(0, 20);
 
     public final static String SCHEME_POST_ALL_NULL_DTO_JSON = "{" + "\"fieldErrors\":[" + "{"
-            + "	\"fieldName\":\"name\"," + "	\"errorMessage\":\"Enter the name of your grant\"" + "}," + "{"
+            + "	\"fieldName\":\"grantName\"," + "	\"errorMessage\":\"Enter the name of your grant\"" + "}," + "{"
             + "	\"fieldName\":\"ggisReference\"," + "	\"errorMessage\":\"Enter your GGIS Scheme Reference Number\""
             + "} " + "]" + "}";
 

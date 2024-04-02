@@ -1,9 +1,12 @@
 package gov.cabinetoffice.gap.adminbackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "grant_admin")
@@ -28,5 +31,12 @@ public class GrantAdmin {
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", referencedColumnName = "gap_user_id")
     private GapUser gapUser;
+
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "grantAdmins")
+    @ToString.Exclude
+    @JsonBackReference
+    @Builder.Default
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    private List<SchemeEntity> schemes = new ArrayList<>();
 
 }

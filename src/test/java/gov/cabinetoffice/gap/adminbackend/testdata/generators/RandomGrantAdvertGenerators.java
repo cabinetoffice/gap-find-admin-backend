@@ -1,6 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.testdata.generators;
 
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
+import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponseType;
@@ -10,6 +11,7 @@ import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
 import gov.cabinetoffice.gap.adminbackend.models.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -18,8 +20,8 @@ public class RandomGrantAdvertGenerators {
     // Grant advert generators
     public static GrantAdvert.GrantAdvertBuilder randomGrantAdvertEntity() {
         return GrantAdvert.builder().id(UUID.randomUUID()).scheme(RandomSchemeGenerator.randomSchemeEntity().build())
-                .version(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null)).lastUpdated(Instant.now())
-                .lastUpdatedBy(new GrantAdmin(1, null, null)).status(GrantAdvertStatus.DRAFT)
+                .version(1).created(Instant.now()).createdBy(new GrantAdmin(1, null, null, new ArrayList<>())).lastUpdated(Instant.now())
+                .lastUpdatedBy(new GrantAdmin(1, null, GapUser.builder().userSub("sub").build(), new ArrayList<>())).status(GrantAdvertStatus.DRAFT)
                 .contentfulEntryId("entry-id").contentfulSlug("contentful-slug").grantAdvertName("Grant Advert Name")
                 .response(randomAdvertResponse().build());
     }

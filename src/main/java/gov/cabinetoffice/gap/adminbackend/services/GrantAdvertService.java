@@ -4,6 +4,7 @@ import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
 import com.contentful.java.cda.CDAEntry;
 import com.contentful.java.cda.QueryOperation;
+import com.contentful.java.cma.CMACallback;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
@@ -20,8 +21,10 @@ import gov.cabinetoffice.gap.adminbackend.enums.AdvertDefinitionQuestionResponse
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertSectionResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.GrantAdvertException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.UserNotFoundException;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapper;
 import gov.cabinetoffice.gap.adminbackend.models.*;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
@@ -29,27 +32,22 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.CurrencyFormatter;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import javax.transaction.Transactional;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -57,79 +55,87 @@ import java.util.*;
 public class GrantAdvertService {
 
     private static final String CONTENTFUL_LOCALE = "en-US";
-
     private static final String CONTENTFUL_GRANT_TYPE_ID = "grantDetails";
-
     private final AdvertDefinition advertDefinition;
-
     private final GrantAdvertRepository grantAdvertRepository;
-
     private final GrantAdminRepository grantAdminRepository;
-
     private final SchemeRepository schemeRepository;
-
     private final GrantAdvertMapper grantAdvertMapper;
-
     private final CMAClient contentfulManagementClient;
-
     private final CDAClient contentfulDeliveryClient;
-
-    private final RestTemplate restTemplate;
-
+    private final UserService userService;
+    private final OpenSearchService openSearchService;
     private final WebClient.Builder webClientBuilder;
-
+    private final Clock clock;
     private final ContentfulConfigProperties contentfulProperties;
-
     private final FeatureFlagsConfigurationProperties featureFlagsProperties;
+
+    public GrantAdvert save(GrantAdvert advert) {
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional.ofNullable(auth)
+                .ifPresentOrElse(authentication -> {
+                    if (!HelperUtils.isAnonymousSession()) {
+                        final AdminSession adminSession = (AdminSession) authentication.getPrincipal();
+                        final GrantAdmin admin = grantAdminRepository.findByGapUserUserSub(adminSession.getUserSub())
+                                .orElseThrow(() -> new UserNotFoundException("Could not find an admin with sub " + adminSession.getUserSub()));
+
+                        if (advert.getScheme().getGrantAdmins().contains(admin)) {
+                            final Instant updatedAt = Instant.now(clock);
+                            advert.setLastUpdated(updatedAt);
+                            advert.setLastUpdatedBy(admin);
+
+                            advert.getScheme().setLastUpdated(updatedAt);
+                            advert.getScheme().setLastUpdatedBy(adminSession.getGrantAdminId());
+
+                            advert.setValidLastUpdated(true);
+                        }
+                    }
+                }, () -> log.warn("Admin session was null. Update must have been performed by a lambda."));
+
+        return grantAdvertRepository.save(advert);
+    }
 
     public GrantAdvert create(Integer grantSchemeId, Integer grantAdminId, String name) {
         final GrantAdmin grantAdmin = grantAdminRepository.findById(grantAdminId).orElseThrow();
         final SchemeEntity scheme = schemeRepository.findById(grantSchemeId).orElseThrow();
-        if (!scheme.getFunderId().equals(grantAdmin.getFunder().getId())) {
-            throw new AccessDeniedException(
-                    "User " + grantAdminId + " is unable to access scheme with id " + scheme.getId());
-        }
         final Integer version = featureFlagsProperties.isNewMandatoryQuestionsEnabled() ? 2 : 1;
         final boolean doesAdvertExist = grantAdvertRepository.findBySchemeId(grantSchemeId).isPresent();
 
         if (!doesAdvertExist) {
             final GrantAdvert grantAdvert = GrantAdvert.builder().grantAdvertName(name).scheme(scheme)
                     .createdBy(grantAdmin).created(Instant.now()).lastUpdatedBy(grantAdmin).lastUpdated(Instant.now())
-                    .status(GrantAdvertStatus.DRAFT).version(version).build();
-            return this.grantAdvertRepository.save(grantAdvert);
+                    .status(GrantAdvertStatus.DRAFT).version(version).validLastUpdated(true).build();
+            return save(grantAdvert);
         }
         final GrantAdvert existingAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).get();
         existingAdvert.setGrantAdvertName(name);
-        existingAdvert.setLastUpdatedBy(grantAdmin);
-        existingAdvert.setLastUpdated(Instant.now());
-        return this.grantAdvertRepository.save(existingAdvert);
 
+        return save(existingAdvert);
     }
 
     /**
      * This method includes access control check, only allowing admins to view their own
      * adverts
      */
-    public GrantAdvert getAdvertById(UUID advertId, boolean lambdaCall) {
+    public GrantAdvert getAdvertById(UUID advertId) {
 
         GrantAdvert advert = grantAdvertRepository.findById(advertId)
                 .orElseThrow(() -> new NotFoundException("Advert with id " + advertId + " not found"));
-
-        if (!lambdaCall) {
-            final AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-            if (!advert.getCreatedBy().getId().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + " is unable to access advert with id " + advert.getId());
-            }
-        }
 
         log.debug("Advert with id {} found", advertId);
         return advert;
     }
 
+    public Integer getSchemeIdFromAdvert(UUID advertId) {
+        return grantAdvertRepository.findByIdWithScheme(advertId)
+                .map(GrantAdvert::getScheme)
+                .map(SchemeEntity::getId)
+                .orElseThrow(() -> new NotFoundException("Scheme not found for advert with id " + advertId));
+    }
+
     public GetGrantAdvertPageResponseDTO getAdvertBuilderPageData(UUID grantAdvertId, String sectionId, String pageId) {
 
-        GrantAdvert grantAdvert = getAdvertById(grantAdvertId, false);
+        GrantAdvert grantAdvert = getAdvertById(grantAdvertId);
 
         GetGrantAdvertPageResponseDTO viewResponse = new GetGrantAdvertPageResponseDTO();
 
@@ -176,8 +182,11 @@ public class GrantAdvertService {
         GrantAdvert grantAdvert = grantAdvertRepository.findById(pagePatchDto.getGrantAdvertId())
                 .orElseThrow(() -> new NotFoundException(
                         String.format("GrantAdvert with id %s not found", pagePatchDto.getGrantAdvertId())));
+
+        validateAdvertStatus(grantAdvert);
         // adds the static opening and closing time to the date question
         addStaticTimeToDateQuestion(pagePatchDto);
+
 
         // if response/section/page does not exist, create it. If it does exist, update it
         GrantAdvertResponse response = Optional.ofNullable(grantAdvert.getResponse()).orElseGet(() -> {
@@ -206,8 +215,7 @@ public class GrantAdvertService {
         // update section status
         updateSectionStatus(section);
 
-        grantAdvertRepository.save(grantAdvert);
-
+        save(grantAdvert);
     }
 
     private void addStaticTimeToDateQuestion(GrantAdvertPageResponseValidationDto pagePatchDto) {
@@ -277,18 +285,17 @@ public class GrantAdvertService {
     public void deleteGrantAdvert(UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        Long deletedCount = grantAdvertRepository.deleteByIdAndCreatedById(grantAdvertId, session.getGrantAdminId());
+        int deletedCount = grantAdvertRepository.deleteByIdAndSchemeEditor(grantAdvertId, session.getGrantAdminId());
 
         if (deletedCount == 0)
             throw new NotFoundException("Grant Advert not found with id of " + grantAdvertId);
     }
 
-    @Transactional
-    public GrantAdvert publishAdvert(UUID advertId, boolean lambdaCall) {
-        final GrantAdvert advert = getAdvertById(advertId, lambdaCall);
+    public GrantAdvert publishAdvert(UUID advertId) {
+        final Instant now = Instant.now();
+        final GrantAdvert advert = getAdvertById(advertId);
 
-        final CMAEntry contentfulAdvert;
-
+        CMAEntry contentfulAdvert;
         // if advert has not been published previously
         if (advert.getFirstPublishedDate() == null) {
             contentfulAdvert = createAdvertInContentful(advert);
@@ -299,26 +306,39 @@ public class GrantAdvertService {
             advert.setLastPublishedDate(Instant.now());
         }
 
-        contentfulManagementClient.entries().publish(contentfulAdvert);
-
+        contentfulAdvert = contentfulManagementClient.entries().fetchOne(contentfulAdvert.getId());
         advert.setStatus(GrantAdvertStatus.PUBLISHED);
         advert.setContentfulSlug(contentfulAdvert.getField("label", CONTENTFUL_LOCALE));
         advert.setContentfulEntryId(contentfulAdvert.getId());
-        updateGrantAdvertApplicationDates(advert);
 
-        return grantAdvertRepository.save(advert);
+        if (Boolean.FALSE.equals(contentfulAdvert.isPublished())) {
+            contentfulManagementClient.entries().async().publish(contentfulAdvert, new CMACallback<>() {
+                @Override
+                protected void onSuccess(CMAEntry result) {
+                    openSearchService.indexEntry(result);
+                    log.debug("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
+                }
+            });
+        }
+
+        updateGrantAdvertApplicationDates(advert);
+        return save(advert);
     }
 
-    public void unpublishAdvert(UUID advertId, boolean lambdaCall) {
-        final GrantAdvert advert = this.getAdvertById(advertId, lambdaCall);
-
+    public void unpublishAdvert(UUID advertId) {
+        final GrantAdvert advert = this.getAdvertById(advertId);
         final CMAEntry contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId());
 
-        contentfulManagementClient.entries().unPublish(contentfulAdvert);
+        if (Boolean.TRUE.equals(contentfulAdvert.isPublished())) {
+            final CMAEntry unpublishedAd = contentfulManagementClient.entries().unPublish(contentfulAdvert);
+            openSearchService.removeIndexEntry(unpublishedAd);
+        }
+
         advert.setStatus(GrantAdvertStatus.DRAFT);
+        advert.setContentfulSlug(null);
         advert.setUnpublishedDate(Instant.now());
 
-        this.grantAdvertRepository.save(advert);
+        save(advert);
     }
 
     private CMAEntry createAdvertInContentful(final GrantAdvert grantAdvert) {
@@ -330,19 +350,10 @@ public class GrantAdvertService {
         contentfulAdvert.setField("grantName", CONTENTFUL_LOCALE, grantAdvert.getGrantAdvertName());
         contentfulAdvert.setField("label", CONTENTFUL_LOCALE, generateUniqueSlug(grantAdvert));
 
-        final CMAEntry createdAAdvert = contentfulManagementClient.entries().create(CONTENTFUL_GRANT_TYPE_ID,
+        final CMAEntry createdAdvert = contentfulManagementClient.entries().create(CONTENTFUL_GRANT_TYPE_ID,
                 contentfulAdvert);
-        createRichTextQuestionsInContentful(grantAdvert, createdAAdvert);
-
-        /*
-         * hate this but because we create a new advert and then immediately update it the
-         * version number in contentful is bumped up, so we need to refresh the data to
-         * prevent errors when publishing the advert :(.
-         *
-         * Absolutely begging to be rate limited by getting this loose with the number of
-         * requests to their API.
-         */
-        return contentfulManagementClient.entries().fetchOne(createdAAdvert.getId());
+        createRichTextQuestionsInContentful(grantAdvert, createdAdvert);
+        return createdAdvert;
     }
 
     private CMAEntry updateAdvertInContentful(final GrantAdvert grantAdvert) {
@@ -358,8 +369,7 @@ public class GrantAdvertService {
 
         final CMAEntry updatedAdvert = contentfulManagementClient.entries().update(contentfulAdvert);
         createRichTextQuestionsInContentful(grantAdvert, updatedAdvert);
-
-        return contentfulManagementClient.entries().fetchOne(updatedAdvert.getId());
+        return updatedAdvert;
     }
 
     private String generateUniqueSlug(final GrantAdvert grantAdvert) {
@@ -414,42 +424,45 @@ public class GrantAdvertService {
         contentfulAdvert.setField(questionResponse.getId(), CONTENTFUL_LOCALE, contentfulValue);
     }
 
-    // TODO ideally this is just a stop gap until we can use the CMA library to convert
-    // the rich text strings to CMARichDocument objects
     private void createRichTextQuestionsInContentful(final GrantAdvert advert, final CMAEntry contentfulAdvert) {
+        final List<GrantAdvertQuestionResponse> responses = getRichTextResponses(advert);
+        final String requestBody = buildRichTextPatchRequestBody(responses);
+        final String contentfulUrl = String.format("https://api.contentful.com/spaces/%1$s/environments/%2$s/entries/%3$s",
+                contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
+                contentfulAdvert.getId());
 
-        // get all the rich text responses
-        final List<GrantAdvertQuestionResponse> responses = advert.getResponse().getSections().stream()
+        if (responses == null || responses.isEmpty()) {
+            log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: No rich text responses found", contentfulUrl);
+        }
+
+        final Instant now = Instant.now();
+        webClientBuilder.build()
+                .patch()
+                .uri(contentfulUrl)
+                .headers(h -> {
+                    h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
+                    h.set("Content-Type", "application/json-patch+json");
+                    h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
+                })
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnError(exception -> {
+                    log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", contentfulUrl, exception.getMessage());
+                    log.info("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
+                })
+                .block();
+        log.info("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
+    }
+
+    private List<GrantAdvertQuestionResponse> getRichTextResponses(final GrantAdvert advert) {
+        return advert.getResponse().getSections().stream()
                 .flatMap(s -> s.getPages().stream()).flatMap(p -> p.getQuestions().stream())
                 .filter(q -> advertDefinition.getSections().stream().flatMap(s -> s.getPages().stream())
                         .flatMap(p -> p.getQuestions().stream())
                         .filter(qr -> qr.getResponseType().equals(AdvertDefinitionQuestionResponseType.RICH_TEXT))
                         .anyMatch(qr -> qr.getId().equals(q.getId())))
                 .toList();
-
-        if (responses != null && !responses.isEmpty()) {
-            final String requestBody = buildRichTextPatchRequestBody(responses);
-
-            // send to contentful
-            final String url = String.format("https://api.contentful.com/spaces/%1$s/environments/%2$s/entries/%3$s",
-                    contentfulProperties.getSpaceId(), contentfulProperties.getEnvironmentId(),
-                    contentfulAdvert.getId());
-            log.debug(url);
-
-            webClientBuilder.build()
-                    .patch()
-                    .uri(url)
-                    .headers(h -> {
-                        h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
-                        h.set("Content-Type", "application/json-patch+json");
-                        h.set("X-Contentful-Version", contentfulAdvert.getVersion().toString());
-                    })
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .doOnError(exception -> log.error("createRichTextQuestionsInContentful failed on PATCH to {}, with message: {}", url, exception.getMessage()))
-                    .block();
-        }
     }
 
     // built to replicate
@@ -507,7 +520,18 @@ public class GrantAdvertService {
         GrantAdvert grantAdvert = grantAdvertRepository.findBySchemeId(grantSchemeId).orElseThrow(
                 () -> new NotFoundException("Grant Advert for Scheme with id " + grantSchemeId + " does not exist"));
 
-        return this.grantAdvertMapper.grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
+        GetGrantAdvertPublishingInformationResponseDTO publishingInfo = this.grantAdvertMapper
+                .grantAdvertPublishInformationResponseDtoFromGrantAdvert(grantAdvert);
+
+        if (grantAdvert.getLastUpdatedBy() != null) {
+            String adminSub = grantAdvert.getLastUpdatedBy().getGapUser().getUserSub();
+
+            byte[] emailAddress = userService.getEmailAddressForSub(adminSub);
+
+            publishingInfo.setLastUpdatedByEmail(emailAddress);
+        }
+
+        return publishingInfo;
     }
 
     public GetGrantAdvertStatusResponseDTO getGrantAdvertStatusBySchemeId(Integer grantSchemeId) {
@@ -519,12 +543,12 @@ public class GrantAdvertService {
     }
 
     public void scheduleGrantAdvert(final UUID grantAdvertId) {
-        GrantAdvert grantAdvert = getAdvertById(grantAdvertId, false);
+        GrantAdvert grantAdvert = getAdvertById(grantAdvertId);
 
         grantAdvert.setStatus(GrantAdvertStatus.SCHEDULED);
         updateGrantAdvertApplicationDates(grantAdvert);
 
-        grantAdvertRepository.save(grantAdvert);
+        save(grantAdvert);
     }
 
     private void updateGrantAdvertApplicationDates(final GrantAdvert grantAdvert) {
@@ -550,35 +574,52 @@ public class GrantAdvertService {
         int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
                 .toArray();
 
-        // build LocalDateTimes, convert to Instant
-        Instant openingDateInstant = LocalDateTime
+        // build ZonedDateTimes
+        ZonedDateTime openingDate = LocalDateTime
                 .of(openingResponse[2], openingResponse[1], openingResponse[0], openingResponse[3], openingResponse[4])
-                .atZone(ZoneId.of("Z")).toInstant();
+                .atZone(ZoneId.of("Europe/London"));
 
-        Instant closingDateInstant = LocalDateTime
+        ZonedDateTime closingDate = LocalDateTime
                 .of(closingResponse[2], closingResponse[1], closingResponse[0], closingResponse[3], closingResponse[4])
-                .atZone(ZoneId.of("Z")).toInstant();
+                .atZone(ZoneId.of("Europe/London"));
 
         // set dates on advert
-        grantAdvert.setOpeningDate(openingDateInstant);
-        grantAdvert.setClosingDate(closingDateInstant);
-
+        grantAdvert.setOpeningDate(openingDate);
+        grantAdvert.setClosingDate(closingDate);
     }
 
     public void unscheduleGrantAdvert(final UUID advertId) {
-        final GrantAdvert advert = getAdvertById(advertId, false);
+        final GrantAdvert advert = getAdvertById(advertId);
         advert.setStatus(GrantAdvertStatus.UNSCHEDULED);
-        grantAdvertRepository.save(advert);
+        save(advert);
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(Integer adminId, Integer schemeId) {
-        Optional<GrantAdvert> advertOptional = this.grantAdvertRepository.findBySchemeId(schemeId);
-        if (advertOptional.isPresent()) {
-            final GrantAdvert advert = advertOptional.get();
-            advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
-            this.grantAdvertRepository.save(advert);
-        }
+    public void updateAdvertOwner(Integer adminId, Integer schemeId) {
+        this.grantAdvertRepository.findBySchemeId(schemeId)
+                .ifPresent(advert -> {
+                    advert.setCreatedBy(this.grantAdminRepository.findById(adminId).orElseThrow());
+                    save(advert);
+                });
     }
 
+    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
+        grantAdvertRepository.findBySchemeId(schemeId)
+                .ifPresent(advert -> {
+                    if (advert.getLastUpdatedBy() != null && advert.getLastUpdatedBy() == grantAdmin) {
+                        advert.setLastUpdatedBy(null);
+                    }
+                    if (advert.getCreatedBy() != null && advert.getCreatedBy() == grantAdmin) {
+                        advert.setCreatedBy(null);
+                    }
+
+                    grantAdvertRepository.save(advert);
+                });
+    }
+
+    public static void validateAdvertStatus(GrantAdvert grantAdvert) {
+        if (grantAdvert.getStatus() == GrantAdvertStatus.PUBLISHED || grantAdvert.getStatus() == GrantAdvertStatus.SCHEDULED) {
+            throw new ConflictException("GRANT_ADVERT_MULTIPLE_EDITORS");
+        }
+    }
 }

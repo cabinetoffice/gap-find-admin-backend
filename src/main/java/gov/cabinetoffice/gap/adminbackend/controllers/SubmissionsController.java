@@ -1,7 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
-import gov.cabinetoffice.gap.adminbackend.config.LambdaSecretConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightExports;
 import gov.cabinetoffice.gap.adminbackend.dtos.S3ObjectKeyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UrlDTO;
@@ -9,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefini
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantExportStatus;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.FileService;
 import gov.cabinetoffice.gap.adminbackend.services.S3Service;
 import gov.cabinetoffice.gap.adminbackend.services.SubmissionsService;
@@ -22,18 +22,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
@@ -55,9 +45,8 @@ public class SubmissionsController {
 
     private final FileService fileService;
 
-    private final LambdaSecretConfigProperties lambdaSecretConfigProperties;
-
     @GetMapping(value = "/spotlight-export/{applicationId}", produces = EXPORT_CONTENT_TYPE)
+    @CheckSchemeOwnership
     public ResponseEntity<InputStreamResource> exportSpotlightChecks(@PathVariable Integer applicationId) {
         log.info("Started submissions export for application " + applicationId);
         long start = System.currentTimeMillis();
@@ -86,6 +75,7 @@ public class SubmissionsController {
     }
 
     @PostMapping("/export-all/{applicationId}")
+    @CheckSchemeOwnership
     public ResponseEntity exportAllSubmissions(@PathVariable Integer applicationId) {
         submissionsService.triggerSubmissionsExport(applicationId);
 
@@ -93,6 +83,7 @@ public class SubmissionsController {
     }
 
     @GetMapping("/status/{applicationId}")
+    @CheckSchemeOwnership
     public ResponseEntity getExportStatus(@PathVariable Integer applicationId) {
         final GrantExportStatus status = submissionsService.getExportStatus(applicationId);
         return new ResponseEntity<>(status.toString(), HttpStatus.OK);
@@ -113,7 +104,7 @@ public class SubmissionsController {
             final @PathVariable @NotNull UUID batchExportId) {
         try {
             final LambdaSubmissionDefinition submission = submissionsService.getSubmissionInfo(submissionId,
-                    batchExportId, lambdaSecretConfigProperties.getSecret());
+                    batchExportId);
             return ResponseEntity.ok(submission);
         }
         catch (NotFoundException e) {

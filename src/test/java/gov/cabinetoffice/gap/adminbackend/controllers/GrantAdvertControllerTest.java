@@ -3,10 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.contentful.java.cma.model.CMAHttpException;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.LambdasInterceptor;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertPageResponseStatus;
 import gov.cabinetoffice.gap.adminbackend.enums.GrantAdvertStatus;
@@ -18,6 +15,7 @@ import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertQuestionResponse;
 import gov.cabinetoffice.gap.adminbackend.security.interceptors.AuthorizationHeaderInterceptor;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
+import gov.cabinetoffice.gap.adminbackend.services.UserService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,6 +34,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import javax.validation.Validator;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
@@ -80,6 +81,9 @@ class GrantAdvertControllerTest {
 
     @MockBean
     private Validator validator;
+    
+    @MockBean
+    private UserService userService;
 
     @MockBean
     @Qualifier("submissionExportAndScheduledPublishingLambdasInterceptor")
@@ -95,7 +99,7 @@ class GrantAdvertControllerTest {
 
         String advertName = "AdvertName";
 
-        CreateGrantAdvertDto dto = CreateGrantAdvertDto.builder().grantSchemeId(grantSchemeId).name(advertName).build();
+        CreateGrantAdvertDto dto = CreateGrantAdvertDto.builder().grantSchemeId(grantSchemeId).advertName(advertName).build();
 
         UUID advertId = UUID.randomUUID();
 
@@ -135,6 +139,7 @@ class GrantAdvertControllerTest {
         String questionId = "grantShortDescription";
 
         String expectedResponse = "This is a description";
+
 
         GrantAdvertPageResponse samplePage = GrantAdvertPageResponse.builder()
                 .status(GrantAdvertPageResponseStatus.IN_PROGRESS)
@@ -234,7 +239,7 @@ class GrantAdvertControllerTest {
         @Test
         @WithAdminSession
         void publishesAndReturnsExpectedResponse() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenReturn(grantAdvert);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenReturn(grantAdvert);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish").contentType(MediaType.APPLICATION_JSON)
                     .content(HelperUtils.asJsonStringWithNulls(grantAdvert))).andExpect(status().isOk());
 
@@ -246,7 +251,7 @@ class GrantAdvertControllerTest {
         @Test
         @WithAdminSession
         void publishAndReturnsNotFound() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(NotFoundException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(NotFoundException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish")).andExpect(status().isNotFound());
 
         }
@@ -254,14 +259,14 @@ class GrantAdvertControllerTest {
         @Test
         @WithAdminSession
         void publishAndReturnsNotEnoughPermissions() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(AccessDeniedException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(AccessDeniedException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish")).andExpect(status().isForbidden());
 
         }
 
         @Test
         void publishAndReturnsUnexpectedServiceError() throws Exception {
-            when(grantAdvertService.publishAdvert(grantAdvertId, false)).thenThrow(RuntimeException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(RuntimeException.class);
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/publish"))
                     .andExpect(status().isInternalServerError());
 
@@ -281,7 +286,7 @@ class GrantAdvertControllerTest {
 
         @Test
         void internalServerError_ReturnsContentfulException() throws Exception {
-            doThrow(CMAHttpException.class).when(grantAdvertService).unpublishAdvert(grantAdvertId, false);
+            doThrow(CMAHttpException.class).when(grantAdvertService).unpublishAdvert(grantAdvertId);
 
             mockMvc.perform(post("/grant-advert/" + grantAdvertId + "/unpublish"))
                     .andExpect(status().isInternalServerError());
@@ -299,7 +304,7 @@ class GrantAdvertControllerTest {
             final UUID grantAdvertId = UUID.randomUUID();
             final GrantAdvert grantAdvert = randomGrantAdvertEntity().id(grantAdvertId).build();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenReturn(grantAdvert);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenReturn(grantAdvert);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/unpublish")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isOk());
@@ -315,7 +320,7 @@ class GrantAdvertControllerTest {
         void unpublishGrantAdvertLambda_unexpectedError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            doThrow(new RuntimeException()).when(grantAdvertService).unpublishAdvert(grantAdvertId, true);
+            doThrow(new RuntimeException()).when(grantAdvertService).unpublishAdvert(grantAdvertId);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/unpublish")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
@@ -325,7 +330,7 @@ class GrantAdvertControllerTest {
         void unpublishGrantAdvertLambda_notFoundError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            doThrow(new NotFoundException()).when(grantAdvertService).unpublishAdvert(grantAdvertId, true);
+            doThrow(new NotFoundException()).when(grantAdvertService).unpublishAdvert(grantAdvertId);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/unpublish")
                     .header(HttpHeaders.AUTHORIZATION, LAMBDA_AUTH_HEADER)).andExpect(status().isNotFound());
@@ -343,7 +348,7 @@ class GrantAdvertControllerTest {
             final UUID grantAdvertId = UUID.randomUUID();
             final GrantAdvert grantAdvert = randomGrantAdvertEntity().id(grantAdvertId).build();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenReturn(grantAdvert);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenReturn(grantAdvert);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/publish").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isOk());
@@ -359,7 +364,7 @@ class GrantAdvertControllerTest {
         void publishGrantAdvertLambda_unexpectedError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenThrow(RuntimeException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(RuntimeException.class);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/publish").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isInternalServerError());
@@ -369,7 +374,7 @@ class GrantAdvertControllerTest {
         void publishGrantAdvertLambda_notFoundError() throws Exception {
             final UUID grantAdvertId = UUID.randomUUID();
 
-            when(grantAdvertService.publishAdvert(grantAdvertId, true)).thenThrow(NotFoundException.class);
+            when(grantAdvertService.publishAdvert(grantAdvertId)).thenThrow(NotFoundException.class);
 
             mockMvc.perform(post("/grant-advert/lambda/" + grantAdvertId + "/publish").header(HttpHeaders.AUTHORIZATION,
                     LAMBDA_AUTH_HEADER)).andExpect(status().isNotFound());
@@ -446,31 +451,41 @@ class GrantAdvertControllerTest {
 
         private final Instant dateTimeInput = Instant.parse("2022-01-01T00:00:00.00Z");
 
-        private final Instant openingDate = dateTimeInput;
+        private final ZonedDateTime openingDate = LocalDateTime.parse("2022-01-01T00:00:00.00").atZone(ZoneId.of("Europe/London"));
 
-        private final Instant closingDate = dateTimeInput;
+        private final ZonedDateTime closingDate = LocalDateTime.parse("2022-01-01T00:00:00.00").atZone(ZoneId.of("Europe/London"));
 
         private final Instant firstPublishedDate = dateTimeInput;
 
         private final Instant lastPublishedDate = dateTimeInput;
+
+        private final Instant createdDate = Instant.parse("2021-01-01T00:00:00.00Z");
 
         private final Instant unpublishedDate = dateTimeInput;
 
         @Test
         void getAdvertPublishingInformation_GrantAdvertPublishingInformationReturned() throws Exception {
             String contentfulSlug = "dummy-contentful-slug";
-            GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponseDTO = GetGrantAdvertPublishingInformationResponseDTO
+            GetGrantAdvertPublishingInformationResponseDTO publishingInfo = GetGrantAdvertPublishingInformationResponseDTO
                     .builder().grantAdvertId(grantAdvertId).grantAdvertStatus(grantAdvertStatus)
                     .contentfulSlug(contentfulSlug).unpublishedDate(unpublishedDate)
                     .firstPublishedDate(firstPublishedDate).lastPublishedDate(lastPublishedDate)
+                    .lastUpdatedByEmail("an-email".getBytes())
+                    .created(createdDate)
+                    .validLastUpdated(true)
+                    .lastUpdated(lastPublishedDate)
                     .closingDate(closingDate).openingDate(openingDate).build();
 
+
+            when(userService.getEmailAddressForSub(any())).thenReturn("an-email".getBytes());
+
+
             when(grantAdvertService.getGrantAdvertPublishingInformationBySchemeId(grantSchemeId))
-                    .thenReturn(grantAdvertPublishingInformationResponseDTO);
+                    .thenReturn(publishingInfo);
 
             mockMvc.perform(get("/grant-advert/publish-information").param("grantSchemeId", grantSchemeId.toString()))
                     .andExpect(status().isOk())
-                    .andExpect(content().string(HelperUtils.asJsonString(grantAdvertPublishingInformationResponseDTO)))
+                    .andExpect(content().string(HelperUtils.asJsonString(publishingInfo)))
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON));
         }
 

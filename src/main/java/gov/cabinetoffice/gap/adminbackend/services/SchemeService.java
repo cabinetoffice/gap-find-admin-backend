@@ -10,20 +10,23 @@ import gov.cabinetoffice.gap.adminbackend.enums.SessionObjectEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SchemeEntityException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SchemeMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpSession;
-import java.time.Instant;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SchemeService {
@@ -34,11 +37,15 @@ public class SchemeService {
 
     private final SessionsService sessionsService;
 
-    private final UserService userService;
+
+    private final GrantAdminRepository grantAdminRepository;
+
+    private final GrantAdvertService grantAdvertService;
+
+    private final ApplicationFormService applicationFormService;
 
     private final FeatureFlagsConfigurationProperties featureFlagsConfigurationProperties;
 
-    @PostAuthorize("returnObject.createdBy == authentication.principal.grantAdminId or hasRole('SUPER_ADMIN')")
     public SchemeDTO getSchemeBySchemeId(Integer schemeId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
@@ -63,9 +70,18 @@ public class SchemeService {
             SchemeEntity entity = this.schemeMapper.schemePostDtoToEntity(newScheme);
             entity.setFunderId(adminSession.getFunderId());
             entity.setCreatedBy(adminSession.getGrantAdminId());
+
             if (featureFlagsConfigurationProperties.isNewMandatoryQuestionsEnabled()) {
                 entity.setVersion(2);
             }
+
+            this.grantAdminRepository.findById(adminSession.getGrantAdminId())
+                    .ifPresentOrElse(
+                            entity::addAdmin,
+                            () -> new SchemeEntityException("Something went wrong while creating a new grant scheme: " +
+                                    "No grant admin found for id: " + adminSession.getGrantAdminId())
+                    );
+
             entity = this.schemeRepo.save(entity);
             this.sessionsService.deleteObjectFromSession(SessionObjectEnum.newScheme, session);
 
@@ -80,19 +96,9 @@ public class SchemeService {
     }
 
     public void patchExistingScheme(Integer schemeId, SchemePatchDTO schemePatchDTO) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
-
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
-
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + "is unable to update the scheme with id " + schemeId);
-            }
-
-            scheme.setLastUpdated(Instant.now());
-            scheme.setLastUpdatedBy(session.getGrantAdminId());
 
             this.schemeMapper.updateSchemeEntityFromPatchDto(schemePatchDTO, scheme);
             this.schemeRepo.save(scheme);
@@ -108,16 +114,9 @@ public class SchemeService {
     }
 
     public void deleteASchemeById(final Integer schemeId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
             SchemeEntity scheme = this.schemeRepo.findById(schemeId).orElseThrow(EntityNotFoundException::new);
-
-            if (!scheme.getCreatedBy().equals(session.getGrantAdminId())) {
-                throw new AccessDeniedException(
-                        "User " + session.getGrantAdminId() + "is unable to delete the scheme with id " + schemeId);
-            }
-
             this.schemeRepo.delete(scheme);
         }
         catch (EntityNotFoundException | IllegalArgumentException | AccessDeniedException ex) {
@@ -134,8 +133,7 @@ public class SchemeService {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         try {
-            List<SchemeEntity> schemes;
-            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId());
+            List<SchemeEntity> schemes = this.schemeRepo.findByGrantAdminsIdOrderByCreatedDateDesc(adminSession.getGrantAdminId());
             return this.schemeMapper.schemeEntityListtoDtoList(schemes);
         }
         catch (Exception e) {
@@ -147,8 +145,8 @@ public class SchemeService {
     public List<SchemeDTO> getPaginatedSchemes(Pageable pagination) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
         try {
-            List<SchemeEntity> schemes;
-            schemes = this.schemeRepo.findByCreatedByOrderByCreatedDateDesc(adminSession.getGrantAdminId(), pagination);
+            List<SchemeEntity> schemes = this.schemeRepo
+                    .findByGrantAdminsIdOrderByCreatedDateDesc(adminSession.getGrantAdminId(), pagination);
             return this.schemeMapper.schemeEntityListtoDtoList(schemes);
         }
         catch (Exception e) {
@@ -163,15 +161,84 @@ public class SchemeService {
         return this.schemeMapper.schemeEntityListtoDtoList(schemes);
     }
 
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void patchCreatedBy(GrantAdmin grantAdmin, Integer schemeId) {
-        SchemeEntity scheme = this.schemeRepo.findById(schemeId)
+    public SchemeEntity findSchemeById(Integer schemeId) {
+       return this.schemeRepo.findById(schemeId)
                 .orElseThrow(() -> new SchemeEntityException(
                         "Update grant ownership failed: Something went wrong while trying to find scheme with id: "
                                 + schemeId));
+    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void updateGrantSchemeOwner(GrantAdmin grantAdmin, Integer schemeId) {
+        final SchemeEntity scheme = this.findSchemeById(schemeId);
+        scheme.getGrantAdmins().stream()
+                .filter(admin -> admin.getId().equals(scheme.getCreatedBy()))
+                .findAny()
+                .ifPresent(scheme::removeAdmin);
+
         scheme.setCreatedBy(grantAdmin.getId());
         scheme.setFunderId(grantAdmin.getFunder().getId());
+
+        scheme.getGrantAdmins().stream()
+                .filter(admin -> admin.getId().equals(grantAdmin.getId()))
+                .findAny()
+                .ifPresentOrElse(
+                        admin -> log.info("Admin with ID {} is already an editor on scheme {}", admin.getId(), scheme.getId()),
+                        () -> scheme.addAdmin(grantAdmin)
+                );
+
         this.schemeRepo.save(scheme);
     }
 
+    @Transactional
+    public void removeAdminReference(String userSub) {
+        grantAdminRepository.findByGapUserUserSub(userSub).ifPresent(grantAdmin -> {
+
+            List<SchemeEntity> schemes = schemeRepo.findByGrantAdminsIdOrderByCreatedDateDesc(grantAdmin.getId());
+
+            for (SchemeEntity scheme: schemes) {
+
+                if (scheme.getLastUpdatedBy() != null && scheme.getLastUpdatedBy().equals(grantAdmin.getId())) {
+                    scheme.setLastUpdatedBy(null);
+                }
+
+                scheme.removeAdmin(grantAdmin);
+                grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin, scheme.getId());
+                applicationFormService.removeAdminReferenceBySchemeId(grantAdmin, scheme.getId());
+            }
+
+            schemeRepo.saveAll(schemes);
+        });
+
+
+    }
+
+
+    public List<SchemeDTO> getPaginatedOwnedSchemesByAdminId(int adminId, Pageable pagination) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                    .findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(adminId, pagination);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getOwnedSchemesByAdminId(int adminId) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByOrderByLastUpdatedDescCreatedDateDesc(adminId);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getPaginatedEditableSchemesByAdminId(int adminId, Pageable pagination) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(adminId, adminId, pagination);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
+
+    public List<SchemeDTO> getEditableSchemesByAdminId(int adminId) {
+        final List<SchemeEntity> schemes = this.schemeRepo
+                .findByCreatedByNotAndGrantAdminsIdOrderByLastUpdatedDescCreatedDateDesc(adminId, adminId);
+
+        return this.schemeMapper.schemeEntityListtoDtoList(schemes);
+    }
 }

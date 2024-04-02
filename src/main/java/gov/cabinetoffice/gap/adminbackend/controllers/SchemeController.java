@@ -2,11 +2,14 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
 import gov.cabinetoffice.gap.adminbackend.dtos.CheckNewAdminEmailDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.schemes.OwnedAndEditableSchemesDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemePostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.ApplicationFormService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.services.SchemeService;
@@ -68,6 +71,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<SchemeDTO> getSchemeById(@PathVariable final Integer schemeId) {
         log.info("Getting scheme with id " + schemeId + " from database");
 
@@ -123,6 +127,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<String> updateSchemeData(@PathVariable final Integer schemeId,
             @Valid @RequestBody SchemePatchDTO scheme) {
         try {
@@ -149,6 +154,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "No scheme found with matching id.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<String> deleteAScheme(@PathVariable final Integer schemeId) {
         try {
             this.schemeService.deleteASchemeById(schemeId);
@@ -197,17 +203,47 @@ public class SchemeController {
         }
     }
 
+    @GetMapping("/editable")
+    @Operation(summary = "Retrieve all grant schemes which belong to the logged in user.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found schemes",
+                    content = @Content(mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = SchemeDTO.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid properties provided",
+                    content = @Content(mediaType = "application/json")),})
+    @Parameter(in = ParameterIn.QUERY, description = "True to paginate results from endpoint", name = "paginate",
+            schema = @Schema(type = "boolean"))
+    @Parameter(name = "pagination", hidden = true)
+    @PageableAsQueryParam
+    public ResponseEntity<OwnedAndEditableSchemesDto> getOwnedAndEditableSchemes(final @RequestParam(defaultValue = "false") boolean paginate, final Pageable pagination) {
+        final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
+        final OwnedAndEditableSchemesDto schemes = paginate ? new OwnedAndEditableSchemesDto(
+                this.schemeService.getPaginatedOwnedSchemesByAdminId(adminSession.getGrantAdminId(), pagination),
+                this.schemeService.getPaginatedEditableSchemesByAdminId(adminSession.getGrantAdminId(), pagination)
+        ) : new OwnedAndEditableSchemesDto(
+                this.schemeService.getOwnedSchemesByAdminId(adminSession.getGrantAdminId()),
+                this.schemeService.getEditableSchemesByAdminId(adminSession.getGrantAdminId())
+        );
+
+        return ResponseEntity.ok()
+                .body(schemes);
+    }
+
     @PatchMapping("/{schemeId}/scheme-ownership")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Transactional
     public ResponseEntity<String> updateGrantOwnership(@PathVariable final Integer schemeId,
             @RequestBody final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
         final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-        GrantAdmin grantAdmin = userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(),
-                jwt);
-        schemeService.patchCreatedBy(grantAdmin, schemeId);
-        grantAdvertService.patchCreatedBy(grantAdmin.getId(), schemeId);
-        applicationFormService.patchCreatedBy(grantAdmin.getId(), schemeId);
+        final GrantAdmin grantAdmin = userService.getGrantAdminIdFromUserServiceEmail(
+                checkNewAdminEmailDto.getEmailAddress(),
+                jwt
+        );
+
+        schemeService.updateGrantSchemeOwner(grantAdmin, schemeId);
+        grantAdvertService.updateAdvertOwner(grantAdmin.getId(), schemeId);
+        applicationFormService.updateApplicationOwner(grantAdmin.getId(), schemeId);
+
         return ResponseEntity.ok("Grant ownership updated successfully");
     }
 
@@ -234,6 +270,7 @@ public class SchemeController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403", description = "You do not have permissions to access this scheme.",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity<Boolean> hasInternalApplicationForm(@PathVariable final Integer schemeId) {
 
         log.info("Checking if scheme " + schemeId + " has an internal application form");

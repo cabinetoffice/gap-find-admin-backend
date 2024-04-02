@@ -4,13 +4,13 @@ public class SessionTestData {
 
     public final static String SESSION_BATCH_ADD_BODY_JSON = """
             {
-                "name": "sampleSchemeName",
+                "grantName": "sampleSchemeName",
                 "ggisReference": "sampleSchemeGGiSReference"
             }""";
 
     public final static String SESSION_BATCH_ADD_INVALID_BODY_JSON = """
             {
-                "name": "",
+                "grantName": "",
                 "ggisReference": ""
             }""";
 
@@ -18,7 +18,7 @@ public class SessionTestData {
             {
                 fieldErrors: [
                     {
-                        "fieldName": "name",
+                        "fieldName": "grantName",
                         "errorMessage": "Enter the name of your grant"
                     },
                     {

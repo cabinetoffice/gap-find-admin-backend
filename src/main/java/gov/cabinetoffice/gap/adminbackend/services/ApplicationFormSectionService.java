@@ -7,6 +7,7 @@ import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.SectionStatusEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
+import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.ApplicationFormRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.ApplicationFormUtils;
@@ -40,7 +41,6 @@ public class ApplicationFormSectionService {
     }
 
     public String addSectionToApplicationForm(Integer applicationId, PostSectionDTO sectionDTO) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
@@ -50,7 +50,7 @@ public class ApplicationFormSectionService {
 
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
         verifyUniqueSectionName(applicationForm, newSection.getSectionTitle());
 
@@ -61,11 +61,12 @@ public class ApplicationFormSectionService {
         return newSection.getSectionId();
     }
 
-    public void deleteSectionFromApplication(Integer applicationId, String sectionId) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
+    public void deleteSectionFromApplication(Integer applicationId, String sectionId, Integer version) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         boolean sectionDeleted = applicationForm.getDefinition().getSections()
                 .removeIf(section -> Objects.equals(section.getSectionId(), sectionId));
@@ -74,45 +75,47 @@ public class ApplicationFormSectionService {
             throw new NotFoundException("Section with id " + sectionId + " does not exist");
         }
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
-
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         this.applicationFormRepository.save(applicationForm);
 
     }
 
     public void updateSectionStatus(final Integer applicationId, final String sectionId,
             final SectionStatusEnum newStatus) {
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
 
         applicationForm.getDefinition().getSectionById(sectionId).setSectionStatus(newStatus);
 
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
 
         this.applicationFormRepository.save(applicationForm);
     }
 
-    public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title) {
+    public void updateSectionTitle(final Integer applicationId, final String sectionId, final String title, final Integer version) {
 
-        AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         ApplicationDefinitionDTO applicationDefinition = applicationForm.getDefinition();
 
         verifyUniqueSectionName(applicationForm, title);
 
         applicationDefinition.getSectionById(sectionId).setSectionTitle(title.replace("\"", ""));
-        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, session, false);
+
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         this.applicationFormRepository.save(applicationForm);
     }
 
-    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment) {
+    public void updateSectionOrder(final Integer applicationId, final String sectionId, final Integer increment, final Integer version) {
         ApplicationFormEntity applicationForm = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "Application with id " + applicationId + " does not exist or insufficient permissions"));
+
+        ApplicationFormUtils.verifyApplicationFormVersion(version, applicationForm);
 
         List<ApplicationFormSectionDTO> sections = applicationForm.getDefinition().getSections();
         ApplicationFormSectionDTO section = applicationForm.getDefinition().getSectionById(sectionId);
@@ -132,6 +135,7 @@ public class ApplicationFormSectionService {
         sections.add(NEW_SECTION_INDEX, section);
 
         applicationForm.getDefinition().setSections(sections);
+        ApplicationFormUtils.updateAuditDetailsAfterFormChange(applicationForm, false);
         this.applicationFormRepository.save(applicationForm);
     }
 

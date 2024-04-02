@@ -25,4 +25,10 @@ public class SchemeDTO {
 
     private Integer createdBy;
 
+    private Instant lastUpdatedDate;
+
+    private boolean lastUpdatedByADeletedUser;
+
+    private byte[] encryptedLastUpdatedBy;
+
 }

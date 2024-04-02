@@ -5,13 +5,14 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.google.common.collect.Lists;
+import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
 import gov.cabinetoffice.gap.adminbackend.constants.AWSConstants;
 import gov.cabinetoffice.gap.adminbackend.constants.SpotlightHeaders;
-import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.ApplicationFormDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.LambdaSubmissionDefinition;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionExportsDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.submission.SubmissionSection;
+import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportBatchEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantExportEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.Submission;
@@ -22,6 +23,7 @@ import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.SpotlightExportException;
 import gov.cabinetoffice.gap.adminbackend.mappers.SubmissionMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
+import gov.cabinetoffice.gap.adminbackend.repositories.GrantAttachmentRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportBatchRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantExportRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SubmissionRepository;
@@ -30,10 +32,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -66,11 +64,20 @@ public class SubmissionsService {
 
     private final GrantExportBatchRepository grantExportBatchRepository;
 
+    private final GrantAttachmentRepository grantAttachmentRepository;
+
+    private final UserServiceClient userServiceClient;
+
     @Value("${cloud.aws.sqs.submissions-export-queue}")
     private String submissionsExportQueue;
 
     @Value("${user-service.domain}")
     private String userServiceUrl;
+
+    public Submission getSubmissionById(final UUID submissionId) {
+        return submissionRepository.findById(submissionId).orElseThrow(() -> new NotFoundException(
+                String.format("No Submission with ID %s was found", submissionId)));
+    }
 
     public ByteArrayOutputStream exportSpotlightChecks(Integer applicationId) {
         AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -82,11 +89,6 @@ public class SubmissionsService {
             throw new AccessDeniedException("Admin " + adminSession.getGrantAdminId()
                     + " is unable to access application with id " + applicationId);
         }
-
-        // TODO GAP-1377 we need to limit the number of submissions we export
-        // to 1000 rows in a file due to a restriction the Spotlight input
-        // processing. So we will need to "page" the returned data and create
-        // multiple files if there are more than 999 submissions.
 
         final List<Submission> submissionsByAppId = submissionRepository
                 .findByApplicationGrantApplicationIdAndStatus(applicationId, SubmissionStatus.SUBMITTED);
@@ -221,8 +223,7 @@ public class SubmissionsService {
         return GrantExportStatus.COMPLETE;
     }
 
-    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId,
-            final String authHeader) {
+    public LambdaSubmissionDefinition getSubmissionInfo(final UUID submissionId, final UUID exportBatchId) {
 
         if (!grantExportRepository
                 .existsById(GrantExportId.builder().exportBatchId(exportBatchId).submissionId(submissionId).build())) {
@@ -232,11 +233,16 @@ public class SubmissionsService {
         final Submission submission = submissionRepository.findByIdWithApplicant(submissionId)
                 .orElseThrow(NotFoundException::new);
         final String userId = submission.getApplicant().getUserId();
-        final String email = getEmailFromUserId(userId, authHeader);
+        final UserDto userDto = userServiceClient.getUserForSub(userId);
+        final String email = Objects.requireNonNull(userDto).getEmailAddress();
+
+        final boolean hasAttachments = grantAttachmentRepository.existsBySubmissionId(submissionId);
+
 
         final LambdaSubmissionDefinition lambdaSubmissionDefinition = submissionMapper
                 .submissionToLambdaSubmissionDefinition(submission);
         lambdaSubmissionDefinition.setEmail(email);
+        lambdaSubmissionDefinition.setHasAttachments(hasAttachments);
         return lambdaSubmissionDefinition;
     }
 
@@ -305,7 +311,8 @@ public class SubmissionsService {
         return list.stream()
                 .map(submission -> GrantExportEntity.builder().id(new GrantExportId(exportId, submission.getId()))
                         .status(GrantExportStatus.REQUESTED).applicationId(applicationId)
-                        .emailAddress(adminSession.getEmailAddress()).createdBy(adminSession.getGrantAdminId()).build())
+                        .emailAddress(adminSession.getEmailAddress()).createdBy(adminSession.getGrantAdminId())
+                        .schemeId(submission.getScheme().getId()).build())
                 .toList();
     }
 
@@ -333,6 +340,9 @@ public class SubmissionsService {
                     return new SendMessageBatchRequestEntry().withId(randomUuid).withMessageBody(randomUuid)
                             .withMessageDeduplicationId(randomUuid)
                             .withMessageGroupId(exportRecord.getId().getExportBatchId().toString())
+                            .addMessageAttributesEntry("schemeId",
+                                    new MessageAttributeValue().withDataType("String")
+                                            .withStringValue(exportRecord.getSchemeId().toString()))
                             .addMessageAttributesEntry("submissionId",
                                     new MessageAttributeValue().withDataType("String")
                                             .withStringValue(exportRecord.getId().getSubmissionId().toString()))
@@ -376,16 +386,5 @@ public class SubmissionsService {
         catch (Exception e) {
             return exportEntity.getId().getSubmissionId().toString();
         }
-
     }
-
-    private String getEmailFromUserId(final String userId, final String authHeader) {
-        final String url = userServiceUrl + "/user?userSub=" + userId;
-        final HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.add("Authorization", authHeader);
-        HttpEntity<?> httpEntity = new HttpEntity<>(requestHeaders);
-        final ResponseEntity<UserV2DTO> user = restTemplate.exchange(url, HttpMethod.GET, httpEntity, UserV2DTO.class);
-        return Objects.requireNonNull(user.getBody()).emailAddress();
-    }
-
 }

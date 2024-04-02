@@ -3,17 +3,13 @@ package gov.cabinetoffice.gap.adminbackend.controllers;
 import com.contentful.java.cma.model.CMAHttpException;
 import gov.cabinetoffice.gap.adminbackend.annotations.LambdasHeaderValidator;
 import gov.cabinetoffice.gap.adminbackend.dtos.errors.FieldErrorsDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.CreateGrantAdvertResponseDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPagePatchResponseDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GrantAdvertPageResponseValidationDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.*;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import gov.cabinetoffice.gap.adminbackend.mappers.GrantAdvertMapper;
 import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.models.GrantAdvertPageResponse;
 import gov.cabinetoffice.gap.adminbackend.models.ValidationError;
+import gov.cabinetoffice.gap.adminbackend.security.CheckSchemeOwnership;
 import gov.cabinetoffice.gap.adminbackend.services.EventLogService;
 import gov.cabinetoffice.gap.adminbackend.services.GrantAdvertService;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
@@ -62,15 +58,16 @@ public class GrantAdvertController {
 
     private final Validator validator;
 
+    @CheckSchemeOwnership
     @PostMapping("/create")
     public ResponseEntity<CreateGrantAdvertResponseDto> create(HttpServletRequest request,
             @Valid @RequestBody CreateGrantAdvertDto createGrantAdvertDto) {
-        log.info("Creating Grant Advert '{}' for Grant Scheme ID '{}'", createGrantAdvertDto.getName(),
+        log.info("Creating Grant Advert '{}' for Grant Scheme ID '{}'", createGrantAdvertDto.getAdvertName(),
                 createGrantAdvertDto.getGrantSchemeId());
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
         GrantAdvert grantAdvert = grantAdvertService.create(createGrantAdvertDto.getGrantSchemeId(),
-                session.getGrantAdminId(), createGrantAdvertDto.getName());
+                session.getGrantAdminId(), createGrantAdvertDto.getAdvertName());
         log.info("Successfully created Grant Advert named '{}' with id '{}'", grantAdvert.getGrantAdvertName(),
                 grantAdvert.getId());
 
@@ -91,6 +88,7 @@ public class GrantAdvertController {
 
     @PatchMapping(value = "/{grantAdvertId}/sections/{sectionId}/pages/{pageId}", consumes = "application/json",
             produces = "application/json")
+    @CheckSchemeOwnership
     public ResponseEntity updatePage(HttpServletRequest request, @PathVariable UUID grantAdvertId,
             @PathVariable String sectionId, @PathVariable String pageId,
             @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
@@ -137,7 +135,7 @@ public class GrantAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Bad request body",
                     content = @Content(mediaType = "application/json")) })
-
+    @CheckSchemeOwnership
     public ResponseEntity getAdvertStatus(@RequestParam @NotNull final Integer grantSchemeId) {
 
         GetGrantAdvertStatusResponseDTO grantAdvertResponse = this.grantAdvertService
@@ -149,22 +147,22 @@ public class GrantAdvertController {
     @GetMapping("/publish-information")
     @Operation(summary = "Retrieves the information around publishing a grant advert for query params provided")
     @ApiResponses(value = { @ApiResponse(responseCode = "200",
-            description = "Successfully fetched the publishing information of grant advert for query params provided",
-            content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = GetGrantAdvertPublishingInformationResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions to fetch this grant advert",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No grant advert found for scheme id provided",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "400", description = "Bad request body",
-                    content = @Content(mediaType = "application/json")) })
-
+                description = "Successfully fetched the publishing information of grant advert for query params provided",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = GetGrantAdvertPublishingInformationResponseDTO.class))),
+                @ApiResponse(responseCode = "403", description = "Insufficient permissions to fetch this grant advert",
+                        content = @Content(mediaType = "application/json")),
+                @ApiResponse(responseCode = "404", description = "No grant advert found for scheme id provided",
+                        content = @Content(mediaType = "application/json")),
+                @ApiResponse(responseCode = "400", description = "Bad request body",
+                        content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity getPublishInformation(@RequestParam @NotNull final Integer grantSchemeId) {
-
         GetGrantAdvertPublishingInformationResponseDTO grantAdvertPublishingInformationResponse = this.grantAdvertService
-                .getGrantAdvertPublishingInformationBySchemeId(grantSchemeId);
+                    .getGrantAdvertPublishingInformationBySchemeId(grantSchemeId);
 
-        return ResponseEntity.ok(grantAdvertPublishingInformationResponse);
+            return ResponseEntity.ok(grantAdvertPublishingInformationResponse);
+
     }
 
     @DeleteMapping("/{grantAdvertId}")
@@ -175,6 +173,7 @@ public class GrantAdvertController {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Unable to find grant advert with id provided",
                     content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity deleteGrantAdvert(@PathVariable UUID grantAdvertId) {
 
         grantAdvertService.deleteGrantAdvert(grantAdvertId);
@@ -207,11 +206,12 @@ public class GrantAdvertController {
     }
 
     @PostMapping("/{grantAdvertId}/publish")
+    @CheckSchemeOwnership
     public ResponseEntity<GrantAdvert> publishGrantAdvert(HttpServletRequest request,
             final @PathVariable UUID grantAdvertId) {
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
 
-        final GrantAdvert publishedAdvert = grantAdvertService.publishAdvert(grantAdvertId, false);
+        final GrantAdvert publishedAdvert = grantAdvertService.publishAdvert(grantAdvertId);
 
         try {
             eventLogService.logAdvertPublishedEvent(request.getRequestedSessionId(), session.getUserSub(),
@@ -230,7 +230,7 @@ public class GrantAdvertController {
     public ResponseEntity publishGrantAdvertLambda(final @PathVariable UUID grantAdvertId) {
 
         try {
-            grantAdvertService.publishAdvert(grantAdvertId, true);
+            grantAdvertService.publishAdvert(grantAdvertId);
         }
         catch (CMAHttpException cmae) {
             log.error("Contentful Error Body - " + cmae.getErrorBody().toString());
@@ -242,6 +242,7 @@ public class GrantAdvertController {
     }
 
     @PostMapping("/{grantAdvertId}/schedule")
+    @CheckSchemeOwnership
     public ResponseEntity scheduleGrantAdvert(HttpServletRequest request, final @PathVariable UUID grantAdvertId) {
         grantAdvertService.scheduleGrantAdvert(grantAdvertId);
         AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
@@ -262,8 +263,9 @@ public class GrantAdvertController {
     @Operation(summary = "Unpublishes the advert with id provided")
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successfully unpublished the advert",
             content = @Content(mediaType = "application/json")) })
+    @CheckSchemeOwnership
     public ResponseEntity unpublishGrantAdvert(final @PathVariable UUID grantAdvertId) {
-        grantAdvertService.unpublishAdvert(grantAdvertId, false);
+        grantAdvertService.unpublishAdvert(grantAdvertId);
         return ResponseEntity.ok().build();
     }
 
@@ -277,11 +279,12 @@ public class GrantAdvertController {
     @LambdasHeaderValidator
     public ResponseEntity unpublishGrantAdvertForLambda(final @PathVariable UUID grantAdvertId) {
 
-        grantAdvertService.unpublishAdvert(grantAdvertId, true);
+        grantAdvertService.unpublishAdvert(grantAdvertId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{grantAdvertId}/unschedule")
+    @CheckSchemeOwnership
     public ResponseEntity unscheduleGrantAdvert(final @PathVariable UUID grantAdvertId) {
         grantAdvertService.unscheduleGrantAdvert(grantAdvertId);
         return ResponseEntity.ok().build();
