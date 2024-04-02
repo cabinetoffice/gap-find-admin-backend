@@ -12,7 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @EntityListeners(AuditingEntityListener.class)
@@ -61,10 +61,10 @@ public class GrantAdvert extends BaseEntity {
     private GrantAdmin lastUpdatedBy;
 
     @Column(name = "opening_date")
-    private LocalDateTime openingDate;
+    private ZonedDateTime openingDate;
 
     @Column(name = "closing_date")
-    private LocalDateTime closingDate;
+    private ZonedDateTime closingDate;
 
     @Column(name = "first_published_date")
     private Instant firstPublishedDate;

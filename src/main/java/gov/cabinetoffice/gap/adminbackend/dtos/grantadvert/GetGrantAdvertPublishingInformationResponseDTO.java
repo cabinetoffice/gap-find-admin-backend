@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Data
@@ -19,9 +19,9 @@ public class GetGrantAdvertPublishingInformationResponseDTO {
 
     private UUID grantAdvertId;
 
-    private LocalDateTime openingDate;
+    private ZonedDateTime openingDate;
 
-    private LocalDateTime closingDate;
+    private ZonedDateTime closingDate;
 
     private Instant firstPublishedDate;
 
