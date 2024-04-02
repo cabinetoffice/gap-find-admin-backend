@@ -738,13 +738,15 @@ class GrantAdvertServiceTest {
                 .id("grantApplicationOpenDate").seen(true)
                 .multiResponse(new String[] { "10", "12", "2022", "00", "01" }).build();
 
-        final LocalDateTime openingDate = LocalDateTime.of(2022, 12, 10, 0, 1);
+        final ZonedDateTime openingDate = LocalDateTime.of(2022, 12, 10, 0, 1)
+                .atZone(ZoneId.of("Europe/London"));
 
         final GrantAdvertQuestionResponse response5 = GrantAdvertQuestionResponse.builder()
                 .id("grantApplicationCloseDate").seen(true)
                 .multiResponse(new String[] { "10", "12", "2023", "23", "59" }).build();
 
-        final LocalDateTime closingDate = LocalDateTime.of(2023, 12, 10, 23, 59);
+        final ZonedDateTime closingDate = LocalDateTime.of(2023, 12, 10, 23, 59)
+                .atZone(ZoneId.of("Europe/London"));;
 
         final GrantAdvertQuestionResponse response6 = GrantAdvertQuestionResponse.builder().id("grantTotalAwardAmount")
                 .response("1000000").seen(true).build();
@@ -1223,13 +1225,15 @@ class GrantAdvertServiceTest {
                 .id("grantApplicationOpenDate").seen(true).multiResponse(new String[] { "10", "12", "2022", "0", "1" })
                 .build();
 
-        final LocalDateTime openingDate = LocalDateTime.of(2022, 12, 10, 0, 1);
+        final ZonedDateTime openingDate = LocalDateTime.of(2022, 12, 10, 0, 1)
+                .atZone(ZoneId.of("Europe/London"));
 
         final GrantAdvertQuestionResponse response5 = GrantAdvertQuestionResponse.builder()
                 .id("grantApplicationCloseDate").seen(true)
                 .multiResponse(new String[] { "10", "12", "2023", "23", "59" }).build();
 
-        final LocalDateTime closingDate = LocalDateTime.of(2023, 12, 10, 23, 59);
+        final ZonedDateTime closingDate = LocalDateTime.of(2023, 12, 10, 23, 59)
+                .atZone(ZoneId.of("Europe/London"));
 
         final GrantAdvertPageResponse datesPage = GrantAdvertPageResponse.builder().id("1")
                 .status(GrantAdvertPageResponseStatus.COMPLETED).questions(List.of(response4, response5)).build();
