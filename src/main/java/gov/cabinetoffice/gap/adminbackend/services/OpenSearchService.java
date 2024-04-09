@@ -28,6 +28,8 @@ public class OpenSearchService {
 
     public void indexEntry(final CMAEntry contentfulEntry) {
         final String body = contentfulEntryToJsonString(contentfulEntry);
+        log.debug("Elastic search update json string: {}", body);
+
         webClientBuilder.build().put()
                 .uri(createUrl(contentfulEntry))
                 .body(Mono.just(body), String.class)
@@ -35,12 +37,15 @@ public class OpenSearchService {
                 .header(AUTHORIZATION, createAuthHeader())
                 .retrieve()
                 .bodyToMono(void.class)
-                .doOnError(e -> log.error("Failed to create an index entry for ad " + contentfulEntry.getId() + "in open search: {}", e.getMessage()))
+                .doOnError(e -> log.error("Failed to create an index entry for ad " + contentfulEntry.getId()
+                        + " in open search: ", e))
                 .block();
     }
 
     public void removeIndexEntry(final CMAEntry contentfulEntry) {
         final String body = contentfulEntryToJsonString(contentfulEntry.getSystem());
+        log.debug("Elastic search delete json string: {}", body);
+
         webClientBuilder.build().method(HttpMethod.DELETE)
                 .uri(createUrl(contentfulEntry))
                 .body(Mono.just(body), String.class)
@@ -48,7 +53,8 @@ public class OpenSearchService {
                 .header(AUTHORIZATION, createAuthHeader())
                 .retrieve()
                 .bodyToMono(void.class)
-                .doOnError(e -> log.error("Failed to delete an index entry for ad " + contentfulEntry.getId() + "in open search: {}", e.getMessage()))
+                .doOnError(e -> log.error("Failed to delete an index entry for ad " + contentfulEntry.getId()
+                        + "in open search: ", e))
                 .block();
     }
 
