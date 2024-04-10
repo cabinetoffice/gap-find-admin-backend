@@ -38,7 +38,9 @@ public class OpenSearchService {
                 .onStatus(HttpStatus::isError, clientResponse -> {
                     log.info("Elastic search update json string: {}", body);
                     log.error("response code from open search: {}", clientResponse.statusCode());
-                    log.error("response from open search: {}", clientResponse.bodyToMono(String.class));
+                    log.error("response headers from open search: {}", clientResponse.headers().asHttpHeaders());
+                    log.error("response body from open search: {}", clientResponse.bodyToMono(String.class));
+
                     throw new IndexingException("failed to add CMA entry with ID " + contentfulEntry.getId() + " to index");
                 })
                 .bodyToMono(void.class)
@@ -56,7 +58,9 @@ public class OpenSearchService {
                 .onStatus(HttpStatus::isError, clientResponse -> {
                     log.info("Elastic search delete json string: {}", body);
                     log.error("response code from open search: {}", clientResponse.statusCode());
-                    log.error("response from open search: {}", clientResponse.bodyToMono(String.class));
+                    log.error("response headers from open search: {}", clientResponse.headers().asHttpHeaders());
+                    log.error("response body from open search: {}", clientResponse.bodyToMono(String.class));
+
                     throw new IndexingException("failed to remove CMA entry with ID " + contentfulEntry.getId() + " from index");
                 })
                 .bodyToMono(void.class)
