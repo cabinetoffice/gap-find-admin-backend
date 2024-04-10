@@ -316,7 +316,7 @@ public class GrantAdvertService {
                 @Override
                 protected void onSuccess(CMAEntry result) {
                     openSearchService.indexEntry(result);
-                    log.debug("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
+                    log.info("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
                 }
             });
         }

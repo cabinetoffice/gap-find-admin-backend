@@ -65,9 +65,11 @@ class OpenSearchServiceTest {
         when(mockRequestHeadersSpec.header("Content-Type", "application/json; UTF-8")).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.header("Authorization", "Basic dGVzdFVzZXJuYW1lOnRlc3RQYXNzd29yZA==")).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
+        when(mockResponseSpec.onStatus(any(), any())).thenReturn(mockResponseSpec);
         when(mockResponseSpec.bodyToMono(void.class)).thenReturn(Mono.empty());
 
         openSearchService.indexEntry(contentfulEntry);
+
     }
 
     @Test
@@ -87,8 +89,10 @@ class OpenSearchServiceTest {
         when(mockRequestHeadersSpec.header("Content-Type", "application/json; UTF-8")).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.header("Authorization", "Basic dGVzdFVzZXJuYW1lOnRlc3RQYXNzd29yZA==")).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
+        when(mockResponseSpec.onStatus(any(), any())).thenReturn(mockResponseSpec);
         when(mockResponseSpec.bodyToMono(void.class)).thenReturn(Mono.empty());
 
         openSearchService.removeIndexEntry(contentfulEntry);
+
     }
 }
