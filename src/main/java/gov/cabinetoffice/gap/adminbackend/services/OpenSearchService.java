@@ -3,9 +3,13 @@ package gov.cabinetoffice.gap.adminbackend.services;
 import com.contentful.java.cma.model.CMAEntry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.config.OpenSearchConfig;
+import gov.cabinetoffice.gap.adminbackend.exceptions.IndexingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,9 +17,6 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 @Service
 @RequiredArgsConstructor
@@ -28,33 +29,37 @@ public class OpenSearchService {
 
     public void indexEntry(final CMAEntry contentfulEntry) {
         final String body = contentfulEntryToJsonString(contentfulEntry);
-        log.debug("Elastic search update json string: {}", body);
-
         webClientBuilder.build().put()
                 .uri(createUrl(contentfulEntry))
                 .body(Mono.just(body), String.class)
                 .header(CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE + "; " + StandardCharsets.UTF_8.name())
                 .header(AUTHORIZATION, createAuthHeader())
                 .retrieve()
+                .onStatus(HttpStatus::isError, clientResponse -> {
+                    log.info("Elastic search update json string: {}", body);
+                    log.error("response code from open search: {}", clientResponse.statusCode());
+                    log.error("response from open search: {}", clientResponse.bodyToMono(String.class));
+                    throw new IndexingException("failed to add CMA entry with ID " + contentfulEntry.getId() + " to index");
+                })
                 .bodyToMono(void.class)
-                .doOnError(e -> log.error("Failed to create an index entry for ad " + contentfulEntry.getId()
-                        + " in open search: ", e))
                 .block();
     }
 
     public void removeIndexEntry(final CMAEntry contentfulEntry) {
         final String body = contentfulEntryToJsonString(contentfulEntry.getSystem());
-        log.debug("Elastic search delete json string: {}", body);
-
         webClientBuilder.build().method(HttpMethod.DELETE)
                 .uri(createUrl(contentfulEntry))
                 .body(Mono.just(body), String.class)
                 .header(CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE + "; " + StandardCharsets.UTF_8.name())
                 .header(AUTHORIZATION, createAuthHeader())
                 .retrieve()
+                .onStatus(HttpStatus::isError, clientResponse -> {
+                    log.info("Elastic search delete json string: {}", body);
+                    log.error("response code from open search: {}", clientResponse.statusCode());
+                    log.error("response from open search: {}", clientResponse.bodyToMono(String.class));
+                    throw new IndexingException("failed to remove CMA entry with ID " + contentfulEntry.getId() + " from index");
+                })
                 .bodyToMono(void.class)
-                .doOnError(e -> log.error("Failed to delete an index entry for ad " + contentfulEntry.getId()
-                        + "in open search: ", e))
                 .block();
     }
 
