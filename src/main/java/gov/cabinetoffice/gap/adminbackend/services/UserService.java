@@ -113,7 +113,7 @@ public class UserService {
         return isAdminSessionValid;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public GrantAdmin getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
             UserV2DTO response = webClientBuilder.build().get()
