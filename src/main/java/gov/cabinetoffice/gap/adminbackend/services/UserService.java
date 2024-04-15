@@ -10,11 +10,13 @@ import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.FundingOrganisationRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.ParameterizedTypeReference;
@@ -116,8 +118,10 @@ public class UserService {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public GrantAdmin getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
+            String roles = HelperUtils.getAdminSessionForAuthenticatedUser().getRoles();
+            String uriRole = roles.contains("SUPER_ADMIN") ? "SUPER_ADMIN" : "ADMIN";
             UserV2DTO response = webClientBuilder.build().get()
-                    .uri(userServiceConfig.getDomain() + "/user/email/" + email + "?role=ADMIN")
+                    .uri(userServiceConfig.getDomain() + "/user/email/" + email + "?role=" + uriRole)
                     .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
             return grantAdminRepository.findByGapUserUserSub(response.sub()).orElseThrow(() -> new NotFoundException(

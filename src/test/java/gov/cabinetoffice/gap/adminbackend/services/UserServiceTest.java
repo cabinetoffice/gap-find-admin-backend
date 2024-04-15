@@ -8,20 +8,23 @@ import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
 import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
+import gov.cabinetoffice.gap.adminbackend.models.AdminSession;
 import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
+
+import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -200,8 +203,8 @@ class UserServiceTest {
     }
 
     @Test
-    void getGrantAdminIdFromEmailReturnsAValidGrantAdminId() {
-        String email = "test@test.com";
+    void getGrantAdminIdFromEmailReturnsAValidGrantAdminIdForAdmin() {
+        String email = "testadmin@test.com";
         UserV2DTO response = UserV2DTO.builder().sub("1").emailAddress(email).build();
 
         final WebClient mockWebClient = mock(WebClient.class);
@@ -210,10 +213,55 @@ class UserServiceTest {
         final WebClient.RequestHeadersSpec mockRequestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         final WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
 
+        AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", email,
+                "[ADMIN]", "UserSub");
+        //use mocked static
+        MockedStatic<HelperUtils> mockedHelperUtils = mockStatic(HelperUtils.class);
+        //return role to be appended to the URI
+        mockedHelperUtils.when(HelperUtils::getAdminSessionForAuthenticatedUser)
+                .thenReturn(session);
+
         when(userServiceConfig.getDomain()).thenReturn("http://localhost:8080");
         when(webClientBuilder.build()).thenReturn(mockWebClient);
         when(mockWebClient.get()).thenReturn(mockRequestHeaderUriSpec);
         when(mockRequestHeaderUriSpec.uri("http://localhost:8080/user/email/" + email + "?role=ADMIN"))
+                .thenReturn(mockRequestHeadersSpec);
+        when(mockRequestHeadersSpec.cookie(anyString(), anyString())).thenReturn(mockRequestHeadersSpec);
+        when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
+        when(mockResponseSpec.bodyToMono(UserV2DTO.class)).thenReturn(Mono.just(response));
+        when(userServiceConfig.getCookieName()).thenReturn("user-service-token");
+
+        when(grantAdminRepository.findByGapUserUserSub(response.sub())).thenReturn(
+                Optional.of(GrantAdmin.builder().id(1).funder(FundingOrganisation.builder().id(1).build()).build()));
+
+        GrantAdmin grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
+
+        assertThat(grantAdminId.getFunder().getId()).isEqualTo(1);
+    }
+
+    @Test
+    void getGrantAdminIdFromEmailReturnsAValidGrantAdminIdForSuperAdmin() {
+        String email = "testsuperadmin@test.com";
+        UserV2DTO response = UserV2DTO.builder().sub("1").emailAddress(email).build();
+
+        final WebClient mockWebClient = mock(WebClient.class);
+        final WebClient.RequestHeadersUriSpec mockRequestHeaderUriSpec = Mockito
+                .mock(WebClient.RequestHeadersUriSpec.class);
+        final WebClient.RequestHeadersSpec mockRequestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        final WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
+
+        AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", email,
+                "[ADMIN, SUPER_ADMIN]", "UserSub");
+        //use mocked static
+        MockedStatic<HelperUtils> mockedHelperUtils = mockStatic(HelperUtils.class);
+        //return role to be appended to the URI
+        mockedHelperUtils.when(HelperUtils::getAdminSessionForAuthenticatedUser)
+                .thenReturn(session);
+
+        when(userServiceConfig.getDomain()).thenReturn("http://localhost:8080");
+        when(webClientBuilder.build()).thenReturn(mockWebClient);
+        when(mockWebClient.get()).thenReturn(mockRequestHeaderUriSpec);
+        when(mockRequestHeaderUriSpec.uri("http://localhost:8080/user/email/" + email + "?role=SUPER_ADMIN"))
                 .thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.cookie(anyString(), anyString())).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
