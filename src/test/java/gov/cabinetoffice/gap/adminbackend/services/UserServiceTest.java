@@ -211,9 +211,7 @@ class UserServiceTest {
 
         AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", email,
                 "[ADMIN]", "UserSub");
-        //use mocked static
         MockedStatic<HelperUtils> mockedHelperUtils = mockStatic(HelperUtils.class);
-        //return role to be appended to the URI
         mockedHelperUtils.when(HelperUtils::getAdminSessionForAuthenticatedUser)
                 .thenReturn(session);
 
@@ -233,6 +231,7 @@ class UserServiceTest {
         GrantAdmin grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
 
         assertThat(grantAdminId.getFunder().getId()).isEqualTo(1);
+        mockedHelperUtils.close();
     }
 
     @Test
@@ -247,10 +246,8 @@ class UserServiceTest {
         final WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
 
         AdminSession session = new AdminSession(1, 1, "Test", "User", "AND Digital", email,
-                "[ADMIN, SUPER_ADMIN]", "UserSub");
-        //use mocked static
+                "[SUPER_ADMIN]", "UserSub");
         MockedStatic<HelperUtils> mockedHelperUtils = mockStatic(HelperUtils.class);
-        //return role to be appended to the URI
         mockedHelperUtils.when(HelperUtils::getAdminSessionForAuthenticatedUser)
                 .thenReturn(session);
 
@@ -270,6 +267,8 @@ class UserServiceTest {
         GrantAdmin grantAdminId = userService.getGrantAdminIdFromUserServiceEmail(email, "jwt");
 
         assertThat(grantAdminId.getFunder().getId()).isEqualTo(1);
+        mockedHelperUtils.close();
+
     }
 
     @Test
