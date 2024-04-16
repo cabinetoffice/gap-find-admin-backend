@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,9 @@ public class AdvertSummaryPageDTO {
     private List<AdvertSummaryPageSectionDTO> sections;
 
     private GrantAdvertStatus status;
+
+    private ZonedDateTime openingDate;
+    private ZonedDateTime closingDate;
 
     @Data
     @AllArgsConstructor

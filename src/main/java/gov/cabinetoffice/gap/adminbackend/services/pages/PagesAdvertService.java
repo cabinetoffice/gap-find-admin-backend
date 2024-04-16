@@ -42,7 +42,7 @@ public class PagesAdvertService {
         final List<AdvertSectionOverviewPageSectionDto> dtoSectionsList = new ArrayList<>();
         final List<AdvertDefinitionSection> statelessSections = definition.getSections();
 
-        GrantAdvert grantAdvert = grantAdvertService.getAdvertById(advertId);
+        final GrantAdvert grantAdvert = grantAdvertService.getAdvertById(advertId);
 
         final List<GrantAdvertSectionResponse> sectionsWithStatus = grantAdvert.getResponse() != null
                 ? grantAdvert.getResponse().getSections() : new ArrayList<>();
@@ -51,18 +51,25 @@ public class PagesAdvertService {
         populateSectionsListForDto(dtoSectionsList, statelessSections, sectionsWithStatus);
 
         if (!dtoSectionsList.isEmpty()) {
-            final List<AdvertSectionOverviewPageSectionDto> nonCompletedSections = dtoSectionsList.stream().filter(
-                    joinedSection -> !joinedSection.getStatus().equals(GrantAdvertSectionResponseStatus.COMPLETED))
+            final List<AdvertSectionOverviewPageSectionDto> nonCompletedSections = dtoSectionsList.stream()
+                    .filter(joinedSection ->
+                            !joinedSection.getStatus().equals(GrantAdvertSectionResponseStatus.COMPLETED)
+                    )
                     .toList();
             isPublishDisabled = !nonCompletedSections.isEmpty();
         }
 
         // builds the dto needed to the frontend
-        final AdvertSectionOverviewPageDTO response = AdvertSectionOverviewPageDTO.builder().sections(dtoSectionsList)
-                .advertName(grantAdvert.getGrantAdvertName()).grantSchemeName(grantSchemeName)
-                .isPublishDisabled(isPublishDisabled).build();
+        final AdvertSectionOverviewPageDTO response = AdvertSectionOverviewPageDTO.builder()
+                .sections(dtoSectionsList)
+                .advertName(grantAdvert.getGrantAdvertName())
+                .grantSchemeName(grantSchemeName)
+                .isPublishDisabled(isPublishDisabled)
+                .build();
+
         log.info("{} with id {} and advert id {}, section-overview page content, successfully created", grantSchemeName,
                 schemeId, advertId);
+
         return response;
     }
 
@@ -71,12 +78,16 @@ public class PagesAdvertService {
         final AdvertSummaryPageDTO advertSummaryPageDTO = new AdvertSummaryPageDTO();
         final GrantAdvert grantAdvert = grantAdvertService.getAdvertById(advertId);
         final List<AdvertDefinitionSection> advertDefinitionSections = definition.getSections();
+        final List<AdvertSummaryPageDTO.AdvertSummaryPageSectionDTO> sections =
+                mergeDefinitionAndQuestionResponseForSummaryPage(advertDefinitionSections,
+                advertSummaryPageDTO, grantAdvert);
 
         advertSummaryPageDTO.setId(grantAdvert.getId());
         advertSummaryPageDTO.setAdvertName(grantAdvert.getGrantAdvertName());
-        advertSummaryPageDTO.setSections(mergeDefinitionAndQuestionResponseForSummaryPage(advertDefinitionSections,
-                advertSummaryPageDTO, grantAdvert));
+        advertSummaryPageDTO.setSections(sections);
         advertSummaryPageDTO.setStatus(grantAdvert.getStatus());
+        advertSummaryPageDTO.setOpeningDate(grantAdvert.getOpeningDate());
+        advertSummaryPageDTO.setClosingDate(grantAdvert.getClosingDate());
 
         return advertSummaryPageDTO;
     }
@@ -107,16 +118,17 @@ public class PagesAdvertService {
                                 .getQuestions().stream()
                                 .map(advertDefinitionQuestion -> getAdvertSummaryPageQuestionDTO(advertSummaryPageDTO,
                                         grantAdvertPageResponse, advertDefinitionQuestion))
-                                .collect(Collectors.toList());
+                                .toList();
 
                         pageDTO.setQuestions(pageQuestionDTOs);
                         return pageDTO;
-                    }).collect(Collectors.toList());
+                    })
+                    .toList();
 
             sectionDTO.setPages(pageDTOs);
 
             return sectionDTO;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @NotNull
