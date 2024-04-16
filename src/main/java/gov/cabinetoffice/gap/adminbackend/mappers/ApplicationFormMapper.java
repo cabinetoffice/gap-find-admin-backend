@@ -61,6 +61,8 @@ public interface ApplicationFormMapper {
     // add/update a single value
     default void updateGenericQuestionPatchToQuestionDto(QuestionGenericPatchDTO questionGenericPatchDTO,
             @MappingTarget ApplicationFormQuestionDTO questionDto) {
+
+        boolean responseTypeChanging = false;
         if (questionGenericPatchDTO == null) {
             return;
         }
@@ -81,19 +83,18 @@ public interface ApplicationFormMapper {
             questionDto.setQuestionSuffix(questionGenericPatchDTO.getQuestionSuffix());
         }
         if (questionGenericPatchDTO.getResponseType() != null) {
+            responseTypeChanging = true;
             questionDto.setResponseType(questionGenericPatchDTO.getResponseType());
         }
 
         Map<String, Object> map = questionGenericPatchDTO.getValidation();
-        if (questionDto.getValidation() != null) {
+        if (questionDto.getValidation() != null || !responseTypeChanging) {
             if (map != null) {
-                questionDto.getValidation().putAll(map);
+               questionDto.getValidation().putAll(map);
             }
         }
-        else {
-            if (map != null) {
+        else if (map != null) {
                 questionDto.setValidation(map);
-            }
         }
     }
 
@@ -124,8 +125,10 @@ public interface ApplicationFormMapper {
         if (questionDto.getValidation() != null) {
             Map<String, Object> map = questionOptionsPatchDTO.getValidation();
             if (map != null) {
+                questionDto.getValidation().clear();
                 questionDto.getValidation().putAll(map);
             }
+
         }
         else {
             Map<String, Object> map = questionOptionsPatchDTO.getValidation();
