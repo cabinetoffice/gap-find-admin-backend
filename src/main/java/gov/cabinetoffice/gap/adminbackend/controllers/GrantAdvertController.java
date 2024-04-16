@@ -92,14 +92,21 @@ public class GrantAdvertController {
     public ResponseEntity updatePage(HttpServletRequest request, @PathVariable UUID grantAdvertId,
             @PathVariable String sectionId, @PathVariable String pageId,
             @RequestBody @NotNull GrantAdvertPagePatchResponseDto patchAdvertPageResponse) {
-        GrantAdvertPageResponse responseWithId = GrantAdvertPageResponse.builder().id(pageId)
-                .status(patchAdvertPageResponse.getStatus()).questions(patchAdvertPageResponse.getQuestions()).build();
+        GrantAdvertPageResponse responseWithId = GrantAdvertPageResponse.builder()
+                .id(pageId)
+                .status(patchAdvertPageResponse.getStatus())
+                .questions(patchAdvertPageResponse.getQuestions())
+                .build();
+
         GrantAdvertPageResponseValidationDto patchPageDto = GrantAdvertPageResponseValidationDto.builder()
-                .grantAdvertId(grantAdvertId).sectionId(sectionId).page(responseWithId).build();
-        // given we need sectionId to validate the Dto, we can't validate in the
-        // controller method
-        Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet = validator
-                .validate(patchPageDto);
+                .grantAdvertId(grantAdvertId)
+                .sectionId(sectionId)
+                .page(responseWithId)
+                .build();
+
+        // given we need sectionId to validate the Dto, we can't validate in the controller method
+        Set<ConstraintViolation<GrantAdvertPageResponseValidationDto>> validationErrorsSet =
+                validator.validate(patchPageDto);
 
         if (!validationErrorsSet.isEmpty()) {
             List<ValidationError> validationErrorsList = reorderValidationErrors(patchAdvertPageResponse,
@@ -111,11 +118,13 @@ public class GrantAdvertController {
 
         try {
             AdminSession session = HelperUtils.getAdminSessionForAuthenticatedUser();
-            eventLogService.logAdvertUpdatedEvent(request.getRequestedSessionId(), session.getUserSub(),
-                    session.getFunderId(), grantAdvertId.toString());
-        }
-        catch (Exception e) {
-            // If anything goes wrong logging to event service, log and continue
+            eventLogService.logAdvertUpdatedEvent(
+                    request.getRequestedSessionId(),
+                    session.getUserSub(),
+                    session.getFunderId(),
+                    grantAdvertId.toString()
+            );
+        } catch (Exception e) {
             log.error("Could not send to event service. Exception: ", e);
         }
 

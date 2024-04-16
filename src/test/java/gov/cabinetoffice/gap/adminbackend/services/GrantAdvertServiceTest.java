@@ -614,30 +614,55 @@ class GrantAdvertServiceTest {
             final GrantAdvert advert = GrantAdvert.builder().build();
 
             String[] openingMultiResponse = new String[]{"10", "10", "2010", "13:00"};
-            GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder().id(OPENING_DATE_ID)
-                    .multiResponse(openingMultiResponse).build();
+            GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder()
+                    .id(OPENING_DATE_ID)
+                    .multiResponse(openingMultiResponse)
+                    .build();
+
             String[] closingMultiResponse = new String[]{"12", "12", "2012", "13:00"};
-            GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder().id(CLOSING_DATE_ID)
-                    .multiResponse(closingMultiResponse).build();
+            GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder()
+                    .id(CLOSING_DATE_ID)
+                    .multiResponse(closingMultiResponse)
+                    .build();
+
             String[] expectedOpeningMultiResponse = new String[]{"10", "10", "2010", "13", "00"};
             String[] expectedClosingMultiResponse = new String[]{"12", "12", "2012", "13", "00"};
 
-            GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder().id(pageId)
+            GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder()
+                    .id("1")
                     .status(GrantAdvertPageResponseStatus.COMPLETED)
-                    .questions(List.of(openingDateQuestion, closingDateQuestion)).build();
+                    .questions(List.of(openingDateQuestion, closingDateQuestion))
+                    .build();
 
             GrantAdvertPageResponseValidationDto datePagePatchDto = GrantAdvertPageResponseValidationDto.builder()
-                    .grantAdvertId(grantAdvertId).sectionId(ADVERT_DATES_SECTION_ID).page(datePage).build();
+                    .grantAdvertId(grantAdvertId)
+                    .sectionId(ADVERT_DATES_SECTION_ID)
+                    .page(datePage)
+                    .build();
 
-            AdvertDefinitionQuestion openDateDefinitionQuestion = AdvertDefinitionQuestion.builder().id(OPENING_DATE_ID)
+            AdvertDefinitionQuestion openDateDefinitionQuestion = AdvertDefinitionQuestion.builder()
+                    .id(OPENING_DATE_ID)
                     .responseType(AdvertDefinitionQuestionResponseType.DATE)
-                    .validation(AdvertDefinitionQuestionValidation.builder().mandatory(true).build()).build();
+                    .validation(AdvertDefinitionQuestionValidation.builder()
+                            .mandatory(true)
+                            .build()
+                    )
+                    .build();
             AdvertDefinitionQuestion closeDateDefinitionQuestion = AdvertDefinitionQuestion.builder()
-                    .id(CLOSING_DATE_ID).responseType(AdvertDefinitionQuestionResponseType.DATE)
-                    .validation(AdvertDefinitionQuestionValidation.builder().mandatory(true).build()).build();
-            AdvertDefinitionSection definitionSection = AdvertDefinitionSection.builder().id(ADVERT_DATES_SECTION_ID)
-                    .pages(List.of(AdvertDefinitionPage.builder().id(pageId)
-                            .questions(List.of(openDateDefinitionQuestion, closeDateDefinitionQuestion)).build()))
+                    .id(CLOSING_DATE_ID)
+                    .responseType(AdvertDefinitionQuestionResponseType.DATE)
+                    .validation(AdvertDefinitionQuestionValidation.builder()
+                            .mandatory(true)
+                            .build()
+                    )
+                    .build();
+            AdvertDefinitionSection definitionSection = AdvertDefinitionSection.builder()
+                    .id(ADVERT_DATES_SECTION_ID)
+                    .pages(List.of(AdvertDefinitionPage.builder()
+                            .id("1")
+                            .questions(List.of(openDateDefinitionQuestion, closeDateDefinitionQuestion))
+                            .build())
+                    )
                     .build();
 
             when(grantAdvertRepository.findById(grantAdvertId))
@@ -655,7 +680,7 @@ class GrantAdvertServiceTest {
             Optional<GrantAdvertSectionResponse> sectionById = response.getSectionById(ADVERT_DATES_SECTION_ID);
             assertThat(sectionById).isPresent();
             assertThat(sectionById.get().getStatus()).isEqualTo(GrantAdvertSectionResponseStatus.COMPLETED);
-            Optional<GrantAdvertPageResponse> pageById = sectionById.get().getPageById(pageId);
+            Optional<GrantAdvertPageResponse> pageById = sectionById.get().getPageById("1");
             assertThat(pageById).isPresent();
             Optional<GrantAdvertQuestionResponse> openingQuestion = pageById.get().getQuestionById(OPENING_DATE_ID);
             assertThat(openingQuestion).isPresent();

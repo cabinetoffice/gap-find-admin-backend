@@ -179,41 +179,49 @@ public class GrantAdvertService {
     }
 
     public void updatePageResponse(GrantAdvertPageResponseValidationDto pagePatchDto) {
-        GrantAdvert grantAdvert = grantAdvertRepository.findById(pagePatchDto.getGrantAdvertId())
+        final GrantAdvert grantAdvert = grantAdvertRepository.findById(pagePatchDto.getGrantAdvertId())
                 .orElseThrow(() -> new NotFoundException(
                         String.format("GrantAdvert with id %s not found", pagePatchDto.getGrantAdvertId())));
 
         validateAdvertStatus(grantAdvert);
-        // adds the static opening and closing time to the date question
         addStaticTimeToDateQuestion(pagePatchDto);
 
-
         // if response/section/page does not exist, create it. If it does exist, update it
-        GrantAdvertResponse response = Optional.ofNullable(grantAdvert.getResponse()).orElseGet(() -> {
-            GrantAdvertResponse newResponse = GrantAdvertResponse.builder().build();
+        final GrantAdvertResponse response = Optional.ofNullable(grantAdvert.getResponse()).orElseGet(() -> {
+            final GrantAdvertResponse newResponse = GrantAdvertResponse.builder().build();
             grantAdvert.setResponse(newResponse);
+
             return newResponse;
         });
-        GrantAdvertSectionResponse section = response.getSectionById(pagePatchDto.getSectionId()).orElseGet(() -> {
-            GrantAdvertSectionResponse newSection = GrantAdvertSectionResponse.builder().id(pagePatchDto.getSectionId())
-                    .status(GrantAdvertSectionResponseStatus.IN_PROGRESS).build();
+
+        final GrantAdvertSectionResponse section = response.getSectionById(pagePatchDto.getSectionId())
+                .orElseGet(() -> {
+            final GrantAdvertSectionResponse newSection = GrantAdvertSectionResponse.builder()
+                    .id(pagePatchDto.getSectionId())
+                    .status(GrantAdvertSectionResponseStatus.IN_PROGRESS)
+                    .build();
             response.getSections().add(newSection);
+
             return newSection;
         });
-        GrantAdvertPageResponse page = section.getPageById(pagePatchDto.getPage().getId()).orElseGet(() -> {
-            GrantAdvertPageResponse newPage = GrantAdvertPageResponse.builder().id(pagePatchDto.getPage().getId())
+
+        final GrantAdvertPageResponse page = section.getPageById(pagePatchDto.getPage().getId())
+                .orElseGet(() -> {
+            final GrantAdvertPageResponse newPage = GrantAdvertPageResponse.builder()
+                    .id(pagePatchDto.getPage().getId())
                     .build();
             section.getPages().add(newPage);
+
             return newPage;
         });
 
-        // ideally I'd use the mapper to do this but mapstruct seems to struggle
-        // with updating iterables and maps etc.
         page.setQuestions(pagePatchDto.getPage().getQuestions());
         page.setStatus(pagePatchDto.getPage().getStatus());
-
-        // update section status
         updateSectionStatus(section);
+
+        if (pagePatchDto.getSectionId().equals(ADVERT_DATES_SECTION_ID)) {
+            updateGrantAdvertApplicationDates(grantAdvert);
+        }
 
         save(grantAdvert);
     }
@@ -551,9 +559,7 @@ public class GrantAdvertService {
         save(grantAdvert);
     }
 
-    private void updateGrantAdvertApplicationDates(final GrantAdvert grantAdvert) {
-        // these should never be null at this point, but just in case.
-        // should also keep our test data in check
+    public void updateGrantAdvertApplicationDates(final GrantAdvert grantAdvert) {
         GrantAdvertSectionResponse applicationDatesSection = grantAdvert.getResponse()
                 .getSectionById(ADVERT_DATES_SECTION_ID)
                 .orElseThrow(() -> new GrantAdvertException("Advert is missing application dates section"));
@@ -569,9 +575,11 @@ public class GrantAdvertService {
         }
 
         // convert the string[] to int[], to easily build Calendars
-        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
+        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse())
+                .mapToInt(Integer::parseInt)
                 .toArray();
-        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
+        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse())
+                .mapToInt(Integer::parseInt)
                 .toArray();
 
         // build ZonedDateTimes
