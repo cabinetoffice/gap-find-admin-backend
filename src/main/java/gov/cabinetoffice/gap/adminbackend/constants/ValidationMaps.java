@@ -1,7 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.constants;
 
 import java.util.AbstractMap;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,6 +26,7 @@ public class ValidationMaps {
                     new AbstractMap.SimpleEntry<String, Object>("allowedTypes",
                             new String[] { "DOC", "DOCX", "ODT", "PDF", "XLS", "XLSX", "ZIP" })));
 
-    public final static Map<String, Object> NO_VALIDATION = Collections.emptyMap();
+    public final static Map<String, Object> NO_VALIDATION = new HashMap<>();
+
 
 }
