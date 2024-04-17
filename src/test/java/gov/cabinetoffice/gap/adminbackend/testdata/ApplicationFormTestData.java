@@ -55,13 +55,19 @@ public class ApplicationFormTestData {
 
     public final static Map<String, Object> SAMPLE_VALIDATION = Collections.singletonMap("mandatory", true);
 
+    public static  ApplicationFormQuestionDTO buildQuestion(ResponseTypeEnum responseType, String questionId, String questionTitle, List<String> options){
+        return new ApplicationFormQuestionDTO(questionId,
+                "ORG_TYPE", null, questionTitle, "Answer the question", null, null, null,
+                responseType, responseType.getValidation(), options, 1);
+    }
+
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION = new ApplicationFormQuestionDTO(SAMPLE_QUESTION_ID,
             "ORG_TYPE", null, SAMPLE_QUESTION_FIELD_TITLE, "Answer the question", null, null, null,
-            ResponseTypeEnum.YesNo, Collections.singletonMap("mandatory", true), null, 1);
+            ResponseTypeEnum.YesNo, ResponseTypeEnum.YesNo.getValidation(), null, 1);
 
     public final static ApplicationFormQuestionDTO SAMPLE_QUESTION_WITH_OPTIONS = new ApplicationFormQuestionDTO(
-            SAMPLE_QUESTION_ID, "ORG_TYPE", null, "Select one of the folloiwng", "Answer the question", null, null,
-            null, ResponseTypeEnum.Dropdown, Collections.singletonMap("mandatory", true), SAMPLE_QUESTION_OPTIONS, 1);
+            SAMPLE_QUESTION_ID, "ORG_TYPE", null, "Select one of the following", "Answer the question", null, null,
+            null, ResponseTypeEnum.Dropdown, ResponseTypeEnum.Dropdown.getValidation(), SAMPLE_QUESTION_OPTIONS, 1);
 
     public final static List<ApplicationFormQuestionDTO> SAMPLE_QUESTION_LIST = new LinkedList<>(
             Collections.singletonList(SAMPLE_QUESTION));

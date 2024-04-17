@@ -8,6 +8,7 @@ import gov.cabinetoffice.gap.adminbackend.dtos.schemes.SchemeDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
 import gov.cabinetoffice.gap.adminbackend.entities.SchemeEntity;
 import gov.cabinetoffice.gap.adminbackend.enums.ApplicationStatusEnum;
+import gov.cabinetoffice.gap.adminbackend.enums.ResponseTypeEnum;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ApplicationFormException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.ConflictException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.FieldViolationException;
@@ -324,6 +325,72 @@ class ApplicationFormServiceTest {
             assertThat(updatedQuestion.getFieldTitle()).isEqualTo(SAMPLE_UPDATED_FIELD_TITLE);
 
             this.utilMock.verify(() -> ApplicationFormUtils.updateAuditDetailsAfterFormChange(any(), eq(false)));
+        }
+
+        @Test
+        void patchQuestionsValuesChangeQuestionType_shortAnswerToDropdown_confirmValidationIsReplaced(){
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity existingForm = SAMPLE_SECOND_APPLICATION_FORM_ENTITY;
+
+            existingForm.getDefinition()
+                    .getSectionById(SAMPLE_SECTION_ID)
+                    .setQuestions(List.of(buildQuestion(ResponseTypeEnum.ShortAnswer, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_FIELD_TITLE, null)));
+
+            when(applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(existingForm));
+
+            doReturn(SAMPLE_APPLICATION_FORM_ENTITY)
+                    .when(applicationFormService).save(any());
+
+            ApplicationFormQuestionDTO updatedQuestionResponseType = buildQuestion(ResponseTypeEnum.Dropdown,
+                    SAMPLE_QUESTION_ID, SAMPLE_QUESTION_FIELD_TITLE, SAMPLE_QUESTION_OPTIONS );
+
+            applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
+                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, updatedQuestionResponseType, new MockHttpSession());
+
+            verify(applicationFormService).save(argument.capture());
+
+            ApplicationFormEntity savedForm = argument.getValue();
+
+            ApplicationFormQuestionDTO updatedQuestion = savedForm.getDefinition().getSectionById(SAMPLE_SECTION_ID).getQuestionById(SAMPLE_QUESTION_ID);
+
+            assertThat(updatedQuestion.getResponseType()).isEqualTo(ResponseTypeEnum.Dropdown);
+            assertThat(updatedQuestion.getValidation()).isEqualTo(ResponseTypeEnum.Dropdown.getValidation());
+
+        }
+
+        @Test
+        void patchQuestionsValuesChangeQuestionType_dropdownToShortAnswer_confirmValidationIsAdded(){
+            ArgumentCaptor<ApplicationFormEntity> argument = ArgumentCaptor.forClass(ApplicationFormEntity.class);
+
+            ApplicationFormEntity existingForm = SAMPLE_SECOND_APPLICATION_FORM_ENTITY;
+
+            existingForm.getDefinition()
+                    .getSectionById(SAMPLE_SECTION_ID)
+                    .setQuestions(List.of(buildQuestion(ResponseTypeEnum.Dropdown, SAMPLE_QUESTION_ID, SAMPLE_QUESTION_FIELD_TITLE, null)));
+
+            when(applicationFormRepository.findById(SAMPLE_APPLICATION_ID))
+                    .thenReturn(Optional.of(existingForm));
+
+            doReturn(SAMPLE_APPLICATION_FORM_ENTITY)
+                    .when(applicationFormService).save(any());
+
+            ApplicationFormQuestionDTO updatedQuestionResponseType = buildQuestion(ResponseTypeEnum.ShortAnswer,
+                    SAMPLE_QUESTION_ID, SAMPLE_QUESTION_FIELD_TITLE, null );
+
+            applicationFormService.patchQuestionValues(SAMPLE_APPLICATION_ID,
+                    SAMPLE_SECTION_ID, SAMPLE_QUESTION_ID, updatedQuestionResponseType, new MockHttpSession());
+
+            verify(applicationFormService).save(argument.capture());
+
+            ApplicationFormEntity savedForm = argument.getValue();
+
+            ApplicationFormQuestionDTO updatedQuestion = savedForm.getDefinition().getSectionById(SAMPLE_SECTION_ID).getQuestionById(SAMPLE_QUESTION_ID);
+
+            assertThat(updatedQuestion.getResponseType()).isEqualTo(ResponseTypeEnum.ShortAnswer);
+            assertThat(updatedQuestion.getValidation()).isEqualTo(ResponseTypeEnum.ShortAnswer.getValidation());
+
         }
 
         @Test
