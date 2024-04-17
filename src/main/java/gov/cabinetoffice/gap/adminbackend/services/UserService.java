@@ -2,11 +2,14 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
+import gov.cabinetoffice.gap.adminbackend.dtos.RoleDto;
+import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
+import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
@@ -34,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static gov.cabinetoffice.gap.adminbackend.utils.HelperUtils.encryptSecret;
 
@@ -117,10 +121,8 @@ public class UserService {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public GrantAdmin getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
-            String roles = HelperUtils.getAdminSessionForAuthenticatedUser().getRoles();
-            String uriRole = roles.contains("SUPER_ADMIN") ? "SUPER_ADMIN" : "ADMIN";
             UserV2DTO response = webClientBuilder.build().get()
-                    .uri(userServiceConfig.getDomain() + "/user/email/" + email + "?role=" + uriRole)
+                    .uri(userServiceConfig.getDomain() + "/user/email/" + email)
                     .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
             return grantAdminRepository.findByGapUserUserSub(response.sub()).orElseThrow(() -> new NotFoundException(
