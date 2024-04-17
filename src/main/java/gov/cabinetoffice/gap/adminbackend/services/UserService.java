@@ -2,14 +2,11 @@ package gov.cabinetoffice.gap.adminbackend.services;
 
 import gov.cabinetoffice.gap.adminbackend.client.UserServiceClient;
 import gov.cabinetoffice.gap.adminbackend.config.UserServiceConfig;
-import gov.cabinetoffice.gap.adminbackend.dtos.RoleDto;
-import gov.cabinetoffice.gap.adminbackend.dtos.UserDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.UserV2DTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.ValidateSessionsRolesRequestBodyDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.user.UserEmailResponseDto;
 import gov.cabinetoffice.gap.adminbackend.entities.FundingOrganisation;
-import gov.cabinetoffice.gap.adminbackend.entities.GapUser;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.exceptions.NotFoundException;
 import gov.cabinetoffice.gap.adminbackend.exceptions.UnauthorizedException;
@@ -18,7 +15,6 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GapUserRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdminRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.GrantApplicantRepository;
 import gov.cabinetoffice.gap.adminbackend.services.encryption.AwsEncryptionServiceImpl;
-import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.ParameterizedTypeReference;
@@ -37,7 +33,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static gov.cabinetoffice.gap.adminbackend.utils.HelperUtils.encryptSecret;
 
