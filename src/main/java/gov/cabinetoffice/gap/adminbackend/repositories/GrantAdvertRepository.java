@@ -1,5 +1,6 @@
 package gov.cabinetoffice.gap.adminbackend.repositories;
 
+import gov.cabinetoffice.gap.adminbackend.entities.GrantAdmin;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantAdvert;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,4 +35,8 @@ public interface GrantAdvertRepository extends JpaRepository<GrantAdvert, UUID> 
     @Query("DELETE FROM GrantAdvert g WHERE g.id = :id " +
             "AND EXISTS (SELECT 1 FROM g.scheme.grantAdmins ga WHERE ga.id = :grantAdminId)")
     int deleteByIdAndSchemeEditor(UUID id, Integer grantAdminId);
+
+    @Query("select g from GrantAdvert g where g.createdBy = ?1 or g.lastUpdatedBy = ?1")
+    List<GrantAdvert> findByCreatedByOrLastUpdatedBy(GrantAdmin admin);
+
 }

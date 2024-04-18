@@ -36,4 +36,6 @@ public interface ApplicationFormRepository extends JpaRepository<ApplicationForm
     List<ApplicationFormsFoundView> findMatchingApplicationForm(@Param("applicationId") Integer applicationId, @Param("applicationName") String applicationName,
             @Param("grantSchemeId") Integer grantSchemeId);
 
+    @Query("select a from ApplicationFormEntity a where a.createdBy = ?1 or a.lastUpdateBy = ?1")
+    List<ApplicationFormEntity> findByCreatedByOrLastUpdateBy(Integer createdBy);
 }

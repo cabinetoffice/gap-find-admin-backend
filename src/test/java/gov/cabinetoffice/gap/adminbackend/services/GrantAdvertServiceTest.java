@@ -1362,9 +1362,10 @@ class GrantAdvertServiceTest {
         GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
 
 
-        when(grantAdvertRepository.findBySchemeId(anyInt())).thenReturn(Optional.of(grantAdvert));
+        when(grantAdvertRepository.findByCreatedByOrLastUpdatedBy(grantAdmin))
+                .thenReturn(Collections.singletonList(grantAdvert));
 
-        grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin, 1);
+        grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin);
 
         verify(grantAdvertRepository).save(grantAdvert);
     }
