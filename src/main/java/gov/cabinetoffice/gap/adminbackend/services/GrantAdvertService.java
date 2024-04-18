@@ -611,18 +611,18 @@ public class GrantAdvertService {
                 });
     }
 
-    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
-        grantAdvertRepository.findBySchemeId(schemeId)
-                .ifPresent(advert -> {
-                    if (advert.getLastUpdatedBy() != null && advert.getLastUpdatedBy() == grantAdmin) {
-                        advert.setLastUpdatedBy(null);
-                    }
-                    if (advert.getCreatedBy() != null && advert.getCreatedBy() == grantAdmin) {
-                        advert.setCreatedBy(null);
-                    }
+    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin) {
 
-                    grantAdvertRepository.save(advert);
-                });
+        grantAdvertRepository.findByCreatedByOrLastUpdatedBy(grantAdmin).forEach(advert -> {
+            if (advert.getLastUpdatedBy() != null && advert.getLastUpdatedBy() == grantAdmin) {
+                advert.setLastUpdatedBy(null);
+            }
+            if (advert.getCreatedBy() != null && advert.getCreatedBy() == grantAdmin) {
+                advert.setCreatedBy(null);
+            }
+
+            grantAdvertRepository.save(advert);
+        });
     }
 
     public static void validateAdvertStatus(GrantAdvert grantAdvert) {

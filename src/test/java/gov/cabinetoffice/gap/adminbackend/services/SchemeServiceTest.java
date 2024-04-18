@@ -564,7 +564,7 @@ class SchemeServiceTest {
         schemeService.removeAdminReference("userSub");
 
         verify(schemeRepository).saveAll(schemes);
-        verify(grantAdvertService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
-        verify(applicationFormService, times(1)).removeAdminReferenceBySchemeId(grantAdmin, 1);
+        verify(grantAdvertService, times(1)).removeAdminReferenceBySchemeId(grantAdmin);
+        verify(applicationFormService, times(1)).removeAdminReferenceBySchemeId(grantAdmin);
     }
 }
