@@ -847,7 +847,7 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            when(contentfulEntries.async()).thenReturn(async);
+            //when(contentfulEntries.async()).thenReturn(async);
 
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
 
@@ -899,7 +899,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(async).publish(eq(publishedContentfulAdvert), any());
+            verify(contentfulEntries).publish(publishedContentfulAdvert);
         }
 
         @Test
@@ -924,7 +924,7 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.update(Mockito.any())).thenReturn(publishedContentfulAdvert);
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert,
                     publishedContentfulAdvert);
-            when(contentfulEntries.async()).thenReturn(async);
+            //when(contentfulEntries.async()).thenReturn(async);
             doReturn(grantAvertInDatabase).when(grantAdvertService).save(any());
 
             final WebClient webClient = mock(WebClient.class);
@@ -965,7 +965,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries, atLeastOnce()).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(async).publish(eq(publishedContentfulAdvert), any());
+            verify(contentfulEntries).publish(publishedContentfulAdvert);
         }
 
         @Test
@@ -1010,7 +1010,7 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            when(contentfulEntries.async()).thenReturn(async);
+            //when(contentfulEntries.async()).thenReturn(async);
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -1047,7 +1047,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(async).publish(eq(publishedContentfulAdvert), any());
+            verify(contentfulEntries).publish(publishedContentfulAdvert);
         }
 
     }
