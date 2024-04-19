@@ -26,7 +26,7 @@ class OpenSearchServiceTest {
     private OpenSearchConfig openSearchConfig;
 
     @Mock
-    private WebClient.Builder webClientBuilder;
+    private WebClient webClient;
 
     @Mock
     private ContentfulConfigProperties contentfulProperties;
@@ -48,7 +48,6 @@ class OpenSearchServiceTest {
 
     @Test
     void indexEntry() {
-        final WebClient mockWebClient = mock(WebClient.class);
         final WebClient.RequestBodyUriSpec mockRequestBodyUriSpec = Mockito.mock(WebClient.RequestBodyUriSpec.class);
         final WebClient.RequestHeadersSpec mockRequestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         final WebClient.RequestHeadersUriSpec mockRequestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
@@ -59,16 +58,14 @@ class OpenSearchServiceTest {
         when(contentfulProperties.getAccessToken()).thenReturn("accessToken");
         when(contentfulProperties.getDeliveryAPIAccessToken()).thenReturn("deliveryAccessToken");
 
-        when(webClientBuilder.build()).thenReturn(mockWebClient);
-
-        when(mockWebClient.get()).thenReturn(mockRequestHeadersUriSpec);
+        when(webClient.get()).thenReturn(mockRequestHeadersUriSpec);
         when(mockRequestHeadersUriSpec.uri(anyString())).thenReturn(mockRequestHeadersUriSpec);
         when(mockRequestHeadersUriSpec.headers(any())).thenReturn(mockRequestHeadersUriSpec);
         when(mockRequestHeadersUriSpec.retrieve()).thenReturn(mockResponseSpec);
         when(mockResponseSpec.onStatus(any(), any())).thenReturn(mockResponseSpec);
         when(mockResponseSpec.bodyToMono(String.class)).thenReturn(Mono.just("{\"system\":{\"id\":\"testId\"},\"environmentId\":\"master\",\"id\":\"testId\",\"published\":false,\"archived\":false}"));
 
-        when(mockWebClient.put()).thenReturn(mockRequestBodyUriSpec);
+        when(webClient.put()).thenReturn(mockRequestBodyUriSpec);
         when(mockRequestBodyUriSpec.uri("testUrl/testDomain/_doc/testId")).thenReturn(mockRequestBodyUriSpec);
         when(mockRequestBodyUriSpec.body(any(), eq(String.class))).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.header("Content-Type", "application/json; UTF-8")).thenReturn(mockRequestHeadersSpec);
@@ -78,16 +75,15 @@ class OpenSearchServiceTest {
 
         openSearchService.indexEntry(contentfulEntry);
 
-        verify(webClientBuilder.build().get(), times(1))
+        verify(webClient.get(), times(1))
                 .uri("https://api.contentful.com/spaces/Space/environments/environment/entries/testId");
 
-        verify(webClientBuilder.build().put(), times(1))
+        verify(webClient.put(), times(1))
                 .uri("testUrl/testDomain/_doc/testId");
     }
 
     @Test
     void removeIndexEntry() {
-        final WebClient mockWebClient = mock(WebClient.class);
         final WebClient.RequestBodyUriSpec mockRequestBodyUriSpec = Mockito.mock(WebClient.RequestBodyUriSpec.class);
         final WebClient.RequestHeadersSpec mockRequestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         final WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
@@ -98,16 +94,15 @@ class OpenSearchServiceTest {
         when(contentfulProperties.getAccessToken()).thenReturn("accessToken");
         when(contentfulProperties.getDeliveryAPIAccessToken()).thenReturn("deliveryAccessToken");
 
-        when(webClientBuilder.build()).thenReturn(mockWebClient);
 
-        when(mockWebClient.get()).thenReturn(mockRequestHeadersUriSpec);
+        when(webClient.get()).thenReturn(mockRequestHeadersUriSpec);
         when(mockRequestHeadersUriSpec.uri(anyString())).thenReturn(mockRequestHeadersUriSpec);
         when(mockRequestHeadersUriSpec.headers(any())).thenReturn(mockRequestHeadersUriSpec);
         when(mockRequestHeadersUriSpec.retrieve()).thenReturn(mockResponseSpec);
         when(mockResponseSpec.onStatus(any(), any())).thenReturn(mockResponseSpec);
         when(mockResponseSpec.bodyToMono(String.class)).thenReturn(Mono.just("{\"system\":{\"id\":\"testId\"},\"environmentId\":\"master\",\"id\":\"testId\",\"published\":false,\"archived\":false}"));
 
-        when(mockWebClient.method(HttpMethod.DELETE)).thenReturn(mockRequestBodyUriSpec);
+        when(webClient.method(HttpMethod.DELETE)).thenReturn(mockRequestBodyUriSpec);
         when(mockRequestBodyUriSpec.uri("testUrl/testDomain/_doc/testId")).thenReturn(mockRequestBodyUriSpec);
         when(mockRequestBodyUriSpec.body(any(), eq(String.class))).thenReturn(mockRequestHeadersSpec);
         when(mockRequestHeadersSpec.header("Content-Type", "application/json; UTF-8")).thenReturn(mockRequestHeadersSpec);
@@ -117,10 +112,10 @@ class OpenSearchServiceTest {
 
         openSearchService.removeIndexEntry(contentfulEntry);
 
-        verify(webClientBuilder.build().get(), times(1))
+        verify(webClient.get(), times(1))
                 .uri("https://api.contentful.com/spaces/Space/environments/environment/entries/testId");
 
-        verify(webClientBuilder.build().method(HttpMethod.DELETE), times(1))
+        verify(webClient.method(HttpMethod.DELETE), times(1))
                 .uri("testUrl/testDomain/_doc/testId");
     }
 }
