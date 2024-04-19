@@ -64,6 +64,8 @@ public class GrantAdvertService {
     private final UserService userService;
     private final OpenSearchService openSearchService;
     private final WebClient.Builder webClientBuilder;
+
+    private final WebClient webClient;
     private final Clock clock;
     private final ContentfulConfigProperties contentfulProperties;
     private final FeatureFlagsConfigurationProperties featureFlagsProperties;
@@ -436,8 +438,7 @@ public class GrantAdvertService {
         }
 
         final Instant now = Instant.now();
-        webClientBuilder.build()
-                .patch()
+        webClient.patch()
                 .uri(contentfulUrl)
                 .headers(h -> {
                     h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));

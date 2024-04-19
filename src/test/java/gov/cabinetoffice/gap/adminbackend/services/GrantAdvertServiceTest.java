@@ -107,6 +107,9 @@ class GrantAdvertServiceTest {
     @Mock
     private OpenSearchService openSearchService;
 
+    @Mock
+    private WebClient webClient;
+
     @InjectMocks
     @Spy
     private GrantAdvertService grantAdvertService;
@@ -851,12 +854,10 @@ class GrantAdvertServiceTest {
 
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
 
-            final WebClient webClient = mock(WebClient.class);
             final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
             final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
-            when(webClientBuilder.build()).thenReturn(webClient);
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
@@ -927,12 +928,10 @@ class GrantAdvertServiceTest {
             //when(contentfulEntries.async()).thenReturn(async);
             doReturn(grantAvertInDatabase).when(grantAdvertService).save(any());
 
-            final WebClient webClient = mock(WebClient.class);
             final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
             final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
-            when(webClientBuilder.build()).thenReturn(webClient);
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
@@ -977,12 +976,10 @@ class GrantAdvertServiceTest {
                     .grantAdvertName("Grant Advert Name").response(response).grantAdvertName("Homelessness Grant")
                     .build();
 
-            final WebClient webClient = mock(WebClient.class);
             final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
             final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
-            when(webClientBuilder.build()).thenReturn(webClient);
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);

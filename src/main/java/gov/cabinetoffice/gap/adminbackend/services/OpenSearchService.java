@@ -22,13 +22,13 @@ import java.util.Base64;
 @Slf4j
 public class OpenSearchService {
 
-    private final WebClient.Builder webClientBuilder;
+    private final WebClient webClient;
     private final OpenSearchConfig openSearchConfig;
     private final ContentfulConfigProperties contentfulProperties;
 
     public void indexEntry(final CMAEntry contentfulEntry) {
         final String body = getContentfulAdvertAsJson(contentfulEntry.getId());
-        webClientBuilder.build().put()
+        webClient.put()
                 .uri(createUrl(contentfulEntry))
                 .body(Mono.just(body), String.class)
                 .header(CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE + "; " + StandardCharsets.UTF_8.name())
@@ -41,7 +41,7 @@ public class OpenSearchService {
 
     public void removeIndexEntry(final CMAEntry contentfulEntry) {
         final String body = getContentfulAdvertAsJson(contentfulEntry.getId());
-        webClientBuilder.build().method(HttpMethod.DELETE)
+        webClient.method(HttpMethod.DELETE)
                 .uri(createUrl(contentfulEntry))
                 .body(Mono.just(body), String.class)
                 .header(CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE + "; " + StandardCharsets.UTF_8.name())
@@ -69,8 +69,7 @@ public class OpenSearchService {
                 entryId
         );
 
-        return webClientBuilder.build()
-                .get()
+        return webClient.get()
                 .uri(contentfulUrl)
                 .headers(h ->
                     h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()))
