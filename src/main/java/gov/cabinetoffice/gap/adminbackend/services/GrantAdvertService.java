@@ -4,7 +4,6 @@ import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
 import com.contentful.java.cda.CDAEntry;
 import com.contentful.java.cda.QueryOperation;
-import com.contentful.java.cma.CMACallback;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
@@ -32,6 +31,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.CurrencyFormatter;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -46,8 +46,6 @@ import javax.transaction.Transactional;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -300,7 +298,6 @@ public class GrantAdvertService {
     }
 
     public GrantAdvert publishAdvert(UUID advertId) {
-        final Instant now = Instant.now();
         final GrantAdvert advert = getAdvertById(advertId);
 
         CMAEntry contentfulAdvert;
@@ -320,13 +317,8 @@ public class GrantAdvertService {
         advert.setContentfulEntryId(contentfulAdvert.getId());
 
         if (Boolean.FALSE.equals(contentfulAdvert.isPublished())) {
-            contentfulManagementClient.entries().async().publish(contentfulAdvert, new CMACallback<>() {
-                @Override
-                protected void onSuccess(CMAEntry result) {
-                    openSearchService.indexEntry(result);
-                    log.debug("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
-                }
-            });
+            final CMAEntry publishedAdvert = contentfulManagementClient.entries().publish(contentfulAdvert);
+            openSearchService.indexEntry(publishedAdvert);
         }
 
         updateGrantAdvertApplicationDates(advert);
@@ -460,6 +452,7 @@ public class GrantAdvertService {
                     log.info("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
                 })
                 .block();
+
         log.info("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
     }
 
