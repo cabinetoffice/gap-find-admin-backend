@@ -1,5 +1,7 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
 import com.contentful.java.cda.CDAEntry;
@@ -7,8 +9,11 @@ import com.contentful.java.cda.QueryOperation;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
+import gov.cabinetoffice.gap.adminbackend.config.OpenSearchSqsProperties;
+import gov.cabinetoffice.gap.adminbackend.dtos.SendAdvertToSqsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -62,13 +67,14 @@ public class GrantAdvertService {
     private final CMAClient contentfulManagementClient;
     private final CDAClient contentfulDeliveryClient;
     private final UserService userService;
-    private final OpenSearchService openSearchService;
     private final WebClient.Builder webClientBuilder;
-
-    private final WebClient webClient;
+    private final AmazonSQS amazonSqs;
+    private final ObjectMapper mapper;
     private final Clock clock;
     private final ContentfulConfigProperties contentfulProperties;
     private final FeatureFlagsConfigurationProperties featureFlagsProperties;
+
+    private final OpenSearchSqsProperties openSearchSqsProperties;
 
     public GrantAdvert save(GrantAdvert advert) {
         final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -320,7 +326,7 @@ public class GrantAdvertService {
 
         if (Boolean.FALSE.equals(contentfulAdvert.isPublished())) {
             final CMAEntry publishedAdvert = contentfulManagementClient.entries().publish(contentfulAdvert);
-            openSearchService.indexEntry(publishedAdvert);
+            sendMessageToQueue(new SendAdvertToSqsDto(publishedAdvert.getId(), "CREATE"));
         }
 
         updateGrantAdvertApplicationDates(advert);
@@ -333,7 +339,7 @@ public class GrantAdvertService {
 
         if (Boolean.TRUE.equals(contentfulAdvert.isPublished())) {
             final CMAEntry unpublishedAd = contentfulManagementClient.entries().unPublish(contentfulAdvert);
-            openSearchService.removeIndexEntry(unpublishedAd);
+            sendMessageToQueue(new SendAdvertToSqsDto(unpublishedAd.getId(), "DELETE"));
         }
 
         advert.setStatus(GrantAdvertStatus.DRAFT);
@@ -341,6 +347,19 @@ public class GrantAdvertService {
         advert.setUnpublishedDate(Instant.now());
 
         save(advert);
+    }
+
+    public void sendMessageToQueue(final SendAdvertToSqsDto advertDto) {
+        final UUID messageId = UUID.randomUUID();
+        final String messageBody = mapper.valueToTree(advertDto).toString();
+        final SendMessageRequest messageRequest = new SendMessageRequest()
+                .withQueueUrl(openSearchSqsProperties.getQueueUrl())
+                .withMessageGroupId(messageId.toString())
+                .withMessageBody(messageBody)
+                .withMessageDeduplicationId(messageId.toString());
+
+        amazonSqs.sendMessage(messageRequest);
+        log.info("Message sent to queue for advert with contentful ID {}");
     }
 
     private CMAEntry createAdvertInContentful(final GrantAdvert grantAdvert) {
@@ -438,7 +457,8 @@ public class GrantAdvertService {
         }
 
         final Instant now = Instant.now();
-        webClient.patch()
+        webClientBuilder.build()
+                .patch()
                 .uri(contentfulUrl)
                 .headers(h -> {
                     h.set("Authorization", String.format("Bearer %s", contentfulProperties.getAccessToken()));
