@@ -339,7 +339,7 @@ public class GrantAdvertService {
 
         if (Boolean.TRUE.equals(contentfulAdvert.isPublished())) {
             final CMAEntry unpublishedAd = contentfulManagementClient.entries().unPublish(contentfulAdvert);
-            sendMessageToQueue(new SendAdvertToSqsDto(unpublishedAd.getId(), "DELETE"));
+            sendMessageToQueue(new SendAdvertToSqsDto(unpublishedAd.getId(), "REMOVE"));
         }
 
         advert.setStatus(GrantAdvertStatus.DRAFT);
