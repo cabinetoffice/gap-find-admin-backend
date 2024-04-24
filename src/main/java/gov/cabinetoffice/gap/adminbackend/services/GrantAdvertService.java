@@ -326,7 +326,7 @@ public class GrantAdvertService {
 
         if (Boolean.FALSE.equals(contentfulAdvert.isPublished())) {
             final CMAEntry publishedAdvert = contentfulManagementClient.entries().publish(contentfulAdvert);
-            sendMessageToQueue(new SendAdvertToSqsDto(publishedAdvert.getId(), "CREATE"));
+            sendMessageToQueue(new SendAdvertToSqsDto(publishedAdvert.getId(), "ADD"));
         }
 
         updateGrantAdvertApplicationDates(advert);
