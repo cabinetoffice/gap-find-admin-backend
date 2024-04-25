@@ -320,26 +320,29 @@ public class GrantAdvertService {
         }
 
         contentfulAdvert = contentfulManagementClient.entries().fetchOne(contentfulAdvert.getId());
+        final boolean isPublished = Boolean.TRUE.equals(contentfulAdvert.isPublished());
         advert.setStatus(GrantAdvertStatus.PUBLISHED);
         advert.setContentfulSlug(contentfulAdvert.getField("label", CONTENTFUL_LOCALE));
         advert.setContentfulEntryId(contentfulAdvert.getId());
 
-        if (Boolean.FALSE.equals(contentfulAdvert.isPublished())) {
-            final CMAEntry publishedAdvert = contentfulManagementClient.entries().publish(contentfulAdvert);
-            sendMessageToQueue(new SendAdvertToSqsDto(publishedAdvert.getId(), "ADD"));
+        if (!isPublished) {
+            contentfulManagementClient.entries().publish(contentfulAdvert);
         }
 
         updateGrantAdvertApplicationDates(advert);
-        return save(advert);
+        final GrantAdvert savedAdvert = save(advert);
+        sendMessageToQueue(new SendAdvertToSqsDto(contentfulAdvert.getId(), "ADD"));
+
+        return savedAdvert;
     }
 
     public void unpublishAdvert(UUID advertId) {
         final GrantAdvert advert = this.getAdvertById(advertId);
         final CMAEntry contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId());
+        final boolean isPublished = Boolean.TRUE.equals(contentfulAdvert.isPublished());
 
-        if (Boolean.TRUE.equals(contentfulAdvert.isPublished())) {
-            final CMAEntry unpublishedAd = contentfulManagementClient.entries().unPublish(contentfulAdvert);
-            sendMessageToQueue(new SendAdvertToSqsDto(unpublishedAd.getId(), "REMOVE"));
+        if (isPublished) {
+           contentfulManagementClient.entries().unPublish(contentfulAdvert);
         }
 
         advert.setStatus(GrantAdvertStatus.DRAFT);
@@ -347,6 +350,7 @@ public class GrantAdvertService {
         advert.setUnpublishedDate(Instant.now());
 
         save(advert);
+        sendMessageToQueue(new SendAdvertToSqsDto(contentfulAdvert.getId(), "REMOVE"));
     }
 
     public void sendMessageToQueue(final SendAdvertToSqsDto advertDto) {
@@ -359,7 +363,7 @@ public class GrantAdvertService {
                 .withMessageDeduplicationId(messageId.toString());
 
         amazonSqs.sendMessage(messageRequest);
-        log.info("Message sent to queue for advert with contentful ID {}");
+        log.info("Message sent to queue for advert with contentful ID {}", advertDto.contentfulEntryId());
     }
 
     private CMAEntry createAdvertInContentful(final GrantAdvert grantAdvert) {
