@@ -1,14 +1,18 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
 import com.contentful.java.cda.FetchQuery;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.ModuleEntries;
 import com.contentful.java.cma.model.CMAEntry;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
+import gov.cabinetoffice.gap.adminbackend.config.OpenSearchSqsProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -72,19 +76,30 @@ class GrantAdvertServiceTest {
     @Mock
     private CDAClient contentfulDeliveryClient;
 
+    @Mock
+    private ObjectMapper mapper;
+
+    @Mock
+    private AmazonSQS amazonSqs;
+
     @Spy
     private GrantAdvertMapper grantAdvertMapper = new GrantAdvertMapperImpl();
 
     @Spy
     private ContentfulConfigProperties contentfulConfigProperties = ContentfulConfigProperties.builder()
-            .accessToken("an-access-token").environmentId("dev").spaceId("a-space-id")
-            .deliveryAPIAccessToken("a-delivery-access-token").build();
+            .accessToken("an-access-token")
+            .environmentId("dev")
+            .spaceId("a-space-id")
+            .deliveryAPIAccessToken("a-delivery-access-token")
+            .build();
+
+    @Spy
+    private OpenSearchSqsProperties openSearchSqsProperties = OpenSearchSqsProperties.builder()
+            .queueUrl("a-url")
+            .build();
 
     @Mock
     private ModuleEntries contentfulEntries;
-
-    @Mock
-    private ModuleEntries.Async async;
 
     @Mock
     private FetchQuery mockedFetchQuery;
@@ -103,12 +118,6 @@ class GrantAdvertServiceTest {
 
     @Mock
     private UserService userService;
-
-    @Mock
-    private OpenSearchService openSearchService;
-
-    @Mock
-    private WebClient webClient;
 
     @InjectMocks
     @Spy
@@ -850,20 +859,28 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            //when(contentfulEntries.async()).thenReturn(async);
-
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
 
+            final WebClient webClient = mock(WebClient.class);
             final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
             final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
+            when(webClientBuilder.build()).thenReturn(webClient);
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+            when(contentfulEntries.publish(any())).thenReturn(publishedContentfulAdvert);
+
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -925,19 +942,27 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.update(Mockito.any())).thenReturn(publishedContentfulAdvert);
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert,
                     publishedContentfulAdvert);
-            //when(contentfulEntries.async()).thenReturn(async);
             doReturn(grantAvertInDatabase).when(grantAdvertService).save(any());
 
+            final WebClient webClient = mock(WebClient.class);
             final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
             final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
+            when(webClientBuilder.build()).thenReturn(webClient);
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+            when(contentfulEntries.publish(any())).thenReturn(publishedContentfulAdvert);
+
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
@@ -976,10 +1001,12 @@ class GrantAdvertServiceTest {
                     .grantAdvertName("Grant Advert Name").response(response).grantAdvertName("Homelessness Grant")
                     .build();
 
+            final WebClient webClient = mock(WebClient.class);
             final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
             final WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
+            when(webClientBuilder.build()).thenReturn(webClient);
             when(webClient.patch()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.headers(any())).thenReturn(requestBodyUriSpec);
@@ -1007,7 +1034,13 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            //when(contentfulEntries.async()).thenReturn(async);
+            when(contentfulEntries.publish(any())).thenReturn(publishedContentfulAdvert);
+
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -1076,6 +1109,12 @@ class GrantAdvertServiceTest {
             doReturn(advert).when(grantAdvertService).save(any());
             when(contentfulAdvert.isPublished()).thenReturn(true);
 
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
+
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
             // maybe overkill to check this here but ensures we can be sure the state has changed
@@ -1084,7 +1123,6 @@ class GrantAdvertServiceTest {
             grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
-            verify(openSearchService).removeIndexEntry(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
 
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);
@@ -1107,6 +1145,11 @@ class GrantAdvertServiceTest {
             doReturn(advert).when(grantAdvertService).save(any());
             when(contentfulAdvert.isPublished()).thenReturn(true);
 
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
+
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
             // maybe overkill to check this here but ensures we can be sure the state has changed
@@ -1115,7 +1158,6 @@ class GrantAdvertServiceTest {
             grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
-            verify(openSearchService).removeIndexEntry(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
 
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);
