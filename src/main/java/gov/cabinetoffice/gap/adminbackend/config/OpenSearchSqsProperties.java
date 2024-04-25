@@ -11,11 +11,8 @@ import org.springframework.context.annotation.Configuration;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Configuration
-@ConfigurationProperties(prefix = "open-search")
-public class OpenSearchConfig {
-        private String url;
-        private String domain;
-        private String username;
-        private String password;
+@Configuration("openSearchSqsProperties")
+@ConfigurationProperties(prefix = "open-search-sqs")
+public class OpenSearchSqsProperties {
+    private String queueUrl;
 }
