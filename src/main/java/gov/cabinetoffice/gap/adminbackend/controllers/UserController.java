@@ -160,7 +160,8 @@ public class UserController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> checkNewAdminEmailIsValid(
             @RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
-        if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
+        // the email we store comes from One Login, which will always convert the value the user entered to lowercase
+        if (checkNewAdminEmailDto.getEmailAddress().toLowerCase().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
             throw new FieldViolationException("emailAddress", "This user already owns this grant.");
         }
 
