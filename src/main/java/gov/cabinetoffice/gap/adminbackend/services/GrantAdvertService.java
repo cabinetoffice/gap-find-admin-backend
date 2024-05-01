@@ -1,15 +1,19 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
 import com.contentful.java.cda.CDAEntry;
 import com.contentful.java.cda.QueryOperation;
-import com.contentful.java.cma.CMACallback;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.model.CMAEntry;
 import com.contentful.java.cma.model.rich.CMARichDocument;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
+import gov.cabinetoffice.gap.adminbackend.config.OpenSearchSqsProperties;
+import gov.cabinetoffice.gap.adminbackend.dtos.SendAdvertToSqsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -32,6 +36,7 @@ import gov.cabinetoffice.gap.adminbackend.repositories.GrantAdvertRepository;
 import gov.cabinetoffice.gap.adminbackend.repositories.SchemeRepository;
 import gov.cabinetoffice.gap.adminbackend.utils.CurrencyFormatter;
 import gov.cabinetoffice.gap.adminbackend.utils.HelperUtils;
+import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -46,8 +51,6 @@ import javax.transaction.Transactional;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import static gov.cabinetoffice.gap.adminbackend.validation.validators.AdvertPageResponseValidator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -64,11 +67,14 @@ public class GrantAdvertService {
     private final CMAClient contentfulManagementClient;
     private final CDAClient contentfulDeliveryClient;
     private final UserService userService;
-    private final OpenSearchService openSearchService;
     private final WebClient.Builder webClientBuilder;
+    private final AmazonSQS amazonSqs;
+    private final ObjectMapper mapper;
     private final Clock clock;
     private final ContentfulConfigProperties contentfulProperties;
     private final FeatureFlagsConfigurationProperties featureFlagsProperties;
+
+    private final OpenSearchSqsProperties openSearchSqsProperties;
 
     public GrantAdvert save(GrantAdvert advert) {
         final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -179,41 +185,49 @@ public class GrantAdvertService {
     }
 
     public void updatePageResponse(GrantAdvertPageResponseValidationDto pagePatchDto) {
-        GrantAdvert grantAdvert = grantAdvertRepository.findById(pagePatchDto.getGrantAdvertId())
+        final GrantAdvert grantAdvert = grantAdvertRepository.findById(pagePatchDto.getGrantAdvertId())
                 .orElseThrow(() -> new NotFoundException(
                         String.format("GrantAdvert with id %s not found", pagePatchDto.getGrantAdvertId())));
 
         validateAdvertStatus(grantAdvert);
-        // adds the static opening and closing time to the date question
         addStaticTimeToDateQuestion(pagePatchDto);
 
-
         // if response/section/page does not exist, create it. If it does exist, update it
-        GrantAdvertResponse response = Optional.ofNullable(grantAdvert.getResponse()).orElseGet(() -> {
-            GrantAdvertResponse newResponse = GrantAdvertResponse.builder().build();
+        final GrantAdvertResponse response = Optional.ofNullable(grantAdvert.getResponse()).orElseGet(() -> {
+            final GrantAdvertResponse newResponse = GrantAdvertResponse.builder().build();
             grantAdvert.setResponse(newResponse);
+
             return newResponse;
         });
-        GrantAdvertSectionResponse section = response.getSectionById(pagePatchDto.getSectionId()).orElseGet(() -> {
-            GrantAdvertSectionResponse newSection = GrantAdvertSectionResponse.builder().id(pagePatchDto.getSectionId())
-                    .status(GrantAdvertSectionResponseStatus.IN_PROGRESS).build();
+
+        final GrantAdvertSectionResponse section = response.getSectionById(pagePatchDto.getSectionId())
+                .orElseGet(() -> {
+            final GrantAdvertSectionResponse newSection = GrantAdvertSectionResponse.builder()
+                    .id(pagePatchDto.getSectionId())
+                    .status(GrantAdvertSectionResponseStatus.IN_PROGRESS)
+                    .build();
             response.getSections().add(newSection);
+
             return newSection;
         });
-        GrantAdvertPageResponse page = section.getPageById(pagePatchDto.getPage().getId()).orElseGet(() -> {
-            GrantAdvertPageResponse newPage = GrantAdvertPageResponse.builder().id(pagePatchDto.getPage().getId())
+
+        final GrantAdvertPageResponse page = section.getPageById(pagePatchDto.getPage().getId())
+                .orElseGet(() -> {
+            final GrantAdvertPageResponse newPage = GrantAdvertPageResponse.builder()
+                    .id(pagePatchDto.getPage().getId())
                     .build();
             section.getPages().add(newPage);
+
             return newPage;
         });
 
-        // ideally I'd use the mapper to do this but mapstruct seems to struggle
-        // with updating iterables and maps etc.
         page.setQuestions(pagePatchDto.getPage().getQuestions());
         page.setStatus(pagePatchDto.getPage().getStatus());
-
-        // update section status
         updateSectionStatus(section);
+
+        if (pagePatchDto.getSectionId().equals(ADVERT_DATES_SECTION_ID)) {
+            updateGrantAdvertApplicationDates(grantAdvert);
+        }
 
         save(grantAdvert);
     }
@@ -292,7 +306,6 @@ public class GrantAdvertService {
     }
 
     public GrantAdvert publishAdvert(UUID advertId) {
-        final Instant now = Instant.now();
         final GrantAdvert advert = getAdvertById(advertId);
 
         CMAEntry contentfulAdvert;
@@ -307,31 +320,29 @@ public class GrantAdvertService {
         }
 
         contentfulAdvert = contentfulManagementClient.entries().fetchOne(contentfulAdvert.getId());
+        final boolean isPublished = Boolean.TRUE.equals(contentfulAdvert.isPublished());
         advert.setStatus(GrantAdvertStatus.PUBLISHED);
         advert.setContentfulSlug(contentfulAdvert.getField("label", CONTENTFUL_LOCALE));
         advert.setContentfulEntryId(contentfulAdvert.getId());
 
-        if (Boolean.FALSE.equals(contentfulAdvert.isPublished())) {
-            contentfulManagementClient.entries().async().publish(contentfulAdvert, new CMACallback<>() {
-                @Override
-                protected void onSuccess(CMAEntry result) {
-                    openSearchService.indexEntry(result);
-                    log.info("Took {} seconds to publish advert", Duration.between(now, Instant.now()).getSeconds());
-                }
-            });
+        if (!isPublished) {
+            contentfulManagementClient.entries().publish(contentfulAdvert);
         }
 
         updateGrantAdvertApplicationDates(advert);
-        return save(advert);
+        final GrantAdvert savedAdvert = save(advert);
+        sendMessageToQueue(new SendAdvertToSqsDto(contentfulAdvert.getId(), "ADD"));
+
+        return savedAdvert;
     }
 
     public void unpublishAdvert(UUID advertId) {
         final GrantAdvert advert = this.getAdvertById(advertId);
         final CMAEntry contentfulAdvert = contentfulManagementClient.entries().fetchOne(advert.getContentfulEntryId());
+        final boolean isPublished = Boolean.TRUE.equals(contentfulAdvert.isPublished());
 
-        if (Boolean.TRUE.equals(contentfulAdvert.isPublished())) {
-            final CMAEntry unpublishedAd = contentfulManagementClient.entries().unPublish(contentfulAdvert);
-            openSearchService.removeIndexEntry(unpublishedAd);
+        if (isPublished) {
+           contentfulManagementClient.entries().unPublish(contentfulAdvert);
         }
 
         advert.setStatus(GrantAdvertStatus.DRAFT);
@@ -339,6 +350,20 @@ public class GrantAdvertService {
         advert.setUnpublishedDate(Instant.now());
 
         save(advert);
+        sendMessageToQueue(new SendAdvertToSqsDto(contentfulAdvert.getId(), "REMOVE"));
+    }
+
+    public void sendMessageToQueue(final SendAdvertToSqsDto advertDto) {
+        final UUID messageId = UUID.randomUUID();
+        final String messageBody = mapper.valueToTree(advertDto).toString();
+        final SendMessageRequest messageRequest = new SendMessageRequest()
+                .withQueueUrl(openSearchSqsProperties.getQueueUrl())
+                .withMessageGroupId(messageId.toString())
+                .withMessageBody(messageBody)
+                .withMessageDeduplicationId(messageId.toString());
+
+        amazonSqs.sendMessage(messageRequest);
+        log.info("Message sent to queue for advert with contentful ID {}", advertDto.contentfulEntryId());
     }
 
     private CMAEntry createAdvertInContentful(final GrantAdvert grantAdvert) {
@@ -452,6 +477,7 @@ public class GrantAdvertService {
                     log.info("Took {} seconds to try and update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
                 })
                 .block();
+
         log.info("Took {} seconds to update rich text questions in Contentful", Duration.between(now, Instant.now()).getSeconds());
     }
 
@@ -551,9 +577,7 @@ public class GrantAdvertService {
         save(grantAdvert);
     }
 
-    private void updateGrantAdvertApplicationDates(final GrantAdvert grantAdvert) {
-        // these should never be null at this point, but just in case.
-        // should also keep our test data in check
+    public void updateGrantAdvertApplicationDates(final GrantAdvert grantAdvert) {
         GrantAdvertSectionResponse applicationDatesSection = grantAdvert.getResponse()
                 .getSectionById(ADVERT_DATES_SECTION_ID)
                 .orElseThrow(() -> new GrantAdvertException("Advert is missing application dates section"));
@@ -569,9 +593,11 @@ public class GrantAdvertService {
         }
 
         // convert the string[] to int[], to easily build Calendars
-        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
+        int[] openingResponse = Arrays.stream(openingDateQuestion.getMultiResponse())
+                .mapToInt(Integer::parseInt)
                 .toArray();
-        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse()).mapToInt(Integer::parseInt)
+        int[] closingResponse = Arrays.stream(closingDateQuestion.getMultiResponse())
+                .mapToInt(Integer::parseInt)
                 .toArray();
 
         // build ZonedDateTimes
@@ -603,18 +629,18 @@ public class GrantAdvertService {
                 });
     }
 
-    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
-        grantAdvertRepository.findBySchemeId(schemeId)
-                .ifPresent(advert -> {
-                    if (advert.getLastUpdatedBy() != null && advert.getLastUpdatedBy() == grantAdmin) {
-                        advert.setLastUpdatedBy(null);
-                    }
-                    if (advert.getCreatedBy() != null && advert.getCreatedBy() == grantAdmin) {
-                        advert.setCreatedBy(null);
-                    }
+    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin) {
 
-                    grantAdvertRepository.save(advert);
-                });
+        grantAdvertRepository.findByCreatedByOrLastUpdatedBy(grantAdmin).forEach(advert -> {
+            if (advert.getLastUpdatedBy() != null && advert.getLastUpdatedBy() == grantAdmin) {
+                advert.setLastUpdatedBy(null);
+            }
+            if (advert.getCreatedBy() != null && advert.getCreatedBy() == grantAdmin) {
+                advert.setCreatedBy(null);
+            }
+
+            grantAdvertRepository.save(advert);
+        });
     }
 
     public static void validateAdvertStatus(GrantAdvert grantAdvert) {

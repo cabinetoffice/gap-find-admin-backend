@@ -61,9 +61,12 @@ public interface ApplicationFormMapper {
     // add/update a single value
     default void updateGenericQuestionPatchToQuestionDto(QuestionGenericPatchDTO questionGenericPatchDTO,
             @MappingTarget ApplicationFormQuestionDTO questionDto) {
+
         if (questionGenericPatchDTO == null) {
             return;
         }
+
+        boolean responseTypeChanging = false;
 
         if (questionGenericPatchDTO.getProfileField() != null) {
             questionDto.setProfileField(questionGenericPatchDTO.getProfileField());
@@ -81,19 +84,18 @@ public interface ApplicationFormMapper {
             questionDto.setQuestionSuffix(questionGenericPatchDTO.getQuestionSuffix());
         }
         if (questionGenericPatchDTO.getResponseType() != null) {
+            responseTypeChanging = true;
             questionDto.setResponseType(questionGenericPatchDTO.getResponseType());
         }
 
         Map<String, Object> map = questionGenericPatchDTO.getValidation();
-        if (questionDto.getValidation() != null) {
+        if (questionDto.getValidation() != null && !responseTypeChanging) {
             if (map != null) {
-                questionDto.getValidation().putAll(map);
+               questionDto.getValidation().putAll(map);
             }
         }
-        else {
-            if (map != null) {
+        else if (map != null) {
                 questionDto.setValidation(map);
-            }
         }
     }
 
@@ -102,6 +104,8 @@ public interface ApplicationFormMapper {
         if (questionOptionsPatchDTO == null) {
             return;
         }
+
+        boolean responseTypeChanging = false;
 
         if (questionOptionsPatchDTO.getProfileField() != null) {
             questionDto.setProfileField(questionOptionsPatchDTO.getProfileField());
@@ -119,29 +123,29 @@ public interface ApplicationFormMapper {
             questionDto.setQuestionSuffix(questionOptionsPatchDTO.getQuestionSuffix());
         }
         if (questionOptionsPatchDTO.getResponseType() != null) {
+            responseTypeChanging = true;
             questionDto.setResponseType(questionOptionsPatchDTO.getResponseType());
         }
-        if (questionDto.getValidation() != null) {
-            Map<String, Object> map = questionOptionsPatchDTO.getValidation();
+
+        Map<String, Object> map = questionOptionsPatchDTO.getValidation();
+        if (questionDto.getValidation() != null && !responseTypeChanging) {
             if (map != null) {
                 questionDto.getValidation().putAll(map);
             }
         }
         else {
-            Map<String, Object> map = questionOptionsPatchDTO.getValidation();
             if (map != null) {
                 questionDto.setValidation(map);
             }
         }
+        List<String> list = questionOptionsPatchDTO.getOptions();
         if (questionDto.getOptions() != null) {
-            List<String> list = questionOptionsPatchDTO.getOptions();
             if (list != null) {
                 questionDto.getOptions().clear();
                 questionDto.getOptions().addAll(list);
             }
         }
         else {
-            List<String> list = questionOptionsPatchDTO.getOptions();
             if (list != null) {
                 questionDto.setOptions(new ArrayList<>(list));
             }

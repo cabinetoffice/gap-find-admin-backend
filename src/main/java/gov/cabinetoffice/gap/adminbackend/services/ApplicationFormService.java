@@ -410,9 +410,9 @@ public class ApplicationFormService {
                 .getApplicationStatus();
     }
 
-    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin, Integer schemeId) {
-        applicationFormRepository.findByGrantSchemeId(schemeId)
-                .ifPresent(application -> {
+    public void removeAdminReferenceBySchemeId(GrantAdmin grantAdmin) {
+        applicationFormRepository.findByCreatedByOrLastUpdateBy(grantAdmin.getId())
+                .forEach(application -> {
                     if (Objects.equals(application.getLastUpdateBy(), grantAdmin.getId())) {
                         application.setLastUpdateBy(null);
                     }

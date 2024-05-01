@@ -160,13 +160,15 @@ public class UserController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> checkNewAdminEmailIsValid(
             @RequestBody @Valid final CheckNewAdminEmailDto checkNewAdminEmailDto, final HttpServletRequest request) {
-        if (checkNewAdminEmailDto.getEmailAddress().equals(checkNewAdminEmailDto.getOldEmailAddress())) {
+        // the email we store comes from One Login, which will always convert the value the user entered to lowercase
+        final String newAdminEmail = checkNewAdminEmailDto.getEmailAddress().toLowerCase();
+        if (newAdminEmail.equals(checkNewAdminEmailDto.getOldEmailAddress())) {
             throw new FieldViolationException("emailAddress", "This user already owns this grant.");
         }
 
         try {
             final String jwt = HelperUtils.getJwtFromCookies(request, userServiceConfig.getCookieName());
-            userService.getGrantAdminIdFromUserServiceEmail(checkNewAdminEmailDto.getEmailAddress(), jwt);
+            userService.getGrantAdminIdFromUserServiceEmail(newAdminEmail, jwt);
         }
         catch (Exception e) {
             throw new FieldViolationException("emailAddress", "Email address does not belong to an admin user");

@@ -1,14 +1,18 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.contentful.java.cda.CDAArray;
 import com.contentful.java.cda.CDAClient;
 import com.contentful.java.cda.FetchQuery;
 import com.contentful.java.cma.CMAClient;
 import com.contentful.java.cma.ModuleEntries;
 import com.contentful.java.cma.model.CMAEntry;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.cabinetoffice.gap.adminbackend.annotations.WithAdminSession;
 import gov.cabinetoffice.gap.adminbackend.config.ContentfulConfigProperties;
 import gov.cabinetoffice.gap.adminbackend.config.FeatureFlagsConfigurationProperties;
+import gov.cabinetoffice.gap.adminbackend.config.OpenSearchSqsProperties;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPageResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertPublishingInformationResponseDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantadvert.GetGrantAdvertStatusResponseDTO;
@@ -72,19 +76,30 @@ class GrantAdvertServiceTest {
     @Mock
     private CDAClient contentfulDeliveryClient;
 
+    @Mock
+    private ObjectMapper mapper;
+
+    @Mock
+    private AmazonSQS amazonSqs;
+
     @Spy
     private GrantAdvertMapper grantAdvertMapper = new GrantAdvertMapperImpl();
 
     @Spy
     private ContentfulConfigProperties contentfulConfigProperties = ContentfulConfigProperties.builder()
-            .accessToken("an-access-token").environmentId("dev").spaceId("a-space-id")
-            .deliveryAPIAccessToken("a-delivery-access-token").build();
+            .accessToken("an-access-token")
+            .environmentId("dev")
+            .spaceId("a-space-id")
+            .deliveryAPIAccessToken("a-delivery-access-token")
+            .build();
+
+    @Spy
+    private OpenSearchSqsProperties openSearchSqsProperties = OpenSearchSqsProperties.builder()
+            .queueUrl("a-url")
+            .build();
 
     @Mock
     private ModuleEntries contentfulEntries;
-
-    @Mock
-    private ModuleEntries.Async async;
 
     @Mock
     private FetchQuery mockedFetchQuery;
@@ -103,9 +118,6 @@ class GrantAdvertServiceTest {
 
     @Mock
     private UserService userService;
-
-    @Mock
-    private OpenSearchService openSearchService;
 
     @InjectMocks
     @Spy
@@ -614,30 +626,55 @@ class GrantAdvertServiceTest {
             final GrantAdvert advert = GrantAdvert.builder().build();
 
             String[] openingMultiResponse = new String[]{"10", "10", "2010", "13:00"};
-            GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder().id(OPENING_DATE_ID)
-                    .multiResponse(openingMultiResponse).build();
+            GrantAdvertQuestionResponse openingDateQuestion = GrantAdvertQuestionResponse.builder()
+                    .id(OPENING_DATE_ID)
+                    .multiResponse(openingMultiResponse)
+                    .build();
+
             String[] closingMultiResponse = new String[]{"12", "12", "2012", "13:00"};
-            GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder().id(CLOSING_DATE_ID)
-                    .multiResponse(closingMultiResponse).build();
+            GrantAdvertQuestionResponse closingDateQuestion = GrantAdvertQuestionResponse.builder()
+                    .id(CLOSING_DATE_ID)
+                    .multiResponse(closingMultiResponse)
+                    .build();
+
             String[] expectedOpeningMultiResponse = new String[]{"10", "10", "2010", "13", "00"};
             String[] expectedClosingMultiResponse = new String[]{"12", "12", "2012", "13", "00"};
 
-            GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder().id(pageId)
+            GrantAdvertPageResponse datePage = GrantAdvertPageResponse.builder()
+                    .id("1")
                     .status(GrantAdvertPageResponseStatus.COMPLETED)
-                    .questions(List.of(openingDateQuestion, closingDateQuestion)).build();
+                    .questions(List.of(openingDateQuestion, closingDateQuestion))
+                    .build();
 
             GrantAdvertPageResponseValidationDto datePagePatchDto = GrantAdvertPageResponseValidationDto.builder()
-                    .grantAdvertId(grantAdvertId).sectionId(ADVERT_DATES_SECTION_ID).page(datePage).build();
+                    .grantAdvertId(grantAdvertId)
+                    .sectionId(ADVERT_DATES_SECTION_ID)
+                    .page(datePage)
+                    .build();
 
-            AdvertDefinitionQuestion openDateDefinitionQuestion = AdvertDefinitionQuestion.builder().id(OPENING_DATE_ID)
+            AdvertDefinitionQuestion openDateDefinitionQuestion = AdvertDefinitionQuestion.builder()
+                    .id(OPENING_DATE_ID)
                     .responseType(AdvertDefinitionQuestionResponseType.DATE)
-                    .validation(AdvertDefinitionQuestionValidation.builder().mandatory(true).build()).build();
+                    .validation(AdvertDefinitionQuestionValidation.builder()
+                            .mandatory(true)
+                            .build()
+                    )
+                    .build();
             AdvertDefinitionQuestion closeDateDefinitionQuestion = AdvertDefinitionQuestion.builder()
-                    .id(CLOSING_DATE_ID).responseType(AdvertDefinitionQuestionResponseType.DATE)
-                    .validation(AdvertDefinitionQuestionValidation.builder().mandatory(true).build()).build();
-            AdvertDefinitionSection definitionSection = AdvertDefinitionSection.builder().id(ADVERT_DATES_SECTION_ID)
-                    .pages(List.of(AdvertDefinitionPage.builder().id(pageId)
-                            .questions(List.of(openDateDefinitionQuestion, closeDateDefinitionQuestion)).build()))
+                    .id(CLOSING_DATE_ID)
+                    .responseType(AdvertDefinitionQuestionResponseType.DATE)
+                    .validation(AdvertDefinitionQuestionValidation.builder()
+                            .mandatory(true)
+                            .build()
+                    )
+                    .build();
+            AdvertDefinitionSection definitionSection = AdvertDefinitionSection.builder()
+                    .id(ADVERT_DATES_SECTION_ID)
+                    .pages(List.of(AdvertDefinitionPage.builder()
+                            .id("1")
+                            .questions(List.of(openDateDefinitionQuestion, closeDateDefinitionQuestion))
+                            .build())
+                    )
                     .build();
 
             when(grantAdvertRepository.findById(grantAdvertId))
@@ -655,7 +692,7 @@ class GrantAdvertServiceTest {
             Optional<GrantAdvertSectionResponse> sectionById = response.getSectionById(ADVERT_DATES_SECTION_ID);
             assertThat(sectionById).isPresent();
             assertThat(sectionById.get().getStatus()).isEqualTo(GrantAdvertSectionResponseStatus.COMPLETED);
-            Optional<GrantAdvertPageResponse> pageById = sectionById.get().getPageById(pageId);
+            Optional<GrantAdvertPageResponse> pageById = sectionById.get().getPageById("1");
             assertThat(pageById).isPresent();
             Optional<GrantAdvertQuestionResponse> openingQuestion = pageById.get().getQuestionById(OPENING_DATE_ID);
             assertThat(openingQuestion).isPresent();
@@ -822,8 +859,6 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            when(contentfulEntries.async()).thenReturn(async);
-
             doReturn(mockGrantAdvert).when(grantAdvertService).save(any());
 
             final WebClient webClient = mock(WebClient.class);
@@ -838,6 +873,14 @@ class GrantAdvertServiceTest {
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+            when(contentfulEntries.publish(any())).thenReturn(publishedContentfulAdvert);
+
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -874,7 +917,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(async).publish(eq(publishedContentfulAdvert), any());
+            verify(contentfulEntries).publish(publishedContentfulAdvert);
         }
 
         @Test
@@ -899,7 +942,6 @@ class GrantAdvertServiceTest {
             when(contentfulEntries.update(Mockito.any())).thenReturn(publishedContentfulAdvert);
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert,
                     publishedContentfulAdvert);
-            when(contentfulEntries.async()).thenReturn(async);
             doReturn(grantAvertInDatabase).when(grantAdvertService).save(any());
 
             final WebClient webClient = mock(WebClient.class);
@@ -914,6 +956,13 @@ class GrantAdvertServiceTest {
             when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
             when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
+            when(contentfulEntries.publish(any())).thenReturn(publishedContentfulAdvert);
+
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
 
             final ArgumentCaptor<GrantAdvert> grantAdvertArgumentCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
@@ -940,7 +989,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries, atLeastOnce()).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(async).publish(eq(publishedContentfulAdvert), any());
+            verify(contentfulEntries).publish(publishedContentfulAdvert);
         }
 
         @Test
@@ -985,7 +1034,13 @@ class GrantAdvertServiceTest {
 
             when(contentfulEntries.fetchOne(contentfulAdvertId)).thenReturn(publishedContentfulAdvert);
 
-            when(contentfulEntries.async()).thenReturn(async);
+            when(contentfulEntries.publish(any())).thenReturn(publishedContentfulAdvert);
+
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
 
             final ArgumentCaptor<CMAEntry> entryCaptor = ArgumentCaptor.forClass(CMAEntry.class);
 
@@ -1022,7 +1077,7 @@ class GrantAdvertServiceTest {
             verify(contentfulEntries).fetchOne(contentfulAdvertId);
 
             // verify that we've published
-            verify(async).publish(eq(publishedContentfulAdvert), any());
+            verify(contentfulEntries).publish(publishedContentfulAdvert);
         }
 
     }
@@ -1054,6 +1109,12 @@ class GrantAdvertServiceTest {
             doReturn(advert).when(grantAdvertService).save(any());
             when(contentfulAdvert.isPublished()).thenReturn(true);
 
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
+
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
             // maybe overkill to check this here but ensures we can be sure the state has changed
@@ -1062,7 +1123,6 @@ class GrantAdvertServiceTest {
             grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
-            verify(openSearchService).removeIndexEntry(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
 
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);
@@ -1085,6 +1145,11 @@ class GrantAdvertServiceTest {
             doReturn(advert).when(grantAdvertService).save(any());
             when(contentfulAdvert.isPublished()).thenReturn(true);
 
+            final JsonNode mockJsonNode = mock(JsonNode.class);
+            when(mapper.valueToTree(any())).thenReturn(mockJsonNode);
+
+            when(mockJsonNode.toString()).thenReturn("{contentfulEntryId: \"entry-id\", action: \"CREATE\"}");
+
             final ArgumentCaptor<GrantAdvert> advertCaptor = ArgumentCaptor.forClass(GrantAdvert.class);
 
             // maybe overkill to check this here but ensures we can be sure the state has changed
@@ -1093,7 +1158,6 @@ class GrantAdvertServiceTest {
             grantAdvertService.unpublishAdvert(grantAdvertId);
 
             verify(contentfulEntries).unPublish(contentfulAdvert);
-            verify(openSearchService).removeIndexEntry(contentfulAdvert);
             verify(grantAdvertService).save(advertCaptor.capture());
 
             assertThat(advertCaptor.getValue().getId()).isEqualTo(grantAdvertId);
@@ -1337,9 +1401,10 @@ class GrantAdvertServiceTest {
         GrantAdvert grantAdvert = RandomGrantAdvertGenerators.randomGrantAdvertEntity().build();
 
 
-        when(grantAdvertRepository.findBySchemeId(anyInt())).thenReturn(Optional.of(grantAdvert));
+        when(grantAdvertRepository.findByCreatedByOrLastUpdatedBy(grantAdmin))
+                .thenReturn(Collections.singletonList(grantAdvert));
 
-        grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin, 1);
+        grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin);
 
         verify(grantAdvertRepository).save(grantAdvert);
     }

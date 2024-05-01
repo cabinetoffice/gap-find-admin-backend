@@ -203,13 +203,12 @@ public class SchemeService {
                 }
 
                 scheme.removeAdmin(grantAdmin);
-                grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin, scheme.getId());
-                applicationFormService.removeAdminReferenceBySchemeId(grantAdmin, scheme.getId());
             }
 
+            grantAdvertService.removeAdminReferenceBySchemeId(grantAdmin);
+            applicationFormService.removeAdminReferenceBySchemeId(grantAdmin);
             schemeRepo.saveAll(schemes);
         });
-
 
     }
 
