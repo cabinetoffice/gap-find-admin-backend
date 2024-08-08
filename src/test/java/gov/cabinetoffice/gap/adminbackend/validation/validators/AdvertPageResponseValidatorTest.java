@@ -928,7 +928,8 @@ class AdvertPageResponseValidatorTest {
                 Arguments.of("https://www.google.co.uk/long/path?query=var&query2=var"),
                 Arguments.of("http://www.google.co.uk/long/path?query=var&query2=var"),
                 Arguments.of("https://google.co.uk/long/path?query=var&query2=var"),
-                Arguments.of("http://google.co.uk/long/path?query=var&query2=var"));
+                Arguments.of("http://google.co.uk/long/path?query=var&query2=var"),
+                Arguments.of("https://google.co.uk/competition/1989/overview/63441f1e-850b-4581-986d-cd2f6c6c226d#summary"));
     }
     // @formatter:on
 
