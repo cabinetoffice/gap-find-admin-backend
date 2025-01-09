@@ -116,8 +116,10 @@ public class UserService {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public GrantAdmin getGrantAdminIdFromUserServiceEmail(final String email, final String jwt) {
         try {
+            //UI might send camelcase. change it to lowercase
+
             UserV2DTO response = webClientBuilder.build().get()
-                    .uri(userServiceConfig.getDomain() + "/user/email/" + email)
+                    .uri(userServiceConfig.getDomain() + "/user/email/" + email.toLowerCase())
                     .cookie(userServiceConfig.getCookieName(), jwt).retrieve().bodyToMono(UserV2DTO.class).block();
 
             return grantAdminRepository.findByGapUserUserSub(response.sub()).orElseThrow(() -> new NotFoundException(
