@@ -16,4 +16,9 @@ public class HealthController {
         return ResponseEntity.ok("Service up");
     }
 
+    @GetMapping("/check")
+    public ResponseEntity<String> getHealthCheck2() {
+        return ResponseEntity.ok("Admin API Service up");
+    }
+
 }
