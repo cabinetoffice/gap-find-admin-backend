@@ -20,82 +20,82 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
-        private final JwtTokenFilter jwtTokenFilter;
+    private final JwtTokenFilter jwtTokenFilter;
 
-        private static final String UUID_REGEX_STRING = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
+    private static final String UUID_REGEX_STRING = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
 
-        public WebSecurityConfig(final UserService userService, final JwtTokenFilterConfig jwtTokenFilterConfig) {
-                this.jwtTokenFilter = new JwtTokenFilter(userService, jwtTokenFilterConfig);
-        }
+    public WebSecurityConfig(final UserService userService, final JwtTokenFilterConfig jwtTokenFilterConfig) {
+        this.jwtTokenFilter = new JwtTokenFilter(userService, jwtTokenFilterConfig);
+    }
 
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-                // if you add a path which is hit by the lambda, remember to update also the
-                // paths in gov/cabinetoffice/gap/adminbackend/config/LambdasInterceptor.java
-                http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and()
-                                .authorizeHttpRequests(auth -> auth
-                                                .mvcMatchers("/login",
-                                                                "/health",
-                                                                "/health/check",
-                                                                "/emails/sendLambdaConfirmationEmail",
-                                                                "/users/validateAdminSession",
-                                                                "/submissions/{submissionId:" + UUID_REGEX_STRING
-                                                                                + "}/export-batch/{batchExportId:"
-                                                                                + UUID_REGEX_STRING + "}/submission",
-                                                                "/submissions/*/export-batch/*/status",
-                                                                "/submissions/{submissionId:" + UUID_REGEX_STRING
-                                                                                + "}/export-batch/{batchExportId:"
-                                                                                + UUID_REGEX_STRING + "}/s3-object-key",
-                                                                "/grant-export/{exportId:" + UUID_REGEX_STRING
-                                                                                + "}/outstandingCount",
-                                                                "/grant-export/{exportId:" + UUID_REGEX_STRING
-                                                                                + "}/failedCount",
-                                                                "/grant-export/{exportId:" + UUID_REGEX_STRING
-                                                                                + "}/remainingCount",
-                                                                "/grant-export/{exportId:" + UUID_REGEX_STRING
-                                                                                + "}/completed",
-                                                                "/grant-export/{exportId:" + UUID_REGEX_STRING
-                                                                                + "}/batch/status",
-                                                                "/grant-export/{exportId:" + UUID_REGEX_STRING
-                                                                                + "}/batch/s3-object-key",
-                                                                "/grant-advert/lambda/{grantAdvertId:"
-                                                                                + UUID_REGEX_STRING + "}/publish",
-                                                                "/grant-advert/lambda/{grantAdvertId:"
-                                                                                + UUID_REGEX_STRING + "}/unpublish",
-                                                                "/users/migrate",
-                                                                "/users/delete",
-                                                                "/users/tech-support-user/**",
-                                                                "/users/admin-user/**",
-                                                                "/users/funding-organisation",
-                                                                "/application-forms/lambda/**",
-                                                                "/feedback/add")
-                                                .permitAll()
-                                                .antMatchers("/v3/api-docs/**",
-                                                                "/swagger-ui/**",
-                                                                "/swagger-resources/**",
-                                                                "/swagger-ui.html",
-                                                                "/webjars/**")
-                                                .permitAll()
-                                                .antMatchers("/spotlight-submissions/{spotlightSubmissionId:"
-                                                                + UUID_REGEX_STRING + "}")
-                                                .permitAll()
-                                                .antMatchers("/spotlight-batch/status/**",
-                                                                "/spotlight-batch",
-                                                                "/spotlight-batch/{spotlightBatchId" + UUID_REGEX_STRING
-                                                                                + "}/add-spotlight-submission/**",
-                                                                "/spotlight-batch/send-to-spotlight")
-                                                .permitAll()
-                                                .anyRequest()
-                                                .authenticated())
+        // if you add a path which is hit by the lambda, remember to update also the
+        // paths in gov/cabinetoffice/gap/adminbackend/config/LambdasInterceptor.java
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and()
+                .authorizeHttpRequests(auth -> auth
+                        .mvcMatchers("/login",
+                                "/health",
+                                "/health/check",
+                                "/emails/sendLambdaConfirmationEmail",
+                                "/users/validateAdminSession",
+                                "/submissions/{submissionId:" + UUID_REGEX_STRING
+                                        + "}/export-batch/{batchExportId:"
+                                        + UUID_REGEX_STRING + "}/submission",
+                                "/submissions/*/export-batch/*/status",
+                                "/submissions/{submissionId:" + UUID_REGEX_STRING
+                                        + "}/export-batch/{batchExportId:"
+                                        + UUID_REGEX_STRING + "}/s3-object-key",
+                                "/grant-export/{exportId:" + UUID_REGEX_STRING
+                                        + "}/outstandingCount",
+                                "/grant-export/{exportId:" + UUID_REGEX_STRING
+                                        + "}/failedCount",
+                                "/grant-export/{exportId:" + UUID_REGEX_STRING
+                                        + "}/remainingCount",
+                                "/grant-export/{exportId:" + UUID_REGEX_STRING
+                                        + "}/completed",
+                                "/grant-export/{exportId:" + UUID_REGEX_STRING
+                                        + "}/batch/status",
+                                "/grant-export/{exportId:" + UUID_REGEX_STRING
+                                        + "}/batch/s3-object-key",
+                                "/grant-advert/lambda/{grantAdvertId:"
+                                        + UUID_REGEX_STRING + "}/publish",
+                                "/grant-advert/lambda/{grantAdvertId:"
+                                        + UUID_REGEX_STRING + "}/unpublish",
+                                "/users/migrate",
+                                "/users/delete",
+                                "/users/tech-support-user/**",
+                                "/users/admin-user/**",
+                                "/users/funding-organisation",
+                                "/application-forms/lambda/**",
+                                "/feedback/add")
+                        .permitAll()
+                        .antMatchers("/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-resources/**",
+                                "/swagger-ui.html",
+                                "/webjars/**")
+                        .permitAll()
+                        .antMatchers("/spotlight-submissions/{spotlightSubmissionId:"
+                                + UUID_REGEX_STRING + "}")
+                        .permitAll()
+                        .antMatchers("/spotlight-batch/status/**",
+                                "/spotlight-batch",
+                                "/spotlight-batch/{spotlightBatchId" + UUID_REGEX_STRING
+                                        + "}/add-spotlight-submission/**",
+                                "/spotlight-batch/send-to-spotlight")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
 
-                                .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable()
-                                .exceptionHandling()
-                                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
+                .formLogin().disable().httpBasic().disable().logout().disable().csrf().disable()
+                .exceptionHandling()
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
 
-                http.addFilterAfter(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
-                return http.build();
-        }
+        return http.build();
+    }
 
 }
