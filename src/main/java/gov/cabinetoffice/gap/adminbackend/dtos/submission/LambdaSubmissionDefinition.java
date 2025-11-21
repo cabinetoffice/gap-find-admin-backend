@@ -18,6 +18,8 @@ public class LambdaSubmissionDefinition {
 
     private String gapId;
 
+    private String submissionName;
+
     private ZonedDateTime submittedDate;
 
     private List<SubmissionSection> sections;

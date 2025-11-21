@@ -58,6 +58,40 @@ mvn Test -Dtest=className
 mvn Test -Dtest=className#methodName
 ```
 
+## Troubleshooting
+
+### MapStruct Mapper Implementation Not Found
+
+If you encounter an error like:
+
+```
+Parameter X of constructor in ...Service required a bean of type '...Mapper' that could not be found.
+```
+
+This typically means MapStruct hasn't generated the mapper implementation classes. MapStruct generates these during compilation.
+
+**Solution:**
+
+1. **Clean and rebuild the project:**
+   ```bash
+   mvn clean compile
+   ```
+   
+   Or in your IDE:
+   - **IntelliJ IDEA**: Build → Rebuild Project
+   - **Eclipse**: Project → Clean → Clean all projects
+
+2. **Verify annotation processing is enabled:**
+   - **IntelliJ IDEA**: Settings → Build, Execution, Deployment → Compiler → Annotation Processors → Enable annotation processing
+   - **Eclipse**: Project Properties → Java Compiler → Annotation Processing → Enable annotation processing
+
+3. **Check for compilation errors:** If there are any compilation errors in mapper interfaces or related DTOs, MapStruct won't generate the implementation classes. Check the compiler output for errors.
+
+After a successful build, you should see generated mapper implementations in:
+```
+target/generated-sources/annotations/gov/cabinetoffice/gap/adminbackend/mappers/
+```
+
 ## System Context Diagram
 ```mermaid
 flowchart TD
