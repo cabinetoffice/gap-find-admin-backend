@@ -1,2 +1,2 @@
-ALTER TABLE grant_submission ADD COLUMN submission_name VARCHAR(255) NULL;
-
+ALTER TABLE grant_submission
+ADD COLUMN IF NOT EXISTS submission_name VARCHAR(255);
