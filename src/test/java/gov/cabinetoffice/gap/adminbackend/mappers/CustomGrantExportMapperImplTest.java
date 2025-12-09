@@ -53,7 +53,8 @@ class CustomGrantExportMapperImplTest {
         .zipFileLocation("location")
         .status(GrantExportStatus.COMPLETE)
         .name("Some company name")
-            .submittedDate(FIXED_DATE_TIME)
+        .submittedDate(FIXED_DATE_TIME)
+        .submissionName("My Application Name")
         .build();
     final SubmissionQuestion ORG_NAME_SUBMISSION_QUESTION = SubmissionQuestion.builder()
         .questionId("APPLICANT_ORG_NAME")
@@ -81,7 +82,8 @@ class CustomGrantExportMapperImplTest {
         .status(SubmissionStatus.SUBMITTED)
         .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
         .definition(submissionDefinition)
-            .submittedDate(FIXED_DATE_TIME)
+        .submittedDate(FIXED_DATE_TIME)
+        .submissionName("My Application Name")
         .build();
 
     @Mock
@@ -122,6 +124,34 @@ class CustomGrantExportMapperImplTest {
 
         exportedSubmissionsDto.setName(submissionId.toString());
         exportedSubmissionsDto.setSubmittedDate(null);
+        exportedSubmissionsDto.setSubmissionName(null);
         assertEquals(exportedSubmissionsDto, exportedSubmissions);
+    }
+
+    @Test
+    void grantExportEntityToExportedSubmissions_mapsSubmissionName() {
+        when(submissionRepository.findById(submissionId)).thenReturn(Optional.of(submission));
+
+        final ExportedSubmissionsDto exportedSubmissions = customGrantExportMapper.grantExportEntityToExportedSubmissions(grantExport);
+
+        assertEquals("My Application Name", exportedSubmissions.getSubmissionName());
+    }
+
+    @Test
+    void grantExportEntityToExportedSubmissions_handlesNullSubmissionName() {
+        final Submission submissionWithoutName = Submission.builder()
+            .id(submissionId)
+            .scheme(scheme)
+            .status(SubmissionStatus.SUBMITTED)
+            .createdBy(GrantApplicant.builder().id(1).userId(UUID.randomUUID().toString()).build())
+            .definition(submissionDefinition)
+            .submittedDate(FIXED_DATE_TIME)
+            .submissionName(null)
+            .build();
+        when(submissionRepository.findById(submissionId)).thenReturn(Optional.of(submissionWithoutName));
+
+        final ExportedSubmissionsDto exportedSubmissions = customGrantExportMapper.grantExportEntityToExportedSubmissions(grantExport);
+
+        assertEquals(null, exportedSubmissions.getSubmissionName());
     }
 }
