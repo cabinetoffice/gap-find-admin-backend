@@ -18,4 +18,5 @@ public class ExportedSubmissionsDto {
     private UUID submissionId;
     private GrantExportStatus status;
     private ZonedDateTime submittedDate;
+    private String submissionName;
 }
