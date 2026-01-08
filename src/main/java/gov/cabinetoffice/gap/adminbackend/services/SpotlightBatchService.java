@@ -107,6 +107,18 @@ public class SpotlightBatchService {
             UUID spotlightBatchId) {
         final SpotlightBatch spotlightBatch = getSpotlightBatch(spotlightBatchId);
         final List<SpotlightSubmission> existingSpotlightSubmissions = spotlightBatch.getSpotlightSubmissions();
+
+        // Check if submission is already in the batch (idempotent operation)
+        boolean alreadyExists = existingSpotlightSubmissions != null
+                && existingSpotlightSubmissions.stream()
+                        .anyMatch(s -> s.getId().equals(spotlightSubmission.getId()));
+
+        if (alreadyExists) {
+            log.info("Submission {} is already in batch {}. Returning existing batch (idempotent).",
+                    spotlightSubmission.getId(), spotlightBatchId);
+            return spotlightBatch;
+        }
+
         final List<SpotlightBatch> existingSpotlightBatches = spotlightSubmission.getBatches();
 
         existingSpotlightSubmissions.add(spotlightSubmission);
