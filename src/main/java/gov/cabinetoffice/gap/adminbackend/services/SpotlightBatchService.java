@@ -44,9 +44,12 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static gov.cabinetoffice.gap.adminbackend.enums.DraftAssessmentResponseDtoStatus.SUCCESS;
 
@@ -136,11 +139,21 @@ public class SpotlightBatchService {
     }
 
     public SpotlightBatch getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId(String gapId) {
-        return spotlightBatchRepository
-                .findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(SpotlightBatchStatus.QUEUED, gapId)
-                .orElseThrow(() -> new NotFoundException(
-                        "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
-                                + " could not be found"));
+        List<SpotlightBatch> batches = spotlightBatchRepository
+                .findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(SpotlightBatchStatus.QUEUED, gapId);
+        
+        if (batches.isEmpty()) {
+            throw new NotFoundException(
+                    "A spotlight batch with spotlightSubmission for mandatory question with gap id " + gapId
+                            + " could not be found");
+        }
+        
+        if (batches.size() > 1) {
+            log.warn("Found {} QUEUED batches for gapId {}. Using the most recent one.", batches.size(), gapId);
+        }
+        
+        // Return the first batch (already ordered by created DESC in the query)
+        return batches.get(0);
     }
 
     public List<SpotlightBatch> getSpotlightBatchesByStatus(SpotlightBatchStatus status) {
@@ -152,10 +165,39 @@ public class SpotlightBatchService {
         final List<SendToSpotlightDto> sendToSpotlightDtos = new ArrayList<>();
         final List<SpotlightBatch> spotlightBatches = getSpotlightBatchesByStatus(status);
 
+        // Track submissions we've already included to prevent duplicates across batches
+        final Set<UUID> processedSubmissionIds = new HashSet<>();
+
         for (SpotlightBatch spotlightBatch : spotlightBatches) {
             try {
+                final List<SpotlightSubmission> submissions = spotlightBatch.getSpotlightSubmissions();
+                
+                // Filter: Only non-SENT submissions that haven't been processed yet
+                final List<SpotlightSubmission> submissionsToProcess = submissions.stream()
+                        .filter(sub -> !SpotlightSubmissionStatus.SENT.toString().equals(sub.getStatus()))
+                        .filter(sub -> !processedSubmissionIds.contains(sub.getId()))
+                        .collect(Collectors.toList());
+                
+                if (submissionsToProcess.isEmpty()) {
+                    log.info("Batch {} skipped - no eligible submissions (all are SENT or already processed)", 
+                            spotlightBatch.getId());
+                    // Mark batch as SUCCESS since all submissions are already SENT
+                    if (submissions.stream().allMatch(s -> SpotlightSubmissionStatus.SENT.toString().equals(s.getStatus()))) {
+                        spotlightBatch.setStatus(SpotlightBatchStatus.SUCCESS);
+                        spotlightBatch.setLastUpdated(Instant.now());
+                        spotlightBatchRepository.save(spotlightBatch);
+                    }
+                    continue;
+                }
+                
+                // Mark these submissions as processed to prevent duplicates in other batches
+                submissionsToProcess.forEach(sub -> processedSubmissionIds.add(sub.getId()));
+                
+                log.info("Processing batch {} with {} submissions (filtered from {})", 
+                        spotlightBatch.getId(), submissionsToProcess.size(), submissions.size());
+
                 final List<SpotlightSchemeDto> schemes = new ArrayList<>();
-                addSpotlightSchemeDtoToList(spotlightBatch, schemes);
+                addSpotlightSchemeDtoToListFiltered(spotlightBatch, schemes, submissionsToProcess);
 
                 final SendToSpotlightDto sendToSpotlightDto = SendToSpotlightDto.builder().schemes(schemes).build();
                 sendToSpotlightDtos.add(sendToSpotlightDto);
@@ -167,6 +209,21 @@ public class SpotlightBatchService {
         }
 
         return sendToSpotlightDtos;
+    }
+
+    /**
+     * Adds spotlight scheme DTOs to the list using a pre-filtered list of submissions.
+     * This prevents duplicate submissions being sent to Spotlight.
+     */
+    private void addSpotlightSchemeDtoToListFiltered(SpotlightBatch spotlightBatch, 
+            List<SpotlightSchemeDto> schemes, List<SpotlightSubmission> submissionsToProcess) {
+        
+        final List<String> uniqueSchemeIds = getUniqueSchemeIds(submissionsToProcess);
+        log.info("uniqueSchemeIds for batch {}: {}", spotlightBatch.getId(), uniqueSchemeIds);
+
+        uniqueSchemeIds.stream()
+                .map(uniqueSchemeId -> generateSchemeDto(uniqueSchemeId, submissionsToProcess))
+                .forEach(schemes::add);
     }
 
     public List<String> getUniqueSchemeIds(List<SpotlightSubmission> spotlightSubmissions) {
@@ -294,16 +351,21 @@ public class SpotlightBatchService {
     private void handleErrorMessage(SpotlightSubmission spotlightSubmission, String errorMessage) {
         if (errorMessage.contains(RESPONSE_MESSAGE_406_SCHEME_NOT_EXIST)) {
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.GGIS_ERROR.toString());
-            sendMessageToQueue(spotlightSubmission);
+            // DON'T re-queue GGIS errors - they require manual intervention to fix the scheme ID
+            // Re-queuing these creates an infinite loop of failures
+            log.warn("GGIS_ERROR for submission {} - scheme doesn't exist in Spotlight. " +
+                    "Manual intervention required to fix the GGIS identifier.", spotlightSubmission.getId());
         }
         else if (errorMessage.contains(RESPONSE_MESSAGE_409_FIELD_MISSING)
                 || errorMessage.contains(RESPONSE_MESSAGE_409_LENGTH)) {
-            // has a validation error
+            // has a validation error - DON'T re-queue as these need manual data fixes
             spotlightSubmission.setStatus(SpotlightSubmissionStatus.VALIDATION_ERROR.toString());
 
             log.info("Sending Spotlight validation support email using SNS for status code: 409");
             final String snsResponse = snsService.spotlightValidationError();
             log.info(snsResponse);
+            log.warn("VALIDATION_ERROR for submission {} - {}. Manual intervention required.", 
+                    spotlightSubmission.getId(), errorMessage);
         }
     }
 
@@ -327,8 +389,11 @@ public class SpotlightBatchService {
 
         final HttpEntity<String> requestEntity = new HttpEntity<>(spotlightBatchAsJsonString, requestHeaders);
 
-        final String draftAssessmentsEndpoint = spotlightConfig.getSpotlightUrl()
-                + "/services/apexrest/DraftAssessments";
+        // Construct the endpoint URL - avoid duplicating the path if already in config
+        String baseUrl = spotlightConfig.getSpotlightUrl();
+        final String draftAssessmentsEndpoint = baseUrl.contains("/services/apexrest/DraftAssessments")
+                ? baseUrl
+                : baseUrl + "/services/apexrest/DraftAssessments";
 
         SpotlightResponseResultsDto list = SpotlightResponseResultsDto.builder().build();
 
