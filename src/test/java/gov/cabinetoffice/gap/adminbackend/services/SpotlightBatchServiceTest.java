@@ -722,7 +722,6 @@ class SpotlightBatchServiceTest {
 
             doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
                     SpotlightBatchStatus.FAILURE);
-            doNothing().when(spotlightBatchService).sendMessageToQueue(spotlightSubmission);
 
             spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
 
@@ -733,7 +732,8 @@ class SpotlightBatchServiceTest {
 
             verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
                     SpotlightBatchStatus.FAILURE);
-            verify(spotlightBatchService, times(1)).sendMessageToQueue(spotlightSubmission);
+            // GGIS_ERROR submissions should NOT be re-queued - they require manual intervention
+            verify(spotlightBatchService, never()).sendMessageToQueue(any());
         }
 
         @Test
