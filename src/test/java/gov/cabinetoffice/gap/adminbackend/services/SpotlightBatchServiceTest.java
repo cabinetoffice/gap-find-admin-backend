@@ -520,7 +520,7 @@ class SpotlightBatchServiceTest {
             final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
 
             when(spotlightBatchRepository.findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(any(), any()))
-                    .thenReturn(Optional.of(spotlightBatch));
+                    .thenReturn(List.of(spotlightBatch));
 
             final SpotlightBatch result = spotlightBatchService
                     .getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId("GAP123");
@@ -531,7 +531,7 @@ class SpotlightBatchServiceTest {
         @Test
         void getSpotlightBatchByMandatoryQuestionGapId_notFound() {
             when(spotlightBatchRepository.findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(any(), any()))
-                    .thenReturn(Optional.empty());
+                    .thenReturn(List.of());
 
             assertThrows(NotFoundException.class,
                     () -> spotlightBatchService.getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId("GAP123"));
