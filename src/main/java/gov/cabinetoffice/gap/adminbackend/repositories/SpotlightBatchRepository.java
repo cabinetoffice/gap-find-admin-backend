@@ -28,8 +28,8 @@ public interface SpotlightBatchRepository extends JpaRepository<SpotlightBatch, 
 
     Optional<List<SpotlightBatch>> findByStatus(@Param("status") SpotlightBatchStatus status);
 
-    @Query("select s from SpotlightBatch s inner join s.spotlightSubmissions spotlightSubmissions where s.status =:status and spotlightSubmissions.mandatoryQuestions.gapId = :gapId")
-    Optional<SpotlightBatch> findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(
+    @Query("select s from SpotlightBatch s inner join s.spotlightSubmissions spotlightSubmissions where s.status =:status and spotlightSubmissions.mandatoryQuestions.gapId = :gapId ORDER BY s.created DESC")
+    List<SpotlightBatch> findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(
             @Param("status") SpotlightBatchStatus status, @Param("gapId") String gapId);
 
 }

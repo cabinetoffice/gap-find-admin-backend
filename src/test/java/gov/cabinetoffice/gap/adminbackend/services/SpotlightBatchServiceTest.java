@@ -520,7 +520,7 @@ class SpotlightBatchServiceTest {
             final SpotlightBatch spotlightBatch = SpotlightBatch.builder().id(uuid).build();
 
             when(spotlightBatchRepository.findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(any(), any()))
-                    .thenReturn(Optional.of(spotlightBatch));
+                    .thenReturn(List.of(spotlightBatch));
 
             final SpotlightBatch result = spotlightBatchService
                     .getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId("GAP123");
@@ -531,7 +531,7 @@ class SpotlightBatchServiceTest {
         @Test
         void getSpotlightBatchByMandatoryQuestionGapId_notFound() {
             when(spotlightBatchRepository.findByStatusAndSpotlightSubmissions_MandatoryQuestions_GapId(any(), any()))
-                    .thenReturn(Optional.empty());
+                    .thenReturn(List.of());
 
             assertThrows(NotFoundException.class,
                     () -> spotlightBatchService.getSpotlightBatchWithQueuedStatusByMandatoryQuestionGapId("GAP123"));
@@ -722,7 +722,6 @@ class SpotlightBatchServiceTest {
 
             doNothing().when(spotlightBatchService).updateSpotlightBatchStatus(sendToSpotlightDto,
                     SpotlightBatchStatus.FAILURE);
-            doNothing().when(spotlightBatchService).sendMessageToQueue(spotlightSubmission);
 
             spotlightBatchService.processSpotlightResponse(sendToSpotlightDto, spotlightResponseResults);
 
@@ -733,7 +732,8 @@ class SpotlightBatchServiceTest {
 
             verify(spotlightBatchService, times(1)).updateSpotlightBatchStatus(sendToSpotlightDto,
                     SpotlightBatchStatus.FAILURE);
-            verify(spotlightBatchService, times(1)).sendMessageToQueue(spotlightSubmission);
+            // GGIS_ERROR submissions should NOT be re-queued - they require manual intervention
+            verify(spotlightBatchService, never()).sendMessageToQueue(any());
         }
 
         @Test
