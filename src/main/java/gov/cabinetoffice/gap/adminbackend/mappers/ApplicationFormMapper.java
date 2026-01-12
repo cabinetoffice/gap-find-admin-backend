@@ -94,8 +94,18 @@ public interface ApplicationFormMapper {
                questionDto.getValidation().putAll(map);
             }
         }
-        else if (map != null) {
-                questionDto.setValidation(map);
+        else {
+            // When response type is changing, apply default validation for the new type
+            if (responseTypeChanging) {
+                questionDto.setValidation(new java.util.HashMap<>(questionDto.getResponseType().getValidation()));
+            }
+            if (map != null) {
+                if (questionDto.getValidation() == null) {
+                    questionDto.setValidation(map);
+                } else {
+                    questionDto.getValidation().putAll(map);
+                }
+            }
         }
     }
 
@@ -134,8 +144,16 @@ public interface ApplicationFormMapper {
             }
         }
         else {
+            // When response type is changing, apply default validation for the new type
+            if (responseTypeChanging) {
+                questionDto.setValidation(new java.util.HashMap<>(questionDto.getResponseType().getValidation()));
+            }
             if (map != null) {
-                questionDto.setValidation(map);
+                if (questionDto.getValidation() == null) {
+                    questionDto.setValidation(map);
+                } else {
+                    questionDto.getValidation().putAll(map);
+                }
             }
         }
         List<String> list = questionOptionsPatchDTO.getOptions();
