@@ -216,6 +216,7 @@ public class GrantExportServiceTest {
                 .status(GrantExportStatus.COMPLETE)
                 .name("name2")
                 .submittedDate(date)
+                .submissionName("Application Name 2")
                 .build();
             final ExportedSubmissionsDto exportedSubmissionsDto2 = ExportedSubmissionsDto.builder()
                 .submissionId(submissionId2)
@@ -223,6 +224,7 @@ public class GrantExportServiceTest {
                 .status(GrantExportStatus.COMPLETE)
                 .name("name1")
                 .submittedDate(oldDate)
+                .submissionName("Application Name 1")
                 .build();
 
             when(exportRepository.findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination))

@@ -58,6 +58,97 @@ mvn Test -Dtest=className
 mvn Test -Dtest=className#methodName
 ```
 
+## Troubleshooting
+
+### MapStruct Mapper Implementation Not Found
+
+If you encounter an error like:
+
+```
+Parameter X of constructor in ...Service required a bean of type '...Mapper' that could not be found.
+```
+
+This typically means MapStruct hasn't generated the mapper implementation classes. MapStruct generates these during compilation.
+
+**Solution:**
+
+1. **Clean and rebuild the project:**
+   ```bash
+   mvn clean compile
+   ```
+   
+   Or in your IDE:
+   - **IntelliJ IDEA**: Build → Rebuild Project
+   - **Eclipse**: Project → Clean → Clean all projects
+
+2. **Verify annotation processing is enabled:**
+   - **IntelliJ IDEA**: Settings → Build, Execution, Deployment → Compiler → Annotation Processors → Enable annotation processing
+   - **Eclipse**: Project Properties → Java Compiler → Annotation Processing → Enable annotation processing
+
+3. **Check for compilation errors:** If there are any compilation errors in mapper interfaces or related DTOs, MapStruct won't generate the implementation classes. Check the compiler output for errors.
+
+After a successful build, you should see generated mapper implementations in:
+```
+target/generated-sources/annotations/gov/cabinetoffice/gap/adminbackend/mappers/
+```
+
+### Flyway Migration Checksum Mismatch
+
+If you encounter an error during deployment like:
+
+```
+Migration checksum mismatch for migration version X.XX
+-> Applied to database : -336000449
+-> Resolved locally : -252574045
+Either revert the changes to the migration, or run repair to update the schema history.
+```
+
+This occurs when a migration file has been modified after it was already applied to the database. Flyway validates checksums to ensure migration files haven't been changed.
+
+**Important:** Never modify migration files after they've been deployed to any environment. If you need to change something, create a new migration file instead.
+
+#### Solution Options
+
+**Option 1: Use Flyway Repair (Recommended)**
+
+Enable Flyway repair mode temporarily in your deployment configuration:
+
+```properties
+spring.flyway.repair=true
+```
+
+Then restart the application. Flyway will repair all checksums to match the current migration files. After the repair completes, remove this property.
+
+**Option 2: Manually Update Checksum in Database**
+
+If you have direct database access, you can manually update the checksum in the `flyway_schema_history` table:
+
+```sql
+-- Connect to your database and run:
+UPDATE flyway_schema_history 
+SET checksum = <new_checksum>  -- Use the checksum from the error message
+WHERE version = '<version>';
+```
+
+**⚠️ Warning:** Only update the checksum if you're certain the migration file changes don't affect the database schema. If the migration was modified to change the schema, you may need to create a new migration to apply those changes instead.
+
+**Option 3: Use Flyway CLI Repair Command**
+
+If you have access to run commands on your deployment environment:
+
+```bash
+flyway repair -url=jdbc:postgresql://<your-db-host>:5432/<database-name> \
+  -user=<username> -password=<password> \
+  -locations=filesystem:src/main/resources/db/migration
+```
+
+#### Prevention
+
+- **Never modify migration files** after they've been applied to any environment
+- If you need to change something, **create a new migration file** instead
+- Use version control to track migration history
+- Consider using `spring.flyway.validate-on-migrate=true` (already enabled) to catch these issues early
+
 ## System Context Diagram
 ```mermaid
 flowchart TD

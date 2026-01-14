@@ -215,7 +215,8 @@ public class ApplicationFormController {
 
             this.applicationFormService.patchApplicationForm(applicationId, applicationFormPatchDTO, false);
 
-            EventType eventType = applicationFormPatchDTO.getApplicationStatus().equals(ApplicationStatusEnum.PUBLISHED)
+            EventType eventType = applicationFormPatchDTO.getApplicationStatus() != null 
+                    && applicationFormPatchDTO.getApplicationStatus().equals(ApplicationStatusEnum.PUBLISHED)
                     ? EventType.APPLICATION_PUBLISHED : EventType.APPLICATION_UPDATED;
 
             logApplicationEvent(eventType, request.getRequestedSessionId(), applicationId.toString());

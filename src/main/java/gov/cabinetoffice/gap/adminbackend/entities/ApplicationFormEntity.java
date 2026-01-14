@@ -54,6 +54,9 @@ public class ApplicationFormEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ApplicationStatusEnum applicationStatus;
 
+    @Column(name = "allows_multiple_submissions")
+    private Boolean allowsMultipleSubmissions;
+
     @Column(name = "definition", nullable = false, columnDefinition = "json")
     @Type(type = "json")
     private ApplicationDefinitionDTO definition;
@@ -70,6 +73,7 @@ public class ApplicationFormEntity extends BaseEntity {
         this.lastUpdateBy = lastUpdateBy;
         this.lastPublished = null;
         this.applicationName = applicationName;
+        this.allowsMultipleSubmissions = false;
         this.definition = definition;
     }
 

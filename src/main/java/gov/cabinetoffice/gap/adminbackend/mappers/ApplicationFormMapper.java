@@ -6,9 +6,11 @@ import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.QuestionGen
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.QuestionOptionsPatchDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.application.questions.QuestionOptionsPostDTO;
 import gov.cabinetoffice.gap.adminbackend.entities.ApplicationFormEntity;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +54,7 @@ public interface ApplicationFormMapper {
 
     List<ApplicationFormsFoundDTO> applicationFormFoundViewToDTO(List<ApplicationFormsFoundView> foundView);
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateApplicationEntityFromPatchDto(ApplicationFormPatchDTO patchDTO,
             @MappingTarget ApplicationFormEntity applicationFormEntity);
 
