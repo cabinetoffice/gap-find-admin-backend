@@ -21,6 +21,7 @@ public interface GrantExportMapper {
     @Mapping(target = "name", expression = "java(mapExportedSubmissionName(grantExportEntity))")
     @Mapping(target ="status", source = "status")
     @Mapping(target = "submittedDate", expression = "java(mapExportedSubmissionSubmittedDate(grantExportEntity))")
+    @Mapping(target = "submissionName", expression = "java(mapExportedSubmissionSubmissionName(grantExportEntity))")
     ExportedSubmissionsDto grantExportEntityToExportedSubmissions(GrantExportEntity grantExportEntity);
 
     default String mapExportedSubmissionName(GrantExportEntity grantExportEntity) {
@@ -29,6 +30,10 @@ public interface GrantExportMapper {
 
     default ZonedDateTime mapExportedSubmissionSubmittedDate(GrantExportEntity grantExportEntity) {
         return null;
+    }
+
+    default String mapExportedSubmissionSubmissionName(GrantExportEntity grantExportEntity) {
+        return "";
     }
 
 }

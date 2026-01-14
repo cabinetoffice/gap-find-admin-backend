@@ -60,6 +60,7 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
         exportedSubmissionsDto.status(grantExportEntity.getStatus());
         exportedSubmissionsDto.name(mapExportedSubmissionName(grantExportEntity));
         exportedSubmissionsDto.submittedDate(mapExportedSubmissionSubmittedDate(grantExportEntity));
+        exportedSubmissionsDto.submissionName(mapExportedSubmissionSubmissionName(grantExportEntity));
 
         return exportedSubmissionsDto.build();
     }
@@ -96,6 +97,20 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
 
         return submission.get().getSubmittedDate();
     }
+
+    @Override
+    public String mapExportedSubmissionSubmissionName(GrantExportEntity grantExportEntity) {
+        log.info("Getting submission name from grant export {} and submission {}", grantExportEntity.getId(),
+                grantExportEntity.getId().getSubmissionId());
+        final UUID submissionId = grantExportEntity.getId().getSubmissionId();
+        final Optional<Submission> submission = submissionRepository.findById(submissionId);
+        if (submission.isEmpty()) {
+            log.error("Submission not found for id: {}", submissionId);
+            return null;
+        }
+        return submission.get().getSubmissionName();
+    }
+
     private UUID grantExportEntityIdSubmissionId(GrantExportEntity grantExportEntity) {
         if (grantExportEntity == null) {
             return null;

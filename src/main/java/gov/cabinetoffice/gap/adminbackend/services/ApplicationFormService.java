@@ -336,14 +336,14 @@ public class ApplicationFormService {
         ApplicationFormEntity application = this.applicationFormRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application with id " + applicationId + " does not exist."));
 
-        if (patchDTO.getApplicationStatus() == ApplicationStatusEnum.PUBLISHED && application.getDefinition()
+        if (patchDTO.getApplicationStatus() != null && patchDTO.getApplicationStatus() == ApplicationStatusEnum.PUBLISHED && application.getDefinition()
                 .getSections().stream().anyMatch(section -> section.getQuestions().isEmpty())) {
             throw new FieldViolationException("sections", "Cannot publish a form with a section that has no questions");
         }
 
         try {
             this.applicationFormMapper.updateApplicationEntityFromPatchDto(patchDTO, application);
-            if (patchDTO.getApplicationStatus().equals(ApplicationStatusEnum.PUBLISHED)) {
+            if (patchDTO.getApplicationStatus() != null && patchDTO.getApplicationStatus().equals(ApplicationStatusEnum.PUBLISHED)) {
                 application.setLastPublished(Instant.now());
             }
 
