@@ -127,7 +127,7 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
     /**
      * This overridden method handles controller methods being called with invalid
      * arguments It'll spit back a json representation of a FieldErrorsDTO or a
-     * ClassErrorsDTO
+     * ClassErrorsDTO.
      */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
@@ -140,7 +140,7 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * This overridden method handles controller methods which cause bind exceptions It'll
-     * spit back a json representation of a FieldErrorsDTO or a ClassErrorsDTO
+     * spit back a json representation of a FieldErrorsDTO or a ClassErrorsDTO.
      */
     @Override
     protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status,
