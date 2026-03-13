@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,5 +36,33 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     @Query("update Submission s set s.lastRequiredChecksExport = ?1 where s.scheme.id = ?2 and s.status = ?3")
     void updateLastRequiredChecksExportBySchemeIdAndStatus(Instant lastRequiredChecksExport, Integer id,
             SubmissionStatus status);
+
+    List<Submission> findByStatusAndLastUpdatedBefore(SubmissionStatus status, LocalDateTime cutoff);
+
+    @Transactional
+    @Modifying
+    @Query(value = """
+            UPDATE grant_submission
+               SET status          = 'EXPIRED',
+                   definition      = NULL,
+                   submission_name = NULL,
+                   gap_id          = NULL,
+                   applicant_id    = NULL,
+                   created_by      = NULL,
+                   last_updated_by = NULL,
+                   last_updated    = :now
+             WHERE id IN :ids
+            """, nativeQuery = true)
+    void anonymiseSubmissions(@Param("ids") List<UUID> ids, @Param("now") LocalDateTime now);
+
+    @Transactional
+    @Modifying
+    @Query(value = "DELETE FROM grant_beneficiary WHERE submission_id IN :ids", nativeQuery = true)
+    void deleteBeneficiaryRowsBySubmissionIds(@Param("ids") List<UUID> ids);
+
+    @Transactional
+    @Modifying
+    @Query(value = "DELETE FROM diligence_check WHERE submission_id IN :ids", nativeQuery = true)
+    void deleteDiligenceCheckRowsBySubmissionIds(@Param("ids") List<UUID> ids);
 
 }

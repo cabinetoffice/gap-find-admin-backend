@@ -18,13 +18,21 @@ import java.util.Date;
 public class S3Service {
 
     @Value("${cloud.aws.s3.submissions-export-bucket-name}")
-    private String attachmentsBucket;
+    private String exportBucketName;
+
+    @Value("${aws.attachmentsBucket}")
+    private String attachmentsBucketName;
 
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
 
+    public void deleteAttachment(String objectKey) {
+        log.info("Deleting S3 object {} from attachments bucket", objectKey);
+        s3Client.deleteObject(attachmentsBucketName, objectKey);
+    }
+
     public String generateExportDocSignedUrl(String objectKey) {
         int linkTimeoutDuration = 604800;
-        GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(attachmentsBucket,
+        GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(exportBucketName,
                 objectKey).withMethod(HttpMethod.GET)
                         .withExpiration(Date.from(Instant.now().plusSeconds(linkTimeoutDuration)));
 
