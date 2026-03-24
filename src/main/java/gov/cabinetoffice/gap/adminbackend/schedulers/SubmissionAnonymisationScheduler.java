@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +39,8 @@ public class SubmissionAnonymisationScheduler {
                 cutoff);
 
         final List<Submission> dueForAnonymisation = submissionRepository
-                .findByStatusAndLastUpdatedBefore(SubmissionStatus.IN_PROGRESS, cutoff);
+                .findByStatusAndLastUpdatedBefore(SubmissionStatus.IN_PROGRESS, cutoff,
+                        PageRequest.of(0, config.getBatchSize()));
 
         log.info("Found {} submission(s) to anonymise", dueForAnonymisation.size());
 
