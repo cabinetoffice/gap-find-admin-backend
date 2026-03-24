@@ -3,6 +3,7 @@ package gov.cabinetoffice.gap.adminbackend.repositories;
 import gov.cabinetoffice.gap.adminbackend.entities.GrantMandatoryQuestions;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,5 +35,8 @@ public interface GrantMandatoryQuestionRepository extends JpaRepository<GrantMan
             + "and g.status = gov.cabinetoffice.gap.adminbackend.enums.GrantMandatoryQuestionStatus.COMPLETED "
             + "and g.submission.status = 'SUBMITTED'")
     boolean existBySchemeIdAndCompletedStatusAndSubmittedSubmission(Integer id);
+
+    @Transactional
+    void deleteBySubmission_Id(UUID submissionId);
 
 }
