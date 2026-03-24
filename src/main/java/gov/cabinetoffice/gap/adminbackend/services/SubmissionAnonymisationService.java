@@ -30,18 +30,22 @@ public class SubmissionAnonymisationService {
     public void anonymiseSubmission(UUID submissionId) {
         log.info("Anonymising submission {}", submissionId);
 
-        // 1. Delete S3 objects before removing the DB attachment rows
+        // 1. Delete S3 objects — if any fail, abort and leave the submission in
+        // IN_PROGRESS so the scheduler retries it on the next run
         final List<GrantAttachment> attachments = grantAttachmentRepository.findBySubmission_Id(submissionId);
-        attachments.forEach(attachment -> {
+        for (GrantAttachment attachment : attachments) {
             try {
                 s3Service.deleteAttachment(attachment.getLocation());
                 log.debug("Deleted S3 object {} for submission {}", attachment.getLocation(), submissionId);
             }
             catch (Exception e) {
-                log.warn("Failed to delete S3 object {} for submission {}: {}", attachment.getLocation(), submissionId,
-                        e.getMessage());
+                log.warn(
+                        "Aborting anonymisation of submission {} — failed to delete S3 object {}: {}. "
+                                + "Submission will be retried on the next scheduler run.",
+                        submissionId, attachment.getLocation(), e.getMessage());
+                return;
             }
-        });
+        }
 
         // 2. Delete diligence_check rows (no cascade on this FK)
         submissionRepository.deleteDiligenceCheckRowsBySubmissionIds(List.of(submissionId));
