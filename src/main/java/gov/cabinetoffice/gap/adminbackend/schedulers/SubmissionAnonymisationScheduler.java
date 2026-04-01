@@ -39,7 +39,7 @@ public class SubmissionAnonymisationScheduler {
                 cutoff);
 
         final List<Submission> dueForAnonymisation = submissionRepository
-                .findByStatusAndLastUpdatedBefore(SubmissionStatus.IN_PROGRESS, cutoff,
+                .findByStatusAndLastUpdatedBeforeAndAdvertClosed(SubmissionStatus.IN_PROGRESS.name(), cutoff,
                         PageRequest.of(0, config.getBatchSize()));
 
         log.info("Found {} submission(s) to anonymise", dueForAnonymisation.size());
