@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Pageable;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,7 +39,16 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     void updateLastRequiredChecksExportBySchemeIdAndStatus(Instant lastRequiredChecksExport, Integer id,
             SubmissionStatus status);
 
-    List<Submission> findByStatusAndLastUpdatedBefore(SubmissionStatus status, LocalDateTime cutoff);
+    @Query(value = """
+            SELECT gs.* FROM grant_submission gs
+            JOIN grant_advert ga ON ga.scheme_id = gs.scheme_id
+            WHERE gs.status = :status
+              AND gs.last_updated < :cutoff
+              AND ga.closing_date < NOW()
+            LIMIT :#{#pageable.pageSize}
+            """, nativeQuery = true)
+    List<Submission> findByStatusAndLastUpdatedBeforeAndAdvertClosed(@Param("status") String status,
+            @Param("cutoff") LocalDateTime cutoff, Pageable pageable);
 
     @Transactional
     @Modifying

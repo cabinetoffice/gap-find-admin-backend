@@ -13,4 +13,6 @@ public class SubmissionAnonymisationConfigProperties {
 
     private int daysBeforeExpiry = 90;
 
+    private int batchSize = 500;
+
 }
