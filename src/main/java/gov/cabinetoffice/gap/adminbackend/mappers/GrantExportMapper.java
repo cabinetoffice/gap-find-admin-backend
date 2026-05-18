@@ -22,6 +22,7 @@ public interface GrantExportMapper {
     @Mapping(target ="status", source = "status")
     @Mapping(target = "submittedDate", expression = "java(mapExportedSubmissionSubmittedDate(grantExportEntity))")
     @Mapping(target = "submissionName", expression = "java(mapExportedSubmissionSubmissionName(grantExportEntity))")
+    @Mapping(target = "gapId", expression = "java(mapExportedSubmissionGapId(grantExportEntity))")
     ExportedSubmissionsDto grantExportEntityToExportedSubmissions(GrantExportEntity grantExportEntity);
 
     default String mapExportedSubmissionName(GrantExportEntity grantExportEntity) {
@@ -33,6 +34,10 @@ public interface GrantExportMapper {
     }
 
     default String mapExportedSubmissionSubmissionName(GrantExportEntity grantExportEntity) {
+        return "";
+    }
+
+    default String mapExportedSubmissionGapId(GrantExportEntity grantExportEntity) {
         return "";
     }
 

@@ -61,6 +61,7 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
         exportedSubmissionsDto.name(mapExportedSubmissionName(grantExportEntity));
         exportedSubmissionsDto.submittedDate(mapExportedSubmissionSubmittedDate(grantExportEntity));
         exportedSubmissionsDto.submissionName(mapExportedSubmissionSubmissionName(grantExportEntity));
+        exportedSubmissionsDto.gapId(mapExportedSubmissionGapId(grantExportEntity));
 
         return exportedSubmissionsDto.build();
     }
@@ -109,6 +110,19 @@ public class CustomGrantExportMapperImpl implements GrantExportMapper {
             return null;
         }
         return submission.get().getSubmissionName();
+    }
+
+    @Override
+    public String mapExportedSubmissionGapId(GrantExportEntity grantExportEntity) {
+        log.info("Getting gap ID from grant export {} and submission {}", grantExportEntity.getId(),
+                grantExportEntity.getId().getSubmissionId());
+        final UUID submissionId = grantExportEntity.getId().getSubmissionId();
+        final Optional<Submission> submission = submissionRepository.findById(submissionId);
+        if (submission.isEmpty()) {
+            log.error("Submission not found for id: {}", submissionId);
+            return null;
+        }
+        return submission.get().getGapId();
     }
 
     private UUID grantExportEntityIdSubmissionId(GrantExportEntity grantExportEntity) {

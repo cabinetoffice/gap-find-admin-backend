@@ -13,6 +13,7 @@ import java.util.UUID;
 @Builder
 public class ExportedSubmissionsDto {
 
+    private String gapId;
     private String name;
     private String zipFileLocation;
     private UUID submissionId;
