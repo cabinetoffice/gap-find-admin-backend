@@ -245,9 +245,9 @@ public class GrantExportServiceTest {
             verify(exportRepository).findByCreatedByAndExportBatchIdAndStatusSorted(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination);
             assertThat(response.getGrantExportId()).isEqualTo(mockExportId);
             assertThat(response.getExportedSubmissions().get(0))
-                .isEqualTo(exportedSubmissionsDto2);
+                .isEqualTo(exportedSubmissionsDto);
             assertThat(response.getExportedSubmissions().get(1))
-                    .isEqualTo(exportedSubmissionsDto);
+                    .isEqualTo(exportedSubmissionsDto2);
             assertThat(response.getSuperZipFileLocation()).isEqualTo("superZip");
             assertThat(response.getSuccessCount()).isEqualTo(2);
             assertThat(response.getFailedCount()).isEqualTo(0);
