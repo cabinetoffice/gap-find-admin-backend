@@ -1,6 +1,5 @@
 package gov.cabinetoffice.gap.adminbackend.services;
 
-import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.ExportedSubmissionsListDto;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportDTO;
 import gov.cabinetoffice.gap.adminbackend.dtos.grantExport.GrantExportListDTO;
@@ -20,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
-import static java.util.Comparator.comparing;
 
 @Service
 @RequiredArgsConstructor
@@ -62,7 +60,7 @@ public class GrantExportService {
          final AdminSession adminSession = HelperUtils.getAdminSessionForAuthenticatedUser();
          log.info("Grabbing list of grant-export with id {} and status {}", exportId,status.toString());
 
-        final List<GrantExportEntity> grantExports = exportRepository.findByCreatedByAndId_ExportBatchIdAndStatus(adminSession.getGrantAdminId(),
+        final List<GrantExportEntity> grantExports = exportRepository.findByCreatedByAndExportBatchIdAndStatusSorted(adminSession.getGrantAdminId(),
                 exportId, status, pagination);
         log.info("Found {} grant-exports", grantExports.size());
 
@@ -74,7 +72,6 @@ public class GrantExportService {
             .superZipFileLocation(superZipLocation)
             .exportedSubmissions(grantExports.stream()
                 .map(customGrantExportMapper::grantExportEntityToExportedSubmissions)
-                .sorted(comparing(ExportedSubmissionsDto::getSubmittedDate))
                 .toList())
             .build();
 
