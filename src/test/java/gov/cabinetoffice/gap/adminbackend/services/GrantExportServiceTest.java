@@ -227,7 +227,7 @@ public class GrantExportServiceTest {
                 .submissionName("Application Name 1")
                 .build();
 
-            when(exportRepository.findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination))
+            when(exportRepository.findByCreatedByAndExportBatchIdAndStatusSorted(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination))
                 .thenReturn(List.of(grantExport, grantExport2));
             when(exportRepository.countByIdExportBatchIdAndStatus(mockExportId, GrantExportStatus.COMPLETE))
                 .thenReturn(2L);
@@ -242,12 +242,12 @@ public class GrantExportServiceTest {
             final ExportedSubmissionsListDto response = grantExportService
                 .generateExportedSubmissionsListDto(mockExportId, GrantExportStatus.COMPLETE, pagination, "superZip");
 
-            verify(exportRepository).findByCreatedByAndId_ExportBatchIdAndStatus(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination);
+            verify(exportRepository).findByCreatedByAndExportBatchIdAndStatusSorted(SEC_CONTEXT_ADMIN_ID,mockExportId, GrantExportStatus.COMPLETE, pagination);
             assertThat(response.getGrantExportId()).isEqualTo(mockExportId);
             assertThat(response.getExportedSubmissions().get(0))
-                .isEqualTo(exportedSubmissionsDto2);
+                .isEqualTo(exportedSubmissionsDto);
             assertThat(response.getExportedSubmissions().get(1))
-                    .isEqualTo(exportedSubmissionsDto);
+                    .isEqualTo(exportedSubmissionsDto2);
             assertThat(response.getSuperZipFileLocation()).isEqualTo("superZip");
             assertThat(response.getSuccessCount()).isEqualTo(2);
             assertThat(response.getFailedCount()).isEqualTo(0);

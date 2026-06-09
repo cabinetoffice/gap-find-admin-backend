@@ -24,10 +24,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 import java.util.UUID;
 
@@ -120,13 +124,22 @@ public class GrantExportController {
     @PageableAsQueryParam
     public ResponseEntity<ExportedSubmissionsListDto> getSubmissions(@PathVariable final UUID exportId,
             @RequestParam(name = "grabOnlyFailed", required = false,
-                    defaultValue = "false") final boolean grabOnlyFailed, final Pageable pagination) {
+                    defaultValue = "false") final boolean grabOnlyFailed,
+            @RequestParam(name = "sortField", required = false, defaultValue = "submittedDate") final String sortField,
+            @RequestParam(name = "sortDir", required = false, defaultValue = "asc") final String sortDir,
+            final Pageable pagination) {
         log.info("Getting submissions for exportId: {}, grabOnlyFailed : {}", exportId, grabOnlyFailed);
+
+        final Map<String, String> allowedSortFields = Map.of("gapId", "s.gapId", "submittedDate", "s.submittedDate");
+        final String jpqlSortField = allowedSortFields.getOrDefault(sortField, "s.submittedDate");
+        final Sort.Direction direction = Sort.Direction.fromOptionalString(sortDir).orElse(Sort.Direction.ASC);
+        final Pageable sortedPagination = PageRequest.of(pagination.getPageNumber(), pagination.getPageSize(),
+                Sort.by(direction, jpqlSortField));
 
         final GrantExportStatus status = grabOnlyFailed ? GrantExportStatus.FAILED : GrantExportStatus.COMPLETE;
         final String superZipLocation = grantExportBatchService.getSuperZipLocation(exportId);
         final ExportedSubmissionsListDto exportedSubmissionsListDto = exportService
-            .generateExportedSubmissionsListDto(exportId, status, pagination, superZipLocation);
+            .generateExportedSubmissionsListDto(exportId, status, sortedPagination, superZipLocation);
 
         return ResponseEntity.ok()
                 .header("cache-control", "private, no-cache, max-age=0, must-revalidate")
