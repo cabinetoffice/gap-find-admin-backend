@@ -49,4 +49,9 @@ public interface GrantExportRepository extends JpaRepository<GrantExportEntity, 
     List<GrantExportEntity> findByCreatedByAndId_ExportBatchIdAndStatus(Integer createdBy, UUID exportBatchId,
             GrantExportStatus status, Pageable pageable);
 
+    @Query("SELECT ge FROM GrantExportEntity ge JOIN Submission s ON s.id = ge.id.submissionId "
+            + "WHERE ge.createdBy = :createdBy AND ge.id.exportBatchId = :exportBatchId AND ge.status = :status")
+    List<GrantExportEntity> findByCreatedByAndExportBatchIdAndStatusSorted(@Param("createdBy") Integer createdBy,
+            @Param("exportBatchId") UUID exportBatchId, @Param("status") GrantExportStatus status, Pageable pageable);
+
 }
